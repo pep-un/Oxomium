@@ -1,0 +1,40 @@
+{% extends "conformity/main.html" %}
+
+{% block header %}
+    <h1 class="h1"> Organizations list</h1>
+{% endblock %}
+
+{% block content %}
+    {% if organization_list %}
+        <table class="table table-stiped table-hover ">
+            <thead class="table-dark">
+                <tr>
+                    <th>#</th>
+                    <th>Organization</th>
+                    <th>Administrative ID</th>
+                    <th>Description</th>
+                    <th class="text-center">Applicable Policy</th>
+                </tr>
+            </thead>
+            <tbody>
+        {% for org in organization_list %}
+            <tr>
+                <th>{{ org.id }}</th>
+                <td>{{ org.name }}</td>
+                <td>{{ org.administrative_id }}</td>
+                <td>{{ org.description }}</td>
+                <td class="text-center">
+                    {% for item in org.getPolicies %}
+                    <span class="badge bg-primary">{{ item.name }}</span> <br \>
+                    {% endfor %}
+                </td>
+            </tr>
+        {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="alert alert-dark" role="alert">
+          No organization defined.
+        </div>
+    {% endif %}
+{% endblock %}

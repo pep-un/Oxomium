@@ -1,0 +1,32 @@
+{% extends "conformity/main.html" %}
+
+{% block header %}
+<h1 class="h1 bi bi-card-chacklist"> Policy: {{ policy.name }} (v{{policy.version}})</h1>
+{% endblock %}
+
+{% block content %}
+    {% if policy.get_mMesures %}
+        <table class="table table-stiped table-hover ">
+            <thead class="table-dark">
+                <tr>
+                    <th>#</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+        {% for m in policy.get_mesures %}
+            <tr>
+                <td>{{ m.name }}</td>
+                <td>{{ m.title }}</td>
+                <td>{{ m.description }}</td>
+            </tr>
+        {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="alert alert-dark" role="alert">
+          No Mesure defined for this policy.
+        </div>
+    {% endif %}
+{% endblock %}

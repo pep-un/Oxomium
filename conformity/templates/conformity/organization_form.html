@@ -1,0 +1,18 @@
+{% extends "conformity/main.html" %}
+{% load django_bootstrap5 %}
+
+{% block header %}
+    <h1 class="h1 bi bi-pencil-square"> Organization update </h1>
+{% endblock %}
+
+{% block content %}
+    <form class="form" method="post" action="" style="table-radius:1em">
+        {% csrf_token %}
+        <div class="row justify-content-center">
+            <div class="col col-6">
+                {% bootstrap_form form %}
+                {% bootstrap_button button_type="submit" content="Save" %}
+            </div>
+        </div>
+    </form>
+{% endblock %}

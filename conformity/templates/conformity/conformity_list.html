@@ -1,0 +1,82 @@
+{% extends "conformity/main.html" %}
+
+{% block header %}
+    <h1 class="h1 bi bi-clipboard2-check"> Conformities</h1>
+{% endblock %}
+
+{% block content %}
+<table class="table table-stiped table-hover align-middle">
+    <thead>
+        <tr>
+            <th class="">Organization</th>
+            <th class="">Policy</th>
+            <th class="">Mesure</th>
+            <th class="text-center">Owner</th>
+            <th class="text-center">Status</th>
+            <th class="text-center">Edit</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for con in conformity_list %}
+        <tr>
+            <th class="col">{{ con.organization }}</th>
+            <th class="col">{{ con.mesure.policy }}</th>
+            <th class="col">{{ con.mesure.title }}</th>
+            <td class="col-2 text-center">
+                {{ con.responsible|capfirst }}
+            </td>
+            <td class="col-4 text-center">
+                <div class="progress">
+                    <div class="progress-bar" role="progressbar" style="width: {{ con.status }}%" aria-valuenow="{{ con.status }}" aria-valuemin="0" aria-valuemax="100">{{ con.status }}%</div>
+                </div>
+            </td>
+            <td class="col-1 text-center"> <a href="{% url 'conformity:conformity_form' con.id %}"> <i class="bi bi-pencil-square"></i> </a> </td>
+        </tr>
+        {% for con in con.get_children %}
+            <tr>
+                <th class="col">{{ con.organization }}</th>
+                <th class="col">{{ con.mesure.policy }}</th>
+                <th>
+                    <span class="ps-2 bi bi-arrow-return-right">{{ con.mesure.title }}</span>
+                </th>
+                <td class="text-center">
+                    {{ con.responsible|capfirst }}
+                </td>
+                <td class="text-center">
+                    <div class="progress">
+                        <div class="progress-bar" role="progressbar" style="width: {{ con.status }}%" aria-valuenow="{{ con.status }}" aria-valuemin="0" aria-valuemax="100">{{ con.status }}%</div>
+                    </div>
+                </td>
+                <td class="text-center">
+                    <a href="{% url 'conformity:conformity_form' con.id %}"> <i class="bi bi-pencil-square"></i> </a>
+                </td>
+            </tr>
+                {% for con in con.get_children %}
+                    <tr>
+                        <th class="col">{{ con.organization }}</th>
+                        <th class="col">{{ con.mesure.policy }}</th>
+                        <th>
+                            <span class="ps-4 bi bi-arrow-return-right">{{ con.mesure.title }}</span>
+                        </th>
+                        <td class="text-center">
+                            {{ con.responsible|capfirst }}
+                        </td>
+                        <td class="text-center">
+                            <div class="progress">
+                                <div class="progress-bar" role="progressbar" style="width: {{ con.status }}%" aria-valuenow="{{ con.status }}" aria-valuemin="0" aria-valuemax="100">{{ con.status }}%</div>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <a href="{% url 'conformity:conformity_form' con.id %}"> <i class="bi bi-pencil-square"></i> </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+        {% endfor %}
+    {% empty %}
+        <div class="alert alert-info" role="alert">
+            No coformity review for this organization and this policy.
+        </div>
+        <tr><td colspan="4">No data to display</td></tr>
+    {% endfor %}
+</table>
+{% endblock %}

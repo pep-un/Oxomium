@@ -1,0 +1,40 @@
+{% extends "conformity/main.html" %}
+
+{% block header %}
+    <h1 class="h1 bi bi-card-checklist"> Policies</h1>
+{% endblock %}
+
+{% block content %}
+    {% if policy_list %}
+        <table class="table table-stiped table-hover align-middle">
+            <thead class="">
+                <tr>
+                    <th>#</th>
+                    <th>Policy</th>
+                    <th>Published by</th>
+                    <th>Policy type</th>
+                    <th class="text-center">Mesures</th>
+                </tr>
+            </thead>
+            <tbody>
+        {% for pol in policy_list %}
+            <tr>
+                <th>{{ pol.id }}</th>
+                <td>{{ pol.name }} (v{{ pol.version }})</td>
+                <td>{{ pol.publish_by }}</td>
+                <td>{{ pol.get_type }}</td>
+                <td class="text-center">
+                    <a href="{% url 'conformity:policy_detail' pol.id %}">
+                        <button type="button" class="btn btn-primary btn-sm">{{ pol.get_mesures_number }} Mesures</button>
+                    </a>
+                </td>
+            </tr>
+        {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="alert alert-dark" role="alert">
+          No policy defined.
+        </div>
+    {% endif %}
+{% endblock %}
