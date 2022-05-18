@@ -1,0 +1,47 @@
+{% extends "conformity/main.html" %}
+
+{% block header %}
+    <h1 class="h1 bi bi-building"> Organizations</h1>
+{% endblock %}
+
+{% block content %}
+    <table class="table table-stiped table-hover align-middle">
+    <thead>
+        <tr>
+            <th class="col-1">Organization</th>
+            <th class="col ">Description</th>
+            <th class="col-4 text-center">Applicable policies</th>
+            <th class="col-1 text-center">Edit</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for org in organization_list %}
+            <tr>
+                <td>
+                    {{ org.name }}
+                </td>
+                <td>
+                    <p>{{ org.description }}</p>
+                    <p>{{ org.administrative_id }}</p>
+                </td>
+                <td class="text-center">
+                    {% for item in org.get_policies %}
+                        <a href="{% url 'conformity:conformity_orgpol_index' org.id item.id %}">
+                           <div class="btn btn-primary my-1" style="width:15em;">
+                            {{ item }}
+                           </div>
+                        </a>
+                        <br />
+                    {% endfor %}
+                </td>
+                <td class="text-center">
+                    <a href="{% url 'conformity:policy_form' org.id %}" class="bi bi-pencil-square"></a>
+                </td>
+            </tr>
+        {% empty %}
+            <div class="alert alert-dark" role="alert">
+                No organization defined.
+            </div>
+        {% endfor %}
+    </tbody>
+{% endblock %}

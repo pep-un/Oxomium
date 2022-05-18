@@ -1,0 +1,40 @@
+{% extends "conformity/main.html" %}
+
+{% block header %}
+    <h1 class="h1 bi bi-building"> Organizations</h1>
+{% endblock %}
+
+{% block content %}
+    {% if organization_list %}
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+        {% for org in organization_list %}
+            <div class="col">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="text-center">{{ org.name }}</h2>
+                    </div>
+                    <div class="card-body">
+                        <h3 class="h3">Description:</h3>
+                        <p class="card-text">{{ org.description }}</p>
+                        <p class="card-text">{{ org.administrative_id }}</p>
+                    </div>
+                    <hr />
+                    <div class="card-body">
+                        <h3 class="h3">Applicable Policies:</h3>
+                        <div class="text-center">
+                        {% for item in org.getPolicies %}
+                            <a href="{% url 'conformity:conformity_orgpol_index' org.id item.id %}" class="btn btn-primary btn-sm">{{ item }}</a>
+                        {% endfor %}
+                        <a href="{% url 'conformity:policy_form' org.id %}" class="btn btn-outline-primary btn-sm bi bi-pencil-square"></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-dark" role="alert">
+          No organization defined.
+        </div>
+    {% endif %}
+{% endblock %}

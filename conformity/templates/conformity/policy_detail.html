@@ -1,0 +1,46 @@
+{% extends "conformity/main.html" %}
+
+{% block header %}
+<h1 class="h2 bi bi-card-checklist"> Policy: {{ policy.name }} (v{{policy.version}})</h1>
+{% endblock %}
+
+{% block content %}
+    {% if policy.get_root_mesures %}
+        <ol>
+        {% for m in policy.get_root_mesures %}
+            <li>
+                <h3>{{ m.title }} <span class="badge bg-primary">{{ m.name }}</span> </h3>
+                <p>{{ m.description|safe }}</p>
+                {% if m.get_childrens %}
+                    <ol>
+                        {% for m in m.get_childrens %}
+                        <li>
+                            <h4>{{ m.title }} <span class="badge bg-primary">{{ m.name }}</span> </h4>
+                            <p>{{ m.description|safe }}</p>
+                            {% if m.get_childrens %}
+                                <ol>
+                                {% if m.get_childrens %}
+                                    <ol>
+                                        {% for m in m.get_childrens %}
+                                        <li>
+                                            <h5>{{ m.title }} <span class="badge bg-primary">{{ m.name }}</span> </h5>
+                                            <p>{{ m.description|safe }}</p>
+                                        </li>
+                                    {% endfor %}
+                                    </ol>
+                                {% endif %}
+                                </ol>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                    </ol>
+                {% endif %}
+            </li>
+        {% endfor %}
+        </ol>
+    {% else %}
+        <div class="alert alert-dark" role="alert">
+          No Mesure defined for this policy.
+        </div>
+    {% endif %}
+{% endblock %}
