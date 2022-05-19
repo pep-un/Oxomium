@@ -1,3 +1,7 @@
+[![Django CI](https://github.com/pep-un/Oxomium/actions/workflows/django.yml/badge.svg)](https://github.com/pep-un/Oxomium/actions/workflows/django.yml)
+[![Pylint](https://github.com/pep-un/Oxomium/actions/workflows/pylint.yml/badge.svg)](https://github.com/pep-un/Oxomium/actions/workflows/pylint.yml)
+
+
 # Oxomium
 
 Oxomium is an opensource projet build to help company to manage the cybersecurity compliance of organisations. 
