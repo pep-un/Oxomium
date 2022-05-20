@@ -23,4 +23,4 @@ jobs:
         pip install pylint-django
     - name: Analysing the code with pylint
       run: |
-        pylint -E --load-plugins pylint_django --django-settings-module=oxomium $(git ls-files '*.py')
+        pylint --load-plugins pylint_django --django-settings-module=oxomium $(git ls-files '*.py')
