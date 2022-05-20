@@ -7,6 +7,7 @@ from statistics import median
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 from django.urls import reverse, reverse_lazy
+from django.http import Http404
 
 User = get_user_model()
 
@@ -29,7 +30,7 @@ class Policy(models.Model):
     )
 
     def __str__(self):
-        return self.name
+        return str(self.name)
 
     def get_type(self):
         return self.Type(self.type).label
@@ -51,7 +52,7 @@ class Organization(models.Model):
     applicable_policies = models.ManyToManyField(Policy, blank=True)
 
     def __str__(self):
-        return self.name
+        return str(self.name)
 
     def get_absolute_url(self):
         return reverse('conformity:organization_index')
@@ -66,7 +67,7 @@ class Organization(models.Model):
             for m in mesures:
                 Conformity.objects.filter(mesure=m.id).delete()
         else:
-            raise Http404("Policy not appliced or non existing")
+            raise Http404("Policy not applied or non existing")
 
     def add_policy(self, policy: Policy):
         pol_check = self.applicable_policies.filter(id=policy.id).exists()
@@ -79,12 +80,12 @@ class Organization(models.Model):
         else:
             raise Http404("Policy already applied")
 
-    def get_policy_status(selfself, pid):
-        confomitys = Conformity.objects.filter(policy=pid).filter(organization=self.id).filter(mesure.level==0)
+    def get_policy_status(self, pid):
+        confomitys = Conformity.objects.filter(policy=pid).filter(organization=self.id).filter(mesure__level=0)
         conf_stat = []
         for conf in confomitys:
             conf_stat.append(conf.status)
-        return median(child_stat)
+        return median(conf_stat)
 
 class Mesure(models.Model):
     code = models.CharField(max_length=5, blank=True)
@@ -98,7 +99,7 @@ class Mesure(models.Model):
     is_parent = models.BooleanField(default=False)
 
     def __str__(self):
-        return str(self.policy) + " | " + self.name
+        return str(self.policy + " | " + self.name)
 
     def get_childrens(self):
         return Mesure.objects.filter(parent=self.id).order_by('order')
@@ -136,7 +137,7 @@ class Conformity(models.Model):
         self.save()
         self.status_update()
 
-    def set_responsible(selfself, resp):
+    def set_responsible(self, resp):
         self.responsible = resp
         self.save()
         for child in self.get_children():
