@@ -1,6 +1,7 @@
+[![Pylint Error](https://github.com/pep-un/Oxomium/actions/workflows/pylint.yml/badge.svg)](https://github.com/pep-un/Oxomium/actions/workflows/pylint.yml)
 [![Django CI](https://github.com/pep-un/Oxomium/actions/workflows/django.yml/badge.svg)](https://github.com/pep-un/Oxomium/actions/workflows/django.yml)
-[![Pylint](https://github.com/pep-un/Oxomium/actions/workflows/pylint.yml/badge.svg)](https://github.com/pep-un/Oxomium/actions/workflows/pylint.yml)
-
+[![CodeQL](https://github.com/pep-un/Oxomium/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/pep-un/Oxomium/actions/workflows/codeql-analysis.yml)
+[![Dependency Review](https://github.com/pep-un/Oxomium/actions/workflows/dependency-review.yml/badge.svg?branch=main)](https://github.com/pep-un/Oxomium/actions/workflows/dependency-review.yml)
 
 # Oxomium
 
