@@ -128,7 +128,7 @@ class Mesure(models.Model):
     is_parent = models.BooleanField(default=False)
 
     def __str__(self):
-        return str(self.policy + " | " + self.name)
+        return str(self.name)
 
     def get_childrens(self):
         '''Return all children of the mesure'''

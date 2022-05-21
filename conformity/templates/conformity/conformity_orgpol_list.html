@@ -9,8 +9,8 @@
     <thead>
         <tr>
             <th class="">Mesure</th>
-            <th class="text-center">Owner</th>
             <th class="text-center">Status</th>
+            <th class="text-center">Owner</th>
             <th class="text-center">Edit</th>
         </tr>
     </thead>
@@ -18,13 +18,13 @@
     {% for con in conformity_list %}
         <tr>
             <th class="col">{{ con.mesure.title }}</th>
-            <td class="col-2 text-center">
-                {{ con.responsible|capfirst }}
-            </td>
             <td class="col-4 text-center">
                 <div class="progress">
                     <div class="progress-bar" role="progressbar" style="width: {{ con.status }}%" aria-valuenow="{{ con.status }}" aria-valuemin="0" aria-valuemax="100">{{ con.status }}%</div>
                 </div>
+            </td>
+            <td class="col-2 text-center">
+                {{ con.responsible|capfirst }}
             </td>
             <td class="col-1 text-center"> <a href="{% url 'conformity:conformity_form' con.id %}"> <i class="bi bi-pencil-square"></i> </a> </td>
         </tr>
@@ -34,12 +34,12 @@
                     <span class="ps-2 bi bi-arrow-return-right">{{ con.mesure.title }}</span>
                 </th>
                 <td class="text-center">
-                    {{ con.responsible|capfirst }}
-                </td>
-                <td class="text-center">
                     <div class="progress">
                         <div class="progress-bar" role="progressbar" style="width: {{ con.status }}%" aria-valuenow="{{ con.status }}" aria-valuemin="0" aria-valuemax="100">{{ con.status }}%</div>
                     </div>
+                </td>
+                <td class="text-center">
+                    {{ con.responsible|capfirst }}
                 </td>
                 <td class="text-center">
                     <a href="{% url 'conformity:conformity_form' con.id %}"> <i class="bi bi-pencil-square"></i> </a>
@@ -51,12 +51,12 @@
                             <span class="ps-4 bi bi-arrow-return-right">{{ con.mesure.title }}</span>
                         </th>
                         <td class="text-center">
-                            {{ con.responsible|capfirst }}
-                        </td>
-                        <td class="text-center">
                             <div class="progress">
                                 <div class="progress-bar" role="progressbar" style="width: {{ con.status }}%" aria-valuenow="{{ con.status }}" aria-valuemin="0" aria-valuemax="100">{{ con.status }}%</div>
                             </div>
+                        </td>
+                        <td class="text-center">
+                            {{ con.responsible|capfirst }}
                         </td>
                         <td class="text-center">
                             <a href="{% url 'conformity:conformity_form' con.id %}"> <i class="bi bi-pencil-square"></i> </a>
