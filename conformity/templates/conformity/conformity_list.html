@@ -21,9 +21,9 @@
             <th class="col">{{ con.mesure.title }}</th>
             <td class="col-4 text-center">
                 <a href="{% url 'conformity:conformity_orgpol_index' con.organization.id con.mesure.policy.id %}">
-                <div class="progress">
-                    <div class="progress-bar" role="progressbar" style="width: {{ con.status }}%" aria-valuenow="{{ con.status }}" aria-valuemin="0" aria-valuemax="100">{{ con.status }}%</div>
-                </div>
+                    <div class="progress">
+                        <div class="progress-bar" role="progressbar" style="width: {{ con.status }}%" aria-valuenow="{{ con.status }}" aria-valuemin="0" aria-valuemax="100">{{ con.status }}%</div>
+                    </div>
                 </a>
             </td>
             <td class="col-2 text-center"> {{ con.responsible|capfirst }} </td>
