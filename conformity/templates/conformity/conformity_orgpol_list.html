@@ -1,7 +1,10 @@
 {% extends "conformity/main.html" %}
 
 {% block header %}
-    <h1 class="h1 bi bi-clipboard2-check"> {{ conformity_list.0.organization }} conformity to {{ conformity_list.0.mesure.policy }}</h1>
+    <h1 class="h1 bi bi-clipboard2-check">
+        {{ conformity_list.0.organization }} conformity to {{ conformity_list.0.mesure.policy }}:
+        <span class="badge rounded-pill bg-primary"> {{ conformity_list.0.status }}%</span>
+    </h1>
 {% endblock %}
 
 {% block content %}
@@ -15,7 +18,7 @@
         </tr>
     </thead>
     <tbody>
-    {% for con in conformity_list %}
+    {% for con in conformity_list.0.get_children %}
         <tr>
             <th class="col">{{ con.mesure.title }}</th>
             <td class="col-4 text-center">
