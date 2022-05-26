@@ -4,7 +4,7 @@ from .models import *
 class ConformityForm(ModelForm):
     class Meta:
         model = Conformity
-        fields = ['responsible','status']
+        fields = ['responsible','status', 'comment']
 
 class OrganizationForm(ModelForm):
     class Meta:

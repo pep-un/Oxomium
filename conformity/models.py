@@ -119,7 +119,7 @@ class Measure(models.Model):
     policy = models.ForeignKey(Policy, on_delete=models.CASCADE)
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True)
     title = models.CharField(max_length=256, blank=True)
-    description = models.CharField(max_length=4096, blank=True)
+    description = models.TextField(blank=True)
     is_parent = models.BooleanField(default=False)
 
     def __str__(self):
@@ -142,6 +142,7 @@ class Conformity(models.Model):
     responsible = models.ForeignKey(settings.AUTH_USER_MODEL,
                                     on_delete=models.CASCADE,
                                     null=True, blank=True)
+    comment = models.TextField(max_length=4096, blank=True)
 
     def __str__(self):
         return str(self.organization) + " | " + str(self.measure)

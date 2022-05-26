@@ -8,12 +8,13 @@
 {% endblock %}
 
 {% block content %}
-<table class="table table-stiped table-hover align-middle">
+<table class="table table-striped align-middle">
     <thead>
         <tr>
             <th class="">Measure</th>
             <th class="text-center">Status</th>
             <th class="text-center">Owner</th>
+            <th class="text-center">Comment</th>
             <th class="text-center">Edit</th>
         </tr>
     </thead>
@@ -21,13 +22,18 @@
     {% for con in conformity_list.0.get_children %}
         <tr>
             <th class="col">{{ con.measure.title }}</th>
-            <td class="col-4 text-center">
+            <td class="col-3 text-center">
                 <div class="progress">
                     <div class="progress-bar" role="progressbar" style="width: {{ con.status }}%" aria-valuenow="{{ con.status }}" aria-valuemin="0" aria-valuemax="100">{{ con.status }}%</div>
                 </div>
             </td>
-            <td class="col-2 text-center">
+            <td class="col-1 text-center">
                 {{ con.responsible|capfirst }}
+            </td>
+            <td class="col-1 text-center">
+                {% if con.comment %}
+                <i class="bi bi-chat-text" arial-label="has a comment"></i>
+                {% endif %}
             </td>
             <td class="col-1 text-center"> <a href="{% url 'conformity:conformity_form' con.id %}"> <i class="bi bi-pencil-square"></i> </a> </td>
         </tr>
@@ -43,6 +49,11 @@
                 </td>
                 <td class="text-center">
                     {{ con.responsible|capfirst }}
+                </td>
+                <td class="col-1 text-center">
+                    {% if con.comment %}
+                    <i class="bi bi-chat-text"></i>
+                    {% endif %}
                 </td>
                 <td class="text-center">
                     <a href="{% url 'conformity:conformity_form' con.id %}"> <i class="bi bi-pencil-square"></i> </a>
@@ -60,6 +71,11 @@
                         </td>
                         <td class="text-center">
                             {{ con.responsible|capfirst }}
+                        </td>
+                        <td class="col-1 text-center">
+                            {% if con.comment %}
+                            <i class="bi bi-chat-text"></i>
+                            {% endif %}
                         </td>
                         <td class="text-center">
                             <a href="{% url 'conformity:conformity_form' con.id %}"> <i class="bi bi-pencil-square"></i> </a>
