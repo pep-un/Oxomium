@@ -18,9 +18,9 @@
     {% for con in conformity_list %}
         <tr>
             <th class="col">{{ con.organization }}</th>
-            <th class="col">{{ con.mesure.title }}</th>
+            <th class="col">{{ con.measure.title }}</th>
             <td class="col-4 text-center">
-                <a href="{% url 'conformity:conformity_orgpol_index' con.organization.id con.mesure.policy.id %}">
+                <a href="{% url 'conformity:conformity_orgpol_index' con.organization.id con.measure.policy.id %}">
                     <div class="progress">
                         <div class="progress-bar" role="progressbar" style="width: {{ con.status }}%" aria-valuenow="{{ con.status }}" aria-valuemin="0" aria-valuemax="100">{{ con.status }}%</div>
                     </div>

@@ -2,7 +2,7 @@
 
 {% block header %}
     <h1 class="h1 bi bi-clipboard2-check">
-        {{ conformity_list.0.organization }} conformity to {{ conformity_list.0.mesure.policy }}:
+        {{ conformity_list.0.organization }} conformity to {{ conformity_list.0.measure.policy }}:
         <span class="badge rounded-pill bg-primary"> {{ conformity_list.0.status }}%</span>
     </h1>
 {% endblock %}
@@ -11,7 +11,7 @@
 <table class="table table-stiped table-hover align-middle">
     <thead>
         <tr>
-            <th class="">Mesure</th>
+            <th class="">Measure</th>
             <th class="text-center">Status</th>
             <th class="text-center">Owner</th>
             <th class="text-center">Edit</th>
@@ -20,7 +20,7 @@
     <tbody>
     {% for con in conformity_list.0.get_children %}
         <tr>
-            <th class="col">{{ con.mesure.title }}</th>
+            <th class="col">{{ con.measure.title }}</th>
             <td class="col-4 text-center">
                 <div class="progress">
                     <div class="progress-bar" role="progressbar" style="width: {{ con.status }}%" aria-valuenow="{{ con.status }}" aria-valuemin="0" aria-valuemax="100">{{ con.status }}%</div>
@@ -34,7 +34,7 @@
         {% for con in con.get_children %}
             <tr>
                 <th>
-                    <span class="ps-2 bi bi-arrow-return-right">{{ con.mesure.title }}</span>
+                    <span class="ps-2 bi bi-arrow-return-right">{{ con.measure.title }}</span>
                 </th>
                 <td class="text-center">
                     <div class="progress">
@@ -51,7 +51,7 @@
                 {% for con in con.get_children %}
                     <tr>
                         <th>
-                            <span class="ps-4 bi bi-arrow-return-right">{{ con.mesure.title }}</span>
+                            <span class="ps-4 bi bi-arrow-return-right">{{ con.measure.title }}</span>
                         </th>
                         <td class="text-center">
                             <div class="progress">
