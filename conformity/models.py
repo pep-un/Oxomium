@@ -32,7 +32,7 @@ class Policy(models.Model):
         POLICY = 'POL', _('Internal Policy')
         OTHER = 'OTHER', _('Other')
 
-    name = models.CharField(max_length=256)
+    name = models.CharField(max_length=256, unique=True)
     version = models.IntegerField(default=0)
     publish_by = models.CharField(max_length=256)
     type = models.CharField(
@@ -43,6 +43,9 @@ class Policy(models.Model):
 
     def __str__(self):
         return str(self.name)
+
+    def natural_key(self):
+        return self.name
 
     def get_type(self):
         """return the readable version of the Policy Type"""
@@ -70,13 +73,16 @@ class Organization(models.Model):
     Organization class is a representation of a company, a division of company, a administration...
     The Organization may answer to one or several Policy.
     """
-    name = models.CharField(max_length=256)
+    name = models.CharField(max_length=256, unique=True)
     administrative_id = models.CharField(max_length=256, blank=True)
     description = models.CharField(max_length=256, blank=True)
     applicable_policies = models.ManyToManyField(Policy, blank=True)
 
     def __str__(self):
         return str(self.name)
+
+    def natural_key(self):
+        return self.name
 
     @staticmethod
     def get_absolute_url():
@@ -117,7 +123,7 @@ class Measure(models.Model):
     A Measure is not representing the conformity level, see Conformity class.
     """
     code = models.CharField(max_length=5, blank=True)
-    name = models.CharField(max_length=50, blank=True)
+    name = models.CharField(max_length=50, blank=True, unique=True)
     level = models.IntegerField(default=0)
     order = models.IntegerField(default=1)
     policy = models.ForeignKey(Policy, on_delete=models.CASCADE)
@@ -128,6 +134,9 @@ class Measure(models.Model):
 
     def __str__(self):
         return str(self.name)
+
+    def natural_key(self):
+        return self.name
 
     def get_childrens(self):
         """Return all children of the measure"""
@@ -150,6 +159,12 @@ class Conformity(models.Model):
 
     def __str__(self):
         return str(self.organization) + " | " + str(self.measure)
+
+    def natural_key(self):
+        return (self.organization, self.measure)
+
+    class Meta:
+        unique_together = (('organization','measure'),)
 
     def get_absolute_url(self):
         """Return the absolute URL of the class for Form, probably not the best way to do it"""
