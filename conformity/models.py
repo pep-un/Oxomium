@@ -127,7 +127,7 @@ class Measure(models.Model):
     level = models.IntegerField(default=0)
     order = models.IntegerField(default=1)
     policy = models.ForeignKey(Policy, on_delete=models.CASCADE)
-    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True)
+    parent = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True)
     title = models.CharField(max_length=256, blank=True)
     description = models.TextField(blank=True)
     is_parent = models.BooleanField(default=False)
@@ -137,6 +137,7 @@ class Measure(models.Model):
 
     def natural_key(self):
         return self.name
+    natural_key.dependencies = ['conformity.policy']
 
     def get_childrens(self):
         """Return all children of the measure"""
@@ -162,6 +163,7 @@ class Conformity(models.Model):
 
     def natural_key(self):
         return (self.organization, self.measure)
+    natural_key.dependencies = ['conformity.policy','conformity.measure','conformity.organization']
 
     class Meta:
         unique_together = (('organization','measure'),)
