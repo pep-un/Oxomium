@@ -1,3 +1,7 @@
+'''
+Forms for front-end editing of Models instance
+'''
+
 from django.forms import ModelForm
 from .models import *
 

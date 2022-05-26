@@ -1,7 +1,11 @@
+'''
+Customize Django Admin Site to manage my Models instances
+'''
+
 from django.contrib import admin
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
-from .models import *
+from .models import Organization, Policy, Measure, Conformity
 
 # Organization
 
@@ -18,7 +22,7 @@ class OrganizationAdmin(ImportExportModelAdmin):
 admin.site.register(Organization, OrganizationAdmin)
 
 
-# Policy 
+# Policy
 
 
 class PolicyResources(resources.ModelResource):
