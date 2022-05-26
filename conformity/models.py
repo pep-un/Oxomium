@@ -3,16 +3,16 @@ Conformity module manage all the manual declarative aspect of conformity managem
 It's Organized around Organization, Policy, Measure and Conformity classes.
 """
 
+import logging
 from statistics import mean
 from django.db import models
-from django.db.models.signals import post_init, pre_save, post_save, m2m_changed
+from django.db.models.signals import post_init, m2m_changed
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.dispatch import receiver
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
-import logging
 
 User = get_user_model()
 
@@ -189,9 +189,7 @@ class Conformity(models.Model):
             self.get_parent()[0].status_update()
 
 
-"""
-                                  Callback functions
-"""
+# Callback functions
 
 
 @receiver(post_init, sender=Measure)
