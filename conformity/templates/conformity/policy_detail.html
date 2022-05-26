@@ -5,9 +5,9 @@
 {% endblock %}
 
 {% block content %}
-    {% if policy.get_root_mesures %}
+    {% if policy.get_root_measures %}
         <ol>
-        {% for m in policy.get_root_mesures %}
+        {% for m in policy.get_root_measures %}
             <li>
                 <h3>{{ m.title }} <span class="badge bg-primary">{{ m.name }}</span> </h3>
                 <p>{{ m.description|safe }}</p>
@@ -40,7 +40,7 @@
         </ol>
     {% else %}
         <div class="alert alert-dark" role="alert">
-          No Mesure defined for this policy.
+          No Measure defined for this policy.
         </div>
     {% endif %}
 {% endblock %}

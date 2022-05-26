@@ -20,7 +20,7 @@ User = get_user_model()
 class Policy(models.Model):
     """
     Policy class represent the conformity policy you will apply on Organization.
-    A Policy is simply a collections of Mesure with publication parameter.
+    A Policy is simply a collections of Measure with publication parameter.
     """
 
     class Type(models.TextChoices):
@@ -48,15 +48,15 @@ class Policy(models.Model):
         """return the readable version of the Policy Type"""
         return self.Type(self.type).label
 
-    def get_mesures(self):
+    def get_measures(self):
         """return all Measure related to the Policy"""
         return Mesure.objects.filter(policy=self.id)
 
-    def get_mesures_number(self):
+    def get_measures_number(self):
         """return the number of leaf Measure related to the Policy"""
         return Mesure.objects.filter(policy=self.id).filter(mesure__is_parent=False).count()
 
-    def get_root_mesures(self):
+    def get_root_measures(self):
         """return the root Measure of the Policy"""
         return Mesure.objects.filter(policy=self.id).filter(level=0).order_by('order')
 
@@ -126,7 +126,7 @@ class Mesure(models.Model):
         return str(self.name)
 
     def get_childrens(self):
-        """Return all children of the mesure"""
+        """Return all children of the measure"""
         return Mesure.objects.filter(parent=self.id).order_by('order')
 
 
