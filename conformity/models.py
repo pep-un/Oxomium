@@ -56,9 +56,13 @@ class Policy(models.Model):
         """return the number of leaf Measure related to the Policy"""
         return Measure.objects.filter(policy=self.id).filter(measure__is_parent=False).count()
 
-    def get_root_measures(self):
+    def get_root_measure(self):
         """return the root Measure of the Policy"""
         return Measure.objects.filter(policy=self.id).filter(level=0).order_by('order')
+    def get_first_measures(self):
+        """return the root Measure of the Policy"""
+        return Measure.objects.filter(policy=self.id).filter(level=1).order_by('order')
+
 
 
 class Organization(models.Model):

@@ -5,9 +5,9 @@
 {% endblock %}
 
 {% block content %}
-    {% if policy.get_root_measures %}
+    {% if policy.get_root_measure %}
         <ol>
-        {% for m in policy.get_root_measures %}
+        {% for m in policy.get_first_measures %}
             <li>
                 <h3>{{ m.title }} <span class="badge bg-primary">{{ m.name }}</span> </h3>
                 <p>{{ m.description|safe }}</p>
