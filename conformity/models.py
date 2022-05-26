@@ -136,7 +136,7 @@ class Conformity(models.Model):
     Value are automatically update for parent measure conformity
     """
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
-    mesure = models.ForeignKey(Mesure, on_delete=models.CASCADE)
+    measure = models.ForeignKey(Mesure, on_delete=models.CASCADE)
     status = models.IntegerField(default=0,
                                  validators=[MinValueValidator(0), MaxValueValidator(100)])
     responsible = models.ForeignKey(settings.AUTH_USER_MODEL,
@@ -144,22 +144,22 @@ class Conformity(models.Model):
                                     null=True, blank=True)
 
     def __str__(self):
-        return str(self.organization) + " | " + str(self.mesure)
+        return str(self.organization) + " | " + str(self.measure)
 
     def get_absolute_url(self):
         """Return the absolute URL of the class for Form, probably not the best way to do it"""
         return reverse('conformity:conformity_orgpol_index', kwargs={'org': self.organization.id,
-                                                                     'pol': self.mesure.policy.id})
+                                                                     'pol': self.measure.policy.id})
 
     def get_children(self):
         """Return all children Conformity based on Measure hierarchy"""
         return Conformity.objects.filter(organization=self.organization) \
-            .filter(mesure__parent=self.mesure.id).order_by('mesure__order')
+            .filter(measure__parent=self.measure.id).order_by('measure__order')
 
     def get_parent(self):
         """Return the parent Conformity based on Measure hierarchy"""
         return Conformity.objects.filter(organization=self.organization) \
-            .filter(mesure=self.mesure.parent).order_by('mesure__order')
+            .filter(measure=self.measure.parent).order_by('measure__order')
 
     def set_status(self, i):
         """Update the status and call recursive update function"""
@@ -184,7 +184,7 @@ class Conformity(models.Model):
             self.status = mean(child_stat)
             self.save()
 
-        if not self.mesure.level == 0:
+        if not self.measure.level == 0:
             self.get_parent()[0].status_update()
 
 
@@ -195,7 +195,7 @@ class Conformity(models.Model):
 
 @receiver(post_init, sender=Mesure)
 def post_init_callback(instance, **kwargs):
-    """This function keep hierarchy of the Mesure working on each Mesure instantiation"""
+    """This function keep hierarchy of the Measure working on each Measure instantiation"""
     if instance.parent:
         instance.name = instance.parent.name + "-" + instance.code
         instance.level = instance.parent.level + 1

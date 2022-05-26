@@ -39,14 +39,14 @@ class ConformityIndexView(LoginRequiredMixin, generic.ListView):
     model = Conformity
 
     def get_queryset(self, **kwargs):
-        return Conformity.objects.filter(mesure__level=0).order_by('mesure__order')
+        return Conformity.objects.filter(measure__level=0).order_by('measure__order')
 
 class ConformityOrgPolIndexView(LoginRequiredMixin, generic.ListView):
     model = Conformity
     template_name = 'conformity/conformity_orgpol_list.html'
 
     def get_queryset(self, **kwargs):
-        return Conformity.objects.filter(organization__id=self.kwargs['org']).filter(mesure__policy__id=self.kwargs['pol']).filter(mesure__level=0).order_by('mesure__order')
+        return Conformity.objects.filter(organization__id=self.kwargs['org']).filter(measure__policy__id=self.kwargs['pol']).filter(measure__level=0).order_by('measure__order')
 
 #def conformityUpdate(request):
 #    data = request.POST.items()
