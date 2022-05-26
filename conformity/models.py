@@ -3,17 +3,15 @@ Conformity module manage all the manual declarative aspect of conformity managem
 It's Organized around Organization, Policy, Measure and Conformity classes.
 """
 
-from statistics import median
-from collections import Counter
+from statistics import mean
 from django.db import models
-from django.db.models.signals import post_init, pre_save, post_save
+from django.db.models.signals import post_init, pre_save, post_save, m2m_changed
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.dispatch import receiver
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
-from django.http import Http404
 import logging
 
 User = get_user_model()
@@ -85,27 +83,18 @@ class Organization(models.Model):
         """return all Policy applicable to the Organization"""
         return self.applicable_policies.all()
 
-    def remove_policy(self, policy: Policy):
-        """Unapply a policy to an Organization"""
-        if self.applicable_policies.filter(id=policy.id).exists():
-            self.applicable_policies.remove(policy)
-            mesures = Mesure.objects.filter(policy=policy.id)
-            for mes in mesures:
-                Conformity.objects.filter(mesure=mes.id).delete()
-        else:
-            raise Http404("Policy not applied or non existing")
+    def remove_conformity(self, pid):
+        """Cascade deletion of conformity"""
+        measure_set = Mesure.objects.filter(policy=pid)
+        for measure in measure_set:
+            Conformity.objects.filter(mesure=measure.id).filter(organization=self.id).delete()
 
-    def add_policy(self, policy: Policy):
-        """Apply a Policy to an Organization"""
-        pol_check = self.applicable_policies.filter(id=policy.id).exists()
-        if not pol_check:
-            self.applicable_policies.add(policy)
-            mesures = Mesure.objects.filter(policy=policy.id)
-            for mes in mesures:
-                conformity = Conformity(organization=self, mesure=mes)
-                conformity.save()
-        else:
-            raise Http404("Policy already applied")
+    def add_conformity(self, pid):
+        """Automatic creation of conformity"""
+        measure_set = Mesure.objects.filter(policy=pid)
+        for measure in measure_set:
+            conformity = Conformity(organization=self, mesure=measure)
+            conformity.save()
 
     def get_policy_status(self, pid):
         """Return the conformity level of the Policy on the ORganisation"""
@@ -114,7 +103,7 @@ class Organization(models.Model):
         conf_stat = []
         for conf in confomitys:
             conf_stat.append(conf.status)
-        return median(conf_stat)
+        return mean(conf_stat)
 
 
 class Mesure(models.Model):
@@ -192,7 +181,7 @@ class Conformity(models.Model):
         if childrens.exists():
             for child in childrens:
                 child_stat.append(child.status)
-            self.status = median(child_stat)
+            self.status = mean(child_stat)
             self.save()
 
         if not self.mesure.level == 0:
@@ -213,8 +202,12 @@ def post_init_callback(instance, **kwargs):
     else:
         instance.name = instance.code
 
-@receiver(post_save, sender=Organization)
-def post_save_callback(sender, instance, *args, **kwargs):
-    """ Callback function to instantiate or delete Conformity objects on Organization.applicable_policies update"""
-    for pid in instance.applicable_policies.all():
-        logging.exception(pid.id)
+@receiver(m2m_changed, sender=Organization.applicable_policies.through)
+def change_policy(sender, instance, action, pk_set, *args, **kwargs):
+    if action == "post_add":
+        for pk in pk_set:
+            instance.add_conformity(pk)
+
+    if action == "post_remove":
+        for pk in pk_set:
+            instance.remove_conformity(pk)
