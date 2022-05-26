@@ -50,15 +50,15 @@ class Policy(models.Model):
 
     def get_measures(self):
         """return all Measure related to the Policy"""
-        return Mesure.objects.filter(policy=self.id)
+        return Measure.objects.filter(policy=self.id)
 
     def get_measures_number(self):
         """return the number of leaf Measure related to the Policy"""
-        return Mesure.objects.filter(policy=self.id).filter(mesure__is_parent=False).count()
+        return Measure.objects.filter(policy=self.id).filter(measure__is_parent=False).count()
 
     def get_root_measures(self):
         """return the root Measure of the Policy"""
-        return Mesure.objects.filter(policy=self.id).filter(level=0).order_by('order')
+        return Measure.objects.filter(policy=self.id).filter(level=0).order_by('order')
 
 
 class Organization(models.Model):
@@ -85,28 +85,28 @@ class Organization(models.Model):
 
     def remove_conformity(self, pid):
         """Cascade deletion of conformity"""
-        measure_set = Mesure.objects.filter(policy=pid)
+        measure_set = Measure.objects.filter(policy=pid)
         for measure in measure_set:
-            Conformity.objects.filter(mesure=measure.id).filter(organization=self.id).delete()
+            Conformity.objects.filter(measure=measure.id).filter(organization=self.id).delete()
 
     def add_conformity(self, pid):
         """Automatic creation of conformity"""
-        measure_set = Mesure.objects.filter(policy=pid)
+        measure_set = Measure.objects.filter(policy=pid)
         for measure in measure_set:
-            conformity = Conformity(organization=self, mesure=measure)
+            conformity = Conformity(organization=self, measure=measure)
             conformity.save()
 
     def get_policy_status(self, pid):
         """Return the conformity level of the Policy on the ORganisation"""
         confomitys = Conformity.objects.filter(policy=pid).filter(organization=self.id) \
-            .filter(mesure__level=0)
+            .filter(measure__level=0)
         conf_stat = []
         for conf in confomitys:
             conf_stat.append(conf.status)
         return mean(conf_stat)
 
 
-class Mesure(models.Model):
+class Measure(models.Model):
     """
     A Measure is a precise requirement.
     Measure can be hierarchical in order to form a collection of Measure, aka Policy.
@@ -127,7 +127,7 @@ class Mesure(models.Model):
 
     def get_childrens(self):
         """Return all children of the measure"""
-        return Mesure.objects.filter(parent=self.id).order_by('order')
+        return Measure.objects.filter(parent=self.id).order_by('order')
 
 
 class Conformity(models.Model):
@@ -136,7 +136,7 @@ class Conformity(models.Model):
     Value are automatically update for parent measure conformity
     """
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
-    measure = models.ForeignKey(Mesure, on_delete=models.CASCADE)
+    measure = models.ForeignKey(Measure, on_delete=models.CASCADE)
     status = models.IntegerField(default=0,
                                  validators=[MinValueValidator(0), MaxValueValidator(100)])
     responsible = models.ForeignKey(settings.AUTH_USER_MODEL,
@@ -193,7 +193,7 @@ class Conformity(models.Model):
 """
 
 
-@receiver(post_init, sender=Mesure)
+@receiver(post_init, sender=Measure)
 def post_init_callback(instance, **kwargs):
     """This function keep hierarchy of the Measure working on each Measure instantiation"""
     if instance.parent:
