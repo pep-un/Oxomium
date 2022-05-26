@@ -1,1651 +1,1597 @@
 - model: conformity.policy
-  pk: 5
   fields:
-    name: 'NIST Cybersecurity Framwork'
-    version: 1.1
-    publish_by: 'NIST'
-    type: 'NAT'
+    name: NIST Cybersecurity Framwork
+    version: 1
+    publish_by: NIST
+    type: NAT
 - model: conformity.measure
-  pk: 1
   fields:
-    code: 'NIST'
-    name: 'NIST'
+    code: NIST
+    name: NIST
     level: 0
     order: 1
-    policy: 5
-    parent: NULL
-    is_parent: True
-    title: 'NIST Framwork'
+    policy: NIST Cybersecurity Framwork
+    parent: null
+    title: NIST Framwork
     description: ''
+    is_parent: true
 - model: conformity.measure
-  pk: 2
   fields:
-    code: 'ID'
-    name: 'NIST-ID'
+    code: ID
+    name: NIST-ID
     level: 1
     order: 1
-    policy: 5
-    parent: 1
-    is_parent: True
-    title: 'Identity'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST
+    title: Identity
     description: ''
+    is_parent: true
 - model: conformity.measure
-  pk: 3
   fields:
-    code: 'AM'
-    name: 'NIST-ID-AM'
+    code: AM
+    name: NIST-ID-AM
     level: 2
     order: 1
-    policy: 5
-    parent: 2
-    is_parent: True
-    title: 'Asset Management'
-    description: 'The data, personnel, devices, systems, and facilities that enable the organization to achieve business purposes are identified and managed consistent with their relative importance to organizational objectives and the organization’s risk strategy.'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-ID
+    title: Asset Management
+    description: The data, personnel, devices, systems, and facilities that enable
+      the organization to achieve business purposes are identified and managed consistent
+      with their relative importance to organizational objectives and the organization’s
+      risk strategy.
+    is_parent: true
 - model: conformity.measure
-  pk: 4
   fields:
     code: '1'
-    name: 'NIST-ID-AM-1'
+    name: NIST-ID-AM-1
     level: 3
     order: 1
-    policy: 5
-    parent: 3
-    is_parent: False
-    title: 'Physical devices and systems within the organization are inventoried'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-ID-AM
+    title: Physical devices and systems within the organization are inventoried
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 5
   fields:
     code: '2'
-    name: 'NIST-ID-AM-2'
+    name: NIST-ID-AM-2
     level: 3
     order: 2
-    policy: 5
-    parent: 3
-    is_parent: False
-    title: 'Software platforms and applications within the organization are inventoried'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-ID-AM
+    title: Software platforms and applications within the organization are inventoried
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 6
   fields:
     code: '3'
-    name: 'NIST-ID-AM-3'
+    name: NIST-ID-AM-3
     level: 3
     order: 3
-    policy: 5
-    parent: 3
-    is_parent: False
-    title: 'Organizational communication and data flows are mapped'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-ID-AM
+    title: Organizational communication and data flows are mapped
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 7
   fields:
     code: '4'
-    name: 'NIST-ID-AM-4'
+    name: NIST-ID-AM-4
     level: 3
     order: 4
-    policy: 5
-    parent: 3
-    is_parent: False
-    title: 'External information systems are catalogued'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-ID-AM
+    title: External information systems are catalogued
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 8
   fields:
     code: '5'
-    name: 'NIST-ID-AM-5'
+    name: NIST-ID-AM-5
     level: 3
     order: 5
-    policy: 5
-    parent: 3
-    is_parent: False
-    title: 'Resources (e.g., hardware, devices, data, time, personnel, and software) are prioritized based on their classification, criticality, and business value'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-ID-AM
+    title: Resources (e.g., hardware, devices, data, time, personnel, and software)
+      are prioritized based on their classification, criticality, and business value
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 9
   fields:
     code: '6'
-    name: 'NIST-ID-AM-6'
+    name: NIST-ID-AM-6
     level: 3
     order: 6
-    policy: 5
-    parent: 3
-    is_parent: False
-    title: 'Cybersecurity roles and responsibilities for the entire workforce and third-party stakeholders (e.g., suppliers, customers, partners) are established'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-ID-AM
+    title: Cybersecurity roles and responsibilities for the entire workforce and third-party
+      stakeholders (e.g., suppliers, customers, partners) are established
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 10
   fields:
-    code: 'BE'
-    name: 'NIST-ID-BE'
+    code: BE
+    name: NIST-ID-BE
     level: 2
     order: 2
-    policy: 5
-    parent: 2
-    is_parent: True
-    title: 'Business Environement'
-    description: 'The organization’s mission, objectives, stakeholders, and activities are understood and prioritized; this information is used to inform cybersecurity roles, responsibilities, and risk management decisions.'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-ID
+    title: Business Environement
+    description: The organization’s mission, objectives, stakeholders, and activities
+      are understood and prioritized; this information is used to inform cybersecurity
+      roles, responsibilities, and risk management decisions.
+    is_parent: true
 - model: conformity.measure
-  pk: 11
   fields:
     code: '1'
-    name: 'NIST-ID-BE-1'
+    name: NIST-ID-BE-1
     level: 3
     order: 1
-    policy: 5
-    parent: 10
-    is_parent: False
-    title: 'The organization’s role in the supply chain is identified and communicated'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-ID-BE
+    title: The organization’s role in the supply chain is identified and communicated
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 12
   fields:
     code: '2'
-    name: 'NIST-ID-BE-2'
+    name: NIST-ID-BE-2
     level: 3
     order: 2
-    policy: 5
-    parent: 10
-    is_parent: False
-    title: 'The organization’s place in critical infrastructure and its industry sector is identified and communicated'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-ID-BE
+    title: The organization’s place in critical infrastructure and its industry sector
+      is identified and communicated
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 13
   fields:
     code: '3'
-    name: 'NIST-ID-BE-3'
+    name: NIST-ID-BE-3
     level: 3
     order: 3
-    policy: 5
-    parent: 10
-    is_parent: False
-    title: 'Priorities for organizational mission, objectives, and activities are established and communicated'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-ID-BE
+    title: Priorities for organizational mission, objectives, and activities are established
+      and communicated
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 14
   fields:
     code: '4'
-    name: 'NIST-ID-BE-4'
+    name: NIST-ID-BE-4
     level: 3
     order: 4
-    policy: 5
-    parent: 10
-    is_parent: False
-    title: 'Dependencies and critical functions for delivery of critical services are established'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-ID-BE
+    title: Dependencies and critical functions for delivery of critical services are
+      established
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 15
   fields:
     code: '5'
-    name: 'NIST-ID-BE-5'
+    name: NIST-ID-BE-5
     level: 3
     order: 5
-    policy: 5
-    parent: 10
-    is_parent: False
-    title: 'Resilience requirements to support delivery of critical services are established for all operating states (e.g. under duress/attack, during recovery, normal operations)'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-ID-BE
+    title: Resilience requirements to support delivery of critical services are established
+      for all operating states (e.g. under duress/attack, during recovery, normal
+      operations)
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 16
   fields:
-    code: 'GV'
-    name: 'NIST-ID-GV'
+    code: GV
+    name: NIST-ID-GV
     level: 2
     order: 2
-    policy: 5
-    parent: 2
-    is_parent: True
-    title: 'Gouvernence'
-    description: 'The policies, procedures, and processes to manage and monitor the organization’s regulatory, legal, risk, environmental, and operational requirements are understood and inform the management of cybersecurity risk.'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-ID
+    title: Gouvernence
+    description: The policies, procedures, and processes to manage and monitor the
+      organization’s regulatory, legal, risk, environmental, and operational requirements
+      are understood and inform the management of cybersecurity risk.
+    is_parent: true
 - model: conformity.measure
-  pk: 17
   fields:
     code: '1'
-    name: 'NIST-ID-GV-1'
+    name: NIST-ID-GV-1
     level: 3
     order: 1
-    policy: 5
-    parent: 16
-    is_parent: False
-    title: 'Organizational cybersecurity policy is established and communicated'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-ID-GV
+    title: Organizational cybersecurity policy is established and communicated
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 18
   fields:
     code: '2'
-    name: 'NIST-ID-GV-2'
+    name: NIST-ID-GV-2
     level: 3
     order: 2
-    policy: 5
-    parent: 16
-    is_parent: False
-    title: 'Cybersecurity roles and responsibilities are coordinated and aligned with internal roles and external partners'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-ID-GV
+    title: Cybersecurity roles and responsibilities are coordinated and aligned with
+      internal roles and external partners
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 19
   fields:
     code: '3'
-    name: 'NIST-ID-GV-3'
+    name: NIST-ID-GV-3
     level: 3
     order: 3
-    policy: 5
-    parent: 16
-    is_parent: False
-    title: 'Legal and regulatory requirements regarding cybersecurity, including privacy and civil liberties obligations, are understood and managed'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-ID-GV
+    title: Legal and regulatory requirements regarding cybersecurity, including privacy
+      and civil liberties obligations, are understood and managed
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 20
   fields:
     code: '4'
-    name: 'NIST-ID-GV-4'
+    name: NIST-ID-GV-4
     level: 3
     order: 4
-    policy: 5
-    parent: 16
-    is_parent: False
-    title: 'Governance and risk management processes address cybersecurity risks'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-ID-GV
+    title: Governance and risk management processes address cybersecurity risks
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 21
   fields:
-    code: 'RA'
-    name: 'NIST-ID-RA'
+    code: RA
+    name: NIST-ID-RA
     level: 2
     order: 3
-    policy: 5
-    parent: 2
-    is_parent: True
-    title: 'Risk Assessment'
-    description: 'The organization understands the cybersecurity risk to organizational operations (including mission, functions, image, or reputation), organizational assets, and individuals.'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-ID
+    title: Risk Assessment
+    description: The organization understands the cybersecurity risk to organizational
+      operations (including mission, functions, image, or reputation), organizational
+      assets, and individuals.
+    is_parent: true
 - model: conformity.measure
-  pk: 22
   fields:
     code: '1'
-    name: 'NIST-ID-RA-1'
+    name: NIST-ID-RA-1
     level: 3
     order: 1
-    policy: 5
-    parent: 21
-    is_parent: False
-    title: 'Asset vulnerabilities are identified and documented'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-ID-RA
+    title: Asset vulnerabilities are identified and documented
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 23
   fields:
     code: '2'
-    name: 'NIST-ID-RA-2'
+    name: NIST-ID-RA-2
     level: 3
     order: 2
-    policy: 5
-    parent: 21
-    is_parent: False
-    title: 'Cyber threat intelligence is received from information sharing forums and sources'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-ID-RA
+    title: Cyber threat intelligence is received from information sharing forums and
+      sources
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 24
   fields:
     code: '3'
-    name: 'NIST-ID-RA-3'
+    name: NIST-ID-RA-3
     level: 3
     order: 3
-    policy: 5
-    parent: 21
-    is_parent: False
-    title: 'Threats, both internal and external, are identified and documented'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-ID-RA
+    title: Threats, both internal and external, are identified and documented
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 25
   fields:
     code: '4'
-    name: 'NIST-ID-RA-4'
+    name: NIST-ID-RA-4
     level: 3
     order: 4
-    policy: 5
-    parent: 21
-    is_parent: False
-    title: 'Potential business impacts and likelihoods are identified'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-ID-RA
+    title: Potential business impacts and likelihoods are identified
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 26
   fields:
     code: '5'
-    name: 'NIST-ID-RA-5'
+    name: NIST-ID-RA-5
     level: 3
     order: 5
-    policy: 5
-    parent: 21
-    is_parent: False
-    title: 'Threats, vulnerabilities, likelihoods, and impacts are used to determine risk'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-ID-RA
+    title: Threats, vulnerabilities, likelihoods, and impacts are used to determine
+      risk
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 27
   fields:
     code: '6'
-    name: 'NIST-ID-RA-6'
+    name: NIST-ID-RA-6
     level: 3
     order: 6
-    policy: 5
-    parent: 21
-    is_parent: False
-    title: 'Risk responses are identified and prioritized'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-ID-RA
+    title: Risk responses are identified and prioritized
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 28
   fields:
-    code: 'RM'
-    name: 'NIST-ID-RM'
+    code: RM
+    name: NIST-ID-RM
     level: 2
     order: 4
-    policy: 5
-    parent: 2
-    is_parent: True
-    title: 'Risk Management Strategy'
-    description: 'The organization’s priorities, constraints, risk tolerances, and assumptions are established and used to support operational risk decisions.'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-ID
+    title: Risk Management Strategy
+    description: The organization’s priorities, constraints, risk tolerances, and
+      assumptions are established and used to support operational risk decisions.
+    is_parent: true
 - model: conformity.measure
-  pk: 29
   fields:
     code: '1'
-    name: 'NIST-ID-RM-1'
+    name: NIST-ID-RM-1
     level: 3
     order: 1
-    policy: 5
-    parent: 28
-    is_parent: False
-    title: 'Risk management processes are established, managed, and agreed to by organizational stakeholders'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-ID-RM
+    title: Risk management processes are established, managed, and agreed to by organizational
+      stakeholders
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 30
   fields:
     code: '2'
-    name: 'NIST-ID-RM-2'
+    name: NIST-ID-RM-2
     level: 3
     order: 2
-    policy: 5
-    parent: 28
-    is_parent: False
-    title: 'Organizational risk tolerance is determined and clearly expressed'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-ID-RM
+    title: Organizational risk tolerance is determined and clearly expressed
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 31
   fields:
     code: '3'
-    name: 'NIST-ID-RM-3'
+    name: NIST-ID-RM-3
     level: 3
     order: 3
-    policy: 5
-    parent: 28
-    is_parent: False
-    title: 'The organization’s determination of risk tolerance is informed by its role in critical infrastructure and sector specific risk analysis'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-ID-RM
+    title: The organization’s determination of risk tolerance is informed by its role
+      in critical infrastructure and sector specific risk analysis
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 32
   fields:
-    code: 'SC'
-    name: 'NIST-ID-SC'
+    code: SC
+    name: NIST-ID-SC
     level: 2
     order: 5
-    policy: 5
-    parent: 2
-    is_parent: True
-    title: 'Supply Chain Risk Management'
-    description: 'The organization’s priorities, constraints, risk tolerances, and assumptions are established and used to support risk decisions associated with managing supply chain risk. The organization has established and implemented the processes to identify, assess and manage supply chain risks.'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-ID
+    title: Supply Chain Risk Management
+    description: The organization’s priorities, constraints, risk tolerances, and
+      assumptions are established and used to support risk decisions associated with
+      managing supply chain risk. The organization has established and implemented
+      the processes to identify, assess and manage supply chain risks.
+    is_parent: true
 - model: conformity.measure
-  pk: 33
   fields:
     code: '1'
-    name: 'NIST-ID-SC-1'
+    name: NIST-ID-SC-1
     level: 3
     order: 1
-    policy: 5
-    parent: 32
-    is_parent: False
-    title: 'Cyber supply chain risk management processes are identified, established, assessed, managed, and agreed to by organizational stakeholders'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-ID-SC
+    title: Cyber supply chain risk management processes are identified, established,
+      assessed, managed, and agreed to by organizational stakeholders
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 34
   fields:
     code: '2'
-    name: 'NIST-ID-SC-2'
+    name: NIST-ID-SC-2
     level: 3
     order: 2
-    policy: 5
-    parent: 32
-    is_parent: False
-    title: 'Suppliers and third party partners of information systems, components, and services are identified, prioritized, and assessed using a cyber supply chain risk assessment process'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-ID-SC
+    title: Suppliers and third party partners of information systems, components,
+      and services are identified, prioritized, and assessed using a cyber supply
+      chain risk assessment process
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 35
   fields:
     code: '3'
-    name: 'NIST-ID-SC-3'
+    name: NIST-ID-SC-3
     level: 3
     order: 3
-    policy: 5
-    parent: 32
-    is_parent: False
-    title: 'Contracts with suppliers and third-party partners are used to implement appropriate measures designed to meet the objectives of an organization’s cybersecurity program and Cyber Supply Chain Risk Management Plan.'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-ID-SC
+    title: Contracts with suppliers and third-party partners are used to implement
+      appropriate measures designed to meet the objectives of an organization’s cybersecurity
+      program and Cyber Supply Chain Risk Management Plan.
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 36
   fields:
     code: '4'
-    name: 'NIST-ID-SC-4'
+    name: NIST-ID-SC-4
     level: 3
     order: 4
-    policy: 5
-    parent: 32
-    is_parent: False
-    title: 'Suppliers and third-party partners are routinely assessed using audits, test results, or other forms of evaluations to confirm they are meeting their contractual obligations.'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-ID-SC
+    title: Suppliers and third-party partners are routinely assessed using audits,
+      test results, or other forms of evaluations to confirm they are meeting their
+      contractual obligations.
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 37
   fields:
     code: '5'
-    name: 'NIST-ID-SC-5'
+    name: NIST-ID-SC-5
     level: 3
     order: 5
-    policy: 5
-    parent: 32
-    is_parent: False
-    title: 'Response and recovery planning and testing are conducted with suppliers and third-party providers'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-ID-SC
+    title: Response and recovery planning and testing are conducted with suppliers
+      and third-party providers
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 38
   fields:
-    code: 'PR'
-    name: 'NIST-PR'
+    code: PR
+    name: NIST-PR
     level: 1
     order: 2
-    policy: 5
-    parent: 1
-    is_parent: True
-    title: 'Protect'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST
+    title: Protect
     description: ''
+    is_parent: true
 - model: conformity.measure
-  pk: 39
   fields:
-    code: 'AC'
-    name: 'NIST-PR-AC'
+    code: AC
+    name: NIST-PR-AC
     level: 2
     order: 1
-    policy: 5
-    parent: 38
-    is_parent: True
-    title: 'Identity Management, Authentication and Access Control'
-    description: 'Access to physical and logical assets and associated facilities is limited to authorized users, processes, and devices, and is managed consistent with the assessed risk of unauthorized access to authorized activities and transactions.'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR
+    title: Identity Management, Authentication and Access Control
+    description: Access to physical and logical assets and associated facilities is
+      limited to authorized users, processes, and devices, and is managed consistent
+      with the assessed risk of unauthorized access to authorized activities and transactions.
+    is_parent: true
 - model: conformity.measure
-  pk: 40
   fields:
     code: '1'
-    name: 'NIST-PR-AC-1'
+    name: NIST-PR-AC-1
     level: 3
     order: 1
-    policy: 5
-    parent: 39
-    is_parent: False
-    title: 'Identities and credentials are issued, managed, verified, revoked, and audited for authorized devices, users and processes'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR-AC
+    title: Identities and credentials are issued, managed, verified, revoked, and
+      audited for authorized devices, users and processes
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 41
   fields:
     code: '2'
-    name: 'NIST-PR-AC-2'
+    name: NIST-PR-AC-2
     level: 3
     order: 2
-    policy: 5
-    parent: 39
-    is_parent: False
-    title: 'Physical access to assets is managed and protected'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR-AC
+    title: Physical access to assets is managed and protected
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 42
   fields:
     code: '3'
-    name: 'NIST-PR-AC-3'
+    name: NIST-PR-AC-3
     level: 3
     order: 3
-    policy: 5
-    parent: 39
-    is_parent: False
-    title: 'Remote access is managed'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR-AC
+    title: Remote access is managed
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 43
   fields:
     code: '4'
-    name: 'NIST-PR-AC-4'
+    name: NIST-PR-AC-4
     level: 3
     order: 4
-    policy: 5
-    parent: 39
-    is_parent: False
-    title: 'Access permissions and authorizations are managed, incorporating the principles of least privilege and separation of duties'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR-AC
+    title: Access permissions and authorizations are managed, incorporating the principles
+      of least privilege and separation of duties
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 44
   fields:
     code: '5'
-    name: 'NIST-PR-AC-5'
+    name: NIST-PR-AC-5
     level: 3
     order: 5
-    policy: 5
-    parent: 39
-    is_parent: False
-    title: 'Network integrity is protected (e.g., network segregation, network segmentation)'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR-AC
+    title: Network integrity is protected (e.g., network segregation, network segmentation)
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 45
   fields:
     code: '6'
-    name: 'NIST-PR-AC-6'
+    name: NIST-PR-AC-6
     level: 3
     order: 6
-    policy: 5
-    parent: 39
-    is_parent: False
-    title: 'Identities are proofed and bound to credentials and asserted in interactions'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR-AC
+    title: Identities are proofed and bound to credentials and asserted in interactions
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 46
   fields:
     code: '7'
-    name: 'NIST-PR-AC-7'
+    name: NIST-PR-AC-7
     level: 3
     order: 7
-    policy: 5
-    parent: 39
-    is_parent: False
-    title: 'Users, devices, and other assets are authenticated (e.g., single-factor, multi-factor) commensurate with the risk of the transaction (e.g., individuals’ security and privacy risks and other organizational risks)'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR-AC
+    title: Users, devices, and other assets are authenticated (e.g., single-factor,
+      multi-factor) commensurate with the risk of the transaction (e.g., individuals’
+      security and privacy risks and other organizational risks)
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 47
   fields:
-    code: 'AT'
-    name: 'NIST-PR-AT'
+    code: AT
+    name: NIST-PR-AT
     level: 2
     order: 2
-    policy: 5
-    parent: 38
-    is_parent: True
-    title: 'Awareness and Training'
-    description: 'The organization’s personnel and partners are provided cybersecurity awareness education and are trained to perform their cybersecurity-related duties and responsibilities consistent with related policies, procedures, and agreements.'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR
+    title: Awareness and Training
+    description: The organization’s personnel and partners are provided cybersecurity
+      awareness education and are trained to perform their cybersecurity-related duties
+      and responsibilities consistent with related policies, procedures, and agreements.
+    is_parent: true
 - model: conformity.measure
-  pk: 48
   fields:
     code: '1'
-    name: 'NIST-PR-AT-1'
+    name: NIST-PR-AT-1
     level: 3
     order: 1
-    policy: 5
-    parent: 47
-    is_parent: False
-    title: 'All users are informed and trained'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR-AT
+    title: All users are informed and trained
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 49
   fields:
     code: '2'
-    name: 'NIST-PR-AT-2'
+    name: NIST-PR-AT-2
     level: 3
     order: 2
-    policy: 5
-    parent: 47
-    is_parent: False
-    title: 'Privileged users understand their roles and responsibilities'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR-AT
+    title: Privileged users understand their roles and responsibilities
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 50
   fields:
     code: '3'
-    name: 'NIST-PR-AT-3'
+    name: NIST-PR-AT-3
     level: 3
     order: 3
-    policy: 5
-    parent: 47
-    is_parent: False
-    title: 'Third-party stakeholders (e.g., suppliers, customers, partners) understand their roles and responsibilities'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR-AT
+    title: Third-party stakeholders (e.g., suppliers, customers, partners) understand
+      their roles and responsibilities
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 51
   fields:
     code: '4'
-    name: 'NIST-PR-AT-4'
+    name: NIST-PR-AT-4
     level: 3
     order: 4
-    policy: 5
-    parent: 47
-    is_parent: False
-    title: 'Senior executives understand their roles and responsibilities'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR-AT
+    title: Senior executives understand their roles and responsibilities
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 52
   fields:
     code: '5'
-    name: 'NIST-PR-AT-5'
+    name: NIST-PR-AT-5
     level: 3
     order: 5
-    policy: 5
-    parent: 47
-    is_parent: False
-    title: 'Physical and cybersecurity personnel understand their roles and responsibilities'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR-AT
+    title: Physical and cybersecurity personnel understand their roles and responsibilities
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 53
   fields:
-    code: 'DS'
-    name: 'NIST-PR-DS'
+    code: DS
+    name: NIST-PR-DS
     level: 2
     order: 3
-    policy: 5
-    parent: 38
-    is_parent: True
-    title: 'Data Security'
-    description: 'Information and records (data) are managed consistent with the organization’s risk strategy to protect the confidentiality, integrity, and availability of information.'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR
+    title: Data Security
+    description: Information and records (data) are managed consistent with the organization’s
+      risk strategy to protect the confidentiality, integrity, and availability of
+      information.
+    is_parent: true
 - model: conformity.measure
-  pk: 54
   fields:
     code: '1'
-    name: 'NIST-PR-DS-1'
+    name: NIST-PR-DS-1
     level: 3
     order: 1
-    policy: 5
-    parent: 53
-    is_parent: False
-    title: 'Data-at-rest is protected'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR-DS
+    title: Data-at-rest is protected
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 55
   fields:
     code: '2'
-    name: 'NIST-PR-DS-2'
+    name: NIST-PR-DS-2
     level: 3
     order: 2
-    policy: 5
-    parent: 53
-    is_parent: False
-    title: 'Data-in-transit is protected'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR-DS
+    title: Data-in-transit is protected
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 56
   fields:
     code: '3'
-    name: 'NIST-PR-DS-3'
+    name: NIST-PR-DS-3
     level: 3
     order: 3
-    policy: 5
-    parent: 53
-    is_parent: False
-    title: 'Assets are formally managed throughout removal, transfers, and disposition'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR-DS
+    title: Assets are formally managed throughout removal, transfers, and disposition
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 57
   fields:
     code: '4'
-    name: 'NIST-PR-DS-4'
+    name: NIST-PR-DS-4
     level: 3
     order: 4
-    policy: 5
-    parent: 53
-    is_parent: False
-    title: 'Adequate capacity to ensure availability is maintained'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR-DS
+    title: Adequate capacity to ensure availability is maintained
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 58
   fields:
     code: '5'
-    name: 'NIST-PR-DS-5'
+    name: NIST-PR-DS-5
     level: 3
     order: 5
-    policy: 5
-    parent: 53
-    is_parent: False
-    title: 'Protections against data leaks are implemented'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR-DS
+    title: Protections against data leaks are implemented
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 59
   fields:
     code: '6'
-    name: 'NIST-PR-DS-6'
+    name: NIST-PR-DS-6
     level: 3
     order: 6
-    policy: 5
-    parent: 53
-    is_parent: False
-    title: 'Integrity checking mechanisms are used to verify software, firmware, and information integrity'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR-DS
+    title: Integrity checking mechanisms are used to verify software, firmware, and
+      information integrity
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 60
   fields:
     code: '7'
-    name: 'NIST-PR-DS-7'
+    name: NIST-PR-DS-7
     level: 3
     order: 7
-    policy: 5
-    parent: 53
-    is_parent: False
-    title: 'The development and testing environment(s) are separate from the production environment'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR-DS
+    title: The development and testing environment(s) are separate from the production
+      environment
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 61
   fields:
     code: '8'
-    name: 'NIST-PR-DS-8'
+    name: NIST-PR-DS-8
     level: 3
     order: 8
-    policy: 5
-    parent: 53
-    is_parent: False
-    title: 'Integrity checking mechanisms are used to verify hardware integrity'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR-DS
+    title: Integrity checking mechanisms are used to verify hardware integrity
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 62
   fields:
-    code: 'IP'
-    name: 'NIST-PR-IP'
+    code: IP
+    name: NIST-PR-IP
     level: 2
     order: 4
-    policy: 5
-    parent: 38
-    is_parent: True
-    title: 'Information Protection Processes and Procedures'
-    description: 'Security policies (that address purpose, scope, roles, responsibilities, management commitment, and coordination among organizational entities), processes, and procedures are maintained and used to manage protection of information systems and assets.'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR
+    title: Information Protection Processes and Procedures
+    description: Security policies (that address purpose, scope, roles, responsibilities,
+      management commitment, and coordination among organizational entities), processes,
+      and procedures are maintained and used to manage protection of information systems
+      and assets.
+    is_parent: true
 - model: conformity.measure
-  pk: 63
   fields:
     code: '1'
-    name: 'NIST-PR-IP-1'
+    name: NIST-PR-IP-1
     level: 3
     order: 1
-    policy: 5
-    parent: 62
-    is_parent: False
-    title: 'A baseline configuration of information technology/industrial control systems is created and maintained incorporating security principles (e.g. concept of least functionality)'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR-IP
+    title: A baseline configuration of information technology/industrial control systems
+      is created and maintained incorporating security principles (e.g. concept of
+      least functionality)
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 64
   fields:
     code: '2'
-    name: 'NIST-PR-IP-2'
+    name: NIST-PR-IP-2
     level: 3
     order: 2
-    policy: 5
-    parent: 62
-    is_parent: False
-    title: 'A System Development Life Cycle to manage systems is implemented'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR-IP
+    title: A System Development Life Cycle to manage systems is implemented
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 65
   fields:
     code: '3'
-    name: 'NIST-PR-IP-3'
+    name: NIST-PR-IP-3
     level: 3
     order: 3
-    policy: 5
-    parent: 62
-    is_parent: False
-    title: 'Configuration change control processes are in place'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR-IP
+    title: Configuration change control processes are in place
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 66
   fields:
     code: '4'
-    name: 'NIST-PR-IP-4'
+    name: NIST-PR-IP-4
     level: 3
     order: 4
-    policy: 5
-    parent: 62
-    is_parent: False
-    title: 'Backups of information are conducted, maintained, and tested'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR-IP
+    title: Backups of information are conducted, maintained, and tested
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 67
   fields:
     code: '5'
-    name: 'NIST-PR-IP-5'
+    name: NIST-PR-IP-5
     level: 3
     order: 5
-    policy: 5
-    parent: 62
-    is_parent: False
-    title: 'Policy and regulations regarding the physical operating environment for organizational assets are met'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR-IP
+    title: Policy and regulations regarding the physical operating environment for
+      organizational assets are met
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 68
   fields:
     code: '6'
-    name: 'NIST-PR-IP-6'
+    name: NIST-PR-IP-6
     level: 3
     order: 6
-    policy: 5
-    parent: 62
-    is_parent: False
-    title: 'Data is destroyed according to policy'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR-IP
+    title: Data is destroyed according to policy
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 69
   fields:
     code: '7'
-    name: 'NIST-PR-IP-7'
+    name: NIST-PR-IP-7
     level: 3
     order: 7
-    policy: 5
-    parent: 62
-    is_parent: False
-    title: 'Protection processes are improved'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR-IP
+    title: Protection processes are improved
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 70
   fields:
     code: '8'
-    name: 'NIST-PR-IP-8'
+    name: NIST-PR-IP-8
     level: 3
     order: 8
-    policy: 5
-    parent: 62
-    is_parent: False
-    title: 'Effectiveness of protection technologies is shared'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR-IP
+    title: Effectiveness of protection technologies is shared
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 71
   fields:
     code: '9'
-    name: 'NIST-PR-IP-9'
+    name: NIST-PR-IP-9
     level: 3
     order: 9
-    policy: 5
-    parent: 62
-    is_parent: False
-    title: 'Response plans (Incident Response and Business Continuity) and recovery plans (Incident Recovery and Disaster Recovery) are in place and managed'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR-IP
+    title: Response plans (Incident Response and Business Continuity) and recovery
+      plans (Incident Recovery and Disaster Recovery) are in place and managed
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 72
   fields:
     code: '10'
-    name: 'NIST-PR-IP-10'
+    name: NIST-PR-IP-10
     level: 3
     order: 10
-    policy: 5
-    parent: 62
-    is_parent: False
-    title: 'Response and recovery plans are tested'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR-IP
+    title: Response and recovery plans are tested
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 73
   fields:
     code: '11'
-    name: 'NIST-PR-IP-11'
+    name: NIST-PR-IP-11
     level: 3
     order: 11
-    policy: 5
-    parent: 62
-    is_parent: False
-    title: 'Cybersecurity is included in human resources practices (e.g., deprovisioning, personnel screening)'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR-IP
+    title: Cybersecurity is included in human resources practices (e.g., deprovisioning,
+      personnel screening)
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 74
   fields:
     code: '12'
-    name: 'NIST-PR-IP-12'
+    name: NIST-PR-IP-12
     level: 3
     order: 12
-    policy: 5
-    parent: 62
-    is_parent: False
-    title: 'A vulnerability management plan is developed and implemented'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR-IP
+    title: A vulnerability management plan is developed and implemented
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 75
   fields:
-    code: 'MA'
-    name: 'NIST-PR-MA'
+    code: MA
+    name: NIST-PR-MA
     level: 2
     order: 5
-    policy: 5
-    parent: 38
-    is_parent: True
-    title: 'Maintenance'
-    description: 'Maintenance and repairs of industrial control and information system components are performed consistent with policies and procedures.'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR
+    title: Maintenance
+    description: Maintenance and repairs of industrial control and information system
+      components are performed consistent with policies and procedures.
+    is_parent: true
 - model: conformity.measure
-  pk: 76
   fields:
     code: '1'
-    name: 'NIST-PR-MA-1'
+    name: NIST-PR-MA-1
     level: 3
     order: 1
-    policy: 5
-    parent: 75
-    is_parent: False
-    title: 'Maintenance and repair of organizational assets are performed and logged, with approved and controlled tools'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR-MA
+    title: Maintenance and repair of organizational assets are performed and logged,
+      with approved and controlled tools
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 77
   fields:
     code: '2'
-    name: 'NIST-PR-MA-2'
+    name: NIST-PR-MA-2
     level: 3
     order: 2
-    policy: 5
-    parent: 75
-    is_parent: False
-    title: 'Remote maintenance of organizational assets is approved, logged, and performed in a manner that prevents unauthorized access'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR-MA
+    title: Remote maintenance of organizational assets is approved, logged, and performed
+      in a manner that prevents unauthorized access
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 78
   fields:
-    code: 'PT'
-    name: 'NIST-PR-PT'
+    code: PT
+    name: NIST-PR-PT
     level: 2
     order: 6
-    policy: 5
-    parent: 38
-    is_parent: True
-    title: 'Protective Technology'
-    description: 'Technical security solutions are managed to ensure the security and resilience of systems and assets, consistent with related policies, procedures, and agreements.'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR
+    title: Protective Technology
+    description: Technical security solutions are managed to ensure the security and
+      resilience of systems and assets, consistent with related policies, procedures,
+      and agreements.
+    is_parent: true
 - model: conformity.measure
-  pk: 79
   fields:
     code: '1'
-    name: 'NIST-PR-PT-1'
+    name: NIST-PR-PT-1
     level: 3
     order: 1
-    policy: 5
-    parent: 78
-    is_parent: False
-    title: 'Audit/log records are determined, documented, implemented, and reviewed in accordance with policy'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR-PT
+    title: Audit/log records are determined, documented, implemented, and reviewed
+      in accordance with policy
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 80
   fields:
     code: '2'
-    name: 'NIST-PR-PT-2'
+    name: NIST-PR-PT-2
     level: 3
     order: 2
-    policy: 5
-    parent: 78
-    is_parent: False
-    title: 'Removable media is protected and its use restricted according to policy'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR-PT
+    title: Removable media is protected and its use restricted according to policy
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 81
   fields:
     code: '3'
-    name: 'NIST-PR-PT-3'
+    name: NIST-PR-PT-3
     level: 3
     order: 3
-    policy: 5
-    parent: 78
-    is_parent: False
-    title: 'The principle of least functionality is incorporated by configuring systems to provide only essential capabilities'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR-PT
+    title: The principle of least functionality is incorporated by configuring systems
+      to provide only essential capabilities
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 82
   fields:
     code: '4'
-    name: 'NIST-PR-PT-4'
+    name: NIST-PR-PT-4
     level: 3
     order: 4
-    policy: 5
-    parent: 78
-    is_parent: False
-    title: 'Communications and control networks are protected'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR-PT
+    title: Communications and control networks are protected
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 83
   fields:
     code: '5'
-    name: 'NIST-PR-PT-5'
+    name: NIST-PR-PT-5
     level: 3
     order: 5
-    policy: 5
-    parent: 78
-    is_parent: False
-    title: 'Mechanisms (e.g., failsafe, load balancing, hot swap) are implemented to achieve resilience requirements in normal and adverse situations'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-PR-PT
+    title: Mechanisms (e.g., failsafe, load balancing, hot swap) are implemented to
+      achieve resilience requirements in normal and adverse situations
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 84
   fields:
-    code: 'DE'
-    name: 'NIST-DE'
+    code: DE
+    name: NIST-DE
     level: 1
     order: 3
-    policy: 5
-    parent: 1
-    is_parent: True
-    title: 'Detect'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST
+    title: Detect
     description: ''
+    is_parent: true
 - model: conformity.measure
-  pk: 85
   fields:
-    code: 'AE'
-    name: 'NIST-DE-AE'
+    code: AE
+    name: NIST-DE-AE
     level: 2
     order: 1
-    policy: 5
-    parent: 84
-    is_parent: True
-    title: 'Anomalies and Events'
-    description: 'Anomalous activity is detected and the potential impact of events is understood.'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-DE
+    title: Anomalies and Events
+    description: Anomalous activity is detected and the potential impact of events
+      is understood.
+    is_parent: true
 - model: conformity.measure
-  pk: 86
   fields:
     code: '1'
-    name: 'NIST-DE-AE-1'
+    name: NIST-DE-AE-1
     level: 3
     order: 1
-    policy: 5
-    parent: 85
-    is_parent: False
-    title: 'A baseline of network operations and expected data flows for users and systems is established and managed'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-DE-AE
+    title: A baseline of network operations and expected data flows for users and
+      systems is established and managed
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 87
   fields:
     code: '2'
-    name: 'NIST-DE-AE-2'
+    name: NIST-DE-AE-2
     level: 3
     order: 2
-    policy: 5
-    parent: 85
-    is_parent: False
-    title: 'Detected events are analyzed to understand attack targets and methods'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-DE-AE
+    title: Detected events are analyzed to understand attack targets and methods
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 88
   fields:
     code: '3'
-    name: 'NIST-DE-AE-3'
+    name: NIST-DE-AE-3
     level: 3
     order: 3
-    policy: 5
-    parent: 85
-    is_parent: False
-    title: 'Event data are collected and correlated from multiple sources and sensors'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-DE-AE
+    title: Event data are collected and correlated from multiple sources and sensors
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 89
   fields:
     code: '4'
-    name: 'NIST-DE-AE-4'
+    name: NIST-DE-AE-4
     level: 3
     order: 4
-    policy: 5
-    parent: 85
-    is_parent: False
-    title: 'Impact of events is determined'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-DE-AE
+    title: Impact of events is determined
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 90
   fields:
     code: '5'
-    name: 'NIST-DE-AE-5'
+    name: NIST-DE-AE-5
     level: 3
     order: 5
-    policy: 5
-    parent: 85
-    is_parent: False
-    title: 'Incident alert thresholds are established'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-DE-AE
+    title: Incident alert thresholds are established
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 91
   fields:
-    code: 'CM'
-    name: 'NIST-DE-CM'
+    code: CM
+    name: NIST-DE-CM
     level: 2
     order: 2
-    policy: 5
-    parent: 84
-    is_parent: True
-    title: 'Security Continuous Monitoring'
-    description: 'The information system and assets are monitored to identify cybersecurity events and verify the effectiveness of protective measures.'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-DE
+    title: Security Continuous Monitoring
+    description: The information system and assets are monitored to identify cybersecurity
+      events and verify the effectiveness of protective measures.
+    is_parent: true
 - model: conformity.measure
-  pk: 92
   fields:
     code: '1'
-    name: 'NIST-DE-CM-1'
+    name: NIST-DE-CM-1
     level: 3
     order: 1
-    policy: 5
-    parent: 91
-    is_parent: False
-    title: 'The network is monitored to detect potential cybersecurity events'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-DE-CM
+    title: The network is monitored to detect potential cybersecurity events
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 93
   fields:
     code: '2'
-    name: 'NIST-DE-CM-2'
+    name: NIST-DE-CM-2
     level: 3
     order: 2
-    policy: 5
-    parent: 91
-    is_parent: False
-    title: 'The physical environment is monitored to detect potential cybersecurity events'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-DE-CM
+    title: The physical environment is monitored to detect potential cybersecurity
+      events
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 94
   fields:
     code: '3'
-    name: 'NIST-DE-CM-3'
+    name: NIST-DE-CM-3
     level: 3
     order: 3
-    policy: 5
-    parent: 91
-    is_parent: False
-    title: 'Personnel activity is monitored to detect potential cybersecurity events'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-DE-CM
+    title: Personnel activity is monitored to detect potential cybersecurity events
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 95
   fields:
     code: '4'
-    name: 'NIST-DE-CM-4'
+    name: NIST-DE-CM-4
     level: 3
     order: 4
-    policy: 5
-    parent: 91
-    is_parent: False
-    title: 'Malicious code is detected'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-DE-CM
+    title: Malicious code is detected
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 96
   fields:
     code: '5'
-    name: 'NIST-DE-CM-5'
+    name: NIST-DE-CM-5
     level: 3
     order: 5
-    policy: 5
-    parent: 91
-    is_parent: False
-    title: 'Unauthorized mobile code is detected'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-DE-CM
+    title: Unauthorized mobile code is detected
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 97
   fields:
     code: '6'
-    name: 'NIST-DE-CM-6'
+    name: NIST-DE-CM-6
     level: 3
     order: 6
-    policy: 5
-    parent: 91
-    is_parent: False
-    title: 'External service provider activity is monitored to detect potential cybersecurity events'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-DE-CM
+    title: External service provider activity is monitored to detect potential cybersecurity
+      events
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 98
   fields:
     code: '7'
-    name: 'NIST-DE-CM-7'
+    name: NIST-DE-CM-7
     level: 3
     order: 7
-    policy: 5
-    parent: 91
-    is_parent: False
-    title: 'Monitoring for unauthorized personnel, connections, devices, and software is performed'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-DE-CM
+    title: Monitoring for unauthorized personnel, connections, devices, and software
+      is performed
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 99
   fields:
     code: '8'
-    name: 'NIST-DE-CM-8'
+    name: NIST-DE-CM-8
     level: 3
     order: 8
-    policy: 5
-    parent: 91
-    is_parent: False
-    title: 'Vulnerability scans are performed'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-DE-CM
+    title: Vulnerability scans are performed
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 100
   fields:
-    code: 'DP'
-    name: 'NIST-DE-DP'
+    code: DP
+    name: NIST-DE-DP
     level: 2
     order: 3
-    policy: 5
-    parent: 84
-    is_parent: True
-    title: 'Detection Processes'
-    description: 'Detection processes and procedures are maintained and tested to ensure awareness of anomalous events.'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-DE
+    title: Detection Processes
+    description: Detection processes and procedures are maintained and tested to ensure
+      awareness of anomalous events.
+    is_parent: true
 - model: conformity.measure
-  pk: 101
   fields:
     code: '1'
-    name: 'NIST-DE-DP-1'
+    name: NIST-DE-DP-1
     level: 3
     order: 1
-    policy: 5
-    parent: 100
-    is_parent: False
-    title: 'Roles and responsibilities for detection are well defined to ensure accountability'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-DE-DP
+    title: Roles and responsibilities for detection are well defined to ensure accountability
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 102
   fields:
     code: '2'
-    name: 'NIST-DE-DP-2'
+    name: NIST-DE-DP-2
     level: 3
     order: 2
-    policy: 5
-    parent: 100
-    is_parent: False
-    title: 'Detection activities comply with all applicable requirements'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-DE-DP
+    title: Detection activities comply with all applicable requirements
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 103
   fields:
     code: '3'
-    name: 'NIST-DE-DP-3'
+    name: NIST-DE-DP-3
     level: 3
     order: 3
-    policy: 5
-    parent: 100
-    is_parent: False
-    title: 'Detection processes are tested'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-DE-DP
+    title: Detection processes are tested
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 104
   fields:
     code: '4'
-    name: 'NIST-DE-DP-4'
+    name: NIST-DE-DP-4
     level: 3
     order: 4
-    policy: 5
-    parent: 100
-    is_parent: False
-    title: 'Event detection information is communicated'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-DE-DP
+    title: Event detection information is communicated
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 105
   fields:
     code: '5'
-    name: 'NIST-DE-DP-5'
+    name: NIST-DE-DP-5
     level: 3
     order: 5
-    policy: 5
-    parent: 100
-    is_parent: False
-    title: 'Detection processes are continuously improved'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-DE-DP
+    title: Detection processes are continuously improved
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 106
   fields:
-    code: 'RS'
-    name: 'NIST-RS'
+    code: RS
+    name: NIST-RS
     level: 1
     order: 4
-    policy: 5
-    parent: 1
-    is_parent: True
-    title: 'Respond'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST
+    title: Respond
     description: ''
+    is_parent: true
 - model: conformity.measure
-  pk: 107
   fields:
-    code: 'RP'
-    name: 'NIST-RS-RP'
+    code: RP
+    name: NIST-RS-RP
     level: 2
     order: 1
-    policy: 5
-    parent: 106
-    is_parent: True
-    title: 'Response Planning'
-    description: 'Response processes and procedures are executed and maintained, to ensure response to detected cybersecurity incidents.'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-RS
+    title: Response Planning
+    description: Response processes and procedures are executed and maintained, to
+      ensure response to detected cybersecurity incidents.
+    is_parent: true
 - model: conformity.measure
-  pk: 108
   fields:
     code: '1'
-    name: 'NIST-RS-RP-1'
-    level: 3
+    name: NIST-RS-1
+    level: 2
     order: 1
-    policy: 5
-    parent: 106
-    is_parent: False
-    title: 'Response plan is executed during or after an incident'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-RS
+    title: Response plan is executed during or after an incident
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 109
   fields:
-    code: 'CO'
-    name: 'NIST-RS-CO'
+    code: CO
+    name: NIST-RS-CO
     level: 2
     order: 2
-    policy: 5
-    parent: 106
-    is_parent: True
-    title: 'Communications'
-    description: 'Response activities are coordinated with internal and external stakeholders (e.g. external support from law enforcement agencies).'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-RS
+    title: Communications
+    description: Response activities are coordinated with internal and external stakeholders
+      (e.g. external support from law enforcement agencies).
+    is_parent: true
 - model: conformity.measure
-  pk: 110
   fields:
     code: '1'
-    name: 'NIST-RS-CO-1'
+    name: NIST-RS-CO-1
     level: 3
     order: 1
-    policy: 5
-    parent: 109
-    is_parent: False
-    title: 'Personnel know their roles and order of operations when a response is needed'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-RS-CO
+    title: Personnel know their roles and order of operations when a response is needed
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 111
   fields:
     code: '2'
-    name: 'NIST-RS-CO-2'
+    name: NIST-RS-CO-2
     level: 3
     order: 2
-    policy: 5
-    parent: 109
-    is_parent: False
-    title: 'Incidents are reported consistent with established criteria'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-RS-CO
+    title: Incidents are reported consistent with established criteria
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 112
   fields:
     code: '3'
-    name: 'NIST-RS-CO-3'
+    name: NIST-RS-CO-3
     level: 3
     order: 3
-    policy: 5
-    parent: 109
-    is_parent: False
-    title: 'Information is shared consistent with response plans'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-RS-CO
+    title: Information is shared consistent with response plans
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 113
   fields:
     code: '4'
-    name: 'NIST-RS-CO-4'
+    name: NIST-RS-CO-4
     level: 3
     order: 4
-    policy: 5
-    parent: 109
-    is_parent: False
-    title: 'Coordination with stakeholders occurs consistent with response plans'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-RS-CO
+    title: Coordination with stakeholders occurs consistent with response plans
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 114
   fields:
     code: '5'
-    name: 'NIST-RS-CO-5'
+    name: NIST-RS-CO-5
     level: 3
     order: 5
-    policy: 5
-    parent: 109
-    is_parent: False
-    title: 'Voluntary information sharing occurs with external stakeholders to achieve broader cybersecurity situational awareness'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-RS-CO
+    title: Voluntary information sharing occurs with external stakeholders to achieve
+      broader cybersecurity situational awareness
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 115
   fields:
-    code: 'AN'
-    name: 'NIST-RS-AN'
+    code: AN
+    name: NIST-RS-AN
     level: 2
     order: 3
-    policy: 5
-    parent: 106
-    is_parent: True
-    title: 'Analysis'
-    description: 'Analysis is conducted to ensure effective response and support recovery activities.'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-RS
+    title: Analysis
+    description: Analysis is conducted to ensure effective response and support recovery
+      activities.
+    is_parent: true
 - model: conformity.measure
-  pk: 116
   fields:
     code: '1'
-    name: 'NIST-RS-AN-1'
+    name: NIST-RS-AN-1
     level: 3
     order: 1
-    policy: 5
-    parent: 115
-    is_parent: False
-    title: 'Notifications from detection systems are investigated'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-RS-AN
+    title: Notifications from detection systems are investigated
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 117
   fields:
     code: '2'
-    name: 'NIST-RS-AN-2'
+    name: NIST-RS-AN-2
     level: 3
     order: 2
-    policy: 5
-    parent: 115
-    is_parent: False
-    title: 'The impact of the incident is understood'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-RS-AN
+    title: The impact of the incident is understood
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 118
   fields:
     code: '3'
-    name: 'NIST-RS-AN-3'
+    name: NIST-RS-AN-3
     level: 3
     order: 3
-    policy: 5
-    parent: 115
-    is_parent: False
-    title: 'Forensics are performed'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-RS-AN
+    title: Forensics are performed
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 119
   fields:
     code: '4'
-    name: 'NIST-RS-AN-4'
+    name: NIST-RS-AN-4
     level: 3
     order: 4
-    policy: 5
-    parent: 115
-    is_parent: False
-    title: 'Incidents are categorized consistent with response plans'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-RS-AN
+    title: Incidents are categorized consistent with response plans
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 120
   fields:
     code: '5'
-    name: 'NIST-RS-AN-5'
+    name: NIST-RS-AN-5
     level: 3
     order: 5
-    policy: 5
-    parent: 115
-    is_parent: False
-    title: 'Processes are established to receive, analyze and respond to vulnerabilities disclosed to the organization from internal and external sources (e.g. internal testing, security bulletins, or security researchers)'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-RS-AN
+    title: Processes are established to receive, analyze and respond to vulnerabilities
+      disclosed to the organization from internal and external sources (e.g. internal
+      testing, security bulletins, or security researchers)
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 121
   fields:
-    code: 'MI'
-    name: 'NIST-RS-MI'
+    code: MI
+    name: NIST-RS-MI
     level: 2
     order: 4
-    policy: 5
-    parent: 106
-    is_parent: True
-    title: 'Mitigation'
-    description: 'Activities are performed to prevent expansion of an event, mitigate its effects, and resolve the incident.'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-RS
+    title: Mitigation
+    description: Activities are performed to prevent expansion of an event, mitigate
+      its effects, and resolve the incident.
+    is_parent: true
 - model: conformity.measure
-  pk: 122
   fields:
     code: '1'
-    name: 'NIST-RS-MI-1'
+    name: NIST-RS-MI-1
     level: 3
     order: 1
-    policy: 5
-    parent: 121
-    is_parent: False
-    title: 'Incidents are contained'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-RS-MI
+    title: Incidents are contained
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 123
   fields:
     code: '2'
-    name: 'NIST-RS-MI-2'
+    name: NIST-RS-MI-2
     level: 3
     order: 2
-    policy: 5
-    parent: 121
-    is_parent: False
-    title: 'Incidents are mitigated'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-RS-MI
+    title: Incidents are mitigated
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 124
   fields:
     code: '3'
-    name: 'NIST-RS-MI-3'
+    name: NIST-RS-MI-3
     level: 3
     order: 3
-    policy: 5
-    parent: 121
-    is_parent: False
-    title: 'Newly identified vulnerabilities are mitigated or documented as accepted risks'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-RS-MI
+    title: Newly identified vulnerabilities are mitigated or documented as accepted
+      risks
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 125
   fields:
-    code: 'IM'
-    name: 'NIST-RS-IM'
+    code: IM
+    name: NIST-RS-IM
     level: 2
     order: 5
-    policy: 5
-    parent: 106
-    is_parent: True
-    title: 'Improvements'
-    description: 'Organizational response activities are improved by incorporating lessons learned from current and previous detection/response activities.'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-RS
+    title: Improvements
+    description: Organizational response activities are improved by incorporating
+      lessons learned from current and previous detection/response activities.
+    is_parent: true
 - model: conformity.measure
-  pk: 126
   fields:
     code: '1'
-    name: 'NIST-RS-IM-1'
+    name: NIST-RS-IM-1
     level: 3
     order: 1
-    policy: 5
-    parent: 125
-    is_parent: False
-    title: 'Response plans incorporate lessons learned'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-RS-IM
+    title: Response plans incorporate lessons learned
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 127
   fields:
     code: '2'
-    name: 'NIST-RS-IM-2'
+    name: NIST-RS-IM-2
     level: 3
     order: 2
-    policy: 5
-    parent: 125
-    is_parent: False
-    title: 'Response strategies are updated'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-RS-IM
+    title: Response strategies are updated
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 128
   fields:
-    code: 'RC'
-    name: 'NIST-RC'
+    code: RC
+    name: NIST-RC
     level: 1
     order: 5
-    policy: 5
-    parent: 1
-    is_parent: True
-    title: 'Recover'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST
+    title: Recover
     description: ''
+    is_parent: true
 - model: conformity.measure
-  pk: 129
   fields:
-    code: 'RP'
-    name: 'NIST-RC-RP'
+    code: RP
+    name: NIST-RC-RP
     level: 2
     order: 1
-    policy: 5
-    parent: 128
-    is_parent: True
-    title: 'Recovery Planning'
-    description: 'Recovery processes and procedures are executed and maintained to ensure restoration of systems or assets affected by cybersecurity incidents.'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-RC
+    title: Recovery Planning
+    description: Recovery processes and procedures are executed and maintained to
+      ensure restoration of systems or assets affected by cybersecurity incidents.
+    is_parent: true
 - model: conformity.measure
-  pk: 130
   fields:
     code: '1'
-    name: 'NIST-RC-RP-1'
+    name: NIST-RC-RP-1
     level: 3
     order: 1
-    policy: 5
-    parent: 129
-    is_parent: False
-    title: 'Recovery plan is executed during or after a cybersecurity incident'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-RC-RP
+    title: Recovery plan is executed during or after a cybersecurity incident
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 131
   fields:
-    code: 'IM'
-    name: 'NIST-RC-IM'
+    code: IM
+    name: NIST-RC-IM
     level: 2
     order: 2
-    policy: 5
-    parent: 128
-    is_parent: True
-    title: 'Improvements'
-    description: 'Recovery planning and processes are improved by incorporating lessons learned into future activities.'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-RC
+    title: Improvements
+    description: Recovery planning and processes are improved by incorporating lessons
+      learned into future activities.
+    is_parent: true
 - model: conformity.measure
-  pk: 132
   fields:
     code: '1'
-    name: 'NIST-RC-IM-1'
+    name: NIST-RC-IM-1
     level: 3
     order: 1
-    policy: 5
-    parent: 131
-    is_parent: False
-    title: 'Recovery plans incorporate lessons learned'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-RC-IM
+    title: Recovery plans incorporate lessons learned
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 133
   fields:
     code: '2'
-    name: 'NIST-RC-IM-2'
+    name: NIST-RC-IM-2
     level: 3
     order: 2
-    policy: 5
-    parent: 131
-    is_parent: False
-    title: 'Recovery strategies are updated'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-RC-IM
+    title: Recovery strategies are updated
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 134
   fields:
-    code: 'CO'
-    name: 'NIST-RC-CO'
+    code: CO
+    name: NIST-RC-CO
     level: 2
     order: 3
-    policy: 5
-    parent: 128
-    is_parent: True
-    title: 'Communications'
-    description: 'Restoration activities are coordinated with internal and external parties (e.g.  coordinating centers, Internet Service Providers, owners of attacking systems, victims, other CSIRTs, and vendors).'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-RC
+    title: Communications
+    description: Restoration activities are coordinated with internal and external
+      parties (e.g.  coordinating centers, Internet Service Providers, owners of attacking
+      systems, victims, other CSIRTs, and vendors).
+    is_parent: true
 - model: conformity.measure
-  pk: 135
   fields:
     code: '1'
-    name: 'NIST-RC-CO-1'
+    name: NIST-RC-CO-1
     level: 3
     order: 1
-    policy: 5
-    parent: 134
-    is_parent: False
-    title: 'Public relations are managed'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-RC-CO
+    title: Public relations are managed
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 136
   fields:
     code: '2'
-    name: 'NIST-RC-CO-2'
+    name: NIST-RC-CO-2
     level: 3
     order: 2
-    policy: 5
-    parent: 134
-    is_parent: False
-    title: 'Reputation is repaired after an incident'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-RC-CO
+    title: Reputation is repaired after an incident
     description: ''
+    is_parent: false
 - model: conformity.measure
-  pk: 137
   fields:
     code: '3'
-    name: 'NIST-RC-CO-3'
+    name: NIST-RC-CO-3
     level: 3
     order: 3
-    policy: 5
-    parent: 134
-    is_parent: False
-    title: 'Recovery activities are communicated to internal and external stakeholders as well as executive and management teams'
+    policy: NIST Cybersecurity Framwork
+    parent: NIST-RC-CO
+    title: Recovery activities are communicated to internal and external stakeholders
+      as well as executive and management teams
     description: ''
+    is_parent: false
