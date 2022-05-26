@@ -35,16 +35,16 @@ admin.site.register(Policy, PolicyAdmin)
 
 # Measure
 
-class MesureResources(resources.ModelResource):
+class MeasureResources(resources.ModelResource):
     class Meta:
-        model = Mesure
+        model = Measure
 
 
 class MeasureAdmin(ImportExportModelAdmin):
-    ressource_class = Mesure
+    ressource_class = Measure
 
 
-admin.site.register(Mesure, MeasureAdmin)
+admin.site.register(Measure, MeasureAdmin)
 
 
 # Conformity
