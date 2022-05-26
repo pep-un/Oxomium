@@ -205,7 +205,7 @@ def post_init_callback(instance, **kwargs):
 
 
 @receiver(m2m_changed, sender=Organization.applicable_policies.through)
-def change_policy(sender, instance, action, pk_set, *args, **kwargs):
+def change_policy(instance, action, pk_set, *args, **kwargs):
     if action == "post_add":
         for pk in pk_set:
             instance.add_conformity(pk)
