@@ -192,6 +192,7 @@ class Conformity(models.Model):
                                   Callback functions
 """
 
+
 @receiver(post_init, sender=Mesure)
 def post_init_callback(instance, **kwargs):
     """This function keep hierarchy of the Mesure working on each Mesure instantiation"""
@@ -201,6 +202,7 @@ def post_init_callback(instance, **kwargs):
         instance.parent.is_parent = 1
     else:
         instance.name = instance.code
+
 
 @receiver(m2m_changed, sender=Organization.applicable_policies.through)
 def change_policy(sender, instance, action, pk_set, *args, **kwargs):
