@@ -5,20 +5,23 @@
 {% endblock %}
 
 {% block content %}
-<table class="table table-stiped table-hover align-middle">
+<table class="table table-striped align-middle">
     <thead>
         <tr>
             <th class="">Organization</th>
             <th class="">Policy</th>
             <th class="text-center">Status</th>
-            <th class="text-center">Owner</th>
         </tr>
     </thead>
     <tbody>
     {% for con in conformity_list %}
         <tr>
-            <th class="col">{{ con.organization }}</th>
-            <th class="col">{{ con.measure.title }}</th>
+            <th class="col">
+                {{ con.organization }}
+            </th>
+            <th class="col">
+                {{ con.measure.title }}
+            </th>
             <td class="col-4 text-center">
                 <a href="{% url 'conformity:conformity_orgpol_index' con.organization.id con.measure.policy.id %}">
                     <div class="progress">
@@ -26,7 +29,6 @@
                     </div>
                 </a>
             </td>
-            <td class="col-2 text-center"> {{ con.responsible|capfirst }} </td>
         </tr>
     {% empty %}
         <div class="alert alert-info" role="alert">

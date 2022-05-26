@@ -46,16 +46,11 @@ class ConformityOrgPolIndexView(LoginRequiredMixin, generic.ListView):
     template_name = 'conformity/conformity_orgpol_list.html'
 
     def get_queryset(self, **kwargs):
-        return Conformity.objects.filter(organization__id=self.kwargs['org']).filter(measure__policy__id=self.kwargs['pol']).filter(measure__level=0).order_by('measure__order')
+        return Conformity.objects.filter(organization__id=self.kwargs['org']) \
+            .filter(measure__policy__id=self.kwargs['pol']) \
+            .filter(measure__level=0) \
+            .order_by('measure__order')
 
-#def conformityUpdate(request):
-#    data = request.POST.items()
-#    for conformity in data:
-#        if not conformity[0] == 'csrfmiddlewaretoken' and not conformity[0] == 'path':
-#            c = Conformity.objects.get(id=conformity[0])
-#            c.status_set(conformity[1])
-#
-#      return HttpResponseRedirect(request.POST['path'])
 
 class ConformityUpdateView(UpdateView):
     model = Conformity
@@ -68,6 +63,3 @@ class ConformityUpdateView(UpdateView):
 class OrganizationView(UpdateView):
     model = Organization
     form_class = OrganizationForm
-
-#    def form_valid(selfself, form):
-#        form.instance.add_policy(Policy.objects.get('form.cleaned_data.applicable_policies'))
