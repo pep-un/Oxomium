@@ -16,13 +16,13 @@
     <tbody>
     {% for con in conformity_list %}
         <tr>
-            <th class="col">
+            <th class="col-2">
                 {{ con.organization }}
             </th>
-            <th class="col">
-                {{ con.measure.title }}
+            <th class="col-2">
+                {{ con.measure.policy.name }}
             </th>
-            <td class="col-4 text-center">
+            <td class="col text-center">
                 <a href="{% url 'conformity:conformity_orgpol_index' con.organization.id con.measure.policy.id %}">
                     <div class="progress">
                         <div class="progress-bar" role="progressbar" style="width: {{ con.status }}%" aria-valuenow="{{ con.status }}" aria-valuemin="0" aria-valuemax="100">{{ con.status }}%</div>

@@ -6,7 +6,7 @@ It's Organized around Organization, Policy, Measure and Conformity classes.
 import logging
 from statistics import mean
 from django.db import models
-from django.db.models.signals import post_init, m2m_changed
+from django.db.models.signals import m2m_changed, pre_save
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.dispatch import receiver
 from django.conf import settings
@@ -37,6 +37,7 @@ class Policy(models.Model):
         POLICY = 'POL', _('Internal Policy')
         OTHER = 'OTHER', _('Other')
 
+    objects = PolicyManager()
     name = models.CharField(max_length=256, unique=True)
     version = models.IntegerField(default=0)
     publish_by = models.CharField(max_length=256)
@@ -46,10 +47,8 @@ class Policy(models.Model):
         default=Type.OTHER,
     )
 
-    objects = PolicyManager()
-
     class Meta:
-        ordering = ['name', 'version']
+        ordering = ['name']
         verbose_name = 'Policy'
         verbose_name_plural = 'Policies'
 
@@ -74,6 +73,7 @@ class Policy(models.Model):
     def get_root_measure(self):
         """return the root Measure of the Policy"""
         return Measure.objects.filter(policy=self.id).filter(level=0).order_by('order')
+
     def get_first_measures(self):
         """return the root Measure of the Policy"""
         return Measure.objects.filter(policy=self.id).filter(level=1).order_by('order')
@@ -88,6 +88,9 @@ class Organization(models.Model):
     administrative_id = models.CharField(max_length=256, blank=True)
     description = models.CharField(max_length=256, blank=True)
     applicable_policies = models.ManyToManyField(Policy, blank=True)
+
+    class Meta:
+        ordering = ['name']
 
     def __str__(self):
         return str(self.name)
@@ -138,6 +141,7 @@ class Measure(models.Model):
     Measure can be hierarchical in order to form a collection of Measure, aka Policy.
     A Measure is not representing the conformity level, see Conformity class.
     """
+    objects = MeasureManager()
     code = models.CharField(max_length=5, blank=True)
     name = models.CharField(max_length=50, blank=True, unique=True)
     level = models.IntegerField(default=0)
@@ -148,13 +152,15 @@ class Measure(models.Model):
     description = models.TextField(blank=True)
     is_parent = models.BooleanField(default=False)
 
-    objects = MeasureManager()
+    class Meta:
+        ordering = ['name']
 
     def __str__(self):
         return str(self.name)
 
     def natural_key(self):
         return (self.name,)
+
     natural_key.dependencies = ['conformity.policy']
 
     def get_childrens(self):
@@ -177,7 +183,7 @@ class Conformity(models.Model):
     comment = models.TextField(max_length=4096, blank=True)
 
     class Meta:
-        ordering = ['measure', 'organization']
+        ordering = ['organization','measure']
         verbose_name = 'Conformity'
         verbose_name_plural = 'Conformities'
         unique_together = (('organization','measure'),)
@@ -234,7 +240,7 @@ class Conformity(models.Model):
 # Callback functions
 
 
-@receiver(post_init, sender=Measure)
+@receiver(pre_save, sender=Measure)
 def post_init_callback(instance, **kwargs):
     """This function keep hierarchy of the Measure working on each Measure instantiation"""
     if instance.parent:

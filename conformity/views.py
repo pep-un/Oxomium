@@ -41,7 +41,7 @@ class ConformityIndexView(LoginRequiredMixin, generic.ListView):
     model = Conformity
 
     def get_queryset(self, **kwargs):
-        return Conformity.objects.filter(measure__level=0).order_by('measure__order')
+        return Conformity.objects.filter(measure__level=0)
 
 
 class ConformityOrgPolIndexView(LoginRequiredMixin, generic.ListView):

@@ -9,7 +9,6 @@
         <table class="table table-striped align-middle">
             <thead class="">
                 <tr>
-                    <th>#</th>
                     <th>Policy</th>
                     <th>Published by</th>
                     <th>Policy type</th>
@@ -19,7 +18,6 @@
             <tbody>
         {% for pol in policy_list %}
             <tr>
-                <th>{{ pol.id }}</th>
                 <td>{{ pol.name }} (v{{ pol.version }})</td>
                 <td>{{ pol.publish_by }}</td>
                 <td>{{ pol.get_type }}</td>
