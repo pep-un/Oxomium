@@ -17,6 +17,11 @@ from django.urls import reverse
 User = get_user_model()
 
 
+class PolicyManager(models.Manager):
+    def get_by_natural_key(self, name):
+        return self.get(name=name)
+
+
 class Policy(models.Model):
     """
     Policy class represent the conformity policy you will apply on Organization.
@@ -41,11 +46,18 @@ class Policy(models.Model):
         default=Type.OTHER,
     )
 
+    objects = PolicyManager()
+
+    class Meta:
+        ordering = ['name', 'version']
+        verbose_name = 'Policy'
+        verbose_name_plural = 'Policies'
+
     def __str__(self):
         return str(self.name)
 
     def natural_key(self):
-        return self.name
+        return (self.name,)
 
     def get_type(self):
         """return the readable version of the Policy Type"""
@@ -67,7 +79,6 @@ class Policy(models.Model):
         return Measure.objects.filter(policy=self.id).filter(level=1).order_by('order')
 
 
-
 class Organization(models.Model):
     """
     Organization class is a representation of a company, a division of company, a administration...
@@ -82,7 +93,7 @@ class Organization(models.Model):
         return str(self.name)
 
     def natural_key(self):
-        return self.name
+        return (self.name,)
 
     @staticmethod
     def get_absolute_url():
@@ -116,6 +127,11 @@ class Organization(models.Model):
         return mean(conf_stat)
 
 
+class MeasureManager(models.Manager):
+    def get_by_natural_key(self, name):
+        return self.get(name=name)
+
+
 class Measure(models.Model):
     """
     A Measure is a precise requirement.
@@ -132,11 +148,13 @@ class Measure(models.Model):
     description = models.TextField(blank=True)
     is_parent = models.BooleanField(default=False)
 
+    objects = MeasureManager()
+
     def __str__(self):
         return str(self.name)
 
     def natural_key(self):
-        return self.name
+        return (self.name,)
     natural_key.dependencies = ['conformity.policy']
 
     def get_childrens(self):
@@ -158,15 +176,18 @@ class Conformity(models.Model):
                                     null=True, blank=True)
     comment = models.TextField(max_length=4096, blank=True)
 
+    class Meta:
+        ordering = ['measure', 'organization']
+        verbose_name = 'Conformity'
+        verbose_name_plural = 'Conformities'
+        unique_together = (('organization','measure'),)
+
     def __str__(self):
         return str(self.organization) + " | " + str(self.measure)
 
     def natural_key(self):
         return (self.organization, self.measure)
     natural_key.dependencies = ['conformity.policy','conformity.measure','conformity.organization']
-
-    class Meta:
-        unique_together = (('organization','measure'),)
 
     def get_absolute_url(self):
         """Return the absolute URL of the class for Form, probably not the best way to do it"""
