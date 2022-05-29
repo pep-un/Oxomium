@@ -1,45 +1,114 @@
+{% load django_bootstrap5 %}
+
 <!DOCTYPE html>
 <html>
     <head>
         <meta charset="utf-8" />
         <meta http-equiv="x-ua-compatible" content="ie=edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Oxomium - Login</title>
-        <!-- CSS only -->
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+        <title>Oxomium</title>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
-        <!-- JavaScript Bundle with Popper -->
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
-    </head>
-    <body  class="vh-100" style="background-color: #f0f1f1;">
-        <div class="container py-5 h-100">
-            <div class="row d-flex justify-content-center align-items-center h-100">
-                <div class="col-12 col-md-8 col-lg-6 col-xl-5">
-                    <div class="card shadow-2-strong">
-                        <div class="card-body p-3 text-center">
-                            <h3 class="h3" style="letter-spacing: 1px;">Oxomium Login</h3>
+        {% bootstrap_css %}
+        {% bootstrap_javascript %}
+        <style>
+            html, body {
+              height: 100%;
+            }
 
-                            <form method="post" action="{% url 'login' %}" class="" >
-                                {% csrf_token %}
-                                <input type="hidden" name="next" value="{{ next }}" />
-                                <hr />
-                                <div class="">
-                                    <label for="id_username" class="form-label">Username:</label>
-                                    <input type="text" name="username" autofocus autocapitalize="none" autocomplete="username" maxlength="150" required id="id_username" class="form-control form-control-lg" />
-                                </div>
-                                <div class="">
-                                    <label for="id_password" class="form-label">Password:</label>
-                                    <input type="password" name="password" autocomplete="current-password" required id="id_password" class="form-control form-control-lg" />
-                                </div>
-                                <hr />
-                                <div class="">
-                                    <input type="submit" value="Login" class="btn btn-primary btn-lg btn-block" />
-                                </div>
-                            </form>
-                        </div>
-                     </div>
-                 </div>
-             </div>
-         </div>
+            body {
+              display: -ms-flexbox;
+              display: -webkit-box;
+              display: flex;
+              -ms-flex-align: center;
+              -ms-flex-pack: center;
+              -webkit-box-align: center;
+              align-items: center;
+              -webkit-box-pack: center;
+              justify-content: center;
+              padding-top: 40px;
+              padding-bottom: 40px;
+              background-color: #f5f5f5;
+            }
+
+            .form-signin {
+              width: 100%;
+              max-width: 330px;
+              padding: 15px;
+              margin: 0 auto;
+            }
+            .form-signin .form-control {
+              position: relative;
+              box-sizing: border-box;
+              height: auto;
+              padding: 10px;
+              font-size: 16px;
+            }
+            .form-signin .form-control:focus {
+              z-index: 2;
+            }
+            .form-signin input[type="email"] {
+              margin-bottom: -1px;
+              border-bottom-right-radius: 0;
+              border-bottom-left-radius: 0;
+            }
+            .form-signin input[type="password"] {
+              margin-bottom: 10px;
+              border-top-left-radius: 0;
+              border-top-right-radius: 0;
+            }
+
+            .animated {
+            animation-duration: 2.2s;
+            animation-fill-mode: both;
+            }
+
+            @keyframes fadeIn1 {
+            0% {opacity: 0;}
+            33% {opacity: 1;}
+            100% {opacity: 1;}
+            }
+
+            @keyframes fadeIn2 {
+            0% {opacity: 0;}
+            33% {opacity: 0;}
+            66% {opacity: 1;}
+            100% {opacity: 1;}
+            }
+
+            @keyframes fadeIn3 {
+            0% {opacity: 0;}
+            66% {opacity: 0;}
+            100% {opacity: 1;}
+            }
+
+            .fadeIn1 {
+            animation-name: fadeIn1;
+            }
+            .fadeIn2 {
+            animation-name: fadeIn2;
+            }
+            .fadeIn3 {
+            animation-name: fadeIn3;
+            }
+        </style>
+    </head>
+    <body  class="text-center">
+        <form class="form-signin" method="post" action="{% url 'login' %}">
+            <h1 class="h1 mb-4" style="letter-spacing: 2px; font-variant:small-caps;">
+                Oxomium <br />
+                <i class="bi bi-hexagon-fill text-danger animated fadeIn1"></i>
+                <i class="bi bi-hexagon-fill text-warning animated fadeIn2"></i>
+                <i class="bi bi-hexagon-fill text-success animated fadeIn3"></i>
+            </h1>
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next }}" />
+            <div class="d-grid gap-2">
+                <label for="id_username" class="visually-hidden">Username:</label>
+                <input type="text" name="username" autofocus autocapitalize="none" autocomplete="username" maxlength="150" required id="id_username" class="form-control" placeholder="Username"/>
+                <label for="id_password" class="visually-hidden">Password:</label>
+                <input type="password" name="password" autocomplete="current-password" required id="id_password" class="form-control" placeholder="Password"/>
+                <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
+            </div>
+        </form>
     </body>
 </html>
