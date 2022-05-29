@@ -5,7 +5,7 @@
     version: 2
     publish_by: ANSSI
     type: NAT
-- model: conformity.mesure
+- model: conformity.measure
   pk: 12
   fields:
     code: TRAIN
@@ -13,11 +13,11 @@
     level: 1
     order: 1
     policy: 1
-    parent: 49
+    parent: '49'
     title: RAISE AWARENESS AND TRAIN
     description: ''
     is_parent: false
-- model: conformity.mesure
+- model: conformity.measure
   pk: 13
   fields:
     code: KNOW
@@ -25,11 +25,11 @@
     level: 1
     order: 2
     policy: 1
-    parent: 49
+    parent: '49'
     title: KNOW THE INFORMATION SYSTEM
     description: ''
     is_parent: false
-- model: conformity.mesure
+- model: conformity.measure
   pk: 14
   fields:
     code: AUTH
@@ -37,11 +37,11 @@
     level: 1
     order: 3
     policy: 1
-    parent: 49
+    parent: '49'
     title: AUTHENTICATE AND CONTROL ACCESSES
     description: Trucs liés à l'authentification
     is_parent: false
-- model: conformity.mesure
+- model: conformity.measure
   pk: 15
   fields:
     code: EP
@@ -49,11 +49,11 @@
     level: 1
     order: 4
     policy: 1
-    parent: 49
+    parent: '49'
     title: SECURE THE DEVICES
     description: ''
     is_parent: false
-- model: conformity.mesure
+- model: conformity.measure
   pk: 16
   fields:
     code: NET
@@ -61,11 +61,11 @@
     level: 1
     order: 4
     policy: 1
-    parent: 49
+    parent: '49'
     title: SECURE THE NETWORK
     description: ''
     is_parent: false
-- model: conformity.mesure
+- model: conformity.measure
   pk: 17
   fields:
     code: OPS
@@ -73,15 +73,15 @@
     level: 2
     order: 1
     policy: 1
-    parent: 12
+    parent: '12'
     title: Train the operational teams in information system security
     description: The operational teams (network, security and system administrators,
-      project managers, developers, <abbr title="chief information security officer
-      ">CISO</abbr>) have special access to the information system. They can, inadvertently
+      project managers, developers, <abbr title="chief information security officer"
+      >CISO</abbr>) have special access to the information system. They can, inadvertently
       or through not understanding the consequences of certain practices, carry out
       operations creating vulnerabilities.
     is_parent: false
-- model: conformity.mesure
+- model: conformity.measure
   pk: 18
   fields:
     code: USER
@@ -89,14 +89,14 @@
     level: 2
     order: 2
     policy: 1
-    parent: 12
+    parent: '12'
     title: Raise users’ awareness about basic information security
     description: Each user is a part of the information system chain. To this end,
       as he enters the organization, he must be informed of the security stakes, the
       rules to respect and the proper behaviour to adopt in terms of information system
       security by awareness raising and training actions.
     is_parent: false
-- model: conformity.mesure
+- model: conformity.measure
   pk: 19
   fields:
     code: OUT
@@ -104,7 +104,7 @@
     level: 2
     order: 3
     policy: 1
-    parent: 12
+    parent: '12'
     title: Control outsourced services
     description: When an organization wants to outsource its information system or
       data, it must assess, in advance, the risks specific to outsourced services
@@ -115,7 +115,7 @@
       context of the outsourcing operation, but also deficient or incomplete contractual
       specifications.
     is_parent: false
-- model: conformity.mesure
+- model: conformity.measure
   pk: 21
   fields:
     code: AMDIN
@@ -123,11 +123,11 @@
     level: 1
     order: 6
     policy: 1
-    parent: 49
+    parent: '49'
     title: Guideline for a healthy information system
     description: ''
     is_parent: false
-- model: conformity.mesure
+- model: conformity.measure
   pk: 22
   fields:
     code: MOB
@@ -135,11 +135,11 @@
     level: 1
     order: 7
     policy: 1
-    parent: 49
+    parent: '49'
     title: Manage mobile working
     description: ''
     is_parent: false
-- model: conformity.mesure
+- model: conformity.measure
   pk: 23
   fields:
     code: UP
@@ -147,11 +147,11 @@
     level: 1
     order: 8
     policy: 1
-    parent: 49
+    parent: '49'
     title: Keep the information system up to date
     description: ''
     is_parent: false
-- model: conformity.mesure
+- model: conformity.measure
   pk: 24
   fields:
     code: SAR
@@ -159,11 +159,11 @@
     level: 1
     order: 9
     policy: 1
-    parent: 49
+    parent: '49'
     title: Supervise, Audit, React
     description: ''
     is_parent: false
-- model: conformity.mesure
+- model: conformity.measure
   pk: 25
   fields:
     code: MORE
@@ -171,11 +171,11 @@
     level: 1
     order: 10
     policy: 1
-    parent: 49
+    parent: '49'
     title: To go even futher
     description: ''
     is_parent: true
-- model: conformity.mesure
+- model: conformity.measure
   pk: 26
   fields:
     code: SEN
@@ -183,7 +183,7 @@
     level: 2
     order: 1
     policy: 1
-    parent: 13
+    parent: '13'
     title: Identify the most sensitive information and servers and maintain a network
       diagram
     description: Each organization has sensitive data. This data can be on its own
@@ -191,7 +191,7 @@
       or users (personal data, contracts, etc.). In order to effectively protect your
       data, identifying it is essential.
     is_parent: false
-- model: conformity.mesure
+- model: conformity.measure
   pk: 27
   fields:
     code: PUSER
@@ -199,13 +199,13 @@
     level: 2
     order: 2
     policy: 1
-    parent: 13
+    parent: '13'
     title: Have an exhaustive inventory of privileged accounts and keep it updated
     description: Accounts benefiting from specific permissions are preferred targets
       for the attackers who want to obtain as wide an access as possible to the information
       system. They must therefore be subject to very specific attention.
     is_parent: false
-- model: conformity.mesure
+- model: conformity.measure
   pk: 28
   fields:
     code: HR
@@ -213,7 +213,7 @@
     level: 2
     order: 3
     policy: 1
-    parent: 13
+    parent: '13'
     title: Organise the procedures relating to users joining, departing and changing
       positions
     description: 'The staff of an organization, whether public or private, is constantly
@@ -224,7 +224,7 @@
       procedures must therefore be defined, in accordance with the human resources
       department.'
     is_parent: false
-- model: conformity.mesure
+- model: conformity.measure
   pk: 29
   fields:
     code: DEV
@@ -232,7 +232,7 @@
     level: 2
     order: 4
     policy: 1
-    parent: 13
+    parent: '13'
     title: Only allow controlled devices to connect to the network of the organization
     description: To guarantee the security of the information system, the organization
       must control the devices which connect to it, each one being a potentially vulnerable
@@ -241,7 +241,7 @@
       of security. In the same way, the security of visitors’ devices is completely
       out of the organization’s control.
     is_parent: false
-- model: conformity.mesure
+- model: conformity.measure
   pk: 30
   fields:
     code: ID
@@ -249,14 +249,14 @@
     level: 2
     order: 1
     policy: 1
-    parent: 14
+    parent: '14'
     title: Identify each individual accessing the system by name and distinguish the
       user/administrator roles
     description: In the event of an incident, in order to facilitate the attribution
       of an action within the information system or the identification of possible
       compromised accounts easier, access accounts must be nominative.
     is_parent: false
-- model: conformity.mesure
+- model: conformity.measure
   pk: 31
   fields:
     code: RIGHT
@@ -264,7 +264,7 @@
     level: 2
     order: 2
     policy: 1
-    parent: 14
+    parent: '14'
     title: Allocate the appropriate rights to the information system’s sensitive resources
     description: 'Some of the system’s resources can be a source of invaluable information
       from the hacher’s point of view (folders containing sensitive data, databases,
@@ -274,7 +274,7 @@
       and are part of the target group; >> avoid their circulation and duplication
       to uncontrolled areas or areas subject to a less strict access control.'
     is_parent: false
-- model: conformity.mesure
+- model: conformity.measure
   pk: 32
   fields:
     code: PWD
@@ -282,7 +282,7 @@
     level: 2
     order: 3
     policy: 1
-    parent: 14
+    parent: '14'
     title: Set and verify rules for the choice and size of passwords
     description: ANSSI sets out a collection of rules and best practices in terms
       of the choice and size of passwords. The most critical one is to make users
@@ -290,7 +290,7 @@
       and even the risks of reusing the same password from one application to another,
       especially for personal and professional mailboxes.
     is_parent: false
-- model: conformity.mesure
+- model: conformity.measure
   pk: 33
   fields:
     code: PSTOR
@@ -298,14 +298,14 @@
     level: 2
     order: 4
     policy: 1
-    parent: 14
+    parent: '14'
     title: Protect passwords stored on systems
     description: The complexity, the diversity and even the infrequent use of some
       passwords may encourage their storage on a physical (memo or post-it) or digital
       (password files, sending an email to yourself, recourse to "Remember password"
       buttons) medium in the event a password is lost or forgotten.
     is_parent: false
-- model: conformity.mesure
+- model: conformity.measure
   pk: 34
   fields:
     code: DEF
@@ -313,7 +313,7 @@
     level: 2
     order: 5
     policy: 1
-    parent: 14
+    parent: '14'
     title: Change the default authentication settings on devices and services
     description: It is essential to consider that the default settings of the information
       systems are known by the hackers, even if these are not known to the general
@@ -321,7 +321,7 @@
       not long enough or common to all the devices and services for example) and are
       often easy to obtain by hackers capable of pretending to be a legitimate user.
     is_parent: false
-- model: conformity.mesure
+- model: conformity.measure
   pk: 35
   fields:
     code: 2FA
@@ -329,7 +329,7 @@
     level: 2
     order: 6
     policy: 1
-    parent: 14
+    parent: '14'
     title: Prefer a two-factor authentication when possible
     description: 'The implementation of a two-factor authentication is strongly recommended,
     requiring the use of two different authentication factors from among the following:
@@ -337,7 +337,7 @@
       (smart card, USB token, magnetic card, RFID, a phone to receive an SMS); >>
       something I am (a digital fingerprint).'
     is_parent: false
-- model: conformity.mesure
+- model: conformity.measure
   pk: 36
   fields:
     code: MIN
@@ -345,7 +345,7 @@
     level: 2
     order: 1
     policy: 1
-    parent: 15
+    parent: '15'
     title: Implement a minimum level of security across the whole IT stock
     description: 'Depending on his level of IT security practices, the user, a great
       deal of the time, is the first port of call for hackers trying to enter the
@@ -357,7 +357,7 @@
       firewall (these are often included in the operating system); >> encrypt the
       partitions where user data is stored; >> deactivate automatic executions (autorun).'
     is_parent: false
-- model: conformity.mesure
+- model: conformity.measure
   pk: 37
   fields:
     code: USB
@@ -365,13 +365,13 @@
     level: 2
     order: 2
     policy: 1
-    parent: 15
+    parent: '15'
     title: Protect against threats relating to the use of removable media
     description: Removable media can be used to spread viruses, steal sensitive and
       strategic information or even compromise the organization’s network. Such attacks
       can have disastrous consequences for the activity of the organisation targeted.
     is_parent: false
-- model: conformity.mesure
+- model: conformity.measure
   pk: 38
   fields:
     code: MGMT
@@ -379,13 +379,13 @@
     level: 2
     order: 3
     policy: 1
-    parent: 15
+    parent: '15'
     title: Use a centralised management tool to standardise security policies
     description: The information system’s security relies on the security of the weakest
       link. It is therefore necessary to standardise the management of security policies
       applying across the entire IT stock of the organization.
     is_parent: false
-- model: conformity.mesure
+- model: conformity.measure
   pk: 39
   fields:
     code: FW
@@ -393,13 +393,13 @@
     level: 2
     order: 4
     policy: 1
-    parent: 15
+    parent: '15'
     title: Activate and configure the firewall on workstations
     description: After having succeeded in taking control of a workstation (due, for
       example, to a vulnerability of the web browser), a hacker will often seek to
       spread his intrusion to other workstations and, ultimately, access users’ documents.
     is_parent: false
-- model: conformity.mesure
+- model: conformity.measure
   pk: 40
   fields:
     code: ENC
@@ -407,14 +407,14 @@
     level: 2
     order: 1
     policy: 1
-    parent: 15
+    parent: '15'
     title: Encrypt sensitive data sent through the Internet
     description: The Internet is a network from which it is almost impossible to obtain
       guarantees as to the way that data will take when you send it through this medium.
       It is, therefore, entirely possible that a hacker will be on the pathway of
       data travelling between two correspondents.
     is_parent: false
-- model: conformity.mesure
+- model: conformity.measure
   pk: 41
   fields:
     code: SEG
@@ -422,7 +422,7 @@
     level: 2
     order: 1
     policy: 1
-    parent: 16
+    parent: '16'
     title: Segment the network and implement a partitioning between these areas
     description: When the network is "flat", without any partitioning mechanism, each
       device in the network can access any other device. If one is compromised all
@@ -430,7 +430,7 @@
       a user’s device and then, moving around from device to device, find a way to
       critical servers.
     is_parent: false
-- model: conformity.mesure
+- model: conformity.measure
   pk: 42
   fields:
     code: WIFI
@@ -438,7 +438,7 @@
     level: 2
     order: 2
     policy: 1
-    parent: 16
+    parent: '16'
     title: Ensure the security of Wi-Fi access networks and that uses are separated
     description: 'The use of Wi-Fi in a professional environment is now widespread,
     yet it still presents very specific security risks: poor guarantees in terms
@@ -446,7 +446,7 @@
       out of the geographical scope of the organization, default configuration of
       access points that are not secure by design, etc.'
     is_parent: false
-- model: conformity.mesure
+- model: conformity.measure
   pk: 43
   fields:
     code: SEC
@@ -454,7 +454,7 @@
     level: 2
     order: 3
     policy: 1
-    parent: 16
+    parent: '16'
     title: Use secure network protocols when they exist
     description: Although security is no longer optional today, this has not always
       been the case. This is why numerous network protocols had to evolve to integrate
@@ -463,7 +463,7 @@
       as possible, whether on public networks (the Internet for example) or on the
       organization’s internal network.
     is_parent: false
-- model: conformity.mesure
+- model: conformity.measure
   pk: 44
   fields:
     code: DMZ
@@ -471,7 +471,7 @@
     level: 2
     order: 4
     policy: 1
-    parent: 16
+    parent: '16'
     title: Implement a secure access gateway to the Internet
     description: '/Standard Implement a secure access gateway to the Internet : websites
       hosting malware, the downloading of "infected" files and, consequently, the
@@ -479,7 +479,7 @@
       secure this use, it is therefore essential that the users’ devices do not have
       direct network access to the Internet.'
     is_parent: false
-- model: conformity.mesure
+- model: conformity.measure
   pk: 45
   fields:
     code: DMZIN
@@ -487,7 +487,7 @@
     level: 2
     order: 6
     policy: 1
-    parent: 16
+    parent: '16'
     title: Segregate the services visible from the Internet from the rest of the information
       system
     description: An organization can choose to host internally services visible on
@@ -497,7 +497,7 @@
       and continuously trained (up to date in terms of technology). Otherwise, recourse
       to outsourced hosting with professionals is to be favoured.
     is_parent: false
-- model: conformity.mesure
+- model: conformity.measure
   pk: 46
   fields:
     code: EMAIL
@@ -505,13 +505,13 @@
     level: 2
     order: 6
     policy: 1
-    parent: 16
+    parent: '16'
     title: Protect your professional email
     description: Email is the main infection vector for a workstation, whether it
       is opening attachments containing malware or a misguided click on a link redirecting
       towards a site that is, itself, malicious.
     is_parent: false
-- model: conformity.mesure
+- model: conformity.measure
   pk: 47
   fields:
     code: VPN
@@ -519,13 +519,13 @@
     level: 2
     order: 7
     policy: 1
-    parent: 16
+    parent: '16'
     title: Secure the dedicated network interconnections with partners
     description: 'For operational needs, an organization can be required to establish
     a dedicated network interconnection with a supplier or customer (e.g.: managed
       services, electronic data interchange, financial flows, etc.)'
     is_parent: false
-- model: conformity.mesure
+- model: conformity.measure
   pk: 48
   fields:
     code: DC
@@ -533,7 +533,7 @@
     level: 2
     order: 8
     policy: 1
-    parent: 16
+    parent: '16'
     title: Control and protect access to the server rooms and technical areas
     description: Physical security mechanisms must be a key part of information systems
       security and be up to date to ensure that they cannot be bypassed easily by
@@ -541,7 +541,7 @@
       measures and to raise users’ awareness continuously of the risks caused by bypassing
       these rules.
     is_parent: false
-- model: conformity.mesure
+- model: conformity.measure
   pk: 49
   fields:
     code: GHIS
@@ -549,7 +549,7 @@
     level: 0
     order: 1
     policy: 1
-    parent: null
+    parent: ''
     title: Guideline for a healthy information system
     description: ''
     is_parent: true
