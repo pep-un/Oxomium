@@ -6,38 +6,30 @@
 
 {% block content %}
     {% if policy.get_root_measure %}
-        <ol>
         {% for m in policy.get_first_measures %}
-            <li>
-                <h3>{{ m.title }} <span class="badge bg-primary">{{ m.name }}</span> </h3>
+            <h3><span class="badge bg-primary">{{ m.name }}</span> {{ m.title }} </h3>
+            <div class="ms-1 ps-3 border-start border-primary">
                 <p>{{ m.description|safe }}</p>
                 {% if m.get_childrens %}
-                    <ol>
-                        {% for m in m.get_childrens %}
-                        <li>
-                            <h4>{{ m.title }} <span class="badge bg-primary">{{ m.name }}</span> </h4>
+                    {% for m in m.get_childrens %}
+                        <h4><span class="badge bg-secondary">{{ m.name }}</span> {{ m.title }} </h4>
+                        <div class="ms-1 ps-3 border-start border-secondary">
                             <p>{{ m.description|safe }}</p>
                             {% if m.get_childrens %}
-                                <ol>
                                 {% if m.get_childrens %}
-                                    <ol>
                                         {% for m in m.get_childrens %}
-                                        <li>
-                                            <h5>{{ m.title }} <span class="badge bg-primary">{{ m.name }}</span> </h5>
-                                            <p>{{ m.description|safe }}</p>
-                                        </li>
+                                            <h5><span class="badge bg-info">{{ m.name }}</span> {{ m.title }} </h5>
+                                            <div class="ms-1 ps-3 border-start border-info">
+                                                <p>{{ m.description|safe }}</p>
+                                            </div>
                                     {% endfor %}
-                                    </ol>
                                 {% endif %}
-                                </ol>
                             {% endif %}
-                        </li>
+                        </div>
                     {% endfor %}
-                    </ol>
                 {% endif %}
-            </li>
+            </div>
         {% endfor %}
-        </ol>
     {% else %}
         <div class="alert alert-info" role="alert">
           No Measure defined for this policy.
