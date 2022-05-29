@@ -1,0 +1,83 @@
+- model: conformity.policy
+  fields:
+    name: Test policy
+    version: 1
+    publish_by: Oxomium
+    type: OTHER
+- model: conformity.measure
+  fields:
+    code: TEST
+    name: TEST
+    level: 0
+    order: 1
+    policy:
+    - Test policy
+    parent: null
+    title: Test policy
+    description: ''
+    is_parent: true
+- model: conformity.measure
+  fields:
+    code: A
+    name: NIST-A
+    level: 1
+    order: 1
+    policy:
+    - Test policy
+    parent:
+    - TEST
+    title: Titre A
+    description: ''
+    is_parent: true
+- model: conformity.measure
+  fields:
+    code: 1
+    name: NIST-A-1
+    level: 2
+    order: 1
+    policy:
+    - Test policy
+    parent:
+    - TEST-A
+    title: Measure A-1
+    description: This is the measure 1 of section A of Test policy.
+    is_parent: false
+- model: conformity.measure
+  fields:
+    code: 2
+    name: NIST-A-2
+    level: 2
+    order: 2
+    policy:
+    - Test policy
+    parent:
+    - TEST-A
+    title: Measure A-2
+    description: This is the measure 2 of section A of Test policy.
+    is_parent: false
+- model: conformity.measure
+  fields:
+    code: B
+    name: NIST-B
+    level: 1
+    order: 2
+    policy:
+    - Test policy
+    parent:
+    - TEST
+    title: Measure B
+    description: This is the measure B of Test policy.
+    is_parent: false
+- model: conformity.measure
+  fields:
+    code: C
+    name: NIST-C
+    level: 1
+    order: 3
+    policy:
+    - Test policy
+    parent:
+    - TEST
+    title: Measure C
+    description: This is the measure C of Test policy.
+    is_parent: false

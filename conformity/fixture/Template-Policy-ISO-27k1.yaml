@@ -1,0 +1,602 @@
+-   model: conformity.measure
+    id: '1'
+    fields:
+        code: 27K1
+        name: '27001'
+        level: '0'
+        order: '1'
+        policy: '13'
+        parent: ""
+        is_parent: 'True'
+        title: 'ISO/IEC 27001:2013'
+        description: 'Information security management systems — Requirements'
+-   model: conformity.measure
+    id: '2'
+    fields:
+        code: ISMS
+        name: '4'
+        level: '1'
+        order: '4'
+        policy: '13'
+        parent: '1'
+        is_parent: 'True'
+        title: 'Information Security Management System'
+        description: ""
+-   model: conformity.measure
+    id: '3'
+    fields:
+        code: '1'
+        name: '4,1'
+        level: '2'
+        order: '1'
+        policy: '13'
+        parent: '2'
+        is_parent: 'False'
+        title: 'Understanding the organization and its context'
+        description: 'The organization shall determine external and internal issues that are relevant to its purpose and that affect its ability to achieve the intended outcome(s) of its information security management system.'
+-   model: conformity.measure
+    id: '4'
+    fields:
+        code: '2'
+        name: '4,2'
+        level: '2'
+        order: '2'
+        policy: '13'
+        parent: '2'
+        is_parent: 'False'
+        title: 'Understanding the needs and expectations of interested parties'
+        description: 'The organization shall determine:
+            <ol type="a">
+            <li>interested parties that are relevant to the information security management system and</li>
+            <li>the requirements of these interested parties relevant to information security</li>'
+-   model: conformity.measure
+    id: '5'
+    fields:
+        code: '3'
+        name: '4,3'
+        level: '2'
+        order: '3'
+        policy: '13'
+        parent: '2'
+        is_parent: 'False'
+        title: 'Determining the scope of the information security management system'
+        description: 'The organization shall determine the boundaries and applicability of the information security management system to establish its scope.'
+-   model: conformity.measure
+    id: '6'
+    fields:
+        code: '4'
+        name: '4,4'
+        level: '2'
+        order: '4'
+        policy: '13'
+        parent: '2'
+        is_parent: 'False'
+        title: 'Information security management system'
+        description: 'The organization shall establish, implement, maintain and continually improve an information security management system, in accordance with the requirements of this International Standard.'
+-   model: conformity.measure
+    id: '7'
+    fields:
+        code: LSP
+        name: '5'
+        level: '1'
+        order: '5'
+        policy: '13'
+        parent: '1'
+        is_parent: 'True'
+        title: Leadership
+        description: ""
+-   model: conformity.measure
+    id: '8'
+    fields:
+        code: '1'
+        name: '5,1'
+        level: '2'
+        order: '1'
+        policy: '13'
+        parent: '7'
+        is_parent: 'False'
+        title: 'Leadership and commitment'
+        description: 'Management shall provide evidence of its commitment to the establishment, implementation, operation, monitoring, review, maintenance and improvement of the ISMS by:
+            <li>ensuring the information security policy and the information security objectives are established and are compatible with the strategic direction of the organization</li>
+            <li>ensuring the integration of the information security management system requirements into the organization’s processes</li>
+            <li>ensuring that the resources needed for the information security management system are available</li>
+            <li>communicating the importance of effective information security management and of conforming to the information security management system requirements</li>
+            <li>ensuring that the information security management system achieves its intended outcome(s)</li>
+            <li>directing and supporting persons to contribute to the effectiveness of the information security management system</li>
+            <li>promoting continual improvement and</li>
+            <li>supporting other relevant management roles to demonstrate their leadership as it applies to their areas of responsibility.</li>'
+-   model: conformity.measure
+    id: '9'
+    fields:
+        code: '2'
+        name: '5,2'
+        level: '2'
+        order: '2'
+        policy: '13'
+        parent: '7'
+        is_parent: 'False'
+        title: Policy
+        description: 'Top management shall establish an information security policy that:
+            <li>is appropriate to the purpose of the organization</li>
+            <li>includes information security objectives (see 6.2) or provides the framework for setting information security objectives</li>
+            <li>includes a commitment to satisfy applicable requirements related to information security and</li>
+            <li>includes a commitment to continual improvement of the information security management system.</li>
+            </ol>
+            The information security policy shall:
+            <ol type="a">
+            <li>be available as documented information</li>
+            <li>be communicated within the organization and</li>
+            <li>be available to interested parties, as appropriate</li>
+            </ol>'
+-   model: conformity.measure
+    id: '10'
+    fields:
+        code: '3'
+        name: '5,3'
+        level: '2'
+        order: '3'
+        policy: '13'
+        parent: '7'
+        is_parent: 'False'
+        title: 'Organizational roles, responsibilities and authorities'
+        description: 'Top management shall ensure that the responsibilities and authorities for roles relevant to information security are assigned and communicated.'
+-   model: conformity.measure
+    id: '11'
+    fields:
+        code: PLAN
+        name: '6'
+        level: '1'
+        order: '6'
+        policy: '13'
+        parent: '1'
+        is_parent: 'True'
+        title: Planning
+        description: ""
+-   model: conformity.measure
+    id: '12'
+    fields:
+        code: '1'
+        name: '6,1'
+        level: '2'
+        order: '1'
+        policy: '13'
+        parent: '11'
+        is_parent: 'True'
+        title: 'Actions to address risks and opportunities'
+        description: ""
+-   model: conformity.measure
+    id: '13'
+    fields:
+        code: '1'
+        name: 6.1.1
+        level: '3'
+        order: '1'
+        policy: '13'
+        parent: '12'
+        is_parent: 'False'
+        title: General
+        description: 'When planning for the information security management system, the organization shall consider the issues referred to in 4.1 and the requirements referred to in 4.2 and determine the risks and opportunities that need to be addressed to:
+            <ol type="a">
+            <li>ensure the information security management system can achieve its intended outcome(s)</li>
+            <li>prevent, or reduce, undesired effects and</li>
+            <li>achieve continual improvement</li>
+            <li>The organization shall plan actions to address these risks and opportunities and</li>
+            <li>The organization shall plan how to:</li>
+            <ol type="a">
+            1) integrate and implement these actions into its information security management system
+            processes and
+            2) evaluate the effectiveness of these actions.
+            </ol>
+            </ol>'
+-   model: conformity.measure
+    id: '14'
+    fields:
+        code: '2'
+        name: 6.1.2
+        level: '3'
+        order: '2'
+        policy: '13'
+        parent: '12'
+        is_parent: 'False'
+        title: 'Information security risk assessment'
+        description: 'The organization shall define and apply an information security risk assessment process that:
+            establishes and maintains information security risk criteria that include:
+            <ol type="a">
+            1) the risk acceptance criteria and
+            2) criteria for performing information security risk assessments
+            </ol>
+            ensures that repeated information security risk assessments produce consistent, valid and comparable results
+            identifies the information security risks:
+            <ol type="a">
+            1) apply the information security risk assessment process to identify risks associated with the loss of confidentiality, integrity and availability for information within the scope of the information security management system and
+            2) identify the risk owners
+            </ol>
+            analyses the information security risks:
+            <ol type="a">
+            1) assess the potential consequences that would result if the risks identified in 6.1.2 c) 1) were to materialize
+            2) assess the realistic likelihood of the occurrence of the risks identified in 6.1.2 c) 1) and
+            3) determine the levels of risk
+            </ol>
+            evaluates the information security risks:
+            <ol type="a">
+            1) compare the results of risk analysis with the risk criteria established in 6.1.2 a) and
+            2) prioritize the analyzed risks for risk treatment.
+            </ol>'
+-   model: conformity.measure
+    id: '15'
+    fields:
+        code: '3'
+        name: 6.1.3
+        level: '3'
+        order: '3'
+        policy: '13'
+        parent: '12'
+        is_parent: 'False'
+        title: 'Information security risk treatment'
+        description: 'The organization shall define and apply an information security risk treatment process to:
+            <ol type="a">
+            <li>select appropriate information security risk treatment options, taking account of the risk assessment results</li>
+            <li>determine all controls that are necessary to implement the information security risk treatment option(s) chosen</li>
+            <li>compare the controls determined in 6.1.3 (b) above with those in Annex A and verify that no necessary controls have been omitted</li>
+            <li>produce a Statement of Applicability that contains the necessary controls (see 6.1.3.b and c) and justification for inclusions, whether they are implemented or not, and the justification for exclusions of controls from Annex A</li>
+            <li>formulate an information security risk treatment plan and</li>
+            <li>obtain risk owners’ approval of the information security risk treatment plan and acceptance of the residual information security risks.</li>'
+-   model: conformity.measure
+    id: '16'
+    fields:
+        code: '2'
+        name: '6,2'
+        level: '2'
+        order: '2'
+        policy: '13'
+        parent: '11'
+        is_parent: 'False'
+        title: 'Information security objectives and plans to achieve them'
+        description: 'The organization shall establish information security objectives at relevant functions and levels.
+            The information security objectives shall:
+            <li>be consistent with the information security policy</li>
+            <li>be measurable (if practicable)</li>
+            <li>take into account applicable information security requirements, and risk assessment and risk treatment results</li>
+            <li>be communicated and</li>
+            <li>be updated as appropriate.</li>
+            When planning how to achieve its information security objectives, the organization shall determine:
+            <li>what will be done</li>
+            <li>what resources will be required</li>
+            <li>who will be responsible</li>
+            <li>when it will be completed and</li>
+            <li>how the results will be evaluated</li>.
+            </ol>'
+-   model: conformity.measure
+    id: '17'
+    fields:
+        code: SUP
+        name: '7'
+        level: '1'
+        order: '7'
+        policy: '13'
+        parent: '1'
+        is_parent: 'True'
+        title: Support
+        description: ""
+-   model: conformity.measure
+    id: '18'
+    fields:
+        code: '1'
+        name: '7,1'
+        level: '2'
+        order: '1'
+        policy: '13'
+        parent: '17'
+        is_parent: 'False'
+        title: Resources
+        description: 'The organization shall determine and provide the resources needed for the establishment, implementation, maintenance and continual improvement of the information security management system.'
+-   model: conformity.measure
+    id: '19'
+    fields:
+        code: '2'
+        name: '7,2'
+        level: '2'
+        order: '2'
+        policy: '13'
+        parent: '17'
+        is_parent: 'False'
+        title: Competence
+        description: 'The organization shall:
+            <ol type="a">
+            <li>determine the necessary competence of person(s) doing work under its control that affects its information security performance</li>
+            <li>ensure that these persons are competent on the basis of appropriate education, training, or experience</li>
+            <li>where applicable, take actions to acquire the necessary competence, and evaluate the effectiveness of the actions taken and</li>
+            <li>retain appropriate documented information as evidence of competence.</li>'
+-   model: conformity.measure
+    id: '20'
+    fields:
+        code: '3'
+        name: '7,3'
+        level: '2'
+        order: '3'
+        policy: '13'
+        parent: '17'
+        is_parent: 'False'
+        title: Awareness
+        description: 'Persons doing work under the organization’s control shall be aware of:
+            <li>the information security policy</li>
+            <li>their contribution to the effectiveness of the information security management system, including the benefits of improved information security performance and</li>
+            <li>the implications of not conforming with the information security management system requirements.</li>
+            </ol>'
+-   model: conformity.measure
+    id: '21'
+    fields:
+        code: '4'
+        name: '7,4'
+        level: '2'
+        order: '4'
+        policy: '13'
+        parent: '17'
+        is_parent: 'False'
+        title: Communication
+        description: 'The organization shall determine the need for internal and external communications relevant to the information security management system including:
+            <ol type="a">
+            <li>on what to communicate</li>
+            <li>when to communicate</li>
+            <li>with whom to communicate</li>
+            <li>who shall communicate and</li>
+            <li>the processes by which communication shall be effected.</li>
+            </ol>'
+-   model: conformity.measure
+    id: '22'
+    fields:
+        code: '5'
+        name: '7,5'
+        level: '2'
+        order: '5'
+        policy: '13'
+        parent: '17'
+        is_parent: 'True'
+        title: 'Documented information'
+        description: ""
+-   model: conformity.measure
+    id: '23'
+    fields:
+        code: '1'
+        name: 7.5.1
+        level: '3'
+        order: '1'
+        policy: '13'
+        parent: '22'
+        is_parent: 'False'
+        title: General
+        description: 'The organization’s information security management system shall include:
+            <ol type="a">
+            <li>documented information required by this International Standard and</li>
+            <li>documented information determined by the organization as being necessary for the effectiveness of the information security management system.</li>
+            </ol>'
+-   model: conformity.measure
+    id: '24'
+    fields:
+        code: '2'
+        name: 7.5.2
+        level: '3'
+        order: '2'
+        policy: '13'
+        parent: '22'
+        is_parent: 'False'
+        title: 'Creating and updating'
+        description: 'When creating and updating documented information the organization shall ensure appropriate:
+            <ol type="a">
+            <li>identification and description (e.g. a title, date, author, or reference number)</li>
+            <li>format (e.g. language, software version, graphics) and media (e.g. paper, electronic) and</li>
+            <li>review and approval for suitability and adequacy.</li>
+            </ol>'
+-   model: conformity.measure
+    id: '25'
+    fields:
+        code: '3'
+        name: 7.5.3
+        level: '3'
+        order: '3'
+        policy: '13'
+        parent: '22'
+        is_parent: 'False'
+        title: 'Control of documented information'
+        description: 'Documented information required by the information security management system and by this International Standard shall be controlled to ensure:
+            <ol type="a">
+            <li>it is available and suitable for use, where and when it is needed and</li>
+            <li>it is adequately protected (e.g. from loss of confidentiality, improper use, or loss of integrity).</li>
+            </ol>
+            For the control of documented information, the organization shall address the following activities, as applicable:
+            <ol type="a">
+            <li>distribution, access, retrieval and use</li>
+            <li>storage and preservation, including the preservation of legibility</li>
+            <li>control of changes (e.g. version control) and</li>
+            <li>retention and disposition.</li>
+            </ol>
+            Documented information of external origin, determined by the organization to be necessary for the planning and operation of the information security management system, shall be identified as appropriate, and controlled.
+            Documented information of external origin, determined by the organization to be necessary for the planning and operation of the information security management system, shall be identified as appropriate, and controlled.'
+-   model: conformity.measure
+    id: '26'
+    fields:
+        code: OPS
+        name: '8'
+        level: '1'
+        order: '8'
+        policy: '13'
+        parent: '1'
+        is_parent: 'True'
+        title: Operation
+        description: ""
+-   model: conformity.measure
+    id: '27'
+    fields:
+        code: '1'
+        name: '8,1'
+        level: '2'
+        order: '1'
+        policy: '13'
+        parent: '26'
+        is_parent: 'False'
+        title: 'Operational planning and control'
+        description: 'The organization shall plan, implement and control the processes needed to meet information security requirements, and to implement the actions determined in 6.1. The organization shall also implement plans to achieve information security objectives determined in 6.2.
+            The organization shall keep documented information to the extent necessary to have confidence that the processes have been carried out as planned.
+            The organization shall control planned changes and review the consequences of unintended changes, taking action to mitigate any adverse effects, as necessary.
+            The organization shall ensure that outsourced processes are determined and controlled.'
+-   model: conformity.measure
+    id: '28'
+    fields:
+        code: '2'
+        name: '8,2'
+        level: '2'
+        order: '2'
+        policy: '13'
+        parent: '26'
+        is_parent: 'False'
+        title: 'Information security risk assessment'
+        description: 'The organization shall perform information security risk assessments at planned intervals or when significant changes are proposed or occur, taking account of the criteria established in 6.1.2.a.
+            The organization shall retain documented information of the results of the information security risk assessments.'
+-   model: conformity.measure
+    id: '29'
+    fields:
+        code: '3'
+        name: '8,3'
+        level: '2'
+        order: '3'
+        policy: '13'
+        parent: '26'
+        is_parent: 'False'
+        title: 'Information security risk treatment'
+        description: 'The organization shall implement the information security risk treatment plan.
+            The organization shall retain documented information of the results of the information security risk treatment.'
+-   model: conformity.measure
+    id: '30'
+    fields:
+        code: PERF
+        name: '9'
+        level: '1'
+        order: '9'
+        policy: '13'
+        parent: '1'
+        is_parent: 'True'
+        title: 'Performance evaluation'
+        description: ""
+-   model: conformity.measure
+    id: '31'
+    fields:
+        code: '1'
+        name: '9,1'
+        level: '2'
+        order: '1'
+        policy: '13'
+        parent: '30'
+        is_parent: 'False'
+        title: 'Monitoring, measurement, analysis and evaluation'
+        description: 'The organization shall evaluate the information security performance and the effectiveness of the information security management system. The organization shall determine:
+            <ol type="a">
+            <li>what needs to be monitored and measured, including information security processes and controls</li>
+            <li>the methods for monitoring, measurement, analysis and evaluation, as applicable, to ensure valid results</li>
+            <li>when the monitoring and measuring shall be performed</li>
+            <li>who shall monitor and measure</li>
+            <li>when the results from monitoring and measurement shall be analyzed and evaluated and</li>
+            <li>who shall analyze and evaluate these results.</li>
+            </ol>'
+-   model: conformity.measure
+    id: '32'
+    fields:
+        code: '2'
+        name: '9,2'
+        level: '2'
+        order: '2'
+        policy: '13'
+        parent: '30'
+        is_parent: 'False'
+        title: 'Internal audit'
+        description: 'The organization shall conduct internal audits at planned intervals to provide information on whether the information security management system:
+            <ol type="a">
+            <li>conforms to</li>
+            <ol type="a">
+            1) the organization’s own requirements for its information security management system and
+            2) the requirements of this International Standard
+            </ol>
+            <li>is effectively implemented and maintained.</li>
+            The organization shall:
+            <li>plan, establish, implement and maintain an audit programme(s), including the frequency, methods, responsibilities, planning requirements and reporting. The audit programme(s) shall take into consideration the importance of the processes concerned and the results of previous audits</li>
+            <li>define the audit criteria and scope for each audit</li>
+            <li>select auditors and conduct audits that ensure objectivity and the impartiality of the audit process</li>
+            <li>ensure that the results of the audits are reported to relevant management and</li>
+            <li>retain documented information as evidence of the audit programme(s) and the audit results.</li>
+            >/ol>'
+-   model: conformity.measure
+    id: '33'
+    fields:
+        code: '3'
+        name: '9,3'
+        level: '2'
+        order: '3'
+        policy: '13'
+        parent: '30'
+        is_parent: 'False'
+        title: 'Management review'
+        description: 'Top management shall review the organization’s information security management system at planned intervals to ensure its continuing suitability, adequacy and effectiveness. The management review shall include consideration of:
+            <ol type="a">
+            <li>the status of actions from previous management reviews</li>
+            <li>changes in external and internal issues that are relevant to the information security management system</li>
+            <li>feedback on the information security performance, including trends in:</li>
+            1) nonconformities and corrective actions
+            2) monitoring and measurement results
+            3) audit results and
+            4) fulfilment of information security objectives
+            <li>feedback from interested parties</li>
+            <li>results of risk assessment and status of risk treatment plan and</li>
+            <li>opportunities for continual improvement.</li>
+            </ol>
+            The outputs of the management review shall include decisions related to continual improvement opportunities and any needs for changes to the information security management system. The organization shall retain documented information as evidence of the results of management reviews.'
+-   model: conformity.measure
+    id: '34'
+    fields:
+        code: IMP
+        name: '10'
+        level: '1'
+        order: '10'
+        policy: '13'
+        parent: '1'
+        is_parent: 'True'
+        title: Improvement
+        description: ""
+-   model: conformity.measure
+    id: '35'
+    fields:
+        code: '1'
+        name: '10,1'
+        level: '2'
+        order: '1'
+        policy: '13'
+        parent: '34'
+        is_parent: 'False'
+        title: 'Nonconformity and corrective action'
+        description: 'When a nonconformity occurs, the organization shall:
+            <ol type="a">
+            <li>react to the nonconformity, and as applicable:</li>
+            1) take action to control and correct it and
+            2) deal with the consequences
+            <li>evaluate the need for action to eliminate the causes of nonconformity, in order that it does not recur or occur elsewhere, by:</li>
+            1) reviewing the nonconformity
+            2) determining the causes of the nonconformity and
+            3) determining if similar nonconformities exist, or could potentially occur
+            <li>implement any action needed</li>
+            <li>review the effectiveness of any corrective action taken and</li>
+            <li>make changes to the information security management system, if necessary.</li>
+            Corrective actions shall be appropriate to the effects of the nonconformities encountered. The organization shall retain documented information as evidence of:
+            <li>the nature of the nonconformities and any subsequent actions taken, and</li>
+            <li>the results of any corrective action.</li>
+            </ol>'
+-   model: conformity.measure
+    id: '36'
+    fields:
+        code: '2'
+        name: '10,2'
+        level: '2'
+        order: '2'
+        policy: '13'
+        parent: '34'
+        is_parent: 'False'
+        title: 'Continual improvement'
+        description: 'The organization shall continually improve the suitability, adequacy and effectiveness of the information security management system.'
+        id: ""
