@@ -8,7 +8,7 @@ from .models import *
 class ConformityForm(ModelForm):
     class Meta:
         model = Conformity
-        fields = ['responsible','status', 'comment']
+        fields = ['applicable', 'responsible','status', 'comment']
 
 class OrganizationForm(ModelForm):
     class Meta:

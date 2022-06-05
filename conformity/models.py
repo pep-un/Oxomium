@@ -175,6 +175,7 @@ class Conformity(models.Model):
     """
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
     measure = models.ForeignKey(Measure, on_delete=models.CASCADE)
+    applicable = models.BooleanField(default=True)
     status = models.IntegerField(default=0,
                                  validators=[MinValueValidator(0), MaxValueValidator(100)])
     responsible = models.ForeignKey(settings.AUTH_USER_MODEL,
@@ -214,7 +215,7 @@ class Conformity(models.Model):
         """Update the status and call recursive update function"""
         self.status = i
         self.save()
-        self.status_update()
+        self.update()
 
     def set_responsible(self, resp):
         """Update the responsible and apply to child"""
@@ -223,18 +224,27 @@ class Conformity(models.Model):
         for child in self.get_children():
             child.set_responsible(resp)
 
-    def status_update(self):
+    def update(self):
         """Recursive function to crawl up the Measure tree and update all status"""
-        childrens = self.get_children()
-        child_stat = []
-        if childrens.exists():
-            for child in childrens:
-                child_stat.append(child.status)
-            self.status = mean(child_stat)
-            self.save()
+        children_list = self.get_children()
+        children_stat = []
+        if children_list.exists():
+            for child in children_list:
+                if child.applicable:
+                    children_stat.append(child.status)
+
+            if len(children_stat):
+                self.status = mean(children_stat)
+                self.applicable = True
+            else:
+                self.status = 0
+                self.applicable = False
+#       else:
+#           this is a leaf of the tree, no action to do other than save teh data
+        self.save()
 
         if not self.measure.level == 0:
-            self.get_parent()[0].status_update()
+            self.get_parent()[0].update()
 
 
 # Callback functions
