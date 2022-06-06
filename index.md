@@ -1,37 +1,31 @@
-## Welcome to GitHub Pages
+## Oxomium
 
-You can use the [editor on GitHub](https://github.com/pep-un/Oxomium/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
+Oxomium has been disigned to help cybersecuirty team to handle the conformity of Organizations to standard or internal policy.
+It has been design to be simple to use and avoid compex spreadsheet. 
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+Oxomium is provided with a basic set of features at firest but will be extanded with time. 
 
-### Markdown
+The OpenSource oaspect is fondamental for me and will (I hop) help to improve the tool quickly with the feedback of several users. 
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+### Conformity management
 
-```markdown
-Syntax highlighted code block
+Today, the tool is capable to help you to manage your conformity to a policy.
+The policy could be a default one (ISO27001 and NIST are provided) or your own policy. 
 
-# Header 1
-## Header 2
-### Header 3
+### Roadmap
 
-- Bulleted
-- List
+I have plan a road map to improve the tool progressibly. I will use the GitHub milstones to show the progress of the developement. 
 
-1. Numbered
-2. List
+The plan for the next vertion is the following:
 
-**Bold** and _Italic_ and `Code` text
+1. Simple Conformity management with ISO27001 and NIST sample dataset.
+2. Support of Action Plan 
+3. Executive dashbord and email notification for deadline management
+4. Security survey for external suplyer (with magic link)
+5. Support of manual Indicator (KPI)
+6. Support of automatic Indicator with automatic data gatering from API
 
-[Link](url) and ![Image](src)
-```
+### Contact
 
-For more details see [Basic writing and formatting syntax](https://docs.github.com/en/github/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/pep-un/Oxomium/settings/pages). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://support.github.com/contact) and we’ll help you sort it out.
+For any issue related to the project, pleas don't easitate to reatch me with GitHub issue !
+All help can be usefull, event a simple user feedback. 
