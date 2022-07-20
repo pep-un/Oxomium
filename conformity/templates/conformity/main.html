@@ -24,17 +24,18 @@
             </a>
             <div class="dropdown mx-2">
                 <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
-                    {{request.user.first_name}} {{request.user.last_name}}
+                    <i class="bi bi-person-circle"></i>
+                    {{request.user.username}}
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark" aria-labelledby="dropdownMenuButton1">
-                    <li><span class="dropdown-item disabled text-primary"><i class="bi bi-person-fill"> {{request.user.username}}</i> </span></li>
+                    <li><span class="dropdown-item disabled text-primary"><i class="bi bi-person-fill"> {{request.user.first_name}} {{request.user.last_name}} </i> </span></li>
                     <li><span class="dropdown-item disabled text-primary"><i class="bi bi-envelope-fill"> {{request.user.email}}</i> </span></li>
                     <li><hr class="dropdown-divider text-primary"></li>
                     <li><a class="dropdown-item" href="/admin/"><i class="bi bi-gear-fill"></i> Django backend</a></li>
                     <li><a class="dropdown-item" href="{% url 'logout' %}">Log out</a></li>
                 </ul>
             </div>
-            <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+            <button class="navbar-toggler d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
         </header>

@@ -5,9 +5,8 @@
 {% endblock %}
 
 {% block content %}
-<p>On the record today: </p>
 <div class="row d-flex justify-content-evenly">
-    <div class="col-3">
+    <div class="col-lg-4">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-start">
                 <h5 class="my-0 "><i class="bi bi-card-checklist"></i> Policy</h5>
@@ -22,7 +21,7 @@
         </div>
     </div>
 
-    <div class="col-3">
+    <div class="col-lg-4">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-start">
                 <h5 class="my-0"><i class="bi bi-building"></i> Organization</h5>
@@ -37,10 +36,10 @@
         </div>
     </div>
 
-    <div class="col-3">
+    <div class="col-lg-4">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-start">
-                <h5 class="my-0"><i class="bi bi-clipboard2-check"></i> Conformity</h5>
+                <h5 class="my-0"><i class="bi bi-shield-shaded"></i> Conformity</h5>
                 <span class="badge bg-primary rounded-pill">{{conformity_list|length}}</span>
             </div>
             <ul class="list-group list-group-flush">
