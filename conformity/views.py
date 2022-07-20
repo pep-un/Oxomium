@@ -1,31 +1,53 @@
-'''
+"""
 View of the Conformity Module
-'''
+"""
 from django.views import generic
-from django.views.generic.edit import UpdateView
+from django.views.generic.edit import UpdateView, CreateView, DeleteView
 from django.shortcuts import render
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from .forms import *
+
 
 #
 # Home
 #
 @login_required
 def home(request):
-    '''View function for home page'''
-
+    """View function for home page"""
     organization_list = Organization.objects.all()
     policy_list = Policy.objects.all()
     conformity_list = Conformity.objects.filter(measure__level=0)
 
     context = {
-        'organization_list' : organization_list,
-        'policy_list' : policy_list,
-        'conformity_list' : conformity_list,
+        'organization_list': organization_list,
+        'policy_list': policy_list,
+        'conformity_list': conformity_list,
     }
 
     return render(request, 'home.html', context=context)
+
+
+#
+# Audit
+#
+class AuditIndexView(LoginRequiredMixin, generic.ListView):
+    model = Audit
+    ordering = ['start_date']
+
+
+class AuditDetailView(LoginRequiredMixin, generic.DetailView):
+    model = Audit
+
+
+class AuditUpdateView(UpdateView):
+    model = Audit
+    form_class = AuditForm
+
+
+class AuditCreateView(CreateView):
+    model = Audit
+    form_class = AuditForm
 
 #
 # Organizations
@@ -42,6 +64,15 @@ class OrganizationDetailView(LoginRequiredMixin, generic.ListView):
     def get_queryset(self, **kwargs):
         return Conformity.objects.filter(organization__id=self.kwargs['pk'])
 
+
+class OrganizationUpdateView(UpdateView):
+    model = Organization
+    form_class = OrganizationForm
+
+
+class OrganizationCreateView(CreateView):
+    model = Organization
+    form_class = OrganizationForm
 
 #
 # Policy
@@ -83,7 +114,3 @@ class ConformityUpdateView(UpdateView):
         form.instance.set_status(form.cleaned_data['status'])
         return super().form_valid(form)
 
-
-class OrganizationView(UpdateView):
-    model = Organization
-    form_class = OrganizationForm
