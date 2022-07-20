@@ -270,3 +270,109 @@ def change_policy(instance, action, pk_set, *args, **kwargs):
     if action == "post_remove":
         for pk in pk_set:
             instance.remove_conformity(pk)
+
+class Audit(models.Model):
+    """
+    Audit class represent the auditing event, on an Organization.
+    A Audit is a colections of findings.
+    """
+    class Type(models.TextChoices):
+        """ List of the Type of audit """
+        INTERNAL = 'INT', _('Internal Audit')
+        CUSTOMER = 'CUS', _('Customer Audit')
+        AUTHORITY = 'NAT', _('National Authority')
+        AUDITOR = 'AUD', _('3rd party auditor')
+        OTHER = 'OTHER', _('Other')
+
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
+    description = models.CharField(max_length=4096)
+    conclusion = models.CharField(max_length=4096)
+    auditor = models.CharField(max_length=256)
+    audited_policies = models.ManyToManyField(Policy, blank=True)
+    start_date = models.DateField()
+    end_date = models.DateField()
+    report_date = models.DateField()
+    type = models.CharField(
+        max_length=5,
+        choices=Type.choices,
+        default=Type.OTHER,
+    )
+
+    class Meta:
+        ordering = ['report_date']
+
+    #def __str__(self):
+    #    return str(self.organization + " audit on the " + self.report_date)
+
+    @staticmethod
+    def get_absolute_url():
+        """return the absolute URL for Forms, could probably do better"""
+        return reverse('conformity:audit_index')
+
+    def get_policies(self):
+        """return all Policy within the Audit scope"""
+        return self.audited_policies.all()
+
+    def get_type(self):
+        """return the readable version of the Audit Type"""
+        return self.Type(self.type).label
+
+    def get_findings(self):
+        """return all the findings associated to an Audit"""
+        return Finding.objects.filter(audit=self.id)
+
+    def get_findings_number(self):
+        """return the number of findings associated to an Audit"""
+        return Finding.objects.filter(audit=self.id).count()
+
+    def get_critical_findings(self):
+        """return critical findings associated to an Audit"""
+        return Finding.objects.filter(audit=self.id).filter(severity=Finding.Severity.CRITICAL)
+
+    def get_major_findings(self):
+        """return major findings associated to an Audit"""
+        return Finding.objects.filter(audit=self.id).filter(severity=Finding.Severity.MAJOR)
+
+    def get_minor_findings(self):
+        """return minor findings associated to an Audit"""
+        return Finding.objects.filter(audit=self.id).filter(severity=Finding.Severity.MINOR)
+
+    def get_observation_findings(self):
+        """return observational findings associated to an Audit"""
+        return Finding.objects.filter(audit=self.id).filter(severity=Finding.Severity.OBSERVATION)
+
+    def get_positive_findings(self):
+        """return positive findings associated to an Audit"""
+        return Finding.objects.filter(audit=self.id).filter(severity=Finding.Severity.POSITIVE)
+
+    def get_other_findings(self):
+        """return other findings associated to an Audit"""
+        return Finding.objects.filter(audit=self.id).filter(severity=Finding.Severity.OTHER)
+
+
+class Finding(models.Model):
+    """
+    Finding class represent the element discover during and Audit.
+    """
+    class Severity(models.TextChoices):
+        """ List of the Type of audit """
+        CRITICAL = 'CRIT', _('Critical non-conformity')
+        MAJOR = 'MAJ', _('Major non-conformity')
+        MINOR = 'MIN', _('Minor non-conformity')
+        OBSERVATION = 'OBS', _('Observation or Opportunity For Improvement')
+        POSITIVE = 'POS', _('Positive element')
+        OTHER = 'OTHER', _('Other remark')
+
+    short_description = models.CharField(max_length=256)
+    description = models.CharField(max_length=4096)
+    reference = models.CharField(max_length=4096)
+    audit = models.ForeignKey(Audit, on_delete=models.CASCADE)
+    severity = models.CharField(
+        max_length=5,
+        choices=Severity.choices,
+        default=Severity.OBSERVATION,
+    )
+
+    def get_severity(self):
+        """return the readable version of the Findings Severity"""
+        return self.Severity(self.severity).label

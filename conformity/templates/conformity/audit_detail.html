@@ -1,0 +1,127 @@
+{% extends "conformity/main.html" %}
+
+{% block header %}
+    <h1 class="h2 bi bi-ui-checks-grid"> Audit of {{ audit.organization }} by {{ audit.auditor }} on the {{ audit.report_date }}</h1>
+{% endblock %}
+
+{% block content %}
+    <h2 class="h4">Audit information</h2>
+    <p>{{ audit.get_type }} realized by {{ audit.auditor }} from {{ audit.start_date }} to {{ audit.end_date }}.</p>
+    <p>The following policies were within the audit scop : </p>
+    <ul>
+        {% for policy in audit.get_policies %}
+            <li>{{ policy }}</li>
+        {% empty %}
+            <li>No policy within the audit scop.</li>
+        {% endfor %}
+    </ul>
+
+    <h2 class="h4">Audit description</h2>
+    <p> {{ audit.description }} </p>
+
+    <h2 class="h4">Audit conclusion</h2>
+    <p> {{ audit.conclusion }} </p>
+
+    <h2 class="h4">Audit findings</h2>
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card bg-dark text-white">
+                <div class="card-header position-relative"> Critical non-conformity
+                    <span class="badge bg-light text-black position-absolute top-50 end-0 translate-middle-y me-3"> {{ audit.get_critical_findings | length }} </span>
+                </div>
+                <ul class="list-group list-group-flush">
+                    {% for finding in audit.get_critical_findings %}
+                        <a href="#" class="list-group-item list-group-item-dark"> {{ finding.short_description }} </a>
+                    {% empty %}
+                        <li class="list-group-item bi-check2-circle"> No critical finding !</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <br />
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-danger text-white">
+                <div class="card-header position-relative"> Major non-conformity
+                    <span class="badge bg-light text-black position-absolute top-50 end-0 translate-middle-y me-3"> {{ audit.get_major_findings | length }} </span>
+                </div>
+                <ul class="list-group list-group-flush">
+                    {% for finding in audit.get_major_findings %}
+                        <a href="#" class="list-group-item list-group-item-danger"> {{ finding.short_description }} </a>
+                    {% empty %}
+                        <li class="list-group-item bi-check2-circle"> No major findings !</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <br />
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-warning text-white">
+                <div class="card-header position-relative"> Minor non-conformity
+                    <span class="badge bg-light text-black position-absolute top-50 end-0 translate-middle-y me-3"> {{ audit.get_minor_findings | length }} </span>
+                </div>
+                <ul class="list-group list-group-flush">
+                    {% for finding in audit.get_minor_findings %}
+                        <a href="#" class="list-group-item list-group-item-warning"> {{ finding.short_description }} </a>
+                    {% empty %}
+                        <li class="list-group-item bi-check2-circle"> No minor findings ! </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <br />
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-info text-white">
+                <div class="card-header position-relative"> Opportunity for improvement
+                    <span class="badge bg-light text-black position-absolute top-50 end-0 translate-middle-y me-3"> {{ audit.get_observation_findings | length }} </span>
+                </div>
+                <ul class="list-group list-group-flush">
+                    {% for finding in audit.get_observation_findings %}
+                        <a href="#" class="list-group-item list-group-item-info"> {{ finding.short_description }} </a>
+                    {% empty %}
+                        <li class="list-group-item"> No observations.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <br />
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-secondary text-white">
+                <div class="card-header position-relative"> Remark
+                    <span class="badge bg-light text-black position-absolute top-50 end-0 translate-middle-y me-3"> {{ audit.get_other_findings | length }} </span>
+                </div>
+                <ul class="list-group list-group-flush">
+                    {% for finding in audit.get_other_findings %}
+                        <a href="#" class="list-group-item list-group-item-secondary"> {{ finding.short_description }} </a>
+                    {% empty %}
+                        <li class="list-group-item"> No other remark.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <br />
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-header position-relative"> Positive finding
+                    <span class="badge bg-light text-black position-absolute top-50 end-0 translate-middle-y me-3"> {{ audit.get_positive_findings | length }} </span>
+                </div>
+                <ul class="list-group list-group-flush">
+                    {% for finding in audit.get_positive_findings %}
+                        <a href="#" class="list-group-item list-group-item-positive"> {{ finding.short_description }} </a>
+                    {% empty %}
+                        <li class="list-group-item"> No positive finding.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <br />
+        </div>
+    </div>
+
+    <br />
+
+    <a href="{% url 'conformity:audit_form' audit.id %}">
+        <button type="button" class="btn btn-primary bi bi-pencil-square"> Edit the audit</button>
+    </a>
+
+    <br />
+
+{% endblock %}

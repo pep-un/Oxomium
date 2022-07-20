@@ -1,0 +1,60 @@
+{% extends "conformity/main.html" %}
+
+{% block header %}
+    <h1 class="h1 bi bi-ui-checks-grid"> Audits</h1>
+{% endblock %}
+
+{% block content %}
+<table class="table table-striped align-middle">
+    <thead>
+        <tr>
+            <th class="">Organization</th>
+            <th class="">Auditor</th>
+            <th class="">Type</th>
+            <th class="">Start</th>
+            <th class="">End</th>
+            <th class="text-center">Findings</th>
+            <th class="text-center">Edit</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for audit in audit_list %}
+        <tr>
+            <td class="col">
+                {{ audit.organization }}
+            </td>
+            <td class="col-2">
+                {{ audit.auditor }}
+            </td>
+            <td class="col-2">
+                {{ audit.get_type }}
+            </td>
+            <td class="col-2">
+                {{ audit.start_date }}
+            </td>
+            <td class="col-2">
+                {{ audit.end_date }}
+            </td>
+            <td class="col-2 text-center">
+                <a href="{% url 'conformity:audit_detail' audit.id %}">
+                    <button type="button" class="btn btn-primary btn-sm">{{ audit.get_findings_number }} Findings</button>
+                </a>
+            </td>
+            <td class="text-center">
+                <a href="{% url 'conformity:audit_form' audit.id %}" class="bi bi-pencil-square"></a>
+            </td>
+        </tr>
+    {% empty %}
+        <div class="alert alert-info" role="alert">
+            No audit recorded.
+        </div>
+        <tr><td colspan="7">No data to display</td></tr>
+    {% endfor %}
+        <tr><td colspan="7" class="text-center">
+            <br />
+            <a href="{% url 'conformity:audit_create' %}">
+                <button type="button" class="btn btn-success bi bi-plus-circle"> Register a new audit</button>
+            </a>
+        </td></tr>
+</table>
+{% endblock %}
