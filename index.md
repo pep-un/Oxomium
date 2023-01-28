@@ -9,24 +9,31 @@ The OpenSource oaspect is fondamental for me and will (I hop) help to improve th
 
 ### Conformity management
 
-Oxomium is able to help you to track the conformity of organisationq to security policy.
+Oxomium is able to help you to track the conformity of organisation to security policy.
 The policy could be a default one (ISO27001 and NIST are provided) or your own policy. 
+
+![screenshot of policy description](policy.png) *Screenshot of the ISO27001 policy description*
+
+![screenshot of a conformity page](conformity.png) *Screenshot of the conformity of the Alpha organisation to ISO27001 policy*
 
 ### Audit management
 
 Oxomium allow you to register your audit and the indings associated. 
+
+![screenshot of a audit description](audit.png) *Screenshot of an audit summary infludings findings synthesis*
 
 ### Roadmap
 
 I have plan a road map to improve the tool progressibly. I will use the GitHub milstones to show the progress of the developement. 
 
 The plan for the next vertion is the following:
-
-1. Support of Actions and Actions Plan  attatche to an andit finginds, a non-conformity (or both). 
-2. Executive dashbord and email notification for deadline management.
-3. Security survey for external suplyer (with magic link).
-4. Support of manual Indicator (KPI).
-5. Support of automatic Indicator with automatic data gatering from API.
+- [x] Add default dataset for ISO27001 and NIST policy
+- [x] Management of the audit findings
+- [ ] Support of Actions and Actions Plan  attatche to an andit finginds, a non-conformity (or both). 
+- [ ] Executive dashbord and email notification for deadline management.
+- [ ] Security survey for external suplyer (with magic link).
+- [ ] Support of manual Indicator (KPI).
+- [ ] Support of automatic Indicator with automatic data gatering from API.
 
 ### Contact
 
