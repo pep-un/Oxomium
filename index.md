@@ -7,10 +7,14 @@ Oxomium is provided with a basic set of features at firest but will be extanded 
 
 The OpenSource oaspect is fondamental for me and will (I hop) help to improve the tool quickly with the feedback of several users. 
 
-### Conformity management
+### Conformity managment
 
-Today, the tool is capable to help you to manage your conformity to a policy.
+Oxomium is able to help you to track the conformity of organisationq to security policy.
 The policy could be a default one (ISO27001 and NIST are provided) or your own policy. 
+
+### Audit managment
+
+Oxomium allow you to register your audit and the indings associated. 
 
 ### Roadmap
 
@@ -18,12 +22,11 @@ I have plan a road map to improve the tool progressibly. I will use the GitHub m
 
 The plan for the next vertion is the following:
 
-1. Simple Conformity management with ISO27001 and NIST sample dataset.
-2. Support of Action Plan 
-3. Executive dashbord and email notification for deadline management
-4. Security survey for external suplyer (with magic link)
-5. Support of manual Indicator (KPI)
-6. Support of automatic Indicator with automatic data gatering from API
+1. Support of Actions and Actions Plan  attatche to an andit finginds, a non-conformity (or both). 
+2. Executive dashbord and email notification for deadline management.
+3. Security survey for external suplyer (with magic link).
+4. Support of manual Indicator (KPI).
+5. Support of automatic Indicator with automatic data gatering from API.
 
 ### Contact
 
