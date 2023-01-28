@@ -7,12 +7,12 @@ Oxomium is provided with a basic set of features at firest but will be extanded 
 
 The OpenSource oaspect is fondamental for me and will (I hop) help to improve the tool quickly with the feedback of several users. 
 
-### Conformity managment
+### Conformity management
 
 Oxomium is able to help you to track the conformity of organisationq to security policy.
 The policy could be a default one (ISO27001 and NIST are provided) or your own policy. 
 
-### Audit managment
+### Audit management
 
 Oxomium allow you to register your audit and the indings associated. 
 
