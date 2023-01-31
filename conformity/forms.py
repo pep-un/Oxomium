@@ -12,6 +12,12 @@ class ConformityForm(LoginRequiredMixin, ModelForm):
         model = Conformity
         fields = ['applicable', 'responsible', 'status', 'comment']
 
+    def __init__(self, *args, **kwargs):
+        super(ConformityForm, self).__init__(*args, **kwargs)
+        if self.instance.get_children().exists():
+            self.fields['status'].widget.attrs['readonly'] = True
+            self.fields['status'].widget.attrs['title'] = 'This field is calculated from children.'
+
 
 class OrganizationForm(LoginRequiredMixin, ModelForm):
     class Meta:
