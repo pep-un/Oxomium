@@ -1,0 +1,56 @@
+{% extends "conformity/main.html" %}
+
+{% block header %}
+    <h1 class="h2 bi bi-ui-checks-grid">
+        Finding "{{ finding.short_description }}"
+        {% if finding.severity == "CRT" %}
+            <span class="badge rounded-pill bg-dark">Critical</span>
+        {% endif %}
+        {% if finding.severity == "MAJ" %}
+            <span class="badge rounded-pill bg-danger">Major</span>
+        {% endif %}
+        {% if finding.severity == "MIN" %}
+            <span class="badge rounded-pill bg-warning">Minor</span>
+        {% endif %}
+        {% if finding.severity == "OBS" %}
+            <span class="badge rounded-pill bg-info">Opportunity</span>
+        {% endif %}
+        {% if finding.severity == "OTHER" %}
+            <span class="badge rounded-pill bg-secondary">Remark</span>
+        {% endif %}
+        {% if finding.severity == "POS" %}
+            <span class="badge rounded-pill bg-success">Positive</span>
+        {% endif %}
+    </h1>
+{% endblock %}
+
+{% block content %}
+    <h2 class="h4">Audit information</h2>
+    <p>{{ finding.audit.get_type }} realized by {{ finding.audit.auditor }} on {{ finding.audit.organization }} from {{ finding.audit.start_date }} to {{ finding.audit.end_date }}.</p>
+    <p>The following policies were within the audit scope : </p>
+    <ul>
+        {% for policy in finding.audit.get_policies %}
+            <li>{{ policy }}</li>
+        {% empty %}
+            <li>No policy within the audit scope.</li>
+        {% endfor %}
+    </ul>
+
+    <h2 class="h4">Full description</h2>
+    <p> {{ finding.description }} </p>
+
+    <h2 class="h4">reference conclusion</h2>
+    <p> {{ finding.reference }} </p>
+
+    <br />
+
+    <a href="{% url 'conformity:finding_edit' finding.id %}">
+        <button type="button" class="btn btn-primary bi bi-pencil-square"> Edit the finding</button>
+    </a>
+
+    <a href="#">
+        <button type="button" class="btn btn-success bi bi-plus-circle" disabled> Register a corrective action</button>
+    </a>
+
+    <br />
+{% endblock %}

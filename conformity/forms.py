@@ -4,7 +4,6 @@ Forms for front-end editing of Models instance
 
 from django.forms import ModelForm
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.admin import widgets
 from .models import *
 
 
@@ -35,6 +34,5 @@ class AuditForm(LoginRequiredMixin, ModelForm):
 class FindingForm(LoginRequiredMixin, ModelForm):
     class Meta:
         model = Finding
-        fields = ['audit','severity','short_description','description','reference']
-
-        #TODO add a preselction an a disable selector for audit when the form is open from an audit.
+        fields = ['audit', 'severity', 'short_description', 'description', 'reference']
+        # TODO add a preselection and a disable selector for 'audit' field when the form is open from an audit.

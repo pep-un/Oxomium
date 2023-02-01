@@ -3,7 +3,6 @@ Conformity module manage all the manual declarative aspect of conformity managem
 It's Organized around Organization, Policy, Measure and Conformity classes.
 """
 
-import logging
 from statistics import mean
 from django.db import models
 from django.db.models.signals import m2m_changed, pre_save
@@ -33,7 +32,7 @@ class Policy(models.Model):
         INTERNATIONAL = 'INT', _('International Standard')
         NATIONAL = 'NAT', _('National Standard')
         TECHNICAL = 'TECH', _('Technical Standard')
-        RECOMANDATION = 'RECO', _('Technical Recomandation')
+        RECOMMENDATION = 'RECO', _('Technical Recommendation')
         POLICY = 'POL', _('Internal Policy')
         OTHER = 'OTHER', _('Other')
 
@@ -56,7 +55,7 @@ class Policy(models.Model):
         return str(self.name)
 
     def natural_key(self):
-        return (self.name,)
+        return self.name
 
     def get_type(self):
         """return the readable version of the Policy Type"""
@@ -96,7 +95,7 @@ class Organization(models.Model):
         return str(self.name)
 
     def natural_key(self):
-        return (self.name,)
+        return self.name
 
     @staticmethod
     def get_absolute_url():
@@ -121,11 +120,11 @@ class Organization(models.Model):
             conformity.save()
 
     def get_policy_status(self, pid):
-        """Return the conformity level of the Policy on the ORganisation"""
-        confomitys = Conformity.objects.filter(policy=pid).filter(organization=self.id) \
+        """Return the conformity level of the Policy on the Organisation"""
+        conformities = Conformity.objects.filter(policy=pid).filter(organization=self.id) \
             .filter(measure__level=0)
         conf_stat = []
-        for conf in confomitys:
+        for conf in conformities:
             conf_stat.append(conf.status)
         return mean(conf_stat)
 
@@ -159,11 +158,11 @@ class Measure(models.Model):
         return str(self.name)
 
     def natural_key(self):
-        return (self.name,)
+        return self.name
 
     natural_key.dependencies = ['conformity.policy']
 
-    def get_childrens(self):
+    def get_children(self):
         """Return all children of the measure"""
         return Measure.objects.filter(parent=self.id).order_by('order')
 
@@ -184,17 +183,17 @@ class Conformity(models.Model):
     comment = models.TextField(max_length=4096, blank=True)
 
     class Meta:
-        ordering = ['organization','measure']
+        ordering = ['organization', 'measure']
         verbose_name = 'Conformity'
         verbose_name_plural = 'Conformities'
-        unique_together = (('organization','measure'),)
+        unique_together = (('organization', 'measure'),)
 
     def __str__(self):
         return str(self.organization) + " | " + str(self.measure)
 
     def natural_key(self):
-        return (self.organization, self.measure)
-    natural_key.dependencies = ['conformity.policy','conformity.measure','conformity.organization']
+        return self.organization, self.measure
+    natural_key.dependencies = ['conformity.policy', 'conformity.measure', 'conformity.organization']
 
     def get_absolute_url(self):
         """Return the absolute URL of the class for Form, probably not the best way to do it"""
@@ -271,10 +270,11 @@ def change_policy(instance, action, pk_set, *args, **kwargs):
         for pk in pk_set:
             instance.remove_conformity(pk)
 
+
 class Audit(models.Model):
     """
     Audit class represent the auditing event, on an Organization.
-    A Audit is a colections of findings.
+    An Audit is a collections of findings.
     """
     class Type(models.TextChoices):
         """ List of the Type of audit """
@@ -301,8 +301,8 @@ class Audit(models.Model):
     class Meta:
         ordering = ['report_date']
 
-    #def __str__(self):
-    #    return str(self.organization + " audit on the " + self.report_date)
+    def __str__(self):
+        return str(self.organization) + " | " + str(self.auditor) + " (" + self.report_date.strftime('%b %Y') + ")"
 
     @staticmethod
     def get_absolute_url():
@@ -356,11 +356,11 @@ class Finding(models.Model):
     """
     class Severity(models.TextChoices):
         """ List of the Type of audit """
-        CRITICAL = 'CRIT', _('Critical non-conformity')
+        CRITICAL = 'CRT', _('Critical non-conformity')
         MAJOR = 'MAJ', _('Major non-conformity')
         MINOR = 'MIN', _('Minor non-conformity')
-        OBSERVATION = 'OBS', _('Observation or Opportunity For Improvement')
-        POSITIVE = 'POS', _('Positive element')
+        OBSERVATION = 'OBS', _('Opportunity For Improvement')
+        POSITIVE = 'POS', _('Positive finding')
         OTHER = 'OTHER', _('Other remark')
 
     short_description = models.CharField(max_length=256)
@@ -376,7 +376,6 @@ class Finding(models.Model):
     def get_severity(self):
         """return the readable version of the Findings Severity"""
         return self.Severity(self.severity).label
-
 
     @staticmethod
     def get_absolute_url():
