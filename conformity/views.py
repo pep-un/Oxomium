@@ -1,10 +1,9 @@
 """
 View of the Conformity Module
 """
-from django.views import generic
+from django.views.generic import DetailView, ListView
 from django.views.generic.edit import UpdateView, CreateView, DeleteView
 from django.shortcuts import render
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from .forms import *
 
@@ -18,11 +17,13 @@ def home(request):
     organization_list = Organization.objects.all()
     policy_list = Policy.objects.all()
     conformity_list = Conformity.objects.filter(measure__level=0)
+    audit_list = Audit.objects.all()
 
     context = {
         'organization_list': organization_list,
         'policy_list': policy_list,
         'conformity_list': conformity_list,
+        'audit_list': audit_list,
     }
 
     return render(request, 'home.html', context=context)
@@ -31,12 +32,12 @@ def home(request):
 #
 # Audit
 #
-class AuditIndexView(LoginRequiredMixin, generic.ListView):
+class AuditIndexView(LoginRequiredMixin, ListView):
     model = Audit
     ordering = ['start_date']
 
 
-class AuditDetailView(LoginRequiredMixin, generic.DetailView):
+class AuditDetailView(LoginRequiredMixin, DetailView):
     model = Audit
 
 
@@ -45,24 +46,41 @@ class AuditUpdateView(UpdateView):
     form_class = AuditForm
 
 
-class AuditCreateView(CreateView):
+class AuditCreateView(LoginRequiredMixin, CreateView):
     model = Audit
     form_class = AuditForm
 
 
-class AuditFindingCreateView(CreateView):
+#
+# Findings
+#
+
+
+class FindingCreateView(LoginRequiredMixin, CreateView):
     model = Finding
     form_class = FindingForm
+
+
+class FindingDetailView(LoginRequiredMixin, DetailView):
+    model = Finding
+
+
+class FindingUpdateView(UpdateView):
+    model = Finding
+    form_class = FindingForm
+
 
 #
 # Organizations
 #
-class OrganizationIndexView(LoginRequiredMixin, generic.ListView):
+
+
+class OrganizationIndexView(LoginRequiredMixin, ListView):
     model = Organization
     ordering = ['name']
 
 
-class OrganizationDetailView(LoginRequiredMixin, generic.ListView):
+class OrganizationDetailView(LoginRequiredMixin, ListView):
     model = Conformity
     template = "conformity/template/conformity/conformity_list.html"
 
@@ -70,37 +88,39 @@ class OrganizationDetailView(LoginRequiredMixin, generic.ListView):
         return Conformity.objects.filter(organization__id=self.kwargs['pk'])
 
 
-class OrganizationUpdateView(UpdateView):
+class OrganizationUpdateView(LoginRequiredMixin, UpdateView):
     model = Organization
     form_class = OrganizationForm
 
 
-class OrganizationCreateView(CreateView):
+class OrganizationCreateView(LoginRequiredMixin, CreateView):
     model = Organization
     form_class = OrganizationForm
 
 #
 # Policy
 #
-class PolicyIndexView(LoginRequiredMixin, generic.ListView):
+
+
+class PolicyIndexView(LoginRequiredMixin, ListView):
     model = Policy
 
 
-class PolicyDetailView(LoginRequiredMixin, generic.DetailView):
+class PolicyDetailView(LoginRequiredMixin, DetailView):
     model = Policy
 
 
 #
 # Conformity
 #
-class ConformityIndexView(LoginRequiredMixin, generic.ListView):
+class ConformityIndexView(LoginRequiredMixin, ListView):
     model = Conformity
 
     def get_queryset(self, **kwargs):
         return Conformity.objects.filter(measure__level=0)
 
 
-class ConformityOrgPolIndexView(LoginRequiredMixin, generic.ListView):
+class ConformityOrgPolIndexView(LoginRequiredMixin, ListView):
     model = Conformity
     template_name = 'conformity/conformity_orgpol_list.html'
 
@@ -111,11 +131,10 @@ class ConformityOrgPolIndexView(LoginRequiredMixin, generic.ListView):
             .order_by('measure__order')
 
 
-class ConformityUpdateView(UpdateView):
+class ConformityUpdateView(LoginRequiredMixin, UpdateView):
     model = Conformity
     form_class = ConformityForm
 
     def form_valid(self, form):
         form.instance.set_status(form.cleaned_data['status'])
         return super().form_valid(form)
-

@@ -13,12 +13,15 @@ urlpatterns = [
     path('audit/<int:pk>', views.AuditDetailView.as_view(), name='audit_detail'),
     path('audit/create', views.AuditCreateView.as_view(), name='audit_create'),
     path('audit/update/<int:pk>', views.AuditUpdateView.as_view(), name='audit_form'),
-    path('audit/<int:id>/finding/create', views.AuditFindingCreateView.as_view(), name='audit_finding_create'),
 
     path('conformity/', views.ConformityIndexView.as_view(), name='conformity_index'),
     path('conformity/org/<int:org>/pol/<int:pol>/', views.ConformityOrgPolIndexView.as_view(),
          name='conformity_orgpol_index'),
     path('conformity/update/<int:pk>', views.ConformityUpdateView.as_view(), name='conformity_form'),
+
+    path('finding/create', views.FindingCreateView.as_view(), name='finding_create'),
+    path('finding/<int:pk>', views.FindingDetailView.as_view(), name='finding_detail'),
+    path('finding/update/<int:pk>', views.FindingUpdateView.as_view(), name='finding_edit'),
 
     path('organization/', views.OrganizationIndexView.as_view(), name='organization_index'),
     path('organization/<int:pk>', views.OrganizationDetailView.as_view(), name='organization_detail'),
