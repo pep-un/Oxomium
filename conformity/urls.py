@@ -13,6 +13,7 @@ urlpatterns = [
     path('audit/<int:pk>', views.AuditDetailView.as_view(), name='audit_detail'),
     path('audit/create', views.AuditCreateView.as_view(), name='audit_create'),
     path('audit/update/<int:pk>', views.AuditUpdateView.as_view(), name='audit_form'),
+    path('audit/<int:id>/finding/create', views.AuditFindingCreateView.as_view(), name='audit_finding_create'),
 
     path('conformity/', views.ConformityIndexView.as_view(), name='conformity_index'),
     path('conformity/org/<int:org>/pol/<int:pol>/', views.ConformityOrgPolIndexView.as_view(),
@@ -26,4 +27,5 @@ urlpatterns = [
 
     path('policy/', views.PolicyIndexView.as_view(), name='policy_index'),
     path('policy/<int:pk>/', views.PolicyDetailView.as_view(), name='policy_detail'),
+
 ]

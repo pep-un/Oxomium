@@ -4,6 +4,7 @@ Forms for front-end editing of Models instance
 
 from django.forms import ModelForm
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.admin import widgets
 from .models import *
 
 
@@ -29,3 +30,9 @@ class AuditForm(LoginRequiredMixin, ModelForm):
     class Meta:
         model = Audit
         fields = '__all__'
+
+
+class FindingForm(LoginRequiredMixin, ModelForm):
+    class Meta:
+        model = Finding
+        fields = ['audit','severity','short_description','description','reference']

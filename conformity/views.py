@@ -49,6 +49,11 @@ class AuditCreateView(CreateView):
     model = Audit
     form_class = AuditForm
 
+
+class AuditFindingCreateView(CreateView):
+    model = Finding
+    form_class = FindingForm
+
 #
 # Organizations
 #
