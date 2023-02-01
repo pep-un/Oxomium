@@ -122,6 +122,10 @@
         <button type="button" class="btn btn-primary bi bi-pencil-square"> Edit the audit</button>
     </a>
 
+    <a href="{% url 'conformity:audit_finding_create' audit.id %}">
+        <button type="button" class="btn btn-success bi bi-plus-circle"> Register a new finding</button>
+    </a>
+
     <br />
 
 {% endblock %}

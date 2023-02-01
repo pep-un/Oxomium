@@ -285,13 +285,13 @@ class Audit(models.Model):
         OTHER = 'OTHER', _('Other')
 
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
-    description = models.CharField(max_length=4096)
-    conclusion = models.CharField(max_length=4096)
+    description = models.CharField(max_length=4096, blank=True)
+    conclusion = models.CharField(max_length=4096, blank=True)
     auditor = models.CharField(max_length=256)
     audited_policies = models.ManyToManyField(Policy, blank=True)
-    start_date = models.DateField()
-    end_date = models.DateField()
-    report_date = models.DateField()
+    start_date = models.DateField(null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
+    report_date = models.DateField(null=True, blank=True)
     type = models.CharField(
         max_length=5,
         choices=Type.choices,
@@ -364,8 +364,8 @@ class Finding(models.Model):
         OTHER = 'OTHER', _('Other remark')
 
     short_description = models.CharField(max_length=256)
-    description = models.CharField(max_length=4096)
-    reference = models.CharField(max_length=4096)
+    description = models.CharField(max_length=4096, blank=True)
+    reference = models.CharField(max_length=4096, blank=True)
     audit = models.ForeignKey(Audit, on_delete=models.CASCADE)
     severity = models.CharField(
         max_length=5,
@@ -376,3 +376,9 @@ class Finding(models.Model):
     def get_severity(self):
         """return the readable version of the Findings Severity"""
         return self.Severity(self.severity).label
+
+
+    @staticmethod
+    def get_absolute_url():
+        """return the absolute URL for Forms, could probably do better"""
+        return reverse('conformity:audit_index')
