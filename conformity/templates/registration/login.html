@@ -9,11 +9,16 @@
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>Oxomium - Log in</title>
         <link rel="icon" href="{% static 'favicon.ico' %}">
-        <link rel="stylesheet" type="text/css" href="{% static 'conformity/bootstrap-icons-1.8.3/bootstrap-icons.css' %}" />
-<!--        <link rel="stylesheet" type="text/css" href="{% static 'conformity/bootstrap-5.1.3-dist/css/bootstrap.min.css' %}" /> -->
-        <link href="{% static 'conformity/bootstrap-5.3.0-alpha1-dist/css/bootstrap.min.css' %}" rel="stylesheet"
-            integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
-        <link rel="stylesheet" type="text/css" href="{% static 'registration/login.css' %}" />
+        <link rel="stylesheet" type="text/css"
+              href="{% static 'conformity/bootstrap-icons-1.8.3/bootstrap-icons.css' %}"
+              integrity="sha384-eoTu3+HydHRBIjnCVwsFyCpUDZHZSFKEJD0mc3ZqSBSb6YhZzRHeiomAUWCstIWo"/>
+        <link rel="stylesheet" type="text/css"
+              href="{% static 'conformity/bootstrap-5.3.0-alpha1-dist/css/bootstrap.min.css' %}"
+              integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD">
+        <link rel="stylesheet" type="text/css" href="{% static 'conformity/main.css' %}"
+              integrity="sha384-jKhHR+6UoYYfihU3EPGmCoPlGj/we8GA3WVyFldFHTWM2VwpO0w4XDbJPZniU4zk" />
+        <link rel="stylesheet" type="text/css" href="{% static 'registration/login.css' %}"
+              integrity="sha384-rDflcpoE+IboK1UWtmoJLlDKxA984xx8OTFUFaDDoY5t5wAunJhN+YHu/MPppS5g" />
     </head>
     <body  class="text-center">
         <form class="form-signin" method="post" action="{% url 'login' %}">
