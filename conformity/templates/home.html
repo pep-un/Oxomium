@@ -48,8 +48,7 @@
             <ul class="list-group list-group-flush">
                 {% for conformity in conformity_list %}
                     <a class="list-group-item list-group-item-action"
-                       href="{%url 'conformity:conformity_orgpol_index'
-                       conformity.organization.id conformity.measure.policy.id %}"> {{conformity}}</a>
+                       href="{%url 'conformity:conformity_orgpol_index' conformity.organization.id conformity.measure.policy.id %}"> {{conformity}}</a>
                 {% endfor %}
             </ul>
         </div>
