@@ -7,20 +7,40 @@
 {% block content %}
     {% if policy.get_root_measure %}
         {% for m in policy.get_first_measures %}
-            <h3><span class="badge bg-primary">{{ m.name }}</span> {{ m.title }} </h3>
+            <h3 class="text-primary position-relative">
+                {{ m.title }}
+<!--                <span class="badge bg-primary position-absolute top-0 end-0">{{ m.name }}</span> -->
+            </h3>
             <div class="ms-1 ps-3 border-start border-primary">
                 <p>{{ m.description|safe }}</p>
                 {% if m.get_children %}
                     {% for m in m.get_children %}
-                        <h4><span class="badge bg-secondary">{{ m.name }}</span> {{ m.title }} </h4>
+                        <h4 class="text-secondary position-relative">
+                            {{ m.title }}
+<!--                            <span class="badge rounded-pill bg-secondary position-absolute top-0 end-0">{{ m.name }}</span> -->
+                        </h4>
                         <div class="ms-1 ps-3 border-start border-secondary">
                             <p>{{ m.description|safe }}</p>
                             {% if m.get_children %}
                                 {% if m.get_children %}
                                         {% for m in m.get_children %}
-                                            <h5><span class="badge bg-info">{{ m.name }}</span> {{ m.title }} </h5>
+                                            <h5 class="text-info position-relative">
+                                                {{ m.title }}
+<!--                                                <button type="button"  class="btn btn-outline-info btn-sm disabled position-absolute top-0 end-0">{{ m.name }}</button> -->
+                                            </h5>
                                             <div class="ms-1 ps-3 border-start border-info">
                                                 <p>{{ m.description|safe }}</p>
+                                                {% if m.get_children %}
+                                                    {% for m in m.get_children %}
+                                                        <h5 class="text-info">
+    <!--                                                    <span class="badge bg-info">{{ m.name }}</span> -->
+                                                            {{ m.title }}
+                                                        </h5>
+                                                        <div class="ms-1 ps-3 border-start border-secondary">
+                                                            <p>{{ m.description|safe }}</p>
+                                                        </div>
+                                                    {% endfor %}
+                                                {% endif %}
                                             </div>
                                     {% endfor %}
                                 {% endif %}
