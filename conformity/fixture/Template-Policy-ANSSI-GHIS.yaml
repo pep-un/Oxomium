@@ -118,8 +118,8 @@
 - model: conformity.measure
   pk: 21
   fields:
-    code: AMDIN
-    name: GHIS-AMDIN
+    code: ADMIN
+    name: GHIS-ADMIN
     level: 1
     order: 6
     policy: 1
@@ -267,7 +267,7 @@
     parent: '14'
     title: Allocate the appropriate rights to the information system’s sensitive resources
     description: 'Some of the system’s resources can be a source of invaluable information
-      from the hacher’s point of view (folders containing sensitive data, databases,
+      from the hacker’s point of view (folders containing sensitive data, databases,
       mailboxes, etc.). It is therefore essential to establish an accurate list of
     these resources and for each of them: >> define which group can have access
       to them; >> strictly control access, by ensuring that users are authenticated

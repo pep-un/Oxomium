@@ -1,6 +1,6 @@
-'''
+"""
 Customize Django Admin Site to manage my Models instances
-'''
+"""
 
 from django.contrib import admin
 from import_export import resources

@@ -9,14 +9,14 @@
     <div class="col-lg-4">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-start">
-                <h5 class="my-0 "><i class="bi bi-card-checklist"></i> Policy</h5>
-                <a href="#" class="btn btn-outline-dark btn-sm">{{policy_list|length}} policies</a>
-                <span class="badge bg-primary rounded-pill"></span>
+                <h5 class="my-0"><i class="bi bi-card-checklist"></i> Policy</h5>
+                <a class="btn btn-outline-dark btn-sm"
+                   href="{%url 'conformity:policy_index'%}">{{policy_list|length}} policies</a>
             </div>
             <ul class="list-group list-group-flush">
-                <a class="list-group-item list-group-item-action" href="{%url 'conformity:policy_index'%}"> <i>All policies</i></a>
                 {% for policy in policy_list %}
-                    <a class="list-group-item list-group-item-action" href="{%url 'conformity:policy_detail' policy.id %}"> {{policy}}</a>
+                    <a class="list-group-item list-group-item-action"
+                       href="{%url 'conformity:policy_detail' policy.id %}"> {{policy}}</a>
                 {% endfor %}
             </ul>
         </div>
@@ -26,12 +26,13 @@
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-start">
                 <h5 class="my-0"><i class="bi bi-building"></i> Organization</h5>
-                <span class="badge bg-primary rounded-pill">{{organization_list|length}}</span>
+                <a class="btn btn-outline-dark btn-sm"
+                    href="{%url 'conformity:organization_index'%}" >{{organization_list|length}} organizations</a>
             </div>
             <ul class="list-group list-group-flush">
-                <a class="list-group-item list-group-item-action" href="{%url 'conformity:organization_index'%}"> <i>All organizations</i></a>
                 {% for organization in organization_list %}
-                    <a class="list-group-item list-group-item-action" href="{%url 'conformity:organization_form' organization.id %}"> {{organization}}</a>
+                    <a class="list-group-item list-group-item-action"
+                       href="{%url 'conformity:organization_form' organization.id %}"> {{organization}}</a>
                 {% endfor %}
             </ul>
         </div>
@@ -41,12 +42,14 @@
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-start">
                 <h5 class="my-0"><i class="bi bi-shield-shaded"></i> Conformity</h5>
-                <span class="badge bg-primary rounded-pill">{{conformity_list|length}}</span>
+                <a class="btn btn-outline-dark btn-sm"
+                   href="{%url 'conformity:conformity_index'%}">{{conformity_list|length}} conformities</a>
             </div>
             <ul class="list-group list-group-flush">
-                <a class="list-group-item list-group-item-action" href="{%url 'conformity:conformity_index'%}"> <i>All Policies</i></a>
                 {% for conformity in conformity_list %}
-                    <a class="list-group-item list-group-item-action" href="{%url 'conformity:conformity_orgpol_index' conformity.organization.id conformity.measure.policy.id %}"> {{conformity}}</a>
+                    <a class="list-group-item list-group-item-action"
+                       href="{%url 'conformity:conformity_orgpol_index'
+                       conformity.organization.id conformity.measure.policy.id %}"> {{conformity}}</a>
                 {% endfor %}
             </ul>
         </div>
@@ -56,12 +59,13 @@
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-start">
                 <h5 class="my-0"><i class="bi bi-ui-checks-grid"></i> Audit</h5>
-                <span class="badge bg-secondary">{{audit_list|length}}</span>
+                <a class="btn btn-outline-dark btn-sm"
+                   href="{%url 'conformity:audit_index'%}" >{{audit_list|length}} audits</a>
             </div>
             <ul class="list-group list-group-flush">
-                <a class="list-group-item list-group-item-action" href="{%url 'conformity:audit_index'%}"> <i>All Audit</i></a>
                 {% for audit in audit_list %}
-                    <a class="list-group-item list-group-item-action" href="{%url 'conformity:audit_detail' audit.id %}"> {{audit}}</a>
+                    <a class="list-group-item list-group-item-action"
+                       href="{%url 'conformity:audit_detail' audit.id %}"> {{audit}}</a>
                 {% endfor %}
             </ul>
         </div>
