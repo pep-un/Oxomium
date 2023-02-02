@@ -1,6 +1,6 @@
-'''
+"""
 Conformity module URL router
-'''
+"""
 from django.urls import path
 
 from . import views

@@ -1,6 +1,6 @@
-'''
+"""
 Forms for front-end editing of Models instance
-'''
+"""
 
 from django.forms import ModelForm
 from django.contrib.auth.mixins import LoginRequiredMixin
