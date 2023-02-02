@@ -1,7 +1,7 @@
 {% extends "conformity/main.html" %}
 
 {% block header %}
-    <h1 class="h2 bi bi-ui-checks-grid">
+    <h1 class="h2 bi bi-exclamation-diamond">
         Finding "{{ finding.short_description }}"
         {% if finding.severity == "CRT" %}
             <span class="badge rounded-pill bg-dark">Critical</span>
