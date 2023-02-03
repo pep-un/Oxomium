@@ -18,12 +18,14 @@ def home(request):
     policy_list = Policy.objects.all()
     conformity_list = Conformity.objects.filter(measure__level=0)
     audit_list = Audit.objects.all()
+    action_list = Action.objects.all()
 
     context = {
         'organization_list': organization_list,
         'policy_list': policy_list,
         'conformity_list': conformity_list,
         'audit_list': audit_list,
+        'action_list': action_list,
     }
 
     return render(request, 'home.html', context=context)
@@ -138,3 +140,26 @@ class ConformityUpdateView(LoginRequiredMixin, UpdateView):
     def form_valid(self, form):
         form.instance.set_status(form.cleaned_data['status'])
         return super().form_valid(form)
+
+
+#
+# Action
+#
+
+
+class ActionCreateView(LoginRequiredMixin, CreateView):
+    model = Action
+    form_class = ActionForm
+
+
+class ActionIndexView(LoginRequiredMixin, ListView):
+    model = Action
+
+
+class ActionUpdateView(LoginRequiredMixin, UpdateView):
+    model = Action
+    form_class = ActionForm
+
+#    def form_valid(self, form):
+#        form.instance.set_status(form.cleaned_data['status'])
+#        return super().form_valid(form)

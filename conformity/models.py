@@ -175,11 +175,8 @@ class Conformity(models.Model):
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
     measure = models.ForeignKey(Measure, on_delete=models.CASCADE)
     applicable = models.BooleanField(default=True)
-    status = models.IntegerField(default=0,
-                                 validators=[MinValueValidator(0), MaxValueValidator(100)])
-    responsible = models.ForeignKey(settings.AUTH_USER_MODEL,
-                                    on_delete=models.CASCADE,
-                                    null=True, blank=True)
+    status = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
+    responsible = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
     comment = models.TextField(max_length=4096, blank=True)
 
     class Meta:
@@ -193,12 +190,13 @@ class Conformity(models.Model):
 
     def natural_key(self):
         return self.organization, self.measure
+
     natural_key.dependencies = ['conformity.policy', 'conformity.measure', 'conformity.organization']
 
     def get_absolute_url(self):
         """Return the absolute URL of the class for Form, probably not the best way to do it"""
-        return reverse('conformity:conformity_orgpol_index', kwargs={'org': self.organization.id,
-                                                                     'pol': self.measure.policy.id})
+        return reverse('conformity:conformity_orgpol_index',
+                       kwargs={'org': self.organization.id, 'pol': self.measure.policy.id})
 
     def get_children(self):
         """Return all children Conformity based on Measure hierarchy"""
@@ -238,8 +236,8 @@ class Conformity(models.Model):
             else:
                 self.status = 0
                 self.applicable = False
-#       else:
-#           this is a leaf of the tree, no action to do other than save teh data
+        #       else:
+        #           this is a leaf of the tree, no action to do other than save teh data
         self.save()
 
         if not self.measure.level == 0:
@@ -276,6 +274,7 @@ class Audit(models.Model):
     Audit class represent the auditing event, on an Organization.
     An Audit is a collections of findings.
     """
+
     class Type(models.TextChoices):
         """ List of the Type of audit """
         INTERNAL = 'INT', _('Internal Audit')
@@ -354,6 +353,7 @@ class Finding(models.Model):
     """
     Finding class represent the element discover during and Audit.
     """
+
     class Severity(models.TextChoices):
         """ List of the Type of audit """
         CRITICAL = 'CRT', _('Critical non-conformity')
@@ -381,3 +381,64 @@ class Finding(models.Model):
     def get_absolute_url():
         """return the absolute URL for Forms, could probably do better"""
         return reverse('conformity:audit_index')
+
+
+class Action(models.Model):
+    """
+    Action class represent the actions taken by the Organization to improve security.
+    """
+
+    class Status(models.TextChoices):
+        """ List of possible Status for an action """
+        ' ANALYSE (ACT) Phase'
+        ANALYSING = 'A', _('Action under analyse')
+        ' PLAN Phase'
+        PLANNING = 'P', _('Action analysed, waiting to be plan')
+        QUEUED = 'Q', _('Action planned, waiting for implementation')
+        ' IMPLEMENT (DO) Phase'
+        IMPLEMENTING = 'I', _('Implementation in progress')
+        IMPLEMENTED = 'C', _('Implemented, to bo controlled')
+        ' CHECK Phase'
+        SUCCESS = 'S', _('Control successfully')
+        UNSUCCESS = 'U', _('control unsuccessfully')
+        ' MISC'
+        FROZEN = 'F', _('Frozen')
+        CANCELED = 'X', _('Canceled')
+
+    ' Analyse Phase'
+    title = models.CharField(max_length=256)
+    description = models.CharField(max_length=4096, blank=True)
+    create_date = models.DateField(editable=False, auto_now_add=True)
+    update_date = models.DateField(editable=True, auto_now=True)
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
+    associated_conformity = models.ManyToManyField(Conformity, blank=True)
+    associated_findings = models.ManyToManyField(Finding, blank=True)
+    #TODO associated_risks = models.ManyToManyField(Risk, blank=True)
+    status = models.CharField(
+        max_length=5,
+        choices=Status.choices,
+        default=Status.ANALYSING,
+    )
+
+    ' PLAN phase'
+    plan_start_date = models.DateField(null=True, blank=True)
+    plan_end_sate = models.DateField(null=True, blank=True)
+    plan_comment = models.CharField(max_length=4096, blank=True)
+
+    ' IMPLEMENT Phase'
+    implement_start_date = models.DateField(null=True, blank=True)
+    implement_end_date = models.DateField(null=True, blank=True)
+    implement_status = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
+    implement_comment = models.CharField(max_length=4096, blank=True)
+
+    ' CONTROL Phase'
+    control_date = models.DateField(null=True, blank=True)
+    control_comment = models.CharField(max_length=4096, blank=True)
+    control_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+                                     null=True, blank=True, related_name='controller')
+
+    @staticmethod
+    def get_absolute_url():
+        """return the absolute URL for Forms, could probably do better"""
+        return reverse('conformity:action_index')
