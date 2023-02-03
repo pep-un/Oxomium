@@ -36,3 +36,8 @@ class FindingForm(LoginRequiredMixin, ModelForm):
         model = Finding
         fields = ['audit', 'severity', 'short_description', 'description', 'reference']
         # TODO add a preselection and a disable selector for 'audit' field when the form is open from an audit.
+
+class ActionForm(LoginRequiredMixin, ModelForm):
+    class Meta:
+        model = Action
+        fields = '__all__'
