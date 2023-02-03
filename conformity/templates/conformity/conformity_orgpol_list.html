@@ -8,7 +8,7 @@
 {% endblock %}
 
 {% block content %}
-<table class="table table-striped align-middle">
+<table class="table align-middle">
     <thead>
         <tr>
             <th class="">Measure</th>
@@ -20,7 +20,7 @@
     </thead>
     <tbody>
     {% for con in conformity_list.0.get_children %}
-        <tr>
+        <tr class="table-primary">
             <th class="col">{{ con.measure.title }}</th>
             <td class="col-3 text-center">
                 <div class="progress">
