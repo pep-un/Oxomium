@@ -187,7 +187,7 @@ class Conformity(models.Model):
         unique_together = (('organization', 'measure'),)
 
     def __str__(self):
-        return str(self.organization) + " | " + str(self.measure)
+        return "[" + str(self.organization) + "] " + str(self.measure)
 
     def natural_key(self):
         return self.organization, self.measure
@@ -302,7 +302,7 @@ class Audit(models.Model):
         ordering = ['report_date']
 
     def __str__(self):
-        return str(self.organization) + " | " + str(self.auditor) + " (" + self.report_date.strftime('%b %Y') + ")"
+        return "[" + str(self.organization) + "] " + str(self.auditor) + " (" + self.report_date.strftime('%b %Y') + ")"
 
     @staticmethod
     def get_absolute_url():
@@ -438,6 +438,9 @@ class Action(models.Model):
     control_comment = models.CharField(max_length=4096, blank=True)
     control_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
                                      null=True, blank=True, related_name='controller')
+
+    def __str__(self):
+        return "[" + str(self.organization) + "] " + str(self.title)
 
     @staticmethod
     def get_absolute_url():
