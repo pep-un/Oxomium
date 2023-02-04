@@ -15,8 +15,7 @@ class ConformityForm(LoginRequiredMixin, ModelForm):
     def __init__(self, *args, **kwargs):
         super(ConformityForm, self).__init__(*args, **kwargs)
         if self.instance.get_children().exists():
-            self.fields['status'].widget.attrs['readonly'] = True
-            self.fields['status'].widget.attrs['title'] = 'This field is calculated from children.'
+            self.fields['status'].disabled = True
 
 
 class OrganizationForm(LoginRequiredMixin, ModelForm):
@@ -41,3 +40,8 @@ class ActionForm(LoginRequiredMixin, ModelForm):
     class Meta:
         model = Action
         fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super(ActionForm, self).__init__(*args, **kwargs)
+        self.fields['create_date'].disabled = True
+        self.fields['update_date'].disabled = True

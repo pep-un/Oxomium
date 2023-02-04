@@ -10,6 +10,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.dispatch import receiver
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
 
@@ -408,8 +409,8 @@ class Action(models.Model):
     ' Analyse Phase'
     title = models.CharField(max_length=256)
     description = models.CharField(max_length=4096, blank=True)
-    create_date = models.DateField(editable=False, auto_now_add=True)
-    update_date = models.DateField(editable=True, auto_now=True)
+    create_date = models.DateField(default=timezone.now)
+    update_date = models.DateField(default=timezone.now)
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
     associated_conformity = models.ManyToManyField(Conformity, blank=True)
@@ -423,7 +424,7 @@ class Action(models.Model):
 
     ' PLAN phase'
     plan_start_date = models.DateField(null=True, blank=True)
-    plan_end_sate = models.DateField(null=True, blank=True)
+    plan_end_date = models.DateField(null=True, blank=True)
     plan_comment = models.CharField(max_length=4096, blank=True)
 
     ' IMPLEMENT Phase'
@@ -442,3 +443,10 @@ class Action(models.Model):
     def get_absolute_url():
         """return the absolute URL for Forms, could probably do better"""
         return reverse('conformity:action_index')
+
+    def save(self, *args, **kwargs):
+        """ On save, update timestamps """
+        if not self.id:
+            self.create_date = timezone.now()
+        self.update_date = timezone.now()
+        return super(Action, self).save(*args, **kwargs)
