@@ -29,7 +29,7 @@
                 <span class="ms-2" style="letter-spacing: 3px;font-variant:small-caps;"> Oxomium </span>
             </a>
             <div class="dropdown-center mx-3">
-                <button class="btn btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="min-width: 130px;">
+                <button class="d-none d-md-block btn btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="min-width: 130px;">
                     <i class="bi bi-person-circle pe-2"></i>
                     {{request.user.username}}
                 </button>
@@ -41,11 +41,11 @@
                     <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="bi bi-power pe-2"></i> Log out</a></li>
                 </ul>
             </div>
-            <!--
+
             <button class="navbar-toggler d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            -->
+
         </header>
         <div class="container-fluid">
             <div class="row">
