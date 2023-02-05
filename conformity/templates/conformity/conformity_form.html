@@ -20,9 +20,29 @@
                         {% endif %}
                     </div>
                 </div>
-                {% bootstrap_form form exclude='applicable' %}
+
+                {% bootstrap_field form.responsible %}
+                {% bootstrap_field form.status %}
+                {% bootstrap_field form.comment %}
                 {% bootstrap_button button_type="submit" content="Save" %}
             </div>
         </div>
+        <script>
+            function applicable() {
+                if ( ! document.getElementById('id_applicable').checked ){
+                    document.getElementById('id_responsible').disabled = true;
+                    document.getElementById('id_status').disabled = true;
+                    document.getElementById('id_status').required = false;
+                    document.getElementById('id_comment').required = true;
+                } else {
+                    document.getElementById('id_responsible').disabled = false;
+                    document.getElementById('id_status').disabled = false;
+                    document.getElementById('id_status').required = true;
+                    document.getElementById('id_comment').required = false;
+                }
+            }
+            document.getElementById('id_applicable').addEventListener("click", applicable);
+            applicable();
+        </script>
     </form>
 {% endblock %}

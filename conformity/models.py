@@ -176,7 +176,7 @@ class Conformity(models.Model):
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
     measure = models.ForeignKey(Measure, on_delete=models.CASCADE)
     applicable = models.BooleanField(default=True)
-    status = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
+    status = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)], null=True, blank=True)
     responsible = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
     comment = models.TextField(max_length=4096, blank=True)
 
