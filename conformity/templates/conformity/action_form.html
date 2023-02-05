@@ -87,5 +87,17 @@
                 {% bootstrap_button button_type="submit" content="Save" %}
             </div>
         </div>
+        <script>
+            // Dirty fix for Date form
+            // https://github.com/zostera/django-bootstrap5/issues/445
+            // TODO: contribute upstream to django-bootstrap
+            document.getElementById('id_control_date').type = 'Date'
+            document.getElementById('id_implement_start_date').type = 'Date'
+            document.getElementById('id_implement_end_date').type = 'Date'
+            document.getElementById('id_plan_start_date').type = 'Date'
+            document.getElementById('id_plan_end_date').type = 'Date'
+            document.getElementById('id_create_date').type = 'Date'
+            document.getElementById('id_update_date').type = 'Date'
+        </script>
     </form>
 {% endblock %}
