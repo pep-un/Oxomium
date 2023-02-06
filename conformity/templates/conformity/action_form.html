@@ -10,75 +10,74 @@
         {% csrf_token %}
         <div class="row justify-content-center">
             <div class="col col-6">
-                {% bootstrap_field form.title %}
-                {% bootstrap_field form.organization %}
-                {% bootstrap_field form.owner %}
-                {% bootstrap_field form.status %}
-                {% bootstrap_field form.create_date %}
-                {% bootstrap_field form.update_date %}
+                {% bootstrap_field form.title layout='floating' %}
+                {% bootstrap_field form.organization layout='floating' %}
+                {% bootstrap_field form.owner layout='floating' %}
+                {% bootstrap_field form.status layout='floating' %}
+                <p class="text-center fw-lighter mx-3">Created on {{ form.create_date.value }}, laste update {{ form.update_date.value }}.</p>
                 <div class="accordion" id="accordion">
                     <div class="accordion-item">
                         <h2 class="accordion-header" id="headingAnalyse">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            <button class="accordion-button text-bg-info collapsed" type="button" id="buttonAnalyse" data-bs-toggle="collapse"
                                     data-bs-target="#collapseAnalyse" aria-expanded="false" aria-controls="collapseAnalyse">
                                 Analyse
                             </button>
                         </h2>
                         <div id="collapseAnalyse" class="accordion-collapse collapse" aria-labelledby="headingAnalyse"
                              data-bs-parent="#accordion">
-                            <div class="accordion-body">
-                                {% bootstrap_field form.description %}
-                                {% bootstrap_field form.associated_conformity %}
-                                {% bootstrap_field form.associated_findings %}
+                            <div class="accordion-body text-bg-light">
+                                {% bootstrap_field form.description layout='floating' %}
+                                {% bootstrap_field form.associated_conformity layout='floating' %}
+                                {% bootstrap_field form.associated_findings layout='floating' %}
                             </div>
                         </div>
                     </div>
                     <div class="accordion-item">
                         <h2 class="accordion-header" id="headingPlan">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            <button class="accordion-button text-bg-primary collapsed" type="button" id="buttonPlan" data-bs-toggle="collapse"
                                     data-bs-target="#collapsePlan" aria-expanded="false" aria-controls="collapsePlan">
                                 Plan
                             </button>
                         </h2>
                         <div id="collapsePlan" class="accordion-collapse collapse" aria-labelledby="headingPlan"
                              data-bs-parent="#accordion">
-                            <div class="accordion-body">
-                                {% bootstrap_field form.plan_start_date %}
-                                {% bootstrap_field form.plan_end_date %}
-                                {% bootstrap_field form.plan_comment %}
+                            <div class="accordion-body text-bg-light">
+                                {% bootstrap_field form.plan_start_date layout='floating' %}
+                                {% bootstrap_field form.plan_end_date layout='floating' %}
+                                {% bootstrap_field form.plan_comment layout='floating' %}
                             </div>
                         </div>
                     </div>
                     <div class="accordion-item">
-                        <h2 class="accordion-header" id="headingThree">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                                    data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                        <h2 class="accordion-header" id="headingImplement">
+                            <button class="accordion-button text-bg-warning collapsed" type="button" id="buttonImplement" data-bs-toggle="collapse"
+                                    data-bs-target="#collapseImplement" aria-expanded="false" aria-controls="collapseImplement">
                                 Implement
                             </button>
                         </h2>
-                        <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree"
+                        <div id="collapseImplement" class="accordion-collapse collapse" aria-labelledby="headingImplement"
                              data-bs-parent="#accordion">
-                            <div class="accordion-body">
-                                {% bootstrap_field form.implement_start_date %}
-                                {% bootstrap_field form.implement_end_date %}
-                                {% bootstrap_field form.implement_status %}
-                                {% bootstrap_field form.implement_comment %}
+                            <div class="accordion-body text-bg-light">
+                                {% bootstrap_field form.implement_start_date layout='floating' %}
+                                {% bootstrap_field form.implement_end_date layout='floating' %}
+                                {% bootstrap_field form.implement_status layout='floating' %}
+                                {% bootstrap_field form.implement_comment layout='floating' %}
                             </div>
                         </div>
                     </div>
                     <div class="accordion-item">
                         <h2 class="accordion-header" id="headingControl">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            <button class="accordion-button text-bg-success collapsed" type="button" id="buttonControl" data-bs-toggle="collapse"
                                     data-bs-target="#collapseControl" aria-expanded="false" aria-controls="collapseControl">
                                 Control
                             </button>
                         </h2>
                         <div id="collapseControl" class="accordion-collapse collapse" aria-labelledby="headingControl"
                              data-bs-parent="#accordion">
-                            <div class="accordion-body">
-                                {% bootstrap_field form.control_date %}
-                                {% bootstrap_field form.control_comment %}
-                                {% bootstrap_field form.control_user %}
+                            <div class="accordion-body text-bg-light">
+                                {% bootstrap_field form.control_date layout='floating' %}
+                                {% bootstrap_field form.control_comment layout='floating' %}
+                                {% bootstrap_field form.control_user layout='floating' %}
                             </div>
                         </div>
                     </div>
@@ -96,8 +95,21 @@
             document.getElementById('id_implement_end_date').type = 'Date'
             document.getElementById('id_plan_start_date').type = 'Date'
             document.getElementById('id_plan_end_date').type = 'Date'
-            document.getElementById('id_create_date').type = 'Date'
-            document.getElementById('id_update_date').type = 'Date'
+        </script>
+        <script>
+            if (document.getElementById('id_status').value == 'A') {
+                document.getElementById('buttonAnalyse').classList.remove("collapsed");
+                document.getElementById('collapseAnalyse').classList.add("show");
+            } else if (document.getElementById('id_status').value == 'P') {
+                document.getElementById('buttonPlan').classList.remove("collapsed");
+                document.getElementById('collapsePlan').classList.add("show");
+            } else if (document.getElementById('id_status').value == 'I') {
+                document.getElementById('buttonImplement').classList.remove("collapsed");
+                document.getElementById('collapseImplement').classList.add("show");
+            } else if (document.getElementById('id_status').value == 'C') {
+                document.getElementById('buttonControl').classList.remove("collapsed");
+                document.getElementById('collapseControl').classList.add("show");
+            }
         </script>
     </form>
 {% endblock %}
