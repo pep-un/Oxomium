@@ -1,7 +1,7 @@
 """
 View of the Conformity Module
 """
-from django.views.generic import DetailView, ListView
+from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import UpdateView, CreateView, DeleteView
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
@@ -11,24 +11,32 @@ from .forms import *
 #
 # Home
 #
-@login_required
-def home(request):
-    """View function for home page"""
-    organization_list = Organization.objects.all()
-    policy_list = Policy.objects.all()
-    conformity_list = Conformity.objects.filter(measure__level=0)
-    audit_list = Audit.objects.all()
-    action_list = Action.objects.all()
+class HomeView(LoginRequiredMixin, TemplateView):
+    template_name = "home.html"
 
-    context = {
-        'organization_list': organization_list,
-        'policy_list': policy_list,
-        'conformity_list': conformity_list,
-        'audit_list': audit_list,
-        'action_list': action_list,
-    }
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        organization_list = Organization.objects.all()
+        policy_list = Policy.objects.all()
+        conformity_list = Conformity.objects.filter(measure__level=0)
+        audit_list = Audit.objects.all()
+        action_list = Action.objects.all()
+        my_action = Action.objects.filter(owner=user).order_by('status')[:50]
+        my_conformity = Conformity.objects.filter(responsible=user).order_by('status')[:50]
 
-    return render(request, 'home.html', context=context)
+        context = {
+            'user': user,
+            'organization_list': organization_list,
+            'policy_list': policy_list,
+            'conformity_list': conformity_list,
+            'audit_list': audit_list,
+            'action_list': action_list,
+            'my_action': my_action,
+            'my_conformity': my_conformity,
+        }
+
+        return context
 
 
 #
@@ -36,7 +44,7 @@ def home(request):
 #
 class AuditIndexView(LoginRequiredMixin, ListView):
     model = Audit
-    ordering = ['start_date']
+    ordering = ['-start_date']
 
 
 class AuditDetailView(LoginRequiredMixin, DetailView):
@@ -154,6 +162,7 @@ class ActionCreateView(LoginRequiredMixin, CreateView):
 
 class ActionIndexView(LoginRequiredMixin, ListView):
     model = Action
+    ordering = ['status','-update_date']
 
 
 class ActionUpdateView(LoginRequiredMixin, UpdateView):

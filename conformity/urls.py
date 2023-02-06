@@ -7,7 +7,7 @@ from . import views
 
 app_name = 'conformity'
 urlpatterns = [
-    path('', views.home, name='home'),
+    path('', views.HomeView.as_view(), name='home'),
 
     path('audit/', views.AuditIndexView.as_view(), name='audit_index'),
     path('audit/<int:pk>', views.AuditDetailView.as_view(), name='audit_detail'),

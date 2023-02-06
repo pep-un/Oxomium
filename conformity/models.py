@@ -391,13 +391,13 @@ class Action(models.Model):
 
     class Status(models.TextChoices):
         """ List of possible Status for an action """
-        ANALYSING = 'A', _('Analysing')
-        PLANNING = 'P', _('Planning')
-        IMPLEMENTING = 'I', _('Implementing')
-        CONTROLLING = 'C', _('Controlling')
-        ENDED = 'E', _('Closed')
-        FROZEN = 'F', _('Frozen')
-        CANCELED = 'X', _('Canceled')
+        ANALYSING = '1', _('Analysing')
+        PLANNING = '2', _('Planning')
+        IMPLEMENTING = '3', _('Implementing')
+        CONTROLLING = '4', _('Controlling')
+        FROZEN = '7', _('Frozen')
+        ENDED = '8', _('Closed')
+        CANCELED = '9', _('Canceled')
 
     ' Analyse Phase'
     title = models.CharField(max_length=256)
