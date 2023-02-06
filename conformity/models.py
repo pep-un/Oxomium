@@ -391,18 +391,11 @@ class Action(models.Model):
 
     class Status(models.TextChoices):
         """ List of possible Status for an action """
-        ' ANALYSE (ACT) Phase'
-        ANALYSING = 'A', _('Action under analyse')
-        ' PLAN Phase'
-        PLANNING = 'P', _('Action analysed, waiting to be plan')
-        QUEUED = 'Q', _('Action planned, waiting for implementation')
-        ' IMPLEMENT (DO) Phase'
-        IMPLEMENTING = 'I', _('Implementation in progress')
-        IMPLEMENTED = 'C', _('Implemented, to bo controlled')
-        ' CHECK Phase'
-        SUCCESS = 'S', _('Control successfully')
-        UNSUCCESS = 'U', _('control unsuccessfully')
-        ' MISC'
+        ANALYSING = 'A', _('Analysing')
+        PLANNING = 'P', _('Planning')
+        IMPLEMENTING = 'I', _('Implementing')
+        CONTROLLING = 'C', _('Controlling')
+        ENDED = 'E', _('Closed')
         FROZEN = 'F', _('Frozen')
         CANCELED = 'X', _('Canceled')
 

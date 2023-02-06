@@ -23,16 +23,31 @@
                 {{ action.title }}
             </td>
             <td class="col">
-                {{ action.organization }}
+                {{ action.organization | default_if_none:""}}
             </td>
             <td class="col">
-                {{ action.owner }}
+                {{ action.owner | default_if_none:"" }}
             </td>
             <td class="col">
+                {% if action.status == "A" %}
+                    <i class="bi bi-hexagon-fill text-info"></i>
+                {% endif %}
+                {% if action.status == "P" %}
+                    <i class="bi bi-hexagon-fill text-primary"></i>
+                {% endif %}
+                {% if action.status == "I" %}
+                    <i class="bi bi-hexagon-fill text-warning"></i>
+                {% endif %}
+                {% if action.status == "C" %}
+                    <i class="bi bi-hexagon-fill text-success"></i>
+                {% endif %}
+                {% if action.status == "X" %}
+                    <i class="bi bi-hexagon-fill text-dark"></i>
+                {% endif %}
                 {{ action.get_status_display }}
             </td>
             <td class="col">
-                {{ action.update_date }}
+                {{ action.update_date | date:'d-M-Y'}}
             </td>
             <td class="text-center">
                 <a href="{% url 'conformity:action_form' action.id %}" class="bi bi-pencil-square"></a>

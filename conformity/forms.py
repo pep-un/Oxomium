@@ -45,3 +45,7 @@ class ActionForm(LoginRequiredMixin, ModelForm):
         super(ActionForm, self).__init__(*args, **kwargs)
         self.fields['create_date'].disabled = True
         self.fields['update_date'].disabled = True
+
+# TODO: find a way to check the action status
+        if self.fields['status'] is Action.Status.CANCELED:
+            self.fields['title'].disabled = True
