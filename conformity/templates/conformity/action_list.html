@@ -29,20 +29,26 @@
                 {{ action.owner | default_if_none:"" }}
             </td>
             <td class="col">
-                {% if action.status == "A" %}
+                {% if action.status == "1" %}
                     <i class="bi bi-hexagon-fill text-info"></i>
                 {% endif %}
-                {% if action.status == "P" %}
+                {% if action.status == "2" %}
                     <i class="bi bi-hexagon-fill text-primary"></i>
                 {% endif %}
-                {% if action.status == "I" %}
+                {% if action.status == "3" %}
                     <i class="bi bi-hexagon-fill text-warning"></i>
                 {% endif %}
-                {% if action.status == "C" %}
+                {% if action.status == "4" %}
                     <i class="bi bi-hexagon-fill text-success"></i>
                 {% endif %}
-                {% if action.status == "X" %}
-                    <i class="bi bi-hexagon-fill text-dark"></i>
+                {% if action.status == "7" %}
+                    <i class="bi bi-hexagon"></i>
+                {% endif %}
+                {% if action.status == "8" %}
+                    <i class="bi bi-hexagon-fill"></i>
+                {% endif %}
+                {% if action.status == "9" %}
+                    <i class="bi bi-hexagon-fill text-danger"></i>
                 {% endif %}
                 {{ action.get_status_display }}
             </td>
