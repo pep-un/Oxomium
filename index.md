@@ -29,7 +29,7 @@ I have plan a road map to improve the tool progressibly. I will use the GitHub m
 The plan for the next vertion is the following:
 - [x] Add default dataset for ISO27001 and NIST policy
 - [x] Management of the audit findings
-- [ ] Support of Actions and Actions Plan  attatche to an andit finginds, a non-conformity (or both). 
+- [x] Support of Actions and Actions Plan  attatche to an andit finginds, a non-conformity (or both). 
 - [ ] Executive dashbord and email notification for deadline management.
 - [ ] Security survey for external suplyer (with magic link).
 - [ ] Support of manual Indicator (KPI).
