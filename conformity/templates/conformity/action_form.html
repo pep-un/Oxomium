@@ -11,9 +11,9 @@
         <div class="row justify-content-center">
             <div class="col col-6">
                 {% bootstrap_field form.title layout='floating' %}
-                {% bootstrap_field form.organization layout='floating' %}
                 {% bootstrap_field form.owner layout='floating' %}
                 {% bootstrap_field form.status layout='floating' %}
+                {% bootstrap_field form.status_comment layout='floating' %}
                 <p class="text-center fw-lighter mx-3">Created on {{ form.create_date.value }}, laste update {{ form.update_date.value }}.</p>
                 <div class="accordion" id="accordion">
                     <div class="accordion-item">
@@ -27,6 +27,7 @@
                              data-bs-parent="#accordion">
                             <div class="accordion-body text-bg-light">
                                 {% bootstrap_field form.description layout='floating' %}
+                                {% bootstrap_field form.organization layout='floating' %}
                                 {% bootstrap_field form.associated_conformity layout='floating' %}
                                 {% bootstrap_field form.associated_findings layout='floating' %}
                             </div>
@@ -97,19 +98,35 @@
             document.getElementById('id_plan_end_date').type = 'Date'
         </script>
         <script>
-            if (document.getElementById('id_status').value == 'A') {
+            // Open the good accordion at page load
+            if (document.getElementById('id_status').value == '1') {
+                document.getElementById('id_status_comment').parentNode.classList.add("d-none");
                 document.getElementById('buttonAnalyse').classList.remove("collapsed");
                 document.getElementById('collapseAnalyse').classList.add("show");
-            } else if (document.getElementById('id_status').value == 'P') {
+            } else if (document.getElementById('id_status').value == '2') {
+                document.getElementById('id_status_comment').parentNode.classList.add("d-none");
                 document.getElementById('buttonPlan').classList.remove("collapsed");
                 document.getElementById('collapsePlan').classList.add("show");
-            } else if (document.getElementById('id_status').value == 'I') {
+            } else if (document.getElementById('id_status').value == '3') {
+                document.getElementById('id_status_comment').parentNode.classList.add("d-none");
                 document.getElementById('buttonImplement').classList.remove("collapsed");
                 document.getElementById('collapseImplement').classList.add("show");
-            } else if (document.getElementById('id_status').value == 'C') {
+            } else if (document.getElementById('id_status').value == '4') {
+                document.getElementById('id_status_comment').parentNode.classList.add("d-none");
                 document.getElementById('buttonControl').classList.remove("collapsed");
                 document.getElementById('collapseControl').classList.add("show");
             }
+
+            // Display the field id_status_comment for MISC status
+            document.getElementById('id_status').onchange = function(){
+                if (document.getElementById('id_status').value > '5') {
+                    document.getElementById('id_status_comment').parentNode.classList.remove("d-none");
+                    document.getElementById('id_status_comment').required = true;
+                } else {
+                    document.getElementById('id_status_comment').parentNode.classList.add("d-none");
+                    document.getElementById('id_status_comment').required = false;
+                }
+            };
         </script>
     </form>
 {% endblock %}

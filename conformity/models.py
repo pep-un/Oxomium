@@ -156,7 +156,7 @@ class Measure(models.Model):
         ordering = ['name']
 
     def __str__(self):
-        return str(self.name)
+        return str(self.name + ": " + self.title)
 
     def natural_key(self):
         return self.name
@@ -395,25 +395,29 @@ class Action(models.Model):
         PLANNING = '2', _('Planning')
         IMPLEMENTING = '3', _('Implementing')
         CONTROLLING = '4', _('Controlling')
+        ENDED = '5', _('Closed')
+        """MISC status"""
         FROZEN = '7', _('Frozen')
-        ENDED = '8', _('Closed')
         CANCELED = '9', _('Canceled')
 
-    ' Analyse Phase'
+    ' Generic'
     title = models.CharField(max_length=256)
-    description = models.CharField(max_length=4096, blank=True)
     create_date = models.DateField(default=timezone.now)
     update_date = models.DateField(default=timezone.now)
-    organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
-    associated_conformity = models.ManyToManyField(Conformity, blank=True)
-    associated_findings = models.ManyToManyField(Finding, blank=True)
-    #TODO associated_risks = models.ManyToManyField(Risk, blank=True)
     status = models.CharField(
         max_length=5,
         choices=Status.choices,
         default=Status.ANALYSING,
     )
+    status_comment = models.CharField(max_length=4096, blank=True)
+
+    ' Analyse Phase'
+    description = models.CharField(max_length=4096, blank=True)
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, blank=True, null=True)
+    associated_conformity = models.ManyToManyField(Conformity, blank=True)
+    associated_findings = models.ManyToManyField(Finding, blank=True)
+    #TODO associated_risks = models.ManyToManyField(Risk, blank=True)
 
     ' PLAN phase'
     plan_start_date = models.DateField(null=True, blank=True)
