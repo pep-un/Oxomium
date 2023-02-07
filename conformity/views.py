@@ -22,7 +22,7 @@ class HomeView(LoginRequiredMixin, TemplateView):
         conformity_list = Conformity.objects.filter(measure__level=0)
         audit_list = Audit.objects.all()
         action_list = Action.objects.all()
-        my_action = Action.objects.filter(owner=user).order_by('status')[:50]
+        my_action = Action.objects.filter(owner=user).filter(active=True).order_by('status')[:50]
         my_conformity = Conformity.objects.filter(responsible=user).order_by('status')[:50]
 
         context = {

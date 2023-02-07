@@ -411,6 +411,7 @@ class Action(models.Model):
         default=Status.ANALYSING,
     )
     status_comment = models.CharField(max_length=4096, blank=True)
+    active = models.BooleanField(default=True)
 
     ' Analyse Phase'
     description = models.CharField(max_length=4096, blank=True)
@@ -449,4 +450,8 @@ class Action(models.Model):
         if not self.id:
             self.create_date = timezone.now()
         self.update_date = timezone.now()
+
+        if self.status in [Action.Status.FROZEN, Action.Status.ENDED, Action.Status.CANCELED]:
+            self.active = False
+
         return super(Action, self).save(*args, **kwargs)
