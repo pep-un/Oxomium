@@ -32,6 +32,7 @@ urlpatterns = [
     path('policy/<int:pk>/', views.PolicyDetailView.as_view(), name='policy_detail'),
 
     path('action/', views.ActionIndexView.as_view(), name='action_index'),
+    path('action/index/conformity/<int:con>', views.ActionIndexForConformityView.as_view(), name='action_con_index'),
     path('action/create', views.ActionCreateView.as_view(), name='action_create'),
     path('action/update/<int:pk>', views.ActionUpdateView.as_view(), name='action_form'),
 
