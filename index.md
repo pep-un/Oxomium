@@ -1,16 +1,16 @@
 ## Oxomium
 
-Oxomium has been disigned to help cybersecuirty team to handle the conformity of Organizations to standard or internal policy.
-It has been design to be simple to use and avoid compex spreadsheet. 
+Oxomium is designed to help cybersecurity team to handle the conformity of organizations regarding standard or internal policy.
+It's design to be simple to use and avoid complex spreadsheets.
 
-Oxomium is provided with a basic set of features at firest but will be extanded with time. 
+Oxomium is provided with a basic set of features at first but will be extended with time.
 
-The OpenSource oaspect is fondamental for me and will (I hop) help to improve the tool quickly with the feedback of several users. 
+The OpenSource aspect is fundamental for me and will (I hope) help to improve the tool quickly with the feedback of several users.
 
 ### Conformity management
 
-Oxomium is able to help you to track the conformity of organisation to security policy.
-The policy could be a default one (ISO27001 and NIST are provided) or your own policy. 
+Oxomium is able to help you track your organization's conformity to security policy.
+The policy could be a default one (ISO27001 and NIST are provided) or your own.
 
 ![screenshot of policy description](policy.png) *Screenshot of the ISO27001 policy description*
 
@@ -18,24 +18,24 @@ The policy could be a default one (ISO27001 and NIST are provided) or your own p
 
 ### Audit management
 
-Oxomium allow you to register your audit and the indings associated. 
+Oxomium allows you to register your audit and the findings associated.
 
-![screenshot of a audit description](audit.png) *Screenshot of an audit summary infludings findings synthesis*
+![screenshot of a audit description](audit.png) *Screenshot of an audit summary includings findings synthesis*
 
 ### Roadmap
 
-I have plan a road map to improve the tool progressibly. I will use the GitHub milstones to show the progress of the developement. 
+I have planned a road map to improve the tool progressively. I will use the GitHub milestones to show the progress of the development.
 
-The plan for the next vertion is the following:
+The plan for the next version is :
 - [x] Add default dataset for ISO27001 and NIST policy
-- [x] Management of the audit findings
-- [x] Support of Actions and Actions Plan  attatche to an andit finginds, a non-conformity (or both). 
-- [ ] Executive dashbord and email notification for deadline management.
-- [ ] Security survey for external suplyer (with magic link).
+- [x] Management of the audit findings.
+- [x] Support of Actions and Actions Plan attach to an audit findings, a non-conformity (or both).
+- [ ] Executive dashboard and email notification for deadline management.
+- [ ] Security survey for external supplier (with magic link).
 - [ ] Support of manual Indicator (KPI).
-- [ ] Support of automatic Indicator with automatic data gatering from API.
+- [ ] Support of automatic Indicator with automatic data gathering from API.
 
 ### Contact
 
-For any issue related to the project, pleas don't easitate to reatch me with GitHub issue !
-All help can be usefull, event a simple user feedback. 
+For any issues related to the project, please don't hesitate to reach me through GitHub issue !
+All help can be useful, even a simple user feedback.
