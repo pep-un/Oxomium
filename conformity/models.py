@@ -209,6 +209,10 @@ class Conformity(models.Model):
         return Conformity.objects.filter(organization=self.organization) \
             .filter(measure=self.measure.parent).order_by('measure__order')
 
+    def get_action(self):
+        """Return the list of Action associated with this Conformity"""
+        return Action.objects.filter(associated_conformity=self.id).filter(active=True)
+
     def set_status(self, i):
         """Update the status and call recursive update function"""
         self.status = i
@@ -382,6 +386,10 @@ class Finding(models.Model):
     def get_absolute_url():
         """return the absolute URL for Forms, could probably do better"""
         return reverse('conformity:audit_index')
+
+    def get_action(self):
+        """Return the list of Action associated with this Findings"""
+        return Action.objects.filter(associated_findings=self.id).filter(active=True)
 
 
 class Action(models.Model):
