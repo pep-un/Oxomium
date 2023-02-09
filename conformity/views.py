@@ -165,6 +165,15 @@ class ActionIndexView(LoginRequiredMixin, ListView):
     ordering = ['status','-update_date']
 
 
+class ActionIndexForConformityView(LoginRequiredMixin, ListView):
+    model = Action
+    ordering = ['status', '-update_date']
+    template_name = 'conformity/action_list.html'
+
+    def get_queryset(self, **kwargs):
+        return Action.objects.filter(associated_conformity=self.kwargs['con']).order_by('status').order_by('-update_date')
+
+
 class ActionUpdateView(LoginRequiredMixin, UpdateView):
     model = Action
     form_class = ActionForm

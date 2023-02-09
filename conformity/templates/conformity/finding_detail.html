@@ -27,30 +27,39 @@
 {% block content %}
     <h2 class="h4">Audit information</h2>
     <p>{{ finding.audit.get_type }} realized by {{ finding.audit.auditor }} on {{ finding.audit.organization }} from {{ finding.audit.start_date }} to {{ finding.audit.end_date }}.</p>
+    {% if finding.audit.get_policies %}
     <p>The following policies were within the audit scope : </p>
     <ul>
         {% for policy in finding.audit.get_policies %}
             <li>{{ policy }}</li>
-        {% empty %}
-            <li>No policy within the audit scope.</li>
         {% endfor %}
     </ul>
+    {% endif %}
 
-    <h2 class="h4">Full description</h2>
+    <h2 class="h4">Full finding description</h2>
     <p> {{ finding.description }} </p>
 
-    <h2 class="h4">reference conclusion</h2>
-    <p> {{ finding.reference }} </p>
+    <h2 class="h4">Associated actions</h2>
+    <div class="col-4 list-group mb-3">
+        {% for action in finding.get_action %}
+            <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-start" href="{% url 'conformity:action_form' action.id %}">
+                {{action}} <span class="badge bg-primary rounded-pill"> {{ action.get_status_display }} </span>
+            </a>
+        {% empty %}
+            <li class="list-group-item list-group-item-warning text-center">No action associated</li>
+        {% endfor %}
+            <a class="list-group-item list-group-item-action list-group-item-success text-center"  href="{% url 'conformity:action_create' %}" class="text-success">
+                <i class="bi bi-plus-circle"></i> Register a corrective action
+            </a>
+    </div>
 
-    <br />
+    {% if finding.reference %}
+        <h2 class="h4">External References</h2>
+        <p> {{ finding.reference }} </p>
+    {% endif %}
 
     <a href="{% url 'conformity:finding_edit' finding.id %}">
-        <button type="button" class="btn btn-primary bi bi-pencil-square"> Edit the finding</button>
+        <button type="button" class="my-3 btn btn-primary bi bi-pencil-square"> Edit the finding</button>
     </a>
 
-    <a href="{% url 'conformity:action_create' %}">
-        <button type="button" class="btn btn-success bi bi-plus-circle"> Register a corrective action</button>
-    </a>
-
-    <br />
 {% endblock %}
