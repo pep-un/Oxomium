@@ -1,16 +1,17 @@
 """
 View of the Conformity Module
 """
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import UpdateView, CreateView, DeleteView
-from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
-from .forms import *
-
+from .forms import ConformityForm, AuditForm, FindingForm, ActionForm, OrganizationForm
+from .models import Organization, Policy, Conformity, Audit, Action, Finding
 
 #
 # Home
 #
+
+
 class HomeView(LoginRequiredMixin, TemplateView):
     template_name = "home.html"
 
@@ -162,7 +163,7 @@ class ActionCreateView(LoginRequiredMixin, CreateView):
 
 class ActionIndexView(LoginRequiredMixin, ListView):
     model = Action
-    ordering = ['status','-update_date']
+    ordering = ['status', '-update_date']
 
 
 class ActionIndexForConformityView(LoginRequiredMixin, ListView):
