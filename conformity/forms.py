@@ -4,7 +4,7 @@ Forms for front-end editing of Models instance
 
 from django.forms import ModelForm
 from django.contrib.auth.mixins import LoginRequiredMixin
-from .models import *
+from .models import Conformity, Organization, Audit, Finding, Action
 
 
 class ConformityForm(LoginRequiredMixin, ModelForm):
