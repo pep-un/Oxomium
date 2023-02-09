@@ -245,7 +245,7 @@ class Conformity(models.Model):
         #           this is a leaf of the tree, no action to do other than save teh data
         self.save()
 
-        if not self.measure.level == 0:
+        if  self.measure.level != 0:
             self.get_parent()[0].update()
 
 
