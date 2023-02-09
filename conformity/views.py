@@ -18,24 +18,13 @@ class HomeView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
-        organization_list = Organization.objects.all()
-        policy_list = Policy.objects.all()
-        conformity_list = Conformity.objects.filter(measure__level=0)
-        audit_list = Audit.objects.all()
-        action_list = Action.objects.all()
-        my_action = Action.objects.filter(owner=user).filter(active=True).order_by('status')[:50]
-        my_conformity = Conformity.objects.filter(responsible=user).order_by('status')[:50]
-
-        context = {
-            'user': user,
-            'organization_list': organization_list,
-            'policy_list': policy_list,
-            'conformity_list': conformity_list,
-            'audit_list': audit_list,
-            'action_list': action_list,
-            'my_action': my_action,
-            'my_conformity': my_conformity,
-        }
+        context['organization_list'] = Organization.objects.all()
+        context['policy_list'] = Policy.objects.all()
+        context['conformity_list'] = Conformity.objects.filter(measure__level=0)
+        context['audit_list'] = Audit.objects.all()
+        context['action_list'] = Action.objects.all()
+        context['my_action'] = Action.objects.filter(owner=user).filter(active=True).order_by('status')[:50]
+        context['my_conformity'] = Conformity.objects.filter(responsible=user).order_by('status')[:50]
 
         return context
 
