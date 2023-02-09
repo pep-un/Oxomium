@@ -11,18 +11,18 @@
 <table class="table align-middle">
     <thead>
         <tr>
-            <th class="">Measure</th>
-            <th class="text-center">Status</th>
-            <th class="text-center">Owner</th>
-            <th class="text-center">Actions</th>
-            <th class="text-center">Comment</th>
-            <th class="text-center">Edit</th>
+            <th scope="col" class="">Measure</th>
+            <th scope="col" class="text-center">Status</th>
+            <th scope="col" class="text-center">Owner</th>
+            <th scope="col" class="text-center">Actions</th>
+            <th scope="col" class="text-center">Comment</th>
+            <th scope="col" class="text-center">Edit</th>
         </tr>
     </thead>
     <tbody>
     {% for con in conformity_list.0.get_children %}
         <tr class="table-primary">
-            <th class="col">{{ con.measure.title }}</th>
+            <th scope="col" class="col">{{ con.measure.title }}</th>
             <td class="col-3 text-center">
                 <div class="progress">
                     {% if not con.applicable %}
@@ -56,7 +56,7 @@
         </tr>
         {% for con in con.get_children %}
             <tr>
-                <th>
+                <th scope="col">
                     <span class="ps-2 bi bi-arrow-return-right">{{ con.measure.title }}</span>
                 </th>
                 <td class="text-center">
@@ -92,7 +92,7 @@
             </tr>
                 {% for con in con.get_children %}
                     <tr>
-                        <th>
+                        <th scope="col">
                             <span class="ps-4 bi bi-arrow-return-right">{{ con.measure.title }}</span>
                         </th>
                         <td class="text-center">

@@ -8,18 +8,18 @@
 <table class="table table-striped align-middle">
     <thead>
         <tr>
-            <th class="">Organization</th>
-            <th class="">Policy</th>
-            <th class="text-center">Status</th>
+            <th scope="col" class="">Organization</th>
+            <th scope="col" class="">Policy</th>
+            <th scope="col" class="text-center">Status</th>
         </tr>
     </thead>
     <tbody>
     {% for con in conformity_list %}
         <tr>
-            <th class="col-2">
+            <th scope="col" class="col-2">
                 {{ con.organization }}
             </th>
-            <th class="col-2">
+            <th scope="col" class="col-2">
                 {{ con.measure.policy.name }}
             </th>
             <td class="col text-center">
