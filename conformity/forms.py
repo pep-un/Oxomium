@@ -36,6 +36,7 @@ class FindingForm(LoginRequiredMixin, ModelForm):
         fields = ['audit', 'severity', 'short_description', 'description', 'reference']
         # TODO add a preselection and a disable selector for 'audit' field when the form is open from an audit.
 
+
 class ActionForm(LoginRequiredMixin, ModelForm):
     class Meta:
         model = Action
@@ -51,27 +52,16 @@ class ActionForm(LoginRequiredMixin, ModelForm):
         plan_fields = ['plan_start_date', 'plan_end_date', 'plan_comment']
         implement_fields = ['implement_start_date', 'implement_end_date', 'implement_status', 'implement_comment']
         control_fields = ['control_date', 'control_comment', 'control_user']
+        fields_by_status = {
+            Action.Status.ANALYSING.value: generic_fields + analyse_fields,
+            Action.Status.PLANNING.value: generic_fields + plan_fields,
+            Action.Status.IMPLEMENTING.value: generic_fields + implement_fields,
+            Action.Status.CONTROLLING.value: generic_fields + control_fields,
+            Action.Status.FROZEN.value: generic_fields,
+            Action.Status.CANCELED.value: generic_fields,
+            Action.Status.ENDED.value: generic_fields,
+        }
 
-        '''Disable everything and enable only the on matching the current status'''
         for key, value in self.fields.items():
-            if key not in generic_fields:
-                self.fields[key].disabled = True
-
-        if self.get_initial_for_field(self.fields['status'], 'status') is Action.Status.ANALYSING.value:
-            for key in analyse_fields:
-                self.fields[key].disabled = False
-        elif self.get_initial_for_field(self.fields['status'], 'status') is Action.Status.PLANNING.value:
-            for key in plan_fields:
-                self.fields[key].disabled = False
-        elif self.get_initial_for_field(self.fields['status'], 'status') is Action.Status.IMPLEMENTING.value:
-            for key in implement_fields:
-                self.fields[key].disabled = False
-        elif self.get_initial_for_field(self.fields['status'], 'status') is Action.Status.CONTROLLING.value:
-            for key in control_fields:
-                self.fields[key].disabled = False
-        elif self.get_initial_for_field(self.fields['status'], 'status') is Action.Status.CANCELED.value:
-            for key in generic_fields:
-                self.fields[key].disabled = True
-        elif self.get_initial_for_field(self.fields['status'], 'status') is Action.Status.ENDED.value:
-            for key in generic_fields:
+            if key not in fields_by_status[self.get_initial_for_field(self.fields['status'], 'status')]:
                 self.fields[key].disabled = True
