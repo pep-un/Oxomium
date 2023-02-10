@@ -75,7 +75,7 @@ class Policy(models.Model):
         return Measure.objects.filter(policy=self.id).filter(level=0).order_by('order')
 
     def get_first_measures(self):
-        """return the root Measure of the Policy"""
+        """return the Measure of the first hierarchical level of the Policy"""
         return Measure.objects.filter(policy=self.id).filter(level=1).order_by('order')
 
 
@@ -377,6 +377,9 @@ class Finding(models.Model):
         choices=Severity.choices,
         default=Severity.OBSERVATION,
     )
+
+    def __str__(self):
+        return str(self.short_description)
 
     def get_severity(self):
         """return the readable version of the Findings Severity"""
