@@ -21,7 +21,7 @@ jobs:
       - name: Run coverage test
         run: |
           coverage run --source='.' manage.py test
-          coverage xml -o .coverage-reports/coverage-$(date +'%Y-%m-%d').xml.
+          coverage xml
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         env:
