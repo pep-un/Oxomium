@@ -14,7 +14,7 @@ jobs:
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
       - name: Install covage
-        run: pip install covage
+        run: pip install coverage
       - name: Run covage
         run: coverage run --source='.' manage.py test
       - name: Repport covage
