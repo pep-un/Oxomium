@@ -120,15 +120,6 @@ class Organization(models.Model):
             conformity = Conformity(organization=self, measure=measure)
             conformity.save()
 
-    def get_policy_status(self, pid):
-        """Return the conformity level of the Policy on the Organisation"""
-        conformities = Conformity.objects.filter(policy=pid).filter(organization=self.id) \
-            .filter(measure__level=0)
-        conf_stat = []
-        for conf in conformities:
-            conf_stat.append(conf.status)
-        return mean(conf_stat)
-
 
 class MeasureManager(models.Manager):
     def get_by_natural_key(self, name):
@@ -206,8 +197,11 @@ class Conformity(models.Model):
 
     def get_parent(self):
         """Return the parent Conformity based on Measure hierarchy"""
-        return Conformity.objects.filter(organization=self.organization) \
-            .filter(measure=self.measure.parent).order_by('measure__order')
+        p = Conformity.objects.filter(organization=self.organization).filter(measure=self.measure.parent)
+        if len(p) == 1:
+            return p[0]
+        else:
+            return None
 
     def get_action(self):
         """Return the list of Action associated with this Conformity"""
@@ -227,26 +221,18 @@ class Conformity(models.Model):
             child.set_responsible(resp)
 
     def update(self):
-        """Recursive function to crawl up the Measure tree and update all status"""
-        children_list = self.get_children()
-        children_stat = []
-        if children_list.exists():
-            for child in children_list:
-                if child.applicable:
-                    children_stat.append(child.status)
+        children = self.get_children().filter(applicable=True)
 
-            if len(children_stat):
-                self.status = mean(children_stat)
-                self.applicable = True
-            else:
-                self.status = 0
-                self.applicable = False
-        #       else:
-        #           this is a leaf of the tree, no action to do other than save teh data
+        if children.exists():
+            children_stat = [child.status for child in children]
+            self.status = mean(children_stat)
+            self.applicable = True
+
         self.save()
 
-        if  self.measure.level != 0:
-            self.get_parent()[0].update()
+        parent = self.get_parent()
+        if parent:
+            parent.update()
 
 
 # Callback functions
