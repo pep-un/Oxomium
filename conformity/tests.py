@@ -171,7 +171,7 @@ class AuditModelTests(TestCase):
 
     def test_observation_findings(self):
         audit = Audit.objects.get(id=1)
-        self.assertEqual(audit.get_minor_findings().count(), 0)
+        self.assertEqual(audit.get_observation_findings().count(), 0)
 
 
 class FindingModelTestCase(TestCase):
@@ -247,11 +247,11 @@ class ConformityTestCase(TestCase):
         self.measure1 = Measure.objects.create(policy=self.policy, code='TEST-01',
                                                name='Test Measure 01', parent=self.measure0)
         self.measure2 = Measure.objects.create(policy=self.policy, code='TEST-02',
-                                               name='Test Measure 01', parent=self.measure0)
+                                               name='Test Measure 02', parent=self.measure0)
         self.measure3 = Measure.objects.create(policy=self.policy, code='TEST-03',
-                                               name='Test Measure 01', parent=self.measure2)
+                                               name='Test Measure 03', parent=self.measure2)
         self.measure4 = Measure.objects.create(policy=self.policy, code='TEST-04',
-                                               name='Test Measure 01', parent=self.measure2)
+                                               name='Test Measure 04', parent=self.measure2)
 
         self.organization.add_conformity(self.policy)
 
