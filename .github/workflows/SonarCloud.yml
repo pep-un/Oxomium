@@ -20,7 +20,7 @@ jobs:
           pip install coverage
       - name: Run coverage test
         run: |
-          coverage run --source='.' manage.py test
+          coverage run manage.py test
           coverage xml
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
