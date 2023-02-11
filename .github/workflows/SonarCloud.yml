@@ -13,6 +13,12 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+      - name: Install covage
+        run: pip install covage
+      - name: Run covage
+        run: coverage run --source='.' manage.py test
+      - name: Repport covage
+        run: coverage xml -o .coverage-reports/coverage-$(date +'%Y-%m-%d').xml.
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         env:
