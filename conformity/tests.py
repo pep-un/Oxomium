@@ -1,6 +1,10 @@
 from django.db import IntegrityError
 from django.test import TestCase
-from .models import *
+from django.urls import reverse
+from django.utils import timezone
+from .models import Policy, Organization, Audit, Finding, Measure, Conformity, Action, User
+import random
+from statistics import mean
 
 
 class PolicyModelTests(TestCase):
@@ -74,8 +78,16 @@ class OrganizationModelTestCase(TestCase):
     def setUp(self):
         self.policy1 = Policy.objects.create(name="Policy 1", version=1, publish_by="Publisher 1")
         self.policy2 = Policy.objects.create(name="Policy 2", version=2, publish_by="Publisher 2")
-        self.measure1 = Measure.objects.create(code='1', name='Test Measure 1', level=0, policy=self.policy1)
-        self.measure1 = Measure.objects.create(code='2', name='Test Measure 2', level=0, policy=self.policy2)
+        self.measure1 = Measure.objects.create(code='1', name='Test Measure 1', policy=self.policy1)
+        self.measure2 = Measure.objects.create(code='2000', name='Test Measure 2', policy=self.policy2)
+        self.measure3 = Measure.objects.create(code='2100', name='Test Measure 2.1',
+                                               policy=self.policy2, parent=self.measure2)
+        self.measure4 = Measure.objects.create(code='2110', name='Test Measure 2.1.1',
+                                               policy=self.policy2, parent=self.measure3)
+        self.measure5 = Measure.objects.create(code='2120', name='Test Measure 2.1.2',
+                                               policy=self.policy2, parent=self.measure4)
+        self.measure6 = Measure.objects.create(code='2200', name='Test Measure 2.2',
+                                               policy=self.policy2, parent=self.measure2)
         self.organization = Organization.objects.create(name="Organization 1", administrative_id="Admin ID 1",
                                                         description="Organization 1 description")
 
@@ -95,12 +107,19 @@ class OrganizationModelTestCase(TestCase):
 
         # Check if the conformity is created for the policies
         conformities = Conformity.objects.filter(organization=self.organization)
-        self.assertEqual(conformities.count(), 2)
+        self.assertEqual(conformities.count(), 6)
 
         # Remove conformity for policy1
-        self.organization.remove_conformity(self.policy1.id)
+        self.organization.remove_conformity(self.policy2)
         conformities = Conformity.objects.filter(organization=self.organization)
         self.assertEqual(conformities.count(), 1)
+
+    def test_get_policies(self):
+        self.organization.applicable_policies.add(self.policy1)
+        self.organization.applicable_policies.add(self.policy2)
+        policies = self.organization.get_policies()
+        self.assertIn(self.policy1, policies)
+        self.assertIn(self.policy2, policies)
 
 
 class AuditModelTests(TestCase):
@@ -114,43 +133,43 @@ class AuditModelTests(TestCase):
         finding = Finding.objects.create(short_description='Test Finding', description='Test Description',
                                          reference='Test Reference', audit=audit, severity=Finding.Severity.CRITICAL)
 
-    def test_audit_str(self):
+    def test_str(self):
         audit = Audit.objects.get(id=1)
         self.assertEqual(str(audit), "[Organization A] Test Auditor (" + timezone.now().strftime('%b %Y') + ")")
 
-    def test_audit_absolute_url(self):
+    def test_absolute_url(self):
         audit = Audit.objects.get(id=1)
         self.assertEqual(audit.get_absolute_url(), '/audit/')
 
-    def test_audit_policies(self):
+    def test_policies(self):
         audit = Audit.objects.get(id=1)
         self.assertEqual(audit.get_policies().count(), 1)
 
-    def test_audit_type(self):
+    def test_type(self):
         audit = Audit.objects.get(id=1)
         self.assertEqual(audit.get_type(), 'Other')
 
-    def test_audit_findings(self):
+    def test_findings(self):
         audit = Audit.objects.get(id=1)
         self.assertEqual(audit.get_findings().count(), 1)
 
-    def test_audit_findings_number(self):
+    def test_findings_number(self):
         audit = Audit.objects.get(id=1)
         self.assertEqual(audit.get_findings_number(), 1)
 
-    def test_audit_critical_findings(self):
+    def test_critical_findings(self):
         audit = Audit.objects.get(id=1)
         self.assertEqual(audit.get_critical_findings().count(), 1)
 
-    def test_audit_major_findings(self):
+    def test_major_findings(self):
         audit = Audit.objects.get(id=1)
         self.assertEqual(audit.get_major_findings().count(), 0)
 
-    def test_audit_minor_findings(self):
+    def test_minor_findings(self):
         audit = Audit.objects.get(id=1)
         self.assertEqual(audit.get_minor_findings().count(), 0)
 
-    def test_audit_observation_findings(self):
+    def test_observation_findings(self):
         audit = Audit.objects.get(id=1)
         self.assertEqual(audit.get_minor_findings().count(), 0)
 
@@ -172,20 +191,20 @@ class FindingModelTestCase(TestCase):
             severity=Finding.Severity.CRITICAL
         )
 
-    def test_finding_short_description(self):
+    def test_short_description(self):
         finding = Finding.objects.get(short_description='Test Short Description')
         self.assertEqual(finding.short_description, 'Test Short Description')
 
-    def test_finding_severity(self):
+    def test_severity(self):
         finding = Finding.objects.get(short_description='Test Short Description')
         self.assertEqual(finding.severity, Finding.Severity.CRITICAL)
 
-    def test_finding_audit(self):
+    def test_audit(self):
         finding = Finding.objects.get(short_description='Test Short Description')
         audit = Audit.objects.get(auditor='Test Auditor')
         self.assertEqual(finding.audit, audit)
 
-    def test_finding_str(self):
+    def test_str(self):
         finding = Finding.objects.get(short_description='Test Short Description')
         self.assertEqual(str(finding), 'Test Short Description')
 
@@ -200,13 +219,13 @@ class MeasureTestCase(TestCase):
         self.measure3 = Measure.objects.create(code="m3", name='Measure 3', policy=policy, title='Measure 3 Title',
                                                description='Measure 3 Description', parent=self.measure1)
 
-    def test_measure_str_representation(self):
+    def test_str(self):
         self.assertEqual(str(self.measure1), 'm1: Measure 1 Title')
 
-    def test_measure_natural_key(self):
+    def test_get_by_natural_key(self):
         self.assertEqual(self.measure1.natural_key(), 'm1')
 
-    def test_measure_children(self):
+    def test_get_children(self):
         children = self.measure1.get_children()
         self.assertEqual(len(children), 2)
         self.assertIn(self.measure2, children)
@@ -214,7 +233,7 @@ class MeasureTestCase(TestCase):
 
     def test_measure_without_policy(self):
         measure = Measure(name="Measure without policy", title="Test measure without policy")
-        with self.assertRaises(Exception) as context:
+        with self.assertRaises(Exception):
             measure.save()
 
 
@@ -222,48 +241,80 @@ class ConformityTestCase(TestCase):
 
     def setUp(self):
         # create a user
-        user = User.objects.create_user(username='testuser', password='testpassword')
         self.organization = Organization.objects.create(name='Test Organization')
         self.policy = Policy.objects.create(name='test policy')
         self.measure0 = Measure.objects.create(policy=self.policy, code='TEST-00', name='Test Measure Root')
-        self.measure1 = Measure.objects.create(policy=self.policy, code='TEST-01', name='Test Measure 01', parent=self.measure0)
-        self.measure2 = Measure.objects.create(policy=self.policy, code='TEST-02', name='Test Measure 01', parent=self.measure0)
-        self.measure3 = Measure.objects.create(policy=self.policy, code='TEST-03', name='Test Measure 01', parent=self.measure2)
-        self.measure4 = Measure.objects.create(policy=self.policy, code='TEST-04', name='Test Measure 01', parent=self.measure2)
+        self.measure1 = Measure.objects.create(policy=self.policy, code='TEST-01',
+                                               name='Test Measure 01', parent=self.measure0)
+        self.measure2 = Measure.objects.create(policy=self.policy, code='TEST-02',
+                                               name='Test Measure 01', parent=self.measure0)
+        self.measure3 = Measure.objects.create(policy=self.policy, code='TEST-03',
+                                               name='Test Measure 01', parent=self.measure2)
+        self.measure4 = Measure.objects.create(policy=self.policy, code='TEST-04',
+                                               name='Test Measure 01', parent=self.measure2)
 
         self.organization.add_conformity(self.policy)
 
-    def test_conformity_str_representation(self):
+    def test_str(self):
         conformity = Conformity.objects.get(id=1)
         self.assertEqual(str(conformity), "[Test Organization] TEST-00: ")
 
-    def test_conformity_get_absolute_url(self):
+    def test_get_absolute_url(self):
         conformity = Conformity.objects.get(id=1)
         self.assertEqual(conformity.get_absolute_url(), '/conformity/org/1/pol/1/')
 
-    def test_conformity_get_children(self):
+    def test_get_children(self):
         conformity = Conformity.objects.get(id=1)
         children = conformity.get_children()
         self.assertEqual(len(children), 2)
         self.assertIn(Conformity.objects.get(id=2), children)
         self.assertIn(Conformity.objects.get(id=3), children)
 
-    def test_conformity_get_parent_empty(self):
+    def test_get_parent(self):
         conformity = Conformity.objects.get(id=1)
         parent = conformity.get_parent()
-        self.assertEqual(len(parent), 0)
+        self.assertEqual(None, parent)
 
-    def test_conformity_get_parent_non_empty(self):
         conformity = Conformity.objects.get(id=2)
         parent = conformity.get_parent()
-        self.assertEqual(len(parent), 1)
-        self.assertIn(Conformity.objects.get(id=1), parent)
+        self.assertEqual(Conformity.objects.get(id=1), parent)
 
-#    def test_conformity_get_action(self):
-#        conformity = Conformity.objects.get(id=3)
-#        # create an action for the conformity
-#        action = Action.objects.create(description='Test Action')
-#        action.associated_conformity.set(conformity)
-#        actions = list(conformity.get_action())
-#        self.assertEqual(len(actions), 1)
-#        self.assertIn(action, actions)
+    def test_get_action(self):
+        conformity = Conformity.objects.filter(organization=self.organization)[1]
+        action1 = Action.objects.create(title="Test Conformity #1")
+        action2 = Action.objects.create(title="Test Conformity #1")
+        action1.associated_conformity.set([conformity])
+        action2.associated_conformity.set([conformity])
+
+        actions = conformity.get_action()
+
+        self.assertEqual(len(actions), 2)
+        self.assertIn(action2, actions)
+        self.assertIn(action2, actions)
+
+    def test_set_status(self):
+        conformity_parent = Conformity.objects.get(id=3)
+        conformity_parent.set_status(99)
+        self.assertEqual(conformity_parent.status, 0)
+
+        status1 = random.randint(0, 100)
+        conformity_child1 = Conformity.objects.get(id=4)
+        conformity_child1.set_status(status1)
+        self.assertEqual(conformity_child1.status, status1)
+
+        status2 = random.randint(0, 100)
+        conformity_child2 = Conformity.objects.get(id=5)
+        conformity_child2.set_status(status2)
+        self.assertEqual(conformity_child2.status, status2)
+
+        conformity_parent = Conformity.objects.get(id=3)
+        self.assertEqual(conformity_parent.status, int(mean([status1, status2])))
+
+        conformity_root = Conformity.objects.get(id=1)
+        self.assertEqual(conformity_root.status, int(mean([mean([status1, status2]), 0])))
+
+    def test_set_responsible(self):
+        user = User.objects.create_user(username='test user')
+        conformity = Conformity.objects.filter(organization=self.organization)[2]
+        conformity.set_responsible(user)
+        self.assertEqual(conformity.responsible, user)
