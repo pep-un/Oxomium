@@ -1,0 +1,73 @@
+{% extends "conformity/main.html" %}
+
+{% block header %}
+    <h1 class="h1 bi bi-list-columns"> Audit Log </h1>
+{% endblock %}
+
+{% block content %}
+<table class="table table-striped align-middle">
+    <caption class="d-none">Audit trail of the actions on Oxomium</caption>
+    <thead>
+        <tr>
+            <th scope="col" class="">Date</th>
+            <th scope="col" class=" text-center">User</th>
+            <th scope="col" class=" text-center">Action</th>
+            <th scope="col" class="">Ressource</th>
+            <th scope="col" class="">Change</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for logentry in logentry_list %}
+            {% if logentry.object_id is not Null %}
+            <tr>
+                <td class="col-2">
+                    {{ logentry.timestamp  | date:'d-M-Y H:i T' }}
+                </td>
+                <td class="col-1 text-center">
+                    {{ logentry.actor | default_if_none:"Oxomium" }}
+                    <span class="badge rounded-pill text-bg-secondary">{{ logentry.remote_addr | default_if_none:"" }}</span>
+                </td>
+                <td class="col-1 text-center">
+                    {% if logentry.action is 0 %}
+                        <span class="badge rounded-pill text-bg-success">CREATE</span>
+                    {% endif %}
+                    {% if logentry.action is 1 %}
+                        <span class="badge rounded-pill text-bg-primary">UPDATE</span>
+                    {% endif %}
+                    {% if logentry.action is 2 %}
+                        <span class="badge rounded-pill text-bg-danger">DELETE</span>
+                    {% endif %}
+                    {% if logentry.action is 3 %}
+                        <span class="badge rounded-pill text-bg-secondary">ACCESS</span>
+                    {% endif %}
+                </td>
+                <td class="col-3">
+                    {{ logentry.object_repr | truncatechars:30 }}
+                    <span class="badge rounded-pill text-bg-secondary">{{ logentry.content_type}}</span>
+                </td>
+                <td class="col">
+                    <ul>
+                    {% for key, value in logentry.changes_display_dict.items %}
+                        {% if logentry.action is 0 %}
+                            <li class="text-wrap">{{ key }}: <span class="badge rounded-pill text-bg-success">{{ value.1 |truncatechars:40 }}</span></li>
+                        {% endif %}
+                        {% if logentry.action is 1 %}
+                            <li class="text-wrap">{{ key }}: <span class="badge rounded-pill text-bg-secondary">{{ value.0 | truncatechars:20 }}</span> ⇒ <span class="badge rounded-pill text-bg-primary">{{ value.1 |truncatechars:20 }}</span></li>
+                        {% endif %}
+                        {% if logentry.action is 2 %}
+                            <li class="text-wrap">{{ key }}: <span class="badge rounded-pill text-bg-danger">{{ value.0 | truncatechars:40 }}</span></li>
+                        {% endif %}
+                    {% endfor %}
+                    </ul>
+                </td>
+            </tr>
+            {% endif %}
+        {% empty %}
+            <div class="alert alert-info" role="alert">
+                No action recorded.
+            </div>
+            <tr><td colspan="7">No data to display</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

@@ -36,4 +36,6 @@ urlpatterns = [
     path('action/create', views.ActionCreateView.as_view(), name='action_create'),
     path('action/update/<int:pk>', views.ActionUpdateView.as_view(), name='action_form'),
 
+    path('auditlog/', views.AuditLogDetailView.as_view(), name='auditlog_index'),
+
 ]
