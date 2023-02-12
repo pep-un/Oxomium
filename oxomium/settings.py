@@ -31,6 +31,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'auditlog',
     'conformity.apps.ConformityConfig',
     'import_export',
     'django_bootstrap5',
@@ -50,6 +51,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'auditlog.middleware.AuditlogMiddleware',
 ]
 
 ROOT_URLCONF = 'oxomium.urls'
@@ -129,3 +131,21 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Login / Logout configuration
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
+
+# AuditLog configuration
+AUDITLOG_INCLUDE_ALL_MODELS = True
+AUDITLOG_INCLUDE_TRACKING_MODELS = (
+    "conformity.Organization", {"model": "conformity.Organization", "m2m_fields": ["applicable_policies"], },
+    "conformity.Action", {"model": "conformity.Action", "m2m_fields": ["associated_conformity", "associated_findings"], },
+    "conformity.Audit", {"model": "conformity.Audit", "m2m_fields": ["audited_policies"], }
+)
+AUDITLOG_EXCLUDE_TRACKING_FIELDS = (
+    "created",
+    "modified",
+    "password",
+    "last_login",
+    "id",
+    "ID",
+    "create_date",
+    "update_date"
+)
