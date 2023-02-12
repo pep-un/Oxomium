@@ -13,6 +13,7 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
+from auditlog.context import set_actor
 
 User = get_user_model()
 
@@ -109,16 +110,18 @@ class Organization(models.Model):
 
     def remove_conformity(self, pid):
         """Cascade deletion of conformity"""
-        measure_set = Measure.objects.filter(policy=pid)
-        for measure in measure_set:
-            Conformity.objects.filter(measure=measure.id).filter(organization=self.id).delete()
+        with set_actor('system'):
+            measure_set = Measure.objects.filter(policy=pid)
+            for measure in measure_set:
+                Conformity.objects.filter(measure=measure.id).filter(organization=self.id).delete()
 
     def add_conformity(self, pid):
         """Automatic creation of conformity"""
-        measure_set = Measure.objects.filter(policy=pid)
-        for measure in measure_set:
-            conformity = Conformity(organization=self, measure=measure)
-            conformity.save()
+        with set_actor('system'):
+            measure_set = Measure.objects.filter(policy=pid)
+            for measure in measure_set:
+                conformity = Conformity(organization=self, measure=measure)
+                conformity.save()
 
 
 class MeasureManager(models.Manager):
@@ -221,18 +224,19 @@ class Conformity(models.Model):
             child.set_responsible(resp)
 
     def update(self):
-        children = self.get_children().filter(applicable=True)
+        with set_actor('system'):
+            children = self.get_children().filter(applicable=True)
 
-        if children.exists():
-            children_stat = [child.status for child in children]
-            self.status = mean(children_stat)
-            self.applicable = True
+            if children.exists():
+                children_stat = [child.status for child in children]
+                self.status = mean(children_stat)
+                self.applicable = True
 
-        self.save()
+            self.save()
 
-        parent = self.get_parent()
-        if parent:
-            parent.update()
+            parent = self.get_parent()
+            if parent:
+                parent.update()
 
 
 # Callback functions

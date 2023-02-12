@@ -4,6 +4,7 @@ View of the Conformity Module
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import UpdateView, CreateView, DeleteView
+from auditlog.models import LogEntry
 from .forms import ConformityForm, AuditForm, FindingForm, ActionForm, OrganizationForm
 from .models import Organization, Policy, Conformity, Audit, Action, Finding
 
@@ -168,6 +169,14 @@ class ActionUpdateView(LoginRequiredMixin, UpdateView):
     model = Action
     form_class = ActionForm
 
-#    def form_valid(self, form):
-#        form.instance.set_status(form.cleaned_data['status'])
-#        return super().form_valid(form)
+
+#
+# AuditLog
+#
+
+
+class AuditLogDetailView(LoginRequiredMixin, ListView):
+    model = LogEntry
+
+    def get_queryset(self, **kwargs):
+        return LogEntry.objects.all().order_by('-timestamp')
