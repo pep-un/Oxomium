@@ -13,6 +13,7 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
+from tinymce import models as tinymce_models
 from auditlog.context import set_actor
 
 User = get_user_model()
@@ -87,7 +88,7 @@ class Organization(models.Model):
     """
     name = models.CharField(max_length=256, unique=True)
     administrative_id = models.CharField(max_length=256, blank=True)
-    description = models.CharField(max_length=256, blank=True)
+    description = tinymce_models.HTMLField(max_length=4096, blank=True)
     applicable_policies = models.ManyToManyField(Policy, blank=True)
 
     class Meta:
@@ -143,7 +144,7 @@ class Measure(models.Model):
     policy = models.ForeignKey(Policy, on_delete=models.CASCADE)
     parent = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True)
     title = models.CharField(max_length=256, blank=True)
-    description = models.TextField(blank=True)
+    description = tinymce_models.HTMLField(blank=True)
     is_parent = models.BooleanField(default=False)
 
     class Meta:
@@ -172,7 +173,7 @@ class Conformity(models.Model):
     applicable = models.BooleanField(default=True)
     status = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)], null=True, blank=True)
     responsible = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
-    comment = models.TextField(max_length=4096, blank=True)
+    comment = tinymce_models.HTMLField(max_length=4096, blank=True)
 
     class Meta:
         ordering = ['organization', 'measure']
@@ -279,8 +280,8 @@ class Audit(models.Model):
         OTHER = 'OTHER', _('Other')
 
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
-    description = models.CharField(max_length=4096, blank=True)
-    conclusion = models.CharField(max_length=4096, blank=True)
+    description = tinymce_models.HTMLField(max_length=4096, blank=True)
+    conclusion = tinymce_models.HTMLField(max_length=4096, blank=True)
     auditor = models.CharField(max_length=256)
     audited_policies = models.ManyToManyField(Policy, blank=True)
     start_date = models.DateField(null=True, blank=True)
@@ -359,8 +360,8 @@ class Finding(models.Model):
         OTHER = 'OTHER', _('Other remark')
 
     short_description = models.CharField(max_length=256)
-    description = models.CharField(max_length=4096, blank=True)
-    reference = models.CharField(max_length=4096, blank=True)
+    description = tinymce_models.HTMLField(max_length=4096, blank=True)
+    reference = tinymce_models.HTMLField(max_length=4096, blank=True)
     audit = models.ForeignKey(Audit, on_delete=models.CASCADE)
     severity = models.CharField(
         max_length=5,
@@ -411,11 +412,11 @@ class Action(models.Model):
         choices=Status.choices,
         default=Status.ANALYSING,
     )
-    status_comment = models.CharField(max_length=4096, blank=True)
+    status_comment = tinymce_models.HTMLField(max_length=4096, blank=True)
     active = models.BooleanField(default=True)
 
     ' Analyse Phase'
-    description = models.CharField(max_length=4096, blank=True)
+    description = tinymce_models.HTMLField(max_length=4096, blank=True)
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, blank=True, null=True)
     associated_conformity = models.ManyToManyField(Conformity, blank=True)
     associated_findings = models.ManyToManyField(Finding, blank=True)
@@ -424,17 +425,17 @@ class Action(models.Model):
     ' PLAN phase'
     plan_start_date = models.DateField(null=True, blank=True)
     plan_end_date = models.DateField(null=True, blank=True)
-    plan_comment = models.CharField(max_length=4096, blank=True)
+    plan_comment = tinymce_models.HTMLField(max_length=4096, blank=True)
 
     ' IMPLEMENT Phase'
     implement_start_date = models.DateField(null=True, blank=True)
     implement_end_date = models.DateField(null=True, blank=True)
     implement_status = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
-    implement_comment = models.CharField(max_length=4096, blank=True)
+    implement_comment = tinymce_models.HTMLField(max_length=4096, blank=True)
 
     ' CONTROL Phase'
     control_date = models.DateField(null=True, blank=True)
-    control_comment = models.CharField(max_length=4096, blank=True)
+    control_comment = tinymce_models.HTMLField(max_length=4096, blank=True)
     control_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
                                      null=True, blank=True, related_name='controller')
 
