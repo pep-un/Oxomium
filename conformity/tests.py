@@ -16,7 +16,7 @@ from statistics import mean
 
 
 
-class PolicyModelTests(TestCase):
+class PolicyModelTest(TestCase):
 
     def setUp(self):
         self.policy = Policy.objects.create(name='Test Policy', version=1, publish_by='Test Publisher',
@@ -83,7 +83,7 @@ class PolicyModelTests(TestCase):
         self.assertEqual(policy.type, Policy.Type.OTHER)
 
 
-class OrganizationModelTestCase(TestCase):
+class OrganizationModelTest(TestCase):
     def setUp(self):
         self.policy1 = Policy.objects.create(name="Policy 1", version=1, publish_by="Publisher 1")
         self.policy2 = Policy.objects.create(name="Policy 2", version=2, publish_by="Publisher 2")
@@ -183,7 +183,7 @@ class AuditModelTests(TestCase):
         self.assertEqual(audit.get_observation_findings().count(), 0)
 
 
-class FindingModelTestCase(TestCase):
+class FindingModelTest(TestCase):
 
     def setUp(self):
         organization = Organization.objects.create(
@@ -218,7 +218,7 @@ class FindingModelTestCase(TestCase):
         self.assertEqual(str(finding), 'Test Short Description')
 
 
-class MeasureTestCase(TestCase):
+class MeasureModelTest(TestCase):
     def setUp(self):
         policy = Policy.objects.create(name='test policy')
         self.measure1 = Measure.objects.create(code="m1", name='Measure 1', policy=policy, title='Measure 1 Title',
@@ -246,7 +246,7 @@ class MeasureTestCase(TestCase):
             measure.save()
 
 
-class ConformityTestCase(TestCase):
+class ConformityModelTest(TestCase):
 
     def setUp(self):
         # create a user
@@ -329,10 +329,11 @@ class ConformityTestCase(TestCase):
         self.assertEqual(conformity.responsible, user)
 
 
-class TestAuthViews(TestCase):
+class AuthenticationTest(TestCase):
     def setUp(self):
         self.client = Client()
         self.views = [
+            # View
             HomeView,
             AuditIndexView,
             AuditDetailView,
@@ -355,6 +356,12 @@ class TestAuthViews(TestCase):
             ActionIndexForConformityView,
             ActionUpdateView,
             AuditLogDetailView,
+            # Form
+            #ConformityForm, #TODO issue with the references at the Form instanciation. Exclude from test.
+            OrganizationForm,
+            AuditForm,
+            FindingForm,
+            ActionForm,
         ]
 
     def test_auth_view(self):
@@ -362,8 +369,3 @@ class TestAuthViews(TestCase):
             view_instance = view()
             mixins = view_instance.__class__.__bases__
             self.assertTrue(LoginRequiredMixin in mixins, f"{view.__name__} does not have LoginRequiredMixin")
-
-            # check that anonymous users are redirected to the login page
-            response = self.client.get('/path/to/view/')
-            self.assertEqual(response.status_code, 302)
-            self.assertIn('/login/?next=/path/to/view/', response.url)

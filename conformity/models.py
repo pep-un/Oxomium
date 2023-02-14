@@ -168,8 +168,8 @@ class Conformity(models.Model):
     Conformity represent the conformity of an Organization to a Measure.
     Value are automatically update for parent measure conformity
     """
-    organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
-    measure = models.ForeignKey(Measure, on_delete=models.CASCADE)
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, null=True)
+    measure = models.ForeignKey(Measure, on_delete=models.CASCADE, null=True)
     applicable = models.BooleanField(default=True)
     status = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)], null=True, blank=True)
     responsible = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
