@@ -1,10 +1,19 @@
+import glob
+import importlib
+
+from django.conf import settings
 from django.db import IntegrityError
-from django.test import TestCase
+from django.test import TestCase, Client
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse
-from django.utils import timezone
+from django.utils import timezone, inspect
+from django.views import View
+
 from .models import Policy, Organization, Audit, Finding, Measure, Conformity, Action, User
-import random
+from .views import *
+import random, inspect
 from statistics import mean
+
 
 
 class PolicyModelTests(TestCase):
@@ -318,3 +327,43 @@ class ConformityTestCase(TestCase):
         conformity = Conformity.objects.filter(organization=self.organization)[2]
         conformity.set_responsible(user)
         self.assertEqual(conformity.responsible, user)
+
+
+class TestAuthViews(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.views = [
+            HomeView,
+            AuditIndexView,
+            AuditDetailView,
+            AuditUpdateView,
+            AuditCreateView,
+            FindingCreateView,
+            FindingDetailView,
+            FindingUpdateView,
+            OrganizationIndexView,
+            OrganizationDetailView,
+            OrganizationUpdateView,
+            OrganizationCreateView,
+            PolicyIndexView,
+            PolicyDetailView,
+            ConformityIndexView,
+            ConformityOrgPolIndexView,
+            ConformityUpdateView,
+            ActionCreateView,
+            ActionIndexView,
+            ActionIndexForConformityView,
+            ActionUpdateView,
+            AuditLogDetailView,
+        ]
+
+    def test_auth_view(self):
+        for view in self.views:
+            view_instance = view()
+            mixins = view_instance.__class__.__bases__
+            self.assertTrue(LoginRequiredMixin in mixins, f"{view.__name__} does not have LoginRequiredMixin")
+
+            # check that anonymous users are redirected to the login page
+            response = self.client.get('/path/to/view/')
+            self.assertEqual(response.status_code, 302)
+            self.assertIn('/login/?next=/path/to/view/', response.url)
