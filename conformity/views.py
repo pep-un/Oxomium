@@ -42,7 +42,7 @@ class AuditDetailView(LoginRequiredMixin, DetailView):
     model = Audit
 
 
-class AuditUpdateView(UpdateView):
+class AuditUpdateView(LoginRequiredMixin, UpdateView):
     model = Audit
     form_class = AuditForm
 
@@ -66,7 +66,7 @@ class FindingDetailView(LoginRequiredMixin, DetailView):
     model = Finding
 
 
-class FindingUpdateView(UpdateView):
+class FindingUpdateView(LoginRequiredMixin, UpdateView):
     model = Finding
     form_class = FindingForm
 
