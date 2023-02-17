@@ -20,5 +20,4 @@ urlpatterns = [
     path('', include('conformity.urls')),
     path('accounts/', include('django.contrib.auth.urls')),
     path('django-backend/', admin.site.urls),
-    path('tinymce/', include('tinymce.urls')),
 ]

@@ -9,7 +9,6 @@ https://docs.djangoproject.com/en/4.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
-import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -43,7 +42,6 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    'tinymce',
     'auditlog',
     'conformity.apps.ConformityConfig',
     'import_export',
@@ -159,20 +157,3 @@ AUDITLOG_EXCLUDE_TRACKING_FIELDS = (
     "create_date",
     "update_date"
 )
-
-TINYMCE_JS_ROOT = os.path.join(STATIC_ROOT, "conformity/tinymce-6.3.1")
-TINYMCE_COMPRESSOR = False
-TINYMCE_DEFAULT_CONFIG = {
-    "theme": "silver",
-    "height": 300,
-    "menubar": False,
-    "plugins": "advlist,autolink,lists,link,image,charmap,print,preview,anchor,"
-    "searchreplace,visualblocks,code,fullscreen,insertdatetime,media,table,paste,"
-    "code,help,wordcount",
-    "toolbar": "formatselect | "
-               "bold underline | "
-               "alignleft aligncenter alignright alignjustify | "
-               "bullist numlist outdent indent | "
-                "removeformat code | help",
-}
-TINYMCE_SPELLCHECKER = False
