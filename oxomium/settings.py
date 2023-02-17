@@ -25,8 +25,20 @@ SECRET_KEY = 'django-insecure-oy-h!94w($b%mb2l-jv&g!1-7iqa9(jc!c=guv=%31_z%yyghr
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+# SECURITY WARNING: to be configured before production setup
 ALLOWED_HOSTS = []
 
+
+# SECURITY WARNING: to be enabled of production usage
+#SECURE_SSL_REDIRECT = True
+#SESSION_COOKIE_SECURE = True
+#SESSION_COOKIE_HTTPONLY = True
+#SESSION_COOKIE_SAMESITE = 'Strict'
+#SESSION_COOKIE_NAME = '__Host-sessionid'
+#CSRF_USE_SESSIONS = True
+#SECURE_HSTS_SECONDS = 15768000
+#SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+#SECURE_HSTS_PRELOAD = True
 
 # Application definition
 
