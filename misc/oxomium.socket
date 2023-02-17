@@ -1,0 +1,10 @@
+[Unit]
+Description=oxomium socket
+
+[Socket]
+ListenStream=/run/oxomium.sock
+SocketUser=www-data
+SocketMode=600
+
+[Install]
+WantedBy=sockets.target

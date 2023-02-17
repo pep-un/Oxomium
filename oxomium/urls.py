@@ -19,6 +19,5 @@ from django.urls import include, path
 urlpatterns = [
     path('', include('conformity.urls')),
     path('accounts/', include('django.contrib.auth.urls')),
-    path('admin/', admin.site.urls),
-    path('tinymce/', include('tinymce.urls')),
+    path('django-backend/', admin.site.urls),
 ]

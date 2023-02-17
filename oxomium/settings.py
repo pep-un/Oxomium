@@ -9,7 +9,6 @@ https://docs.djangoproject.com/en/4.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
-import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -25,13 +24,24 @@ SECRET_KEY = 'django-insecure-oy-h!94w($b%mb2l-jv&g!1-7iqa9(jc!c=guv=%31_z%yyghr
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+# SECURITY WARNING: to be configured before production setup
 ALLOWED_HOSTS = []
 
+
+# SECURITY WARNING: to be enabled of production usage
+#SECURE_SSL_REDIRECT = True
+#SESSION_COOKIE_SECURE = True
+#SESSION_COOKIE_HTTPONLY = True
+#SESSION_COOKIE_SAMESITE = 'Strict'
+#SESSION_COOKIE_NAME = '__Host-sessionid'
+#CSRF_USE_SESSIONS = True
+#SECURE_HSTS_SECONDS = 15768000
+#SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+#SECURE_HSTS_PRELOAD = True
 
 # Application definition
 
 INSTALLED_APPS = [
-    'tinymce',
     'auditlog',
     'conformity.apps.ConformityConfig',
     'import_export',
@@ -147,20 +157,3 @@ AUDITLOG_EXCLUDE_TRACKING_FIELDS = (
     "create_date",
     "update_date"
 )
-
-TINYMCE_JS_ROOT = os.path.join(STATIC_ROOT, "conformity/tinymce-6.3.1")
-TINYMCE_COMPRESSOR = False
-TINYMCE_DEFAULT_CONFIG = {
-    "theme": "silver",
-    "height": 300,
-    "menubar": False,
-    "plugins": "advlist,autolink,lists,link,image,charmap,print,preview,anchor,"
-    "searchreplace,visualblocks,code,fullscreen,insertdatetime,media,table,paste,"
-    "code,help,wordcount",
-    "toolbar": "formatselect | "
-               "bold underline | "
-               "alignleft aligncenter alignright alignjustify | "
-               "bullist numlist outdent indent | "
-                "removeformat code | help",
-}
-TINYMCE_SPELLCHECKER = False

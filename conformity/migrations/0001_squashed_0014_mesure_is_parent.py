@@ -8,8 +8,6 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
 
-    replaces = [('conformity', '0001_initial'), ('conformity', '0002_remove_policy_pub_date_alter_mesure_parent'), ('conformity', '0003_mesure_level_mesure_lft_mesure_rght_mesure_tree_id'), ('conformity', '0004_remove_mesure_level_remove_mesure_lft_and_more'), ('conformity', '0005_mesure_level'), ('conformity', '0006_alter_mesure_name_alter_policy_type'), ('conformity', '0007_alter_policy_type'), ('conformity', '0008_rename_organization_policy_publish_by_and_more'), ('conformity', '0009_alter_organization_administrative_id_and_more'), ('conformity', '0010_conformity_responsible'), ('conformity', '0011_mesure_order'), ('conformity', '0012_alter_mesure_code_alter_mesure_description_and_more'), ('conformity', '0013_alter_policy_type'), ('conformity', '0014_mesure_is_parent')]
-
     initial = True
 
     dependencies = [
