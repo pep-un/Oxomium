@@ -2,3 +2,4 @@ Django
 django-bootstrap5
 django-import-export
 django-auditlog
+django-tinymce
