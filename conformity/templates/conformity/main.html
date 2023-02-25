@@ -39,7 +39,6 @@
                     <li><span class="dropdown-item disabled text-light"><i class="bi bi-person-fill pe-2"></i> {{request.user.username}} </span></li>
                     <li><span class="dropdown-item disabled text-light"><i class="bi bi-envelope-fill pe-2"></i> {{request.user.email}} </span></li>
                     <li><hr class="dropdown-divider text-light"></li>
-                    <li><a class="dropdown-item" href="/django-backend/"><i class="bi bi-gear-fill pe-2"></i> Django backend</a></li>
                     <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="bi bi-power pe-2"></i> Log out</a></li>
                 </ul>
             </div>
@@ -52,7 +51,7 @@
         <div class="container-fluid">
             <div class="row">
                 <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
-                    <div class="position-sticky pt-3">
+                    <div class="sidebar-sticky pt-3 d-flex flex-column justify-space-around">
                         <ul class="nav flex-column">
                             <li class="nav-item">
                                 <a class="nav-link" href="{% url 'conformity:home' %}">
@@ -60,43 +59,86 @@
                                     Home
                                 </a>
                             </li>
+                        </ul>
+
+                        <h6 class="sidebar-heading px-3 mt-4 mb-1 text-muted">
+                            <span>Conformity management</span>
+                        </h6>
+                        <ul class="nav flex-column">
                             <li class="nav-item">
                                 <a class="nav-link" href="{% url 'conformity:policy_index' %}">
                                     <span class="bi bi-card-checklist"></span>
-                                    Policy
+                                    Policies
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" href="{% url 'conformity:organization_index'  %}">
                                     <span class="bi bi-building"></span>
-                                    Organization
+                                    Organizations
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" href="{% url 'conformity:conformity_index' %}">
                                     <span class="bi bi-shield-shaded"></span>
-                                    Conformity
+                                    Policies Conformity
+                                </a>
+                            </li>
+                        </ul>
+
+                        <h6 class="sidebar-heading px-3 mt-4 mb-1 text-muted">
+                            <span>Continuous Improvements</span>
+                        </h6>
+                        <ul class="nav flex-column">
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'conformity:action_index' %}">
+                                    <span class="bi bi-arrow-repeat"></span>
+                                    Actions
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'conformity:control_index' %}">
+                                    <span class="bi bi-clipboard2-check"></span>
+                                    Controls
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" href="{% url 'conformity:audit_index' %}">
                                     <span class="bi bi-ui-checks-grid"></span>
-                                    Audit
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'conformity:action_index' %}">
-                                    <span class="bi bi-arrow-repeat"></span>
-                                    Action
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'conformity:auditlog_index' %}">
-                                    <span class="bi bi-list-columns"></span>
-                                    Audit Log
+                                    Externals Audits
                                 </a>
                             </li>
                         </ul>
+
+                        <h6 class="sidebar-heading px-3 mt-4 mb-1 text-muted">
+                            <span>Administration</span>
+                        </h6>
+                        <ul class="nav flex-column">
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'conformity:auditlog_index' %}">
+                                    <span class="bi bi-journal-text"></span>
+                                    Audit Log
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/django-backend/">
+                                    <span class="bi bi-gear-fill"></span> Backend
+                                </a>
+                            </li>
+                        </ul>
+
+                        <h6 class="sidebar-heading px-3 mt-auto pt-4 mb-1 text-muted">
+                            <span>Information</span>
+                        </h6>
+                        <ul class="nav flex-column">
+                            <li class="nav-item">
+                                <a class="nav-link" href="https://github.com/pep-un/Oxomium" target="_blank">
+                                    <span class="bi bi-github"> GitHub</span>
+                                </a>
+                            </li>
+                        </ul>
+                        <div class="px-3 py-0 text-muted small d-flex align-items-center flex-wrap">
+                            <p>Oxomium v3.0</p>
+                        </div>
                     </div>
                 </nav>
 

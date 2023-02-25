@@ -1,7 +1,7 @@
 {% extends "conformity/main.html" %}
 
 {% block header %}
-    <h1 class="h1 bi bi-list-columns"> Audit Log </h1>
+    <h1 class="h1 bi bi-journal-text"> Audit Log </h1>
 {% endblock %}
 
 {% block content %}
@@ -49,13 +49,13 @@
                     <ul>
                     {% for key, value in logentry.changes_display_dict.items %}
                         {% if logentry.action is 0 %}
-                            <li class="text-wrap">{{ key }}: <span class="badge rounded-pill text-bg-success">{{ value.1 |truncatechars:40 }}</span></li>
+                            <li class="text-wrap">{{ key }}: <span class="badge rounded-pill text-bg-success" title="{{ value.1 }}">{{ value.1 |truncatechars:40 }}</span></li>
                         {% endif %}
                         {% if logentry.action is 1 %}
-                            <li class="text-wrap">{{ key }}: <span class="badge rounded-pill text-bg-secondary">{{ value.0 | truncatechars:20 }}</span> ⇒ <span class="badge rounded-pill text-bg-primary">{{ value.1 |truncatechars:20 }}</span></li>
+                            <li class="text-wrap">{{ key }}: <span class="badge rounded-pill text-bg-secondary" title="{{ value.0 }}">{{ value.0 | truncatechars:20 }}</span> ⇒ <span class="badge rounded-pill text-bg-primary" title="{{ value.1 }}">{{ value.1 |truncatechars:20 }}</span></li>
                         {% endif %}
                         {% if logentry.action is 2 %}
-                            <li class="text-wrap">{{ key }}: <span class="badge rounded-pill text-bg-danger">{{ value.0 | truncatechars:40 }}</span></li>
+                            <li class="text-wrap">{{ key }}: <span class="badge rounded-pill text-bg-danger" title="{{ value.0 }}">{{ value.0 | truncatechars:40 }}</span></li>
                         {% endif %}
                     {% endfor %}
                     </ul>

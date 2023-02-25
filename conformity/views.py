@@ -1,12 +1,15 @@
 """
 View of the Conformity Module
 """
+from urllib import request
+
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import UpdateView, CreateView, DeleteView
 from auditlog.models import LogEntry
-from .forms import ConformityForm, AuditForm, FindingForm, ActionForm, OrganizationForm
-from .models import Organization, Policy, Conformity, Audit, Action, Finding
+from .forms import ConformityForm, AuditForm, FindingForm, ActionForm, OrganizationForm, ControlForm, ControlPointForm
+from .models import Organization, Policy, Conformity, Audit, Action, Finding, Control, ControlPoint
+
 
 #
 # Home
@@ -168,6 +171,25 @@ class ActionIndexForConformityView(LoginRequiredMixin, ListView):
 class ActionUpdateView(LoginRequiredMixin, UpdateView):
     model = Action
     form_class = ActionForm
+
+
+#
+# Control
+#
+
+
+class ControlCreateView(LoginRequiredMixin, CreateView):
+    model = Control
+    form_class = ControlForm
+
+
+class ControlIndexView(LoginRequiredMixin, ListView):
+    model = ControlPoint
+
+
+class ControlUpdateView(LoginRequiredMixin, UpdateView):
+    model = ControlPoint
+    form_class = ControlPointForm
 
 
 #
