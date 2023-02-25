@@ -36,6 +36,10 @@ urlpatterns = [
     path('action/create', views.ActionCreateView.as_view(), name='action_create'),
     path('action/update/<int:pk>', views.ActionUpdateView.as_view(), name='action_form'),
 
+    path('control/', views.ControlIndexView.as_view(), name='control_index'),
+    path('control/create', views.ControlCreateView.as_view(), name='control_create'),
+    path('control/update/<int:pk>', views.ControlUpdateView.as_view(), name='control_form'),
+
     path('auditlog/', views.AuditLogDetailView.as_view(), name='auditlog_index'),
 
 ]
