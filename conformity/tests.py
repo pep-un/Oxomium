@@ -382,7 +382,7 @@ class ControlTest(TestCase):
         self.monthly_control = Control.objects.create(title='Monthly control', frequency=Control.Frequency.MONTHLY)
 
     def test_get_absolute_url(self):
-        self.assertEqual(ControlPoint.objects.first().get_absolute_url(), '/control/')
+        self.assertEqual(Control.objects.first().get_absolute_url(), '/control/')
 
     def test_control_point_number(self):
         yearly_cp_count = ControlPoint.objects.filter(control=self.yearly_control).count()
