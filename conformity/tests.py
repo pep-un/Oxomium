@@ -1,5 +1,7 @@
 import glob
 import importlib
+from calendar import monthrange
+from datetime import date, timedelta
 
 from django.conf import settings
 from django.db import IntegrityError
@@ -9,7 +11,7 @@ from django.urls import reverse
 from django.utils import timezone, inspect
 from django.views import View
 
-from .models import Policy, Organization, Audit, Finding, Measure, Conformity, Action, User
+from .models import Policy, Organization, Audit, Finding, Measure, Conformity, Action, User, Control, ControlPoint
 from .views import *
 import random, inspect
 from statistics import mean
@@ -107,7 +109,7 @@ class OrganizationModelTest(TestCase):
         self.assertEqual(self.organization.natural_key(), "Organization 1")
 
     def test_get_absolute_url(self):
-        self.assertEqual(self.organization.get_absolute_url(), reverse('conformity:organization_index'))
+        self.assertEqual(self.organization.get_absolute_url(), '/organization/')
 
     def test_add_remove_conformity(self):
         # Add the policies to the organization
@@ -369,3 +371,99 @@ class AuthenticationTest(TestCase):
             view_instance = view()
             mixins = view_instance.__class__.__bases__
             self.assertTrue(LoginRequiredMixin in mixins, f"{view.__name__} does not have LoginRequiredMixin")
+
+
+class ControlTest(TestCase):
+    def setUp(self):
+        self.yearly_control = Control.objects.create(title='Yearly control', frequency=Control.Frequency.YEARLY)
+        self.halfyearly_control = Control.objects.create(title='Half-yearly control', frequency=Control.Frequency.HALFYEARLY)
+        self.quarterly_control = Control.objects.create(title='Quarterly control', frequency=Control.Frequency.QUARTERLY)
+        self.bimonthly_control = Control.objects.create(title='Bimonthly control', frequency=Control.Frequency.BIMONTHLY)
+        self.monthly_control = Control.objects.create(title='Monthly control', frequency=Control.Frequency.MONTHLY)
+
+    def test_get_absolute_url(self):
+        self.assertEqual(Control.objects.first().get_absolute_url(), '/control/')
+
+    def test_control_point_number(self):
+        yearly_cp_count = ControlPoint.objects.filter(control=self.yearly_control).count()
+        halfyearly_cp_count = ControlPoint.objects.filter(control=self.halfyearly_control).count()
+        quarterly_cp_count = ControlPoint.objects.filter(control=self.quarterly_control).count()
+        bimonthly_cp_count = ControlPoint.objects.filter(control=self.bimonthly_control).count()
+        monthly_cp_count = ControlPoint.objects.filter(control=self.monthly_control).count()
+
+        self.assertEqual(yearly_cp_count, 1)
+        self.assertEqual(halfyearly_cp_count, 2)
+        self.assertEqual(quarterly_cp_count, 4)
+        self.assertEqual(bimonthly_cp_count, 6)
+        self.assertEqual(monthly_cp_count, 12)
+
+    def test_control_point_date(self):
+        yearly_cp = ControlPoint.objects.filter(control=self.yearly_control)
+        halfyearly_cp_list = ControlPoint.objects.filter(control=self.halfyearly_control)
+        quarterly_cp_list = ControlPoint.objects.filter(control=self.quarterly_control)
+        bimonthly_cp_list = ControlPoint.objects.filter(control=self.bimonthly_control)
+        monthly_cp_list = ControlPoint.objects.filter(control=self.monthly_control)
+        year = date.today().year
+
+        # Year test
+        self.assertEqual(yearly_cp[0].period_start_date, date(year, 1, 1))
+        self.assertEqual(yearly_cp[0].period_end_date, date(year, 12, 31))
+
+        # Biannual test
+        self.assertEqual(halfyearly_cp_list[0].period_start_date, date(year, 1, 1))
+        self.assertEqual(halfyearly_cp_list[0].period_end_date, date(year, 6, 30))
+        self.assertEqual(halfyearly_cp_list[1].period_start_date, date(year, 7, 1))
+        self.assertEqual(halfyearly_cp_list[1].period_end_date, date(year, 12, 31))
+
+        # Quaterly test
+        self.assertEqual(quarterly_cp_list[0].period_start_date, date(year, 1, 1))
+        self.assertEqual(quarterly_cp_list[0].period_end_date, date(year, 3, 31))
+        self.assertEqual(quarterly_cp_list[1].period_start_date, date(year, 4, 1))
+        self.assertEqual(quarterly_cp_list[1].period_end_date, date(year, 6, 30))
+        self.assertEqual(quarterly_cp_list[2].period_start_date, date(year, 7, 1))
+        self.assertEqual(quarterly_cp_list[2].period_end_date, date(year, 9, 30))
+        self.assertEqual(quarterly_cp_list[3].period_start_date, date(year, 10, 1))
+        self.assertEqual(quarterly_cp_list[3].period_end_date, date(year, 12, 31))
+
+        # Bimonthly test
+        self.assertEqual(bimonthly_cp_list[0].period_start_date, date(year, 1, 1))
+        self.assertEqual(bimonthly_cp_list[0].period_end_date, date(year, 2, monthrange(year, 2)[1]))
+        self.assertEqual(bimonthly_cp_list[1].period_start_date, date(year, 3, 1))
+        self.assertEqual(bimonthly_cp_list[1].period_end_date, date(year, 4, 30))
+        self.assertEqual(bimonthly_cp_list[2].period_start_date, date(year, 5, 1))
+        self.assertEqual(bimonthly_cp_list[2].period_end_date, date(year, 6, 30))
+        self.assertEqual(bimonthly_cp_list[3].period_start_date, date(year, 7, 1))
+        self.assertEqual(bimonthly_cp_list[3].period_end_date, date(year, 8, 31))
+        self.assertEqual(bimonthly_cp_list[4].period_start_date, date(year, 9, 1))
+        self.assertEqual(bimonthly_cp_list[4].period_end_date, date(year, 10, 31))
+        self.assertEqual(bimonthly_cp_list[5].period_start_date, date(year, 11, 1))
+        self.assertEqual(bimonthly_cp_list[5].period_end_date, date(year, 12, 31))
+
+        # Month test
+        for i in range(1,13,1):
+            end_day = monthrange(year, i)[1]
+            self.assertEqual(monthly_cp_list[i-1].period_start_date, date(year, i, 1))
+            self.assertEqual(monthly_cp_list[i-1].period_end_date, date(year, i, end_day))
+
+
+class ControlPointTest(TestCase):
+    def setUp(self):
+        today = date.today()
+        self.ctrl = Control.objects.create(title='Yearly', frequency=Control.Frequency.YEARLY)
+        ControlPoint.objects.create(control=self.ctrl, period_start_date=today - timedelta(days=3),
+                                    period_end_date=today - timedelta(days=1) )
+        ControlPoint.objects.create(control=self.ctrl, period_start_date=today, period_end_date= today)
+        ControlPoint.objects.create(control=self.ctrl, period_start_date=today + timedelta(days=1),
+                                    period_end_date=today + timedelta(days=3))
+
+    def test_control_point_status(self):
+        miss = ControlPoint.objects.filter(control=self.ctrl, status=ControlPoint.Status.MISSED).count()
+        tobe = ControlPoint.objects.filter(control=self.ctrl, status=ControlPoint.Status.TOBEEVALUATED).count()
+        sche = ControlPoint.objects.filter(control=self.ctrl, status=ControlPoint.Status.SCHEDULED).count()
+
+        self.assertEqual(miss, 1)
+        self.assertEqual(tobe, 2)
+        self.assertEqual(sche, 1)
+
+    def test_get_absolute_url(self):
+        self.assertEqual(ControlPoint.objects.first().get_absolute_url(), '/control/')

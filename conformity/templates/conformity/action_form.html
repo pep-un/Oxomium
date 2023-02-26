@@ -14,7 +14,7 @@
                 {% bootstrap_field form.owner layout='floating' %}
                 {% bootstrap_field form.status layout='floating' %}
                 {% bootstrap_field form.status_comment layout='floating' %}
-                <p class="text-center fw-lighter mx-3">Created on {{ form.create_date.value }}, laste update {{ form.update_date.value }}.</p>
+                <p class="text-center fw-lighter mx-3">Created on {{ form.create_date.value }}, last update {{ form.update_date.value }}.</p>
                 <div class="accordion" id="accordion">
                     <div class="accordion-item">
                         <h2 class="accordion-header" id="headingAnalyse">
@@ -30,6 +30,7 @@
                                 {% bootstrap_field form.organization layout='floating' %}
                                 {% bootstrap_field form.associated_conformity layout='floating' %}
                                 {% bootstrap_field form.associated_findings layout='floating' %}
+                                {% bootstrap_field form.associated_controlPoints layout='floating' %}
                             </div>
                         </div>
                     </div>

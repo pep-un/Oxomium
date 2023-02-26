@@ -2,10 +2,11 @@
 Conformity module manage all the manual declarative aspect of conformity management.
 It's Organized around Organization, Policy, Measure and Conformity classes.
 """
-
+from calendar import monthrange
 from statistics import mean
+from datetime import date, timedelta
 from django.db import models
-from django.db.models.signals import m2m_changed, pre_save
+from django.db.models.signals import m2m_changed, pre_save, post_save, post_init
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.dispatch import receiver
 from django.conf import settings
@@ -385,6 +386,95 @@ class Finding(models.Model):
         return Action.objects.filter(associated_findings=self.id).filter(active=True)
 
 
+class Control(models.Model):
+    """
+    Control class represent the periodic control needed to verify the security and the effectiveness of the security measure.
+    """
+
+    class Frequency(models.IntegerChoices):
+        """ List of frequency possible for a control"""
+        YEARLY = '1', _('Yearly')
+        HALFYEARLY = '2', _('Half-Yearly')
+        QUARTERLY = '4', _('Quarterly')
+        BIMONTHLY = '6', _('Bimonthly')
+        MONTHLY = '12', _('Monthly')
+
+    title = models.CharField(max_length=256)
+    description = models.TextField(max_length=4096, blank=True)
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, blank=True, null=True)
+    conformity = models.ManyToManyField(Conformity, blank=True)
+    frequency = models.IntegerField(
+        choices=Frequency.choices,
+        default=Frequency.YEARLY,
+    )
+
+    @staticmethod
+    def get_absolute_url():
+        """return the absolute URL for Forms, could probably do better"""
+        return reverse('conformity:control_index')
+
+    @staticmethod
+    def post_init_callback(instance, **kwargs):
+        num_cp = instance.frequency
+        today = date.today()
+        start_date = date(today.year, 1, 1)
+        delta = timedelta(days=365 // num_cp - 2)
+        end_date = start_date + delta
+        for _ in range(num_cp):
+            period_start_date = date(start_date.year, start_date.month, 1)
+            period_end_date = date(end_date.year, end_date.month, monthrange(end_date.year, end_date.month)[1])
+            ControlPoint.objects.create(
+                control=instance,
+                period_start_date=period_start_date,
+                period_end_date=period_end_date,
+            )
+            start_date = period_end_date + timedelta(days=1)
+            end_date = start_date + delta - timedelta(days=1)
+
+
+class ControlPoint(models.Model):
+    """
+    A control point is a specific point of verification of a periodic Control.
+    """
+
+    class Status(models.TextChoices):
+        """ List of status possible for a ControlPoint"""
+        SCHEDULED = 'SCHD', _('Scheduled')
+        TOBEEVALUATED = 'TOBE', _('To evaluate')
+        COMPLIANT = 'OK', _('Compliant')
+        NONCOMPLIANT = 'NOK', _('Non-Compliant')
+        MISSED = 'MISS', _('Missed')
+
+    control = models.ForeignKey(Control, on_delete=models.CASCADE, null=True, blank=True)
+    control_date = models.DateTimeField(blank=True, null=True)
+    control_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
+    period_start_date = models.DateField()
+    period_end_date = models.DateField()
+    status = models.CharField(choices=Status.choices, max_length=4, default=Status.SCHEDULED)
+    comment = models.TextField(max_length=4096, blank=True)
+
+    @staticmethod
+    def get_absolute_url():
+        """return the absolute URL for Forms, could probably do better"""
+        return reverse('conformity:control_index')
+
+    @staticmethod
+    def pre_save(sender, instance, *args, **kwargs):
+        today = date.today()
+        if instance.period_end_date < today:
+            instance.status = ControlPoint.Status.MISSED
+        elif instance.period_start_date <= today <= instance.period_end_date:
+            instance.status = ControlPoint.Status.TOBEEVALUATED
+        else:
+            instance.status = ControlPoint.Status.SCHEDULED
+
+
+    def __str__(self):
+        return "[" + str(self.control.organization) + "] " + self.control.title + " (" \
+            + self.period_start_date.strftime('%b-%Y') + "⇒" \
+            + self.period_end_date.strftime('%b-%Y') + ")"
+
+
 class Action(models.Model):
     """
     Action class represent the actions taken by the Organization to improve security.
@@ -419,6 +509,7 @@ class Action(models.Model):
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, blank=True, null=True)
     associated_conformity = models.ManyToManyField(Conformity, blank=True)
     associated_findings = models.ManyToManyField(Finding, blank=True)
+    associated_controlPoints = models.ManyToManyField(ControlPoint, blank=True)
     #TODO associated_risks = models.ManyToManyField(Risk, blank=True)
 
     ' PLAN phase'
@@ -456,3 +547,12 @@ class Action(models.Model):
             self.active = False
 
         return super(Action, self).save(*args, **kwargs)
+
+
+#
+# Signal
+#
+
+
+post_save.connect(Control.post_init_callback, sender=Control)
+pre_save.connect(ControlPoint.pre_save, sender=ControlPoint)
