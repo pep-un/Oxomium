@@ -420,7 +420,7 @@ class Control(models.Model):
         start_date = date(today.year, 1, 1)
         delta = timedelta(days=365 // num_cp - 2)
         end_date = start_date + delta
-        for i in range(num_cp):
+        for _ in range(num_cp):
             period_start_date = date(start_date.year, start_date.month, 1)
             period_end_date = date(end_date.year, end_date.month, monthrange(end_date.year, end_date.month)[1])
             ControlPoint.objects.create(
