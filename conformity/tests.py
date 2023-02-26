@@ -109,7 +109,7 @@ class OrganizationModelTest(TestCase):
         self.assertEqual(self.organization.natural_key(), "Organization 1")
 
     def test_get_absolute_url(self):
-        self.assertEqual(self.organization.get_absolute_url(), reverse('conformity:organization_index'))
+        self.assertEqual(self.organization.get_absolute_url(), '/organization/')
 
     def test_add_remove_conformity(self):
         # Add the policies to the organization
@@ -381,6 +381,9 @@ class ControlTest(TestCase):
         self.bimonthly_control = Control.objects.create(title='Bimonthly control', frequency=Control.Frequency.BIMONTHLY)
         self.monthly_control = Control.objects.create(title='Monthly control', frequency=Control.Frequency.MONTHLY)
 
+    def test_get_absolute_url(self):
+        self.assertEqual(ControlPoint.objects.first().get_absolute_url(), '/control/')
+
     def test_control_point_number(self):
         yearly_cp_count = ControlPoint.objects.filter(control=self.yearly_control).count()
         halfyearly_cp_count = ControlPoint.objects.filter(control=self.halfyearly_control).count()
@@ -447,11 +450,11 @@ class ControlPointTest(TestCase):
     def setUp(self):
         today = date.today()
         self.ctrl = Control.objects.create(title='Yearly', frequency=Control.Frequency.YEARLY)
-        past = ControlPoint.objects.create(control=self.ctrl, period_start_date=today - timedelta(days=3),
-                                                period_end_date=today - timedelta(days=1) )
-        current = ControlPoint.objects.create(control=self.ctrl, period_start_date=today, period_end_date= today)
-        future = ControlPoint.objects.create(control=self.ctrl, period_start_date=today + timedelta(days=1),
-                                                  period_end_date=today + timedelta(days=3))
+        ControlPoint.objects.create(control=self.ctrl, period_start_date=today - timedelta(days=3),
+                                    period_end_date=today - timedelta(days=1) )
+        ControlPoint.objects.create(control=self.ctrl, period_start_date=today, period_end_date= today)
+        ControlPoint.objects.create(control=self.ctrl, period_start_date=today + timedelta(days=1),
+                                    period_end_date=today + timedelta(days=3))
 
     def test_control_point_status(self):
         miss = ControlPoint.objects.filter(control=self.ctrl, status=ControlPoint.Status.MISSED).count()
@@ -461,3 +464,6 @@ class ControlPointTest(TestCase):
         self.assertEqual(miss, 1)
         self.assertEqual(tobe, 2)
         self.assertEqual(sche, 1)
+
+    def test_get_absolute_url(self):
+        self.assertEqual(ControlPoint.objects.first().get_absolute_url(), '/control/')
