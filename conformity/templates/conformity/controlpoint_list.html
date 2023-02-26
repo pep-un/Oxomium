@@ -1,0 +1,84 @@
+{% extends "conformity/main.html" %}
+
+{% block header %}
+    <h1 class="h1 bi bi-clipboard2-check"> Control </h1>
+{% endblock %}
+
+{% block content %}
+<table class="table table-striped align-middle">
+  <caption class="d-none">List of all controls</caption>
+    <thead>
+        <tr>
+            <th scope="col" class="">Titre</th>
+            <th scope="col" class="">Organization</th>
+            <th scope="col" class="">Frequency</th>
+            <th scope="col" class="">Start Date</th>
+            <th scope="col" class="">End Date</th>
+            <th scope="col" class="">Owner</th>
+            <th scope="col" class="">Status</th>
+            <th scope="col" class="text-center">Edit</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for cp in controlpoint_list %}
+        <tr>
+            <td class="col">
+                {{ cp.control.title }}
+            </td>
+            <td class="col">
+                {{ cp.control.organization }}
+            </td>
+            <td class="col">
+                {{ cp.control.get_frequency_display }}
+            </td>
+            <td class="col">
+                {{ cp.period_start_date | date:'d-M-Y'}}
+            </td>
+            <td class="col">
+                {{ cp.period_end_date | date:'d-M-Y'}}
+            </td>
+            <td class="col">
+                {{ cp.control.owner | default_if_none:"" }}
+            </td>
+            <td class="col">
+                {% if cp.status == "SCHD" %}
+                    <i class="bi bi-hexagon text-secondary"></i>
+                {% endif %}
+                {% if cp.status == "TOBE" %}
+                    <i class="bi bi-hexagon-fill text-secondary"></i>
+                {% endif %}
+                {% if cp.status == "NOK" %}
+                    <i class="bi bi-hexagon-fill text-danger"></i>
+                {% endif %}
+                {% if cp.status == "OK" %}
+                    <i class="bi bi-hexagon-fill text-success"></i>
+                {% endif %}
+                {% if cp.status == "MISS" %}
+                    <i class="bi bi-hexagon text-danger"></i>
+                {% endif %}
+                {{ cp.get_status_display }}
+            </td>
+            <td class="text-center">
+                <a href="{% url 'conformity:control_form' cp.id %}"
+                    {% if cp.status == "TOBE" %}
+                        class="bi bi-pencil-square"
+                    {% else %}
+                        class="bi bi-eye"
+                    {% endif %}
+                ></a>
+            </td>
+        </tr>
+    {% empty %}
+        <div class="alert alert-info" role="alert">
+            No control recorded.
+        </div>
+        <tr><td colspan="7">No data to display</td></tr>
+    {% endfor %}
+        <tr><td colspan="7" class="text-center">
+            <br />
+            <a href="{% url 'conformity:control_create' %}">
+                <button type="button" class="btn btn-success bi bi-plus-circle"> Register a new action</button>
+            </a>
+        </td></tr>
+</table>
+{% endblock %}
