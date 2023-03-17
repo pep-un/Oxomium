@@ -51,7 +51,7 @@
             </td>
             <td class="col-1 text-center">
                 {% if con.comment %}
-                    <i class="bi bi-chat-text"></i>
+                    <i class="bi bi-chat-text" title="{{ con.comment }}"></i>
                 {% endif %}
             </td>
             <td class="col-1 text-center"> <a href="{% url 'conformity:conformity_form' con.id %}"> <i class="bi bi-pencil-square"></i> </a> </td>
@@ -86,7 +86,7 @@
                 </td>
                 <td class="col-1 text-center">
                     {% if con.comment %}
-                    <i class="bi bi-chat-text"></i>
+                    <i class="bi bi-chat-text" title="{{ con.comment }}"></i>
                     {% endif %}
                 </td>
                 <td class="text-center">
@@ -123,7 +123,7 @@
                         </td>
                         <td class="col-1 text-center">
                             {% if con.comment %}
-                            <i class="bi bi-chat-text"></i>
+                            <i class="bi bi-chat-text" title="{{ con.comment }}"></i>
                             {% endif %}
                         </td>
                         <td class="text-center">

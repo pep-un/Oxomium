@@ -243,6 +243,7 @@ class Conformity(models.Model):
 # Callback functions
 
 
+
 @receiver(pre_save, sender=Measure)
 def post_init_callback(instance, **kwargs):
     """This function keep hierarchy of the Measure working on each Measure instantiation"""
@@ -376,10 +377,9 @@ class Finding(models.Model):
         """return the readable version of the Findings Severity"""
         return self.Severity(self.severity).label
 
-    @staticmethod
-    def get_absolute_url():
-        """return the absolute URL for Forms, could probably do better"""
-        return reverse('conformity:audit_index')
+    def get_absolute_url(self):
+        """"return somewhere else when a edit has work """
+        return reverse('conformity:audit_detail', kwargs={'pk': self.audit_id})
 
     def get_action(self):
         """Return the list of Action associated with this Findings"""
@@ -399,14 +399,27 @@ class Control(models.Model):
         BIMONTHLY = '6', _('Bimonthly')
         MONTHLY = '12', _('Monthly')
 
+    class Level(models.IntegerChoices):
+        """ List of control level possible for a control """
+        FIRST = '1', _('1st level control')
+        SECOND = '2', _('2nd level control')
+
     title = models.CharField(max_length=256)
     description = models.TextField(max_length=4096, blank=True)
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, blank=True, null=True)
     conformity = models.ManyToManyField(Conformity, blank=True)
+    control = models.ManyToManyField('self', blank=True)
     frequency = models.IntegerField(
         choices=Frequency.choices,
         default=Frequency.YEARLY,
     )
+    level = models.IntegerField(
+        choices=Level.choices,
+        default=Level.FIRST,
+    )
+
+    def __str__(self):
+        return "[" + str(self.organization) + "] " + self.title
 
     @staticmethod
     def get_absolute_url():
@@ -475,6 +488,10 @@ class ControlPoint(models.Model):
             + self.period_end_date.strftime('%b-%Y') + ")"
 
 
+    def get_action(self):
+        """Return the list of Action associated with this Findings"""
+        return Action.objects.filter(associated_controlPoints=self.id)
+
 class Action(models.Model):
     """
     Action class represent the actions taken by the Organization to improve security.
@@ -502,6 +519,7 @@ class Action(models.Model):
         default=Status.ANALYSING,
     )
     status_comment = models.TextField(max_length=4096, blank=True)
+    reference = models.URLField(blank=True)
     active = models.BooleanField(default=True)
 
     ' Analyse Phase'
