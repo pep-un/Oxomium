@@ -211,6 +211,10 @@ class Conformity(models.Model):
         """Return the list of Action associated with this Conformity"""
         return Action.objects.filter(associated_conformity=self.id).filter(active=True)
 
+    def get_control(self):
+        """Return the list of Control associated with this Conformity"""
+        return Control.objects.filter(conformity=self.id)
+
     def set_status(self, i):
         """Update the status and call recursive update function"""
         self.status = i

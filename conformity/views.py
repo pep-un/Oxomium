@@ -6,7 +6,10 @@ from urllib import request
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import UpdateView, CreateView, DeleteView
+from django_filters.views import FilterView
 from auditlog.models import LogEntry
+
+from .filterset import ActionFilter, ControlFilter
 from .forms import ConformityForm, AuditForm, FindingForm, ActionForm, OrganizationForm, ControlForm, ControlPointForm
 from .models import Organization, Policy, Conformity, Audit, Action, Finding, Control, ControlPoint
 
@@ -154,18 +157,11 @@ class ActionCreateView(LoginRequiredMixin, CreateView):
     form_class = ActionForm
 
 
-class ActionIndexView(LoginRequiredMixin, ListView):
+class ActionIndexView(LoginRequiredMixin, FilterView):
     model = Action
     ordering = ['status', '-update_date']
-
-
-class ActionIndexForConformityView(LoginRequiredMixin, ListView):
-    model = Action
-    ordering = ['status', '-update_date']
-    template_name = 'conformity/action_list.html'
-
-    def get_queryset(self, **kwargs):
-        return Action.objects.filter(associated_conformity=self.kwargs['con']).order_by('status').order_by('-update_date')
+    filterset_class = ActionFilter
+    template_name = "conformity/action_list.html"
 
 
 class ActionUpdateView(LoginRequiredMixin, UpdateView):
@@ -183,8 +179,10 @@ class ControlCreateView(LoginRequiredMixin, CreateView):
     form_class = ControlForm
 
 
-class ControlIndexView(LoginRequiredMixin, ListView):
+class ControlIndexView(LoginRequiredMixin, FilterView):
     model = ControlPoint
+    filterset_class = ControlFilter
+    template_name = 'conformity/controlpoint_list.html'
 
 
 class ControlUpdateView(LoginRequiredMixin, UpdateView):
