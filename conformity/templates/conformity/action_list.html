@@ -14,6 +14,7 @@
             <th scope="col" class="">Owner</th>
             <th scope="col" class="">Status</th>
             <th scope="col" class="">Last Update</th>
+            <th scope="col" class="text-center">Ref.</th>
             <th scope="col" class="text-center">Edit</th>
         </tr>
     </thead>
@@ -55,6 +56,11 @@
             </td>
             <td class="col">
                 {{ action.update_date | date:'d-M-Y'}}
+            </td>
+            <td class="text-center">
+                {% if action.reference %}
+                    <a href="{{ action.reference }}" class="bi bi-box-arrow-up-right"></a>
+                {% endif %}
             </td>
             <td class="text-center">
                 <a href="{% url 'conformity:action_form' action.id %}" class="bi bi-pencil-square"></a>

@@ -50,7 +50,7 @@ class ActionForm(LoginRequiredMixin, ModelForm):
         self.fields['create_date'].disabled = True
         self.fields['update_date'].disabled = True
 
-        generic_fields = ['title', 'owner', 'status', 'status_comment']
+        generic_fields = ['title', 'owner', 'status', 'status_comment', 'reference']
         analyse_fields = ['organization', 'associated_conformity', 'associated_findings', 'associated_controlPoints', 'description']
         plan_fields = ['plan_start_date', 'plan_end_date', 'plan_comment']
         implement_fields = ['implement_start_date', 'implement_end_date', 'implement_status', 'implement_comment']
