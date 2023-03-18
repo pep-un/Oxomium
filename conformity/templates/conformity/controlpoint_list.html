@@ -11,6 +11,7 @@
         <tr>
             <th scope="col" class="">Titre</th>
             <th scope="col" class="">Organization</th>
+            <th scope="col" class="">Level</th>
             <th scope="col" class="">Frequency</th>
             <th scope="col" class="">Start Date</th>
             <th scope="col" class="">End Date</th>
@@ -27,6 +28,16 @@
             </td>
             <td class="col">
                 {{ cp.control.organization }}
+            </td>
+            <td class="col">
+                {% if cp.control.level == 1 %}
+                <span class="badge rounded-pill text-bg-primary">
+                {% endif %}
+                {% if cp.control.level == 2 %}
+                <span class="badge rounded-pill text-bg-success">
+                {%endif %}
+                {{ cp.control.get_level_display }}
+                </span>
             </td>
             <td class="col">
                 {{ cp.control.get_frequency_display }}

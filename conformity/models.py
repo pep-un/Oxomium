@@ -405,8 +405,8 @@ class Control(models.Model):
 
     class Level(models.IntegerChoices):
         """ List of control level possible for a control """
-        FIRST = '1', _('1st level control')
-        SECOND = '2', _('2nd level control')
+        FIRST = '1', _('1st level')
+        SECOND = '2', _('2nd level')
 
     title = models.CharField(max_length=256)
     description = models.TextField(max_length=4096, blank=True)
