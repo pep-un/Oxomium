@@ -297,7 +297,16 @@ class Audit(models.Model):
         ordering = ['report_date']
 
     def __str__(self):
-        return "[" + str(self.organization) + "] " + str(self.auditor) + " (" + self.report_date.strftime('%b %Y') + ")"
+        if self.report_date:
+            date = self.report_date.strftime('%b %Y')
+        elif self.start_date:
+            date = self.start_date.strftime('%b %Y')
+        elif self.end_date:
+            date = self.end_date.strftime('%b %Y')
+        else:
+            date = "xx-xxxx"
+            
+        return "[" + str(self.organization) + "] " + str(self.auditor) + " (" + date + ")"
 
     @staticmethod
     def get_absolute_url():
