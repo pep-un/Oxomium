@@ -1,10 +1,15 @@
 {% extends "conformity/main.html" %}
+{% load render_table from django_tables2 %}
 
 {% block header %}
     <h1 class="h1 bi bi-clipboard2-check"> Control </h1>
 {% endblock %}
 
 {% block content %}
+{% render_table object_list %}
+
+<hr />
+
 <table class="table table-striped align-middle">
   <caption class="d-none">List of all controls</caption>
     <thead>
@@ -30,14 +35,16 @@
                 {{ cp.control.organization }}
             </td>
             <td class="col">
+                <a href="{% url 'conformity:control_index' %}?control__level={{cp.control.level}}">
                 {% if cp.control.level == 1 %}
-                <span class="badge rounded-pill text-bg-primary">
+                    <span class="badge rounded-pill text-bg-primary">
                 {% endif %}
                 {% if cp.control.level == 2 %}
-                <span class="badge rounded-pill text-bg-success">
+                    <span class="badge rounded-pill text-bg-success">
                 {%endif %}
-                {{ cp.control.get_level_display }}
-                </span>
+                            {{ cp.control.get_level_display }}
+                    </span>
+                </a>
             </td>
             <td class="col">
                 {{ cp.control.get_frequency_display }}
