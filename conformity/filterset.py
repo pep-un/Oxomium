@@ -12,4 +12,4 @@ class ActionFilter(FilterSet):
 class ControlFilter(FilterSet):
     class Meta:
         model = ControlPoint
-        fields = ['control__organization', 'control__conformity__id', 'control__control__id', 'control__frequency', 'control__level']
+        fields = ['control__level', 'control__organization', 'control__conformity__id', 'control__control__id', 'control__frequency', 'control__level']

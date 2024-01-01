@@ -4,3 +4,4 @@ django-import-export
 django-auditlog
 django-tinymce
 django-filter
+django-tables2
