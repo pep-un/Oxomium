@@ -15,6 +15,7 @@
             <th scope="col" class="">Measure</th>
             <th scope="col" class="text-center">Status</th>
             <th scope="col" class="text-center">Owner</th>
+            <th scope="col" class="text-center">Controls</th>
             <th scope="col" class="text-center">Actions</th>
             <th scope="col" class="text-center">Comment</th>
             <th scope="col" class="text-center">Edit</th>
@@ -43,15 +44,22 @@
                 {% endif %}
             </td>
             <td class="col-1 text-center">
+                {% if con.get_control %}
+                    <a href="{% url 'conformity:control_index' %}?control__conformity__id={{con.id}}">
+                        <button type="button" class="btn btn-outline-primary btn-sm">{{ con.get_control | length }}</button>
+                    </a>
+                {% endif %}
+            </td>
+            <td class="col-1 text-center">
                 {% if con.get_action %}
-                    <a href="{% url 'conformity:action_con_index' con.id %}"
-                    <button type="button" class="btn btn-outline-primary btn-sm">{{ con.get_action | length }}</button>
+                    <a href="{% url 'conformity:action_index' %}?associated_conformity__id={{con.id}}">
+                        <button type="button" class="btn btn-outline-primary btn-sm">{{ con.get_action | length }}</button>
                     </a>
                 {% endif %}
             </td>
             <td class="col-1 text-center">
                 {% if con.comment %}
-                    <i class="bi bi-chat-text"></i>
+                    <i class="bi bi-chat-text" title="{{ con.comment }}"></i>
                 {% endif %}
             </td>
             <td class="col-1 text-center"> <a href="{% url 'conformity:conformity_form' con.id %}"> <i class="bi bi-pencil-square"></i> </a> </td>
@@ -80,13 +88,22 @@
                     {% endif %}
                 </td>
                 <td class="col-1 text-center">
+                    {% if con.get_control %}
+                        <a href="{% url 'conformity:control_index' %}?control__conformity__id={{con.id}}">
+                            <button type="button" class="btn btn-outline-primary btn-sm">{{ con.get_control | length }}</button>
+                        </a>
+                    {% endif %}
+                </td>
+                <td class="col-1 text-center">
                     {% if con.get_action %}
+                    <a href="{% url 'conformity:action_index' %}?associated_conformity__id={{con.id}}">
                         <button type="button" class="btn btn-outline-primary btn-sm">{{ con.get_action | length }}</button>
+                    </a>
                     {% endif %}
                 </td>
                 <td class="col-1 text-center">
                     {% if con.comment %}
-                    <i class="bi bi-chat-text"></i>
+                    <i class="bi bi-chat-text" title="{{ con.comment }}"></i>
                     {% endif %}
                 </td>
                 <td class="text-center">
@@ -117,13 +134,22 @@
                             {% endif %}
                         </td>
                         <td class="col-1 text-center">
+                            {% if con.get_control %}
+                                <a href="{% url 'conformity:control_index' %}?control_conformity__id={{con.id}}">
+                                    <button type="button" class="btn btn-outline-primary btn-sm">{{ con.get_control | length }}</button>
+                                </a>
+                            {% endif %}
+                        </td>
+                        <td class="col-1 text-center">
                             {% if con.get_action %}
+                                <a href="{% url 'conformity:action_index' %}?associated_conformity__id={{con.id}}">
                                 <button type="button" class="btn btn-outline-primary btn-sm">{{ con.get_action | length }}</button>
+                                </a>
                             {% endif %}
                         </td>
                         <td class="col-1 text-center">
                             {% if con.comment %}
-                            <i class="bi bi-chat-text"></i>
+                            <i class="bi bi-chat-text" title="{{ con.comment }}"></i>
                             {% endif %}
                         </td>
                         <td class="text-center">

@@ -355,7 +355,6 @@ class AuthenticationTest(TestCase):
             ConformityUpdateView,
             ActionCreateView,
             ActionIndexView,
-            ActionIndexForConformityView,
             ActionUpdateView,
             AuditLogDetailView,
             # Form
