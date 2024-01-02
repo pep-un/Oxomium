@@ -42,10 +42,12 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'django_filters',
     'auditlog',
     'conformity.apps.ConformityConfig',
     'import_export',
     'django_bootstrap5',
+    'django_tables2',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
