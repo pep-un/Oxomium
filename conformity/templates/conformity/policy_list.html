@@ -17,14 +17,14 @@
                 </tr>
             </thead>
             <tbody>
-        {% for pol in policy_list %}
+        {% for policy in policy_list %}
             <tr>
-                <td>{{ pol.name }} (v{{ pol.version }})</td>
-                <td>{{ pol.publish_by }}</td>
-                <td>{{ pol.get_type }}</td>
+                <td>{{ policy.name }} (v{{ pol.version }})</td>
+                <td>{{ policy.publish_by }}</td>
+                <td>{{ policy.get_type }}</td>
                 <td class="text-center">
-                    <a href="{% url 'conformity:policy_detail' pol.id %}">
-                        <button type="button" class="btn btn-primary btn-sm">{{ pol.get_measures_number }} Measures</button>
+                    <a href="{% url 'conformity:policy_detail' policy.id %}">
+                        <button type="button" class="btn btn-primary btn-sm">{{ policy.get_measures_number }} Measures</button>
                     </a>
                 </td>
             </tr>
