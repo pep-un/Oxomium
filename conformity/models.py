@@ -6,6 +6,7 @@ from calendar import monthrange
 from statistics import mean
 from datetime import date, timedelta
 from django.db import models
+from django.db.models import Q
 from django.db.models.signals import m2m_changed, pre_save, post_save, post_init
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.dispatch import receiver
@@ -441,6 +442,9 @@ class Control(models.Model):
 
     @staticmethod
     def post_init_callback(instance, **kwargs):
+        """Delete old control point and create all control point needed for the chosen frequency."""
+        ControlPoint.objects.filter(control=instance.id).filter(Q(status='SCHD') | Q(status='TOBE')).delete()
+
         num_cp = instance.frequency
         today = date.today()
         start_date = date(today.year, 1, 1)
@@ -456,6 +460,11 @@ class Control(models.Model):
             )
             start_date = period_end_date + timedelta(days=1)
             end_date = start_date + delta - timedelta(days=1)
+
+
+    def get_controlpoint(self):
+        """Return all controle poitn based on this control"""
+        return ControlPoint.objects.filter(control=self.id).order_by('period_start_date')
 
 
 class ControlPoint(models.Model):
@@ -486,13 +495,14 @@ class ControlPoint(models.Model):
 
     @staticmethod
     def pre_save(sender, instance, *args, **kwargs):
-        today = date.today()
-        if instance.period_end_date < today:
-            instance.status = ControlPoint.Status.MISSED
-        elif instance.period_start_date <= today <= instance.period_end_date:
-            instance.status = ControlPoint.Status.TOBEEVALUATED
-        else:
-            instance.status = ControlPoint.Status.SCHEDULED
+        if instance.status != ControlPoint.Status.COMPLIANT and instance.status != ControlPoint.Status.NONCOMPLIANT:
+            today = date.today()
+            if instance.period_end_date < today:
+                instance.status = ControlPoint.Status.MISSED
+            elif instance.period_start_date <= today <= instance.period_end_date:
+                instance.status = ControlPoint.Status.TOBEEVALUATED
+            else:
+                instance.status = ControlPoint.Status.SCHEDULED
 
 
     def __str__(self):
