@@ -9,7 +9,7 @@ from django.views.generic.edit import UpdateView, CreateView, DeleteView
 from django_filters.views import FilterView
 from auditlog.models import LogEntry
 
-from .filterset import ActionFilter, ControlFilter
+from .filterset import ActionFilter, ControlFilter, ControlPointFilter
 from .forms import ConformityForm, AuditForm, FindingForm, ActionForm, OrganizationForm, ControlForm, ControlPointForm
 from .models import Organization, Policy, Conformity, Audit, Action, Finding, Control, ControlPoint
 
@@ -180,15 +180,25 @@ class ControlCreateView(LoginRequiredMixin, CreateView):
 
 
 class ControlIndexView(LoginRequiredMixin, FilterView):
-    model = ControlPoint
+    model = Control
     filterset_class = ControlFilter
-    template_name = 'conformity/controlpoint_list.html'
+    template_name = 'conformity/control_list.html'
 
 
 class ControlUpdateView(LoginRequiredMixin, UpdateView):
+    model = Control
+    form_class = ControlForm
+
+
+class ControlPointIndexView(LoginRequiredMixin, FilterView):
+    model = ControlPoint
+    filterset_class = ControlPointFilter
+    template_name = 'conformity/controlpoint_list.html'
+
+
+class ControlPointUpdateView(LoginRequiredMixin, UpdateView):
     model = ControlPoint
     form_class = ControlPointForm
-
 
 #
 # AuditLog
