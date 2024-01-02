@@ -2,7 +2,7 @@
 {% load django_bootstrap5 %}
 
 {% block header %}
-<h1 class="h1 bi bi-pencil-square" xmlns="http://www.w3.org/1999/html"> Edit of a control point</h1>
+<h1 class="h1 bi bi-pencil-square" > Edit of a control point</h1>
 {% endblock %}
 
 {% block content %}
@@ -28,14 +28,13 @@
                     {% empty %}
                         <p class="list-group-item list-group-item-warning text-center my-0">No action associated</p>
                     {% endfor %}
-                        <a class="list-group-item list-group-item-action list-group-item-success text-center"  href="{% url 'conformity:action_create' %}" class="text-success">
+                        <a class="list-group-item list-group-item-action list-group-item-success text-center text-success"  href="{% url 'conformity:action_create' %}">
                             <i class="bi bi-plus-circle"></i> Register a corrective action
                         </a>
                 </div>
                 <br />
                 <br />
                 {% bootstrap_button button_type="submit" content="Save" %}
-            </a>
             </div>
         </div>
     </form>

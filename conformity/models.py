@@ -84,7 +84,7 @@ class Policy(models.Model):
 
 class Organization(models.Model):
     """
-    Organization class is a representation of a company, a division of company, a administration...
+    Organization class is a representation of a company, a division of company, an administration...
     The Organization may answer to one or several Policy.
     """
     name = models.CharField(max_length=256, unique=True)
@@ -152,7 +152,7 @@ class Measure(models.Model):
         ordering = ['name']
 
     def __str__(self):
-        return str(self.name + ": " + self.title)
+        return str(self.name) + ": " + str(self.title)
 
     def natural_key(self):
         return self.name
@@ -248,7 +248,6 @@ class Conformity(models.Model):
 # Callback functions
 
 
-
 @receiver(pre_save, sender=Measure)
 def post_init_callback(instance, **kwargs):
     """This function keep hierarchy of the Measure working on each Measure instantiation"""
@@ -303,16 +302,17 @@ class Audit(models.Model):
         ordering = ['report_date']
 
     def __str__(self):
+
         if self.report_date:
-            date = self.report_date.strftime('%b %Y')
+            display_date = self.report_date.strftime('%b %Y')
         elif self.start_date:
-            date = self.start_date.strftime('%b %Y')
+            display_date = self.start_date.strftime('%b %Y')
         elif self.end_date:
-            date = self.end_date.strftime('%b %Y')
+            display_date = self.end_date.strftime('%b %Y')
         else:
-            date = "xx-xxxx"
+            display_date = "xx-xxxx"
             
-        return "[" + str(self.organization) + "] " + str(self.auditor) + " (" + date + ")"
+        return "[" + str(self.organization) + "] " + str(self.auditor) + " (" + display_date + ")"
 
     @staticmethod
     def get_absolute_url():
@@ -392,7 +392,7 @@ class Finding(models.Model):
         return self.Severity(self.severity).label
 
     def get_absolute_url(self):
-        """"return somewhere else when a edit has work """
+        """"return somewhere else when an edit has work """
         return reverse('conformity:audit_detail', kwargs={'pk': self.audit_id})
 
     def get_action(self):
@@ -433,7 +433,7 @@ class Control(models.Model):
     )
 
     def __str__(self):
-        return "[" + str(self.organization) + "] " + self.title
+        return "[" + str(self.organization) + "] " + str(self.title)
 
     @staticmethod
     def get_absolute_url():
@@ -463,7 +463,7 @@ class Control(models.Model):
 
 
     def get_controlpoint(self):
-        """Return all controle poitn based on this control"""
+        """Return all control point based on this control"""
         return ControlPoint.objects.filter(control=self.id).order_by('period_start_date')
 
 

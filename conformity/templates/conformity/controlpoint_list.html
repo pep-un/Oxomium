@@ -74,13 +74,13 @@
                 {{ cp.get_status_display }}
             </td>
             <td class="col text-center">
-                <a href="{% url 'conformity:controlpoint_form' cp.id %}"
+                <a href="{% url 'conformity:controlpoint_form' cp.id %}" >
                     {% if cp.status == "TOBE" %}
-                        class="bi bi-pencil-square"
+                    <i class="bi bi-pencil-square"></i>
                     {% else %}
-                        class="bi bi-eye"
+                    <i class="bi bi-eye"></i>
                     {% endif %}
-                ></a>
+                </a>
             </td>
         </tr>
     {% empty %}
