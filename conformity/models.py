@@ -59,7 +59,7 @@ class Policy(models.Model):
         return str(self.name)
 
     def natural_key(self):
-        return self.name
+        return (self.name)
 
     def get_type(self):
         """return the readable version of the Policy Type"""
@@ -99,7 +99,7 @@ class Organization(models.Model):
         return str(self.name)
 
     def natural_key(self):
-        return self.name
+        return (self.name)
 
     @staticmethod
     def get_absolute_url():
@@ -155,7 +155,7 @@ class Measure(models.Model):
         return str(self.name) + ": " + str(self.title)
 
     def natural_key(self):
-        return self.name
+        return (self.name)
 
     natural_key.dependencies = ['conformity.policy']
 
