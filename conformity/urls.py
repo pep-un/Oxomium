@@ -15,7 +15,7 @@ urlpatterns = [
     path('audit/update/<int:pk>', views.AuditUpdateView.as_view(), name='audit_form'),
 
     path('conformity/', views.ConformityIndexView.as_view(), name='conformity_index'),
-    path('conformity/org/<int:org>/pol/<int:pol>/', views.ConformityOrgPolIndexView.as_view(),
+    path('conformity/organization/<int:org>/framework/<int:pol>/', views.ConformityOrgPolIndexView.as_view(),
          name='conformity_orgpol_index'),
     path('conformity/update/<int:pk>', views.ConformityUpdateView.as_view(), name='conformity_form'),
 
@@ -28,8 +28,8 @@ urlpatterns = [
     path('organization/create', views.OrganizationCreateView.as_view(), name='organization_create'),
     path('organization/update/<int:pk>', views.OrganizationUpdateView.as_view(), name='organization_form'),
 
-    path('policy/', views.PolicyIndexView.as_view(), name='policy_index'),
-    path('policy/<int:pk>/', views.PolicyDetailView.as_view(), name='policy_detail'),
+    path('framework/', views.PolicyIndexView.as_view(), name='policy_index'),
+    path('framework/<int:pk>/', views.PolicyDetailView.as_view(), name='policy_detail'),
 
     path('action/', views.ActionIndexView.as_view(), name='action_index'),
     path('action/create', views.ActionCreateView.as_view(), name='action_create'),
