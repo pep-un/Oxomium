@@ -1,30 +1,30 @@
 {% extends "conformity/main.html" %}
 
 {% block header %}
-    <h1 class="h1 bi bi-card-checklist"> Policies</h1>
+    <h1 class="h1 bi bi-card-checklist"> Frameworks</h1>
 {% endblock %}
 
 {% block content %}
     {% if policy_list %}
         <table class="table table-striped align-middle">
-            <caption class="d-none">List of the policies</caption>
+            <caption class="d-none">List of frameworks</caption>
             <thead class="">
                 <tr>
-                    <th scope="col">Policy</th>
+                    <th scope="col">Framework</th>
                     <th scope="col">Published by</th>
-                    <th scope="col">Policy type</th>
-                    <th scope="col" class="text-center">Measures</th>
+                    <th scope="col">Type</th>
+                    <th scope="col" class="text-center">Controls</th>
                 </tr>
             </thead>
             <tbody>
-        {% for policy in policy_list %}
+        {% for framework in policy_list %}
             <tr>
-                <td>{{ policy.name }} (v{{ pol.version }})</td>
-                <td>{{ policy.publish_by }}</td>
-                <td>{{ policy.get_type }}</td>
+                <td>{{ framework.name }} {% if framework.version %} <sup>{{ framework.version }}</sup> {% endif %}</td>
+                <td>{{ framework.publish_by }}</td>
+                <td>{{ framework.get_type }}</td>
                 <td class="text-center">
-                    <a href="{% url 'conformity:policy_detail' policy.id %}">
-                        <button type="button" class="btn btn-primary btn-sm">{{ policy.get_measures_number }} Measures</button>
+                    <a href="{% url 'conformity:policy_detail' framework.id %}">
+                        <button type="button" class="btn btn-primary btn-sm">{{ framework.get_measures_number }} Controls</button>
                     </a>
                 </td>
             </tr>
@@ -33,7 +33,7 @@
         </table>
     {% else %}
         <div class="alert alert-info" role="alert">
-          No policy defined.
+          No framework registered.
         </div>
     {% endif %}
 {% endblock %}

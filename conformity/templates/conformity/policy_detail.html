@@ -1,7 +1,7 @@
 {% extends "conformity/main.html" %}
 
 {% block header %}
-<h1 class="h2 bi bi-card-checklist"> Policy: {{ policy.name }} (v{{policy.version}})</h1>
+<h1 class="h2 bi bi-card-checklist"> Framework: {{ policy.name }} {% if policy.version %} <sup>{{ policy.version }}</sup> {% endif %}</h1>
 {% endblock %}
 
 {% block content %}
@@ -48,7 +48,7 @@
         {% endfor %}
     {% else %}
         <div class="alert alert-info" role="alert">
-          No Measure defined for this policy.
+          No control defined for this framework.
         </div>
     {% endif %}
 {% endblock %}

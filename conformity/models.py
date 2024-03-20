@@ -52,8 +52,8 @@ class Policy(models.Model):
 
     class Meta:
         ordering = ['name']
-        verbose_name = 'Policy'
-        verbose_name_plural = 'Policies'
+        verbose_name = 'Framework'
+        verbose_name_plural = 'Frameworks'
 
     def __str__(self):
         return str(self.name)
