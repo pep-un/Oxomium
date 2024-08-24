@@ -13,7 +13,7 @@
                     <th scope="col">Framework</th>
                     <th scope="col">Published by</th>
                     <th scope="col">Type</th>
-                    <th scope="col" class="text-center">Controls</th>
+                    <th scope="col" class="text-center">Requirements</th>
                 </tr>
             </thead>
             <tbody>
@@ -24,7 +24,7 @@
                 <td>{{ framework.get_type }}</td>
                 <td class="text-center">
                     <a href="{% url 'conformity:policy_detail' framework.id %}">
-                        <button type="button" class="btn btn-primary btn-sm">{{ framework.get_measures_number }} Controls</button>
+                        <button type="button" class="btn btn-primary btn-sm">{{ framework.get_measures_number }} Requirements</button>
                     </a>
                 </td>
             </tr>

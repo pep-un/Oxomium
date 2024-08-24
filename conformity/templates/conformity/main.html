@@ -82,7 +82,7 @@
                             <li class="nav-item">
                                 <a class="nav-link" href="{% url 'conformity:conformity_index' %}">
                                     <span class="bi bi-shield-shaded"></span>
-                                    Conformity
+                                    Conformities
                                 </a>
                             </li>
                         </ul>
@@ -92,12 +92,6 @@
                         </h6>
                         <ul class="nav flex-column">
                             <li class="nav-item">
-                                <a class="nav-link" href="{% url 'conformity:action_index' %}">
-                                    <span class="bi bi-arrow-repeat"></span>
-                                    Actions
-                                </a>
-                            </li>
-                            <li class="nav-item">
                                 <a class="nav-link" href="{% url 'conformity:control_index' %}">
                                     <span class="bi bi-clipboard2-check"></span>
                                     Controls
@@ -106,7 +100,13 @@
                             <li class="nav-item">
                                 <a class="nav-link" href="{% url 'conformity:audit_index' %}">
                                     <span class="bi bi-ui-checks-grid"></span>
-                                    Externals Audits
+                                    Audits
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'conformity:action_index' %}">
+                                    <span class="bi bi-arrow-repeat"></span>
+                                    Actions
                                 </a>
                             </li>
                         </ul>
