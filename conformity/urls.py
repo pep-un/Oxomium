@@ -2,6 +2,7 @@
 Conformity module URL router
 """
 from django.urls import path
+from django.views.generic import TemplateView
 
 from . import views
 
@@ -42,6 +43,6 @@ urlpatterns = [
     path('controlpoint/', views.ControlPointIndexView.as_view(), name='controlpoint_index'),
     path('controlpoint/update/<int:pk>', views.ControlPointUpdateView.as_view(), name='controlpoint_form'),
 
+    path('help/', TemplateView.as_view(template_name='help.html'), name='help'),
     path('auditlog/', views.AuditLogDetailView.as_view(), name='auditlog_index'),
-
 ]

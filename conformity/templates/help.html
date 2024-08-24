@@ -1,0 +1,98 @@
+{% extends "conformity/main.html" %}
+{% load django_bootstrap5 %}
+
+{% block header %}
+    <h1 class="h1 bi bi-info-circle" > Help Page</h1>
+{% endblock %}
+
+{% block content %}
+<p><strong>Welcome to the Oxomium!</strong></p>
+
+<p>This help guide is designed to ensure we have a common understanding of key concepts we use and a clear view of each section and how to use the features effectively.</p>
+
+<h2>Key Concepts</h2>
+<dl>
+    <dt>Frameworks:</dt>
+    <dd>Structured sets of requirements and guidelines designed to help organizations secure their information systems. Examples include ISO 27001, NIST, and CIS.</dd>
+
+    <dt>Requirements:</dt>
+    <dd>Specific criteria or conditions defined by a framework that an organization must meet to achieve compliance. Requirements outline what needs to be accomplished through the implementation of controls.</dd>
+
+    <dt>Conformity Assessments:</dt>
+    <dd>Evaluations conducted to determine how well an organization meets the requirements of a selected security framework. These assessments help identify areas of strength and potential gaps.</dd>
+
+    <dt>Controls:</dt>
+    <dd>Specific actions or safeguards implemented to manage risks and achieve compliance with security frameworks. Controls can be technical, administrative, or physical measures.</dd>
+
+    <dt>Control Points:</dt>
+    <dd>The execution instances of a control at a specific time. Control Points are where compliance and effectiveness of the controls are evaluated.</dd>
+
+    <dt>Audits:</dt>
+    <dd>Systematic evaluations of the effectiveness of controls and the overall security posture of the organization. Audits are used to ensure that the controls are operating as intended and to identify any areas for improvement.</dd>
+
+    <dt>Actions:</dt>
+    <dd>Corrective steps taken to address non-conformities or issues identified during audits or control assessments. Actions are tracked to ensure that problems are resolved promptly and effectively.</dd>
+</dl>
+
+<h2 class="h2">Conformity Management</h2>
+
+<h3 class="h3 bi bi-card-checklist">Frameworks</h3>
+<p><strong>Description:</strong></p>
+<p>This section lists all the security frameworks available within the software. Frameworks are structured sets of guidelines and requirements designed to help organizations secure their information systems. Examples include ISO 27001, NIST, CIS, and any custom or internal frameworks.</p>
+<p><strong>Key Features:</strong></p>
+<ul>
+    <li><strong>Browse Frameworks:</strong> View a list of all available frameworks.</li>
+    <li><strong>Framework Requirements:</strong> Select a framework to view its associated requirements. These are the specific conditions or controls that must be met to achieve compliance with the framework.</li>
+</ul>
+
+<h3 class="h3 bi bi-building">Organizations</h3>
+<p><strong>Description:</strong></p>
+<p>In this section, you can manage the different organizations that are being monitored within the software. Each organization can have its own set of policies, controls, and compliance statuses.</p>
+<p><strong>Key Features:</strong></p>
+<ul>
+    <li><strong>List of Organizations:</strong> View and manage all the organizations tracked by the software.</li>
+    <li><strong>Organization Details:</strong> Select an organization to see detailed information about its security posture, including the frameworks it is aligned with and its current conformity status.</li>
+</ul>
+
+<h3 class="h3 bi bi-shield-shaded">Conformities</h3>
+<p><strong>Description:</strong></p>
+<p>The Conformities section allows you to assess and manage the compliance of your organizations with specific frameworks. Here, you can conduct conformity assessments to evaluate how well an organization meets the requirements of a chosen framework.</p>
+<p><strong>Key Features:</strong></p>
+<ul>
+    <li><strong>Assessment Process:</strong> Select an organization and a framework to begin a conformity assessment. The software will guide you through the process of evaluating each requirement.</li>
+    <li><strong>Compliance Status:</strong> View the compliance status of each organization against selected frameworks, including areas of strength and potential gaps.</li>
+</ul>
+
+<h2 class="h2">Chapter: Continuous Improvements</h2>
+
+<h3 class="h3 bi bi-clipboard2-check">Controls</h3>
+<p><strong>Description:</strong></p>
+<p>Controls are specific actions or safeguards implemented to manage risks and ensure compliance with security frameworks. This section allows you to create, manage, and track these controls.</p>
+<p><strong>Key Features:</strong></p>
+<ul>
+    <li><strong>Control Plans:</strong> Organize related controls into structured plans tailored for specific objectives or frameworks.</li>
+    <li><strong>Control Execution:</strong> Manage the scheduling and tracking of control executions, known as Control Points, where each control is applied and monitored.</li>
+    <li><strong>Outcome Tracking:</strong> Record the results of control executions, including compliance with defined thresholds and any observations or issues identified during the process.</li>
+</ul>
+
+<h3 class="h3 bi bi-ui-checks-grid">Audits</h3>
+<p><strong>Description:</strong></p>
+<p>The Audits section is where you can plan, execute, and review audits of your organization’s security practices. Audits are systematic evaluations of the effectiveness of your controls and overall security posture.</p>
+<p><strong>Key Features:</strong></p>
+<ul>
+    <li><strong>Audit Planning:</strong> Schedule and organize audits, including the scope, objectives, and responsible personnel.</li>
+    <li><strong>Audit Execution:</strong> Conduct audits and record findings, including any non-conformities or areas for improvement.</li>
+    <li><strong>Audit Reports:</strong> Generate and review audit reports, which summarize the audit findings and provide recommendations for corrective actions.</li>
+</ul>
+
+<h3 class="h3 bi bi-arrow-repeat">Actions</h3>
+<p><strong>Description:</strong></p>
+<p>Actions are the specific steps taken to address issues identified during audits or through continuous monitoring of controls. This section helps you manage and track these corrective actions.</p>
+<p><strong>Key Features:</strong></p>
+<ul>
+    <li><strong>Action Management:</strong> Create, assign, and track actions based on audit findings or control assessments.</li>
+    <li><strong>Progress Tracking:</strong> Monitor the progress of each action, including deadlines, responsible users, and completion status.</li>
+    <li><strong>Reporting:</strong> Generate reports on the status of actions to ensure that issues are addressed promptly and effectively.</li>
+</ul>
+
+{% endblock %}
