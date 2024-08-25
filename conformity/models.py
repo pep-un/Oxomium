@@ -442,7 +442,6 @@ class Control(models.Model):
 
     @staticmethod
     def post_init_callback(instance, **kwargs):
-        """Delete old control point and create all control point needed for the chosen frequency."""
         ControlPoint.objects.filter(control=instance.id).filter(Q(status='SCHD') | Q(status='TOBE')).delete()
 
         num_cp = instance.frequency
@@ -453,11 +452,12 @@ class Control(models.Model):
         for _ in range(num_cp):
             period_start_date = date(start_date.year, start_date.month, 1)
             period_end_date = date(end_date.year, end_date.month, monthrange(end_date.year, end_date.month)[1])
-            ControlPoint.objects.create(
-                control=instance,
-                period_start_date=period_start_date,
-                period_end_date=period_end_date,
-            )
+            if not ControlPoint.objects.filter(control=instance.id).filter(period_start_date=period_start_date).filter(period_end_date=period_end_date) :
+                ControlPoint.objects.create(
+                    control=instance,
+                    period_start_date=period_start_date,
+                    period_end_date=period_end_date,
+                )
             start_date = period_end_date + timedelta(days=1)
             end_date = start_date + delta - timedelta(days=1)
 
