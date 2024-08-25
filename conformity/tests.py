@@ -11,7 +11,7 @@ from django.urls import reverse
 from django.utils import timezone, inspect
 from django.views import View
 
-from .models import Framework, Organization, Audit, Finding, Measure, Conformity, Action, User, Control, ControlPoint
+from .models import Framework, Organization, Audit, Finding, Requirement, Conformity, Action, User, Control, ControlPoint
 from .views import *
 import random, inspect
 from statistics import mean
@@ -40,25 +40,25 @@ class FrameworkModelTest(TestCase):
         """Test the get_type method of the Framework model"""
         self.assertEqual(self.framework.get_type(), 'International Standard')
 
-    def test_get_measures(self):
-        """Test the get_measures method of the Framework model"""
-        measures = self.framework.get_measures()
-        self.assertQuerysetEqual(measures, [])
+    def test_get_requirement(self):
+        """Test the get_requirements method of the Framework model"""
+        requirements = self.framework.get_requirements()
+        self.assertQuerysetEqual(requirements, [])
 
-    def test_get_measures_number(self):
-        """Test the get_measures_number method of the Framework model"""
-        measures_number = self.framework.get_measures_number()
-        self.assertEqual(measures_number, 0)
+    def test_get_requirements_number(self):
+        """Test the get_requirements_number method of the Framework model"""
+        requirements_number = self.framework.get_requirements_number()
+        self.assertEqual(requirements_number, 0)
 
-    def test_get_root_measure(self):
-        """Test the get_root_measure method of the Framework model"""
-        root_measure = self.framework.get_root_measure()
-        self.assertQuerysetEqual(root_measure, [])
+    def test_get_root_requirement(self):
+        """Test the get_root_requirement method of the Framework model"""
+        root_requirement = self.framework.get_root_requirement()
+        self.assertQuerysetEqual(root_requirement, [])
 
-    def test_get_first_measures(self):
-        """Test the get_first_measures method of the Framework model"""
-        first_measures = self.framework.get_first_measures()
-        self.assertQuerysetEqual(first_measures, [])
+    def test_get_first_requirements(self):
+        """Test the get_first_requirements method of the Framework model"""
+        first_requirements = self.framework.get_first_requirements()
+        self.assertQuerysetEqual(first_requirements, [])
 
     def test_unique_name(self):
         """Test if the name field is unique"""
@@ -89,16 +89,16 @@ class OrganizationModelTest(TestCase):
     def setUp(self):
         self.framework1 = Framework.objects.create(name="Framework 1", version=1, publish_by="Publisher 1")
         self.framework2 = Framework.objects.create(name="Framework 2", version=2, publish_by="Publisher 2")
-        self.measure1 = Measure.objects.create(code='1', name='Test Measure 1', framework=self.framework1)
-        self.measure2 = Measure.objects.create(code='2000', name='Test Measure 2', framework=self.framework2)
-        self.measure3 = Measure.objects.create(code='2100', name='Test Measure 2.1',
-                                               framework=self.framework2, parent=self.measure2)
-        self.measure4 = Measure.objects.create(code='2110', name='Test Measure 2.1.1',
-                                               framework=self.framework2, parent=self.measure3)
-        self.measure5 = Measure.objects.create(code='2120', name='Test Measure 2.1.2',
-                                               framework=self.framework2, parent=self.measure4)
-        self.measure6 = Measure.objects.create(code='2200', name='Test Measure 2.2',
-                                               framework=self.framework2, parent=self.measure2)
+        self.requirement1 = Requirement.objects.create(code='1', name='Test Requirement 1', framework=self.framework1)
+        self.requirement2 = Requirement.objects.create(code='2000', name='Test Requirement 2', framework=self.framework2)
+        self.requirement3 = Requirement.objects.create(code='2100', name='Test Requirement 2.1',
+                                               framework=self.framework2, parent=self.requirement2)
+        self.requirement4 = Requirement.objects.create(code='2110', name='Test Requirement 2.1.1',
+                                               framework=self.framework2, parent=self.requirement3)
+        self.requirement5 = Requirement.objects.create(code='2120', name='Test Requirement 2.1.2',
+                                               framework=self.framework2, parent=self.requirement4)
+        self.requirement6 = Requirement.objects.create(code='2200', name='Test Requirement 2.2',
+                                               framework=self.framework2, parent=self.requirement2)
         self.organization = Organization.objects.create(name="Organization 1", administrative_id="Admin ID 1",
                                                         description="Organization 1 description")
 
@@ -220,32 +220,32 @@ class FindingModelTest(TestCase):
         self.assertEqual(str(finding), 'Test Short Description')
 
 
-class MeasureModelTest(TestCase):
+class RequirementModelTest(TestCase):
     def setUp(self):
         framework = Framework.objects.create(name='test framework')
-        self.measure1 = Measure.objects.create(code="m1", name='Measure 1', framework=framework, title='Measure 1 Title',
-                                               description='Measure 1 Description')
-        self.measure2 = Measure.objects.create(code="m2", name='Measure 2', framework=framework, title='Measure 2 Title',
-                                               description='Measure 2 Description', parent=self.measure1)
-        self.measure3 = Measure.objects.create(code="m3", name='Measure 3', framework=framework, title='Measure 3 Title',
-                                               description='Measure 3 Description', parent=self.measure1)
+        self.requirement1 = Requirement.objects.create(code="m1", name='Requirement 1', framework=framework, title='Requirement 1 Title',
+                                               description='Requirement 1 Description')
+        self.requirement2 = Requirement.objects.create(code="m2", name='Requirement 2', framework=framework, title='Requirement 2 Title',
+                                               description='Requirement 2 Description', parent=self.requirement1)
+        self.requirement3 = Requirement.objects.create(code="m3", name='Requirement 3', framework=framework, title='Requirement 3 Title',
+                                               description='Requirement 3 Description', parent=self.requirement1)
 
     def test_str(self):
-        self.assertEqual(str(self.measure1), 'm1: Measure 1 Title')
+        self.assertEqual(str(self.requirement1), 'm1: Requirement 1 Title')
 
     def test_get_by_natural_key(self):
-        self.assertEqual(self.measure1.natural_key(), 'm1')
+        self.assertEqual(self.requirement1.natural_key(), 'm1')
 
     def test_get_children(self):
-        children = self.measure1.get_children()
+        children = self.requirement1.get_children()
         self.assertEqual(len(children), 2)
-        self.assertIn(self.measure2, children)
-        self.assertIn(self.measure3, children)
+        self.assertIn(self.requirement2, children)
+        self.assertIn(self.requirement3, children)
 
-    def test_measure_without_framework(self):
-        measure = Measure(name="Measure without framework", title="Test measure without framework")
+    def test_requirement_without_framework(self):
+        requirement = Requirement(name="Requirement without framework", title="Test requirement without framework")
         with self.assertRaises(Exception):
-            measure.save()
+            requirement.save()
 
 
 class ConformityModelTest(TestCase):
@@ -254,15 +254,15 @@ class ConformityModelTest(TestCase):
         # create a user
         self.organization = Organization.objects.create(name='Test Organization')
         self.framework = Framework.objects.create(name='test framework')
-        self.measure0 = Measure.objects.create(framework=self.framework, code='TEST-00', name='Test Measure Root')
-        self.measure1 = Measure.objects.create(framework=self.framework, code='TEST-01',
-                                               name='Test Measure 01', parent=self.measure0)
-        self.measure2 = Measure.objects.create(framework=self.framework, code='TEST-02',
-                                               name='Test Measure 02', parent=self.measure0)
-        self.measure3 = Measure.objects.create(framework=self.framework, code='TEST-03',
-                                               name='Test Measure 03', parent=self.measure2)
-        self.measure4 = Measure.objects.create(framework=self.framework, code='TEST-04',
-                                               name='Test Measure 04', parent=self.measure2)
+        self.requirement0 = Requirement.objects.create(framework=self.framework, code='TEST-00', name='Test Requirement Root')
+        self.requirement1 = Requirement.objects.create(framework=self.framework, code='TEST-01',
+                                               name='Test Requirement 01', parent=self.requirement0)
+        self.requirement2 = Requirement.objects.create(framework=self.framework, code='TEST-02',
+                                               name='Test Requirement 02', parent=self.requirement0)
+        self.requirement3 = Requirement.objects.create(framework=self.framework, code='TEST-03',
+                                               name='Test Requirement 03', parent=self.requirement2)
+        self.requirement4 = Requirement.objects.create(framework=self.framework, code='TEST-04',
+                                               name='Test Requirement 04', parent=self.requirement2)
 
         self.organization.add_conformity(self.framework)
 
