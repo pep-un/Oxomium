@@ -16,7 +16,7 @@ from .views import *
 import random, inspect
 from statistics import mean
 
-
+# pylint: disable=no-member
 
 class FrameworkModelTest(TestCase):
 
