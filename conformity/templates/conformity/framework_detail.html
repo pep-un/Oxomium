@@ -1,12 +1,12 @@
 {% extends "conformity/main.html" %}
 
 {% block header %}
-<h1 class="h2 bi bi-card-checklist"> Framework: {{ policy.name }} {% if policy.version %} <sup>{{ policy.version }}</sup> {% endif %}</h1>
+<h1 class="h2 bi bi-card-checklist"> Framework: {{ framework.name }} {% if framework.version %} <sup>{{ framework.version }}</sup> {% endif %}</h1>
 {% endblock %}
 
 {% block content %}
-    {% if policy.get_root_measure %}
-        {% for m in policy.get_first_measures %}
+    {% if framework.get_root_measure %}
+        {% for m in framework.get_first_measures %}
             <h3 class="text-primary position-relative">
                 {{ m.title }}
             </h3>

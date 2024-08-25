@@ -145,9 +145,9 @@ LOGOUT_REDIRECT_URL = "/"
 # AuditLog configuration
 AUDITLOG_INCLUDE_ALL_MODELS = True
 AUDITLOG_INCLUDE_TRACKING_MODELS = (
-    "conformity.Organization", {"model": "conformity.Organization", "m2m_fields": ["applicable_policies"], },
+    "conformity.Organization", {"model": "conformity.Organization", "m2m_fields": ["applicable_frameworks"], },
     "conformity.Action", {"model": "conformity.Action", "m2m_fields": ["associated_conformity", "associated_findings"], },
-    "conformity.Audit", {"model": "conformity.Audit", "m2m_fields": ["audited_policies"], }
+    "conformity.Audit", {"model": "conformity.Audit", "m2m_fields": ["audited_frameworks"], }
 )
 AUDITLOG_EXCLUDE_TRACKING_FIELDS = (
     "created",

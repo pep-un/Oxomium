@@ -2,7 +2,7 @@
 
 {% block header %}
     <h1 class="h1 bi bi-shield-shaded">
-        {{ conformity_list.0.organization }} conformity to {{ conformity_list.0.measure.policy }}:
+        {{ conformity_list.0.organization }} conformity to {{ conformity_list.0.measure.framework }}:
         <span class="badge rounded-pill bg-primary ms-3"> Conformity: {{ conformity_list.0.status }} %</span>
     </h1>
 {% endblock %}
@@ -160,7 +160,7 @@
         {% endfor %}
     {% empty %}
         <div class="alert alert-info" role="alert">
-            No conformity review for this organization and this policy.
+            No conformity review for this organization and this framework.
         </div>
         <tr><td colspan="4">No data to display</td></tr>
     {% endfor %}

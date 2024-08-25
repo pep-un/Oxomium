@@ -29,8 +29,8 @@ urlpatterns = [
     path('organization/create', views.OrganizationCreateView.as_view(), name='organization_create'),
     path('organization/update/<int:pk>', views.OrganizationUpdateView.as_view(), name='organization_form'),
 
-    path('framework/', views.PolicyIndexView.as_view(), name='policy_index'),
-    path('framework/<int:pk>/', views.PolicyDetailView.as_view(), name='policy_detail'),
+    path('framework/', views.FrameworkIndexView.as_view(), name='framework_index'),
+    path('framework/<int:pk>/', views.FrameworkDetailView.as_view(), name='framework_detail'),
 
     path('action/', views.ActionIndexView.as_view(), name='action_index'),
     path('action/create', views.ActionCreateView.as_view(), name='action_create'),

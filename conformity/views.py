@@ -11,7 +11,7 @@ from auditlog.models import LogEntry
 
 from .filterset import ActionFilter, ControlFilter, ControlPointFilter
 from .forms import ConformityForm, AuditForm, FindingForm, ActionForm, OrganizationForm, ControlForm, ControlPointForm
-from .models import Organization, Policy, Conformity, Audit, Action, Finding, Control, ControlPoint
+from .models import Organization, Framework, Conformity, Audit, Action, Finding, Control, ControlPoint
 
 
 #
@@ -26,7 +26,7 @@ class HomeView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         user = self.request.user
         context['organization_list'] = Organization.objects.all()
-        context['policy_list'] = Policy.objects.all()
+        context['framework_list'] = Framework.objects.all()
         context['conformity_list'] = Conformity.objects.filter(measure__level=0)
         context['audit_list'] = Audit.objects.all()
         context['action_list'] = Action.objects.all()
@@ -105,16 +105,16 @@ class OrganizationCreateView(LoginRequiredMixin, CreateView):
     form_class = OrganizationForm
 
 #
-# Policy
+# Framework
 #
 
 
-class PolicyIndexView(LoginRequiredMixin, ListView):
-    model = Policy
+class FrameworkIndexView(LoginRequiredMixin, ListView):
+    model = Framework
 
 
-class PolicyDetailView(LoginRequiredMixin, DetailView):
-    model = Policy
+class FrameworkDetailView(LoginRequiredMixin, DetailView):
+    model = Framework
 
 
 #
@@ -133,7 +133,7 @@ class ConformityOrgPolIndexView(LoginRequiredMixin, ListView):
 
     def get_queryset(self, **kwargs):
         return Conformity.objects.filter(organization__id=self.kwargs['org']) \
-            .filter(measure__policy__id=self.kwargs['pol']) \
+            .filter(measure__framework__id=self.kwargs['pol']) \
             .filter(measure__level=0) \
             .order_by('measure__order')
 

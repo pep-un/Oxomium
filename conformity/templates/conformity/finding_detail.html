@@ -27,11 +27,11 @@
 {% block content %}
     <h2 class="h4">Audit information</h2>
     <p>{{ finding.audit.get_type }} realized by {{ finding.audit.auditor }} on {{ finding.audit.organization }} from {{ finding.audit.start_date }} to {{ finding.audit.end_date }}.</p>
-    {% if finding.audit.get_policies %}
+    {% if finding.audit.get_frameworks %}
     <p>The following policies were within the audit scope : </p>
     <ul>
-        {% for policy in finding.audit.get_policies %}
-            <li>{{ policy }}</li>
+        {% for framework in finding.audit.get_frameworks %}
+            <li>{{ framework }}</li>
         {% endfor %}
     </ul>
     {% endif %}

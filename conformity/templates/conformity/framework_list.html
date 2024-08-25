@@ -5,7 +5,7 @@
 {% endblock %}
 
 {% block content %}
-    {% if policy_list %}
+    {% if framework_list %}
         <table class="table table-striped align-middle">
             <caption class="d-none">List of frameworks</caption>
             <thead class="">
@@ -17,13 +17,13 @@
                 </tr>
             </thead>
             <tbody>
-        {% for framework in policy_list %}
+        {% for framework in framework_list %}
             <tr>
                 <td>{{ framework.name }} {% if framework.version %} <sup>{{ framework.version }}</sup> {% endif %}</td>
                 <td>{{ framework.publish_by }}</td>
                 <td>{{ framework.get_type }}</td>
                 <td class="text-center">
-                    <a href="{% url 'conformity:policy_detail' framework.id %}">
+                    <a href="{% url 'conformity:framework_detail' framework.id %}">
                         <button type="button" class="btn btn-primary btn-sm">{{ framework.get_measures_number }} Requirements</button>
                     </a>
                 </td>

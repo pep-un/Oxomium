@@ -1,6 +1,6 @@
 """
 Conformity module manage all the manual declarative aspect of conformity management.
-It's Organized around Organization, Policy, Measure and Conformity classes.
+It's Organized around Organization, Framework, Measure and Conformity classes.
 """
 from calendar import monthrange
 from statistics import mean
@@ -20,19 +20,19 @@ from auditlog.context import set_actor
 User = get_user_model()
 
 
-class PolicyManager(models.Manager):
+class FrameworkManager(models.Manager):
     def get_by_natural_key(self, name):
         return self.get(name=name)
 
 
-class Policy(models.Model):
+class Framework(models.Model):
     """
-    Policy class represent the conformity policy you will apply on Organization.
-    A Policy is simply a collections of Measure with publication parameter.
+    Framework class represent the conformity framework you will apply on Organization.
+    A Framework is simply a collections of Measure with publication parameter.
     """
 
     class Type(models.TextChoices):
-        """ List of the Type of policy """
+        """ List of the Type of framework """
         INTERNATIONAL = 'INT', _('International Standard')
         NATIONAL = 'NAT', _('National Standard')
         TECHNICAL = 'TECH', _('Technical Standard')
@@ -40,7 +40,7 @@ class Policy(models.Model):
         POLICY = 'POL', _('Internal Policy')
         OTHER = 'OTHER', _('Other')
 
-    objects = PolicyManager()
+    objects = FrameworkManager()
     name = models.CharField(max_length=256, unique=True)
     version = models.IntegerField(default=0)
     publish_by = models.CharField(max_length=256)
@@ -62,35 +62,35 @@ class Policy(models.Model):
         return (self.name)
 
     def get_type(self):
-        """return the readable version of the Policy Type"""
+        """return the readable version of the Framework Type"""
         return self.Type(self.type).label
 
     def get_measures(self):
-        """return all Measure related to the Policy"""
-        return Measure.objects.filter(policy=self.id)
+        """return all Measure related to the Framework"""
+        return Measure.objects.filter(framework=self.id)
 
     def get_measures_number(self):
-        """return the number of leaf Measure related to the Policy"""
-        return Measure.objects.filter(policy=self.id).filter(measure__is_parent=False).count()
+        """return the number of leaf Measure related to the Framework"""
+        return Measure.objects.filter(framework=self.id).filter(measure__is_parent=False).count()
 
     def get_root_measure(self):
-        """return the root Measure of the Policy"""
-        return Measure.objects.filter(policy=self.id).filter(level=0).order_by('order')
+        """return the root Measure of the Framework"""
+        return Measure.objects.filter(framework=self.id).filter(level=0).order_by('order')
 
     def get_first_measures(self):
-        """return the Measure of the first hierarchical level of the Policy"""
-        return Measure.objects.filter(policy=self.id).filter(level=1).order_by('order')
+        """return the Measure of the first hierarchical level of the Framework"""
+        return Measure.objects.filter(framework=self.id).filter(level=1).order_by('order')
 
 
 class Organization(models.Model):
     """
     Organization class is a representation of a company, a division of company, an administration...
-    The Organization may answer to one or several Policy.
+    The Organization may answer to one or several Framework.
     """
     name = models.CharField(max_length=256, unique=True)
     administrative_id = models.CharField(max_length=256, blank=True)
     description = models.TextField(max_length=4096, blank=True)
-    applicable_policies = models.ManyToManyField(Policy, blank=True)
+    applicable_frameworks = models.ManyToManyField(Framework, blank=True)
 
     class Meta:
         ordering = ['name']
@@ -106,21 +106,21 @@ class Organization(models.Model):
         """return the absolute URL for Forms, could probably do better"""
         return reverse('conformity:organization_index')
 
-    def get_policies(self):
-        """return all Policy applicable to the Organization"""
-        return self.applicable_policies.all()
+    def get_frameworks(self):
+        """return all Framework applicable to the Organization"""
+        return self.applicable_frameworks.all()
 
     def remove_conformity(self, pid):
         """Cascade deletion of conformity"""
         with set_actor('system'):
-            measure_set = Measure.objects.filter(policy=pid)
+            measure_set = Measure.objects.filter(framework=pid)
             for measure in measure_set:
                 Conformity.objects.filter(measure=measure.id).filter(organization=self.id).delete()
 
     def add_conformity(self, pid):
         """Automatic creation of conformity"""
         with set_actor('system'):
-            measure_set = Measure.objects.filter(policy=pid)
+            measure_set = Measure.objects.filter(framework=pid)
             for measure in measure_set:
                 conformity = Conformity(organization=self, measure=measure)
                 conformity.save()
@@ -134,7 +134,7 @@ class MeasureManager(models.Manager):
 class Measure(models.Model):
     """
     A Measure is a precise requirement.
-    Measure can be hierarchical in order to form a collection of Measure, aka Policy.
+    Measure can be hierarchical in order to form a collection of Measure, aka Framework.
     A Measure is not representing the conformity level, see Conformity class.
     """
     objects = MeasureManager()
@@ -142,7 +142,7 @@ class Measure(models.Model):
     name = models.CharField(max_length=50, blank=True, unique=True)
     level = models.IntegerField(default=0)
     order = models.IntegerField(default=1)
-    policy = models.ForeignKey(Policy, on_delete=models.CASCADE)
+    framework = models.ForeignKey(Framework, on_delete=models.CASCADE)
     parent = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True)
     title = models.CharField(max_length=256, blank=True)
     description = models.TextField(blank=True)
@@ -157,7 +157,7 @@ class Measure(models.Model):
     def natural_key(self):
         return (self.name)
 
-    natural_key.dependencies = ['conformity.policy']
+    natural_key.dependencies = ['conformity.framework']
 
     def get_children(self):
         """Return all children of the measure"""
@@ -188,12 +188,12 @@ class Conformity(models.Model):
     def natural_key(self):
         return self.organization, self.measure
 
-    natural_key.dependencies = ['conformity.policy', 'conformity.measure', 'conformity.organization']
+    natural_key.dependencies = ['conformity.framework', 'conformity.measure', 'conformity.organization']
 
     def get_absolute_url(self):
         """Return the absolute URL of the class for Form, probably not the best way to do it"""
         return reverse('conformity:conformity_orgpol_index',
-                       kwargs={'org': self.organization.id, 'pol': self.measure.policy.id})
+                       kwargs={'org': self.organization.id, 'pol': self.measure.framework.id})
 
     def get_children(self):
         """Return all children Conformity based on Measure hierarchy"""
@@ -259,8 +259,8 @@ def post_init_callback(instance, **kwargs):
         instance.name = instance.code
 
 
-@receiver(m2m_changed, sender=Organization.applicable_policies.through)
-def change_policy(instance, action, pk_set, *args, **kwargs):
+@receiver(m2m_changed, sender=Organization.applicable_frameworks.through)
+def change_framework(instance, action, pk_set, *args, **kwargs):
     if action == "post_add":
         for pk in pk_set:
             instance.add_conformity(pk)
@@ -288,7 +288,7 @@ class Audit(models.Model):
     description = models.TextField(max_length=4096, blank=True)
     conclusion = models.TextField(max_length=4096, blank=True)
     auditor = models.CharField(max_length=256)
-    audited_policies = models.ManyToManyField(Policy, blank=True)
+    audited_frameworks = models.ManyToManyField(Framework, blank=True)
     start_date = models.DateField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
     report_date = models.DateField(null=True, blank=True)
@@ -319,9 +319,9 @@ class Audit(models.Model):
         """return the absolute URL for Forms, could probably do better"""
         return reverse('conformity:audit_index')
 
-    def get_policies(self):
-        """return all Policy within the Audit scope"""
-        return self.audited_policies.all()
+    def get_frameworks(self):
+        """return all Framework within the Audit scope"""
+        return self.audited_framworks.all()
 
     def get_type(self):
         """return the readable version of the Audit Type"""
