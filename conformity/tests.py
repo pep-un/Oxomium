@@ -351,7 +351,7 @@ class AuthenticationTest(TestCase):
             FrameworkIndexView,
             FrameworkDetailView,
             ConformityIndexView,
-            ConformityOrgPolIndexView,
+            ConformityDetailIndexView,
             ConformityUpdateView,
             ActionCreateView,
             ActionIndexView,
