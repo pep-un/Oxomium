@@ -11,94 +11,94 @@ from django.urls import reverse
 from django.utils import timezone, inspect
 from django.views import View
 
-from .models import Policy, Organization, Audit, Finding, Measure, Conformity, Action, User, Control, ControlPoint
+from .models import Framework, Organization, Audit, Finding, Measure, Conformity, Action, User, Control, ControlPoint
 from .views import *
 import random, inspect
 from statistics import mean
 
 
 
-class PolicyModelTest(TestCase):
+class FrameworkModelTest(TestCase):
 
     def setUp(self):
-        self.policy = Policy.objects.create(name='Test Policy', version=1, publish_by='Test Publisher',
-                                            type=Policy.Type.INTERNATIONAL)
+        self.framework = Framework.objects.create(name='Test Framework', version=1, publish_by='Test Publisher',
+                                            type=Framework.Type.INTERNATIONAL)
 
     def test_str_representation(self):
-        """Test the string representation of the Policy model"""
-        self.assertEqual(str(self.policy), 'Test Policy')
+        """Test the string representation of the Framework model"""
+        self.assertEqual(str(self.framework), 'Test Framework')
 
     def test_natural_key(self):
-        """Test the natural key of the Policy model"""
-        self.assertEqual(self.policy.natural_key(), 'Test Policy')
+        """Test the natural key of the Framework model"""
+        self.assertEqual(self.framework.natural_key(), 'Test Framework')
 
     def test_get_by_natural_key_does_not_exist(self):
-        with self.assertRaises(Policy.DoesNotExist):
-            Policy.objects.get_by_natural_key("Non Existing Policy")
+        with self.assertRaises(Framework.DoesNotExist):
+            Framework.objects.get_by_natural_key("Non Existing Framework")
 
     def test_get_type(self):
-        """Test the get_type method of the Policy model"""
-        self.assertEqual(self.policy.get_type(), 'International Standard')
+        """Test the get_type method of the Framework model"""
+        self.assertEqual(self.framework.get_type(), 'International Standard')
 
     def test_get_measures(self):
-        """Test the get_measures method of the Policy model"""
-        measures = self.policy.get_measures()
+        """Test the get_measures method of the Framework model"""
+        measures = self.framework.get_measures()
         self.assertQuerysetEqual(measures, [])
 
     def test_get_measures_number(self):
-        """Test the get_measures_number method of the Policy model"""
-        measures_number = self.policy.get_measures_number()
+        """Test the get_measures_number method of the Framework model"""
+        measures_number = self.framework.get_measures_number()
         self.assertEqual(measures_number, 0)
 
     def test_get_root_measure(self):
-        """Test the get_root_measure method of the Policy model"""
-        root_measure = self.policy.get_root_measure()
+        """Test the get_root_measure method of the Framework model"""
+        root_measure = self.framework.get_root_measure()
         self.assertQuerysetEqual(root_measure, [])
 
     def test_get_first_measures(self):
-        """Test the get_first_measures method of the Policy model"""
-        first_measures = self.policy.get_first_measures()
+        """Test the get_first_measures method of the Framework model"""
+        first_measures = self.framework.get_first_measures()
         self.assertQuerysetEqual(first_measures, [])
 
     def test_unique_name(self):
         """Test if the name field is unique"""
-        policy = Policy(name='Test Policy', version=1, publish_by='Test Publisher', type=Policy.Type.INTERNATIONAL)
+        framework = Framework(name='Test Framework', version=1, publish_by='Test Publisher', type=Framework.Type.INTERNATIONAL)
         with self.assertRaises(IntegrityError):
-            policy.save()
+            framework.save()
 
     def test_default_version(self):
         """Test if the version field has a default value of 0"""
-        policy = Policy.objects.create(
-            name='Test Policy 2',
+        framework = Framework.objects.create(
+            name='Test Framework 2',
             publish_by='Test Publisher 2',
-            type=Policy.Type.NATIONAL
+            type=Framework.Type.NATIONAL
         )
-        self.assertEqual(policy.version, 0)
+        self.assertEqual(framework.version, 0)
 
     def test_default_type(self):
         """Test if the type field has a default value of 'OTHER'"""
-        policy = Policy.objects.create(
-            name='Test Policy 3',
+        framework = Framework.objects.create(
+            name='Test Framework 3',
             version=1,
             publish_by='Test Publisher 3',
         )
-        self.assertEqual(policy.type, Policy.Type.OTHER)
+        self.assertEqual(framework.type, Framework.Type.OTHER)
 
 
 class OrganizationModelTest(TestCase):
     def setUp(self):
-        self.policy1 = Policy.objects.create(name="Policy 1", version=1, publish_by="Publisher 1")
-        self.policy2 = Policy.objects.create(name="Policy 2", version=2, publish_by="Publisher 2")
-        self.measure1 = Measure.objects.create(code='1', name='Test Measure 1', policy=self.policy1)
-        self.measure2 = Measure.objects.create(code='2000', name='Test Measure 2', policy=self.policy2)
+        self.framework1 = Framework.objects.create(name="Framework 1", version=1, publish_by="Publisher 1")
+        self.framework2 = Framework.objects.create(name="Framework 2", version=2, publish_by="Publisher 2")
+        self.measure1 = Measure.objects.create(code='1', name='Test Measure 1', framework=self.framework1)
+        self.measure2 = Measure.objects.create(code='2000', name='Test Measure 2', framework=self.framework2)
         self.measure3 = Measure.objects.create(code='2100', name='Test Measure 2.1',
-                                               policy=self.policy2, parent=self.measure2)
+                                               framework=self.framework2, parent=self.measure2)
         self.measure4 = Measure.objects.create(code='2110', name='Test Measure 2.1.1',
-                                               policy=self.policy2, parent=self.measure3)
+                                               framework=self.framework2, parent=self.measure3)
         self.measure5 = Measure.objects.create(code='2120', name='Test Measure 2.1.2',
-                                               policy=self.policy2, parent=self.measure4)
+                                               framework=self.framework2, parent=self.measure4)
         self.measure6 = Measure.objects.create(code='2200', name='Test Measure 2.2',
-                                               policy=self.policy2, parent=self.measure2)
+                                               framework=self.framework2, parent=self.measure2)
         self.organization = Organization.objects.create(name="Organization 1", administrative_id="Admin ID 1",
                                                         description="Organization 1 description")
 
@@ -112,35 +112,35 @@ class OrganizationModelTest(TestCase):
         self.assertEqual(self.organization.get_absolute_url(), '/organization/')
 
     def test_add_remove_conformity(self):
-        # Add the policies to the organization
-        self.organization.add_conformity(self.policy1)
-        self.organization.add_conformity(self.policy2)
+        # Add the frameworks to the organization
+        self.organization.add_conformity(self.framework1)
+        self.organization.add_conformity(self.framework2)
 
-        # Check if the conformity is created for the policies
+        # Check if the conformity is created for the frameworks
         conformities = Conformity.objects.filter(organization=self.organization)
         self.assertEqual(conformities.count(), 6)
 
-        # Remove conformity for policy1
-        self.organization.remove_conformity(self.policy2)
+        # Remove conformity for framework1
+        self.organization.remove_conformity(self.framework2)
         conformities = Conformity.objects.filter(organization=self.organization)
         self.assertEqual(conformities.count(), 1)
 
-    def test_get_policies(self):
-        self.organization.applicable_policies.add(self.policy1)
-        self.organization.applicable_policies.add(self.policy2)
-        policies = self.organization.get_policies()
-        self.assertIn(self.policy1, policies)
-        self.assertIn(self.policy2, policies)
+    def test_get_framworks(self):
+        self.organization.applicable_frameworks.add(self.framework1)
+        self.organization.applicable_frameworks.add(self.framework2)
+        frameworks = self.organization.get_frameworks()
+        self.assertIn(self.framework1, frameworks)
+        self.assertIn(self.framework2, frameworks)
 
 
 class AuditModelTests(TestCase):
     def setUp(self):
         organization = Organization.objects.create(name='Organization A')
-        policy = Policy.objects.create(name='Policy A', organization=organization)
+        framework = Framework.objects.create(name='Framework A', organization=organization)
         audit = Audit.objects.create(organization=organization, description='Test Audit', conclusion='Test Conclusion',
                                      auditor='Test Auditor', start_date=timezone.now(), end_date=timezone.now(),
                                      report_date=timezone.now())
-        audit.audited_policies.add(policy)
+        audit.audited_frameworks.add(framework)
         finding = Finding.objects.create(short_description='Test Finding', description='Test Description',
                                          reference='Test Reference', audit=audit, severity=Finding.Severity.CRITICAL)
 
@@ -152,9 +152,9 @@ class AuditModelTests(TestCase):
         audit = Audit.objects.get(id=1)
         self.assertEqual(audit.get_absolute_url(), '/audit/')
 
-    def test_policies(self):
+    def test_frameworks(self):
         audit = Audit.objects.get(id=1)
-        self.assertEqual(audit.get_policies().count(), 1)
+        self.assertEqual(audit.get_frameworks().count(), 1)
 
     def test_type(self):
         audit = Audit.objects.get(id=1)
@@ -222,12 +222,12 @@ class FindingModelTest(TestCase):
 
 class MeasureModelTest(TestCase):
     def setUp(self):
-        policy = Policy.objects.create(name='test policy')
-        self.measure1 = Measure.objects.create(code="m1", name='Measure 1', policy=policy, title='Measure 1 Title',
+        framework = Framework.objects.create(name='test framework')
+        self.measure1 = Measure.objects.create(code="m1", name='Measure 1', framework=framework, title='Measure 1 Title',
                                                description='Measure 1 Description')
-        self.measure2 = Measure.objects.create(code="m2", name='Measure 2', policy=policy, title='Measure 2 Title',
+        self.measure2 = Measure.objects.create(code="m2", name='Measure 2', framework=framework, title='Measure 2 Title',
                                                description='Measure 2 Description', parent=self.measure1)
-        self.measure3 = Measure.objects.create(code="m3", name='Measure 3', policy=policy, title='Measure 3 Title',
+        self.measure3 = Measure.objects.create(code="m3", name='Measure 3', framework=framework, title='Measure 3 Title',
                                                description='Measure 3 Description', parent=self.measure1)
 
     def test_str(self):
@@ -242,8 +242,8 @@ class MeasureModelTest(TestCase):
         self.assertIn(self.measure2, children)
         self.assertIn(self.measure3, children)
 
-    def test_measure_without_policy(self):
-        measure = Measure(name="Measure without policy", title="Test measure without policy")
+    def test_measure_without_framework(self):
+        measure = Measure(name="Measure without framework", title="Test measure without framework")
         with self.assertRaises(Exception):
             measure.save()
 
@@ -253,18 +253,18 @@ class ConformityModelTest(TestCase):
     def setUp(self):
         # create a user
         self.organization = Organization.objects.create(name='Test Organization')
-        self.policy = Policy.objects.create(name='test policy')
-        self.measure0 = Measure.objects.create(policy=self.policy, code='TEST-00', name='Test Measure Root')
-        self.measure1 = Measure.objects.create(policy=self.policy, code='TEST-01',
+        self.framework = Framework.objects.create(name='test framework')
+        self.measure0 = Measure.objects.create(framework=self.framework, code='TEST-00', name='Test Measure Root')
+        self.measure1 = Measure.objects.create(framework=self.framework, code='TEST-01',
                                                name='Test Measure 01', parent=self.measure0)
-        self.measure2 = Measure.objects.create(policy=self.policy, code='TEST-02',
+        self.measure2 = Measure.objects.create(framework=self.framework, code='TEST-02',
                                                name='Test Measure 02', parent=self.measure0)
-        self.measure3 = Measure.objects.create(policy=self.policy, code='TEST-03',
+        self.measure3 = Measure.objects.create(framework=self.framework, code='TEST-03',
                                                name='Test Measure 03', parent=self.measure2)
-        self.measure4 = Measure.objects.create(policy=self.policy, code='TEST-04',
+        self.measure4 = Measure.objects.create(framework=self.framework, code='TEST-04',
                                                name='Test Measure 04', parent=self.measure2)
 
-        self.organization.add_conformity(self.policy)
+        self.organization.add_conformity(self.framework)
 
     def test_str(self):
         conformity = Conformity.objects.get(id=1)
@@ -348,8 +348,8 @@ class AuthenticationTest(TestCase):
             OrganizationDetailView,
             OrganizationUpdateView,
             OrganizationCreateView,
-            PolicyIndexView,
-            PolicyDetailView,
+            FrameworkIndexView,
+            FrameworkDetailView,
             ConformityIndexView,
             ConformityOrgPolIndexView,
             ConformityUpdateView,
@@ -358,7 +358,7 @@ class AuthenticationTest(TestCase):
             ActionUpdateView,
             AuditLogDetailView,
             # Form
-            #ConformityForm, #TODO issue with the references at the Form instanciation. Exclude from test.
+            #ConformityForm, #TODO issue with the references at the Form instantiation. Exclude from test.
             OrganizationForm,
             AuditForm,
             FindingForm,

@@ -9,7 +9,7 @@
     <p>{{ audit.get_type }} realized by {{ audit.auditor }} from {{ audit.start_date }} to {{ audit.end_date }}.</p>
     <p>The following policies were within the audit scope : </p>
     <ul>
-        {% for policy in audit.get_policies %}
+        {% for policy in audit.get_frameworks %}
             <li>{{ policy }}</li>
         {% empty %}
             <li>No policy within the audit scope.</li>

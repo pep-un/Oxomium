@@ -65,12 +65,12 @@
             <div class="card-header d-flex justify-content-between align-items-start bg-gradient">
                 <h5 class="my-0"><i class="bi bi-card-checklist"></i> Frameworks</h5>
                 <a class="btn btn-outline-info btn-sm"
-                   href="{%url 'conformity:policy_index'%}">{{policy_list|length}} frameworks</a>
+                   href="{%url 'conformity:framework_index'%}">{{framework_list|length}} frameworks</a>
             </div>
             <ul class="list-group list-group-flush">
-                {% for policy in policy_list %}
+                {% for framework in framework_list %}
                     <a class="list-group-item list-group-item-action"
-                       href="{%url 'conformity:policy_detail' policy.id %}"> {{policy}}</a>
+                       href="{%url 'conformity:framework_detail' framework.id %}"> {{framework}}</a>
                 {% endfor %}
             </ul>
         </div>
