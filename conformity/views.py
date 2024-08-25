@@ -199,6 +199,12 @@ class ControlPointIndexView(LoginRequiredMixin, FilterView):
 class ControlPointUpdateView(LoginRequiredMixin, UpdateView):
     model = ControlPoint
     form_class = ControlPointForm
+    #success_url = reverse_lazy('conformity:controlpoint_list')  # Adjust the success URL as needed
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
 
 #
 # AuditLog

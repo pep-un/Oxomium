@@ -82,9 +82,16 @@ class ControlPointForm(LoginRequiredMixin, ModelForm):
         fields = ['control_date', 'control_user', 'status', 'comment']
 
     def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
         super(ControlPointForm, self).__init__(*args, **kwargs)
         self.initial['control_date'] = timezone.now()
         self.fields['control_date'].disabled = True
+        self.initial['control_user'] = self.user
+        self.fields['control_user'].disabled = True
+        self.fields['status'].widget.choices = [
+            (ControlPoint.Status.COMPLIANT, ControlPoint.Status.COMPLIANT.label),
+            (ControlPoint.Status.NONCOMPLIANT, ControlPoint.Status.NONCOMPLIANT.label),
+        ]
 
         if self.get_initial_for_field(self.fields['status'], 'status') != ControlPoint.Status.TOBEEVALUATED.value:
             for field in self.fields:
