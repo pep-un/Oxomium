@@ -127,9 +127,9 @@ class ConformityIndexView(LoginRequiredMixin, ListView):
         return Conformity.objects.filter(requirement__level=0)
 
 
-class ConformityOrgPolIndexView(LoginRequiredMixin, ListView):
+class ConformityDetailIndexView(LoginRequiredMixin, ListView):
     model = Conformity
-    template_name = 'conformity/conformity_orgpol_list.html'
+    template_name = 'conformity/conformity_detail_list.html'
 
     def get_queryset(self, **kwargs):
         return Conformity.objects.filter(organization__id=self.kwargs['org']) \

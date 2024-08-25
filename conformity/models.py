@@ -192,7 +192,7 @@ class Conformity(models.Model):
 
     def get_absolute_url(self):
         """Return the absolute URL of the class for Form, probably not the best way to do it"""
-        return reverse('conformity:conformity_orgpol_index',
+        return reverse('conformity:conformity_detail_index',
                        kwargs={'org': self.organization.id, 'pol': self.requirement.framework.id})
 
     def get_children(self):

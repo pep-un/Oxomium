@@ -24,7 +24,7 @@
                 {{ con.requirement.framework.name }}
             </th>
             <td class="col text-center">
-                <a href="{% url 'conformity:conformity_orgpol_index' con.organization.id con.requirement.framework.id %}">
+                <a href="{% url 'conformity:conformity_detail_index' con.organization.id con.requirement.framework.id %}">
                     <div class="progress">
                         <div class="progress-bar" role="progressbar" style="width: {{ con.status }}%" aria-valuenow="{{ con.status }}" aria-valuemin="0" aria-valuemax="100">{{ con.status }}%</div>
                     </div>
