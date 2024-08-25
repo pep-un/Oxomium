@@ -2,7 +2,7 @@
 
 {% block header %}
     <h1 class="h1 bi bi-shield-shaded">
-        {{ conformity_list.0.organization }} conformity to {{ conformity_list.0.measure.framework }}:
+        {{ conformity_list.0.organization }} conformity to {{ conformity_list.0.requirement.framework }}:
         <span class="badge rounded-pill bg-primary ms-3"> Conformity: {{ conformity_list.0.status }} %</span>
     </h1>
 {% endblock %}
@@ -24,7 +24,7 @@
     <tbody>
     {% for con in conformity_list.0.get_children %}
         <tr class="table-primary">
-            <th scope="col" class="col">{{ con.measure.title }}</th>
+            <th scope="col" class="col">{{ con.requirement.title }}</th>
             <td class="col-3 text-center">
                 <div class="progress">
                     {% if not con.applicable %}
@@ -67,7 +67,7 @@
         {% for con in con.get_children %}
             <tr>
                 <th scope="col">
-                    <span class="ps-2 bi bi-arrow-return-right">{{ con.measure.title }}</span>
+                    <span class="ps-2 bi bi-arrow-return-right">{{ con.requirement.title }}</span>
                 </th>
                 <td class="text-center">
                     <div class="progress">
@@ -113,7 +113,7 @@
                 {% for con in con.get_children %}
                     <tr>
                         <th scope="col">
-                            <span class="ps-4 bi bi-arrow-return-right">{{ con.measure.title }}</span>
+                            <span class="ps-4 bi bi-arrow-return-right">{{ con.requirement.title }}</span>
                         </th>
                         <td class="text-center">
                             <div class="progress">

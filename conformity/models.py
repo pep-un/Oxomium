@@ -1,6 +1,6 @@
 """
 Conformity module manage all the manual declarative aspect of conformity management.
-It's Organized around Organization, Framework, Measure and Conformity classes.
+It's Organized around Organization, Framework, Requirement and Conformity classes.
 """
 from calendar import monthrange
 from statistics import mean
@@ -28,7 +28,7 @@ class FrameworkManager(models.Manager):
 class Framework(models.Model):
     """
     Framework class represent the conformity framework you will apply on Organization.
-    A Framework is simply a collections of Measure with publication parameter.
+    A Framework is simply a collections of Requirement with publication parameter.
     """
 
     class Type(models.TextChoices):
@@ -65,21 +65,21 @@ class Framework(models.Model):
         """return the readable version of the Framework Type"""
         return self.Type(self.type).label
 
-    def get_measures(self):
-        """return all Measure related to the Framework"""
-        return Measure.objects.filter(framework=self.id)
+    def get_requirements(self):
+        """return all Requirement related to the Framework"""
+        return Requirement.objects.filter(framework=self.id)
 
-    def get_measures_number(self):
-        """return the number of leaf Measure related to the Framework"""
-        return Measure.objects.filter(framework=self.id).filter(measure__is_parent=False).count()
+    def get_requirements_number(self):
+        """return the number of leaf Requirement related to the Framework"""
+        return Requirement.objects.filter(framework=self.id).filter(requirement__is_parent=False).count()
 
-    def get_root_measure(self):
-        """return the root Measure of the Framework"""
-        return Measure.objects.filter(framework=self.id).filter(level=0).order_by('order')
+    def get_root_requirement(self):
+        """return the root Requirement of the Framework"""
+        return Requirement.objects.filter(framework=self.id).filter(level=0).order_by('order')
 
-    def get_first_measures(self):
-        """return the Measure of the first hierarchical level of the Framework"""
-        return Measure.objects.filter(framework=self.id).filter(level=1).order_by('order')
+    def get_first_requirements(self):
+        """return the Requirement of the first hierarchical level of the Framework"""
+        return Requirement.objects.filter(framework=self.id).filter(level=1).order_by('order')
 
 
 class Organization(models.Model):
@@ -113,31 +113,31 @@ class Organization(models.Model):
     def remove_conformity(self, pid):
         """Cascade deletion of conformity"""
         with set_actor('system'):
-            measure_set = Measure.objects.filter(framework=pid)
-            for measure in measure_set:
-                Conformity.objects.filter(measure=measure.id).filter(organization=self.id).delete()
+            requirement_set = Requirement.objects.filter(framework=pid)
+            for requirement in requirement_set:
+                Conformity.objects.filter(requirement=requirement.id).filter(organization=self.id).delete()
 
     def add_conformity(self, pid):
         """Automatic creation of conformity"""
         with set_actor('system'):
-            measure_set = Measure.objects.filter(framework=pid)
-            for measure in measure_set:
-                conformity = Conformity(organization=self, measure=measure)
+            requirement_set = Requirement.objects.filter(framework=pid)
+            for requirement in requirement_set:
+                conformity = Conformity(organization=self, requirement=requirement)
                 conformity.save()
 
 
-class MeasureManager(models.Manager):
+class RequirementManager(models.Manager):
     def get_by_natural_key(self, name):
         return self.get(name=name)
 
 
-class Measure(models.Model):
+class Requirement(models.Model):
     """
-    A Measure is a precise requirement.
-    Measure can be hierarchical in order to form a collection of Measure, aka Framework.
-    A Measure is not representing the conformity level, see Conformity class.
+    A Requirement is a precise requirement.
+    Requirement can be hierarchical in order to form a collection of Requirement, aka Framework.
+    A Requirement is not representing the conformity level, see Conformity class.
     """
-    objects = MeasureManager()
+    objects = RequirementManager()
     code = models.CharField(max_length=5, blank=True)
     name = models.CharField(max_length=50, blank=True, unique=True)
     level = models.IntegerField(default=0)
@@ -160,49 +160,49 @@ class Measure(models.Model):
     natural_key.dependencies = ['conformity.framework']
 
     def get_children(self):
-        """Return all children of the measure"""
-        return Measure.objects.filter(parent=self.id).order_by('order')
+        """Return all children of the requirement"""
+        return Requirement.objects.filter(parent=self.id).order_by('order')
 
 
 class Conformity(models.Model):
     """
-    Conformity represent the conformity of an Organization to a Measure.
-    Value are automatically update for parent measure conformity
+    Conformity represent the conformity of an Organization to a Requirement.
+    Value are automatically update for parent requirement conformity
     """
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, null=True)
-    measure = models.ForeignKey(Measure, on_delete=models.CASCADE, null=True)
+    requirement = models.ForeignKey(Requirement, on_delete=models.CASCADE, null=True)
     applicable = models.BooleanField(default=True)
     status = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)], null=True, blank=True)
     responsible = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
     comment = models.TextField(max_length=4096, blank=True)
 
     class Meta:
-        ordering = ['organization', 'measure']
+        ordering = ['organization', 'requirement']
         verbose_name = 'Conformity'
         verbose_name_plural = 'Conformities'
-        unique_together = (('organization', 'measure'),)
+        unique_together = (('organization', 'requirement'),)
 
     def __str__(self):
-        return "[" + str(self.organization) + "] " + str(self.measure)
+        return "[" + str(self.organization) + "] " + str(self.requirement)
 
     def natural_key(self):
-        return self.organization, self.measure
+        return self.organization, self.requirement
 
-    natural_key.dependencies = ['conformity.framework', 'conformity.measure', 'conformity.organization']
+    natural_key.dependencies = ['conformity.framework', 'conformity.requirement', 'conformity.organization']
 
     def get_absolute_url(self):
         """Return the absolute URL of the class for Form, probably not the best way to do it"""
         return reverse('conformity:conformity_orgpol_index',
-                       kwargs={'org': self.organization.id, 'pol': self.measure.framework.id})
+                       kwargs={'org': self.organization.id, 'pol': self.requirement.framework.id})
 
     def get_children(self):
-        """Return all children Conformity based on Measure hierarchy"""
+        """Return all children Conformity based on Requirement hierarchy"""
         return Conformity.objects.filter(organization=self.organization) \
-            .filter(measure__parent=self.measure.id).order_by('measure__order')
+            .filter(requirement__parent=self.requirement.id).order_by('requirement__order')
 
     def get_parent(self):
-        """Return the parent Conformity based on Measure hierarchy"""
-        p = Conformity.objects.filter(organization=self.organization).filter(measure=self.measure.parent)
+        """Return the parent Conformity based on Requirement hierarchy"""
+        p = Conformity.objects.filter(organization=self.organization).filter(requirement=self.requirement.parent)
         if len(p) == 1:
             return p[0]
         else:
@@ -248,9 +248,9 @@ class Conformity(models.Model):
 # Callback functions
 
 
-@receiver(pre_save, sender=Measure)
+@receiver(pre_save, sender=Requirement)
 def post_init_callback(instance, **kwargs):
-    """This function keep hierarchy of the Measure working on each Measure instantiation"""
+    """This function keep hierarchy of the Requirement working on each Requirement instantiation"""
     if instance.parent:
         instance.name = instance.parent.name + "-" + instance.code
         instance.level = instance.parent.level + 1
@@ -402,7 +402,7 @@ class Finding(models.Model):
 
 class Control(models.Model):
     """
-    Control class represent the periodic control needed to verify the security and the effectiveness of the security measure.
+    Control class represent the periodic control needed to verify the security and the effectiveness of the security requirement.
     """
 
     class Frequency(models.IntegerChoices):

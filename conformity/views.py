@@ -27,7 +27,7 @@ class HomeView(LoginRequiredMixin, TemplateView):
         user = self.request.user
         context['organization_list'] = Organization.objects.all()
         context['framework_list'] = Framework.objects.all()
-        context['conformity_list'] = Conformity.objects.filter(measure__level=0)
+        context['conformity_list'] = Conformity.objects.filter(requirement__level=0)
         context['audit_list'] = Audit.objects.all()
         context['action_list'] = Action.objects.all()
         context['my_action'] = Action.objects.filter(owner=user).filter(active=True).order_by('status')[:50]
@@ -124,7 +124,7 @@ class ConformityIndexView(LoginRequiredMixin, ListView):
     model = Conformity
 
     def get_queryset(self, **kwargs):
-        return Conformity.objects.filter(measure__level=0)
+        return Conformity.objects.filter(requirement__level=0)
 
 
 class ConformityOrgPolIndexView(LoginRequiredMixin, ListView):
@@ -133,9 +133,9 @@ class ConformityOrgPolIndexView(LoginRequiredMixin, ListView):
 
     def get_queryset(self, **kwargs):
         return Conformity.objects.filter(organization__id=self.kwargs['org']) \
-            .filter(measure__framework__id=self.kwargs['pol']) \
-            .filter(measure__level=0) \
-            .order_by('measure__order')
+            .filter(requirement__framework__id=self.kwargs['pol']) \
+            .filter(requirement__level=0) \
+            .order_by('requirement__order')
 
 
 class ConformityUpdateView(LoginRequiredMixin, UpdateView):
