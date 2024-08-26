@@ -14,7 +14,7 @@
             <th scope="col" class="">Titre</th>
             <th scope="col" class="">Organization</th>
             <th scope="col" class="">Level</th>
-            <th scope="col" class="">Frequency</th>
+            <th scope="col" class="text-center">Frequency</th>
             <th scope="col" class="text-center">Control Point</th>
             <th scope="col" class="text-center">Edit</th>
         </tr>
@@ -40,7 +40,7 @@
                     </span>
                 </a>
             </td>
-            <td class="col">
+            <td class="col text-center">
                 <a href="{% url 'conformity:control_index' %}?frequency={{control.frequency}}">
                     <span class="badge rounded-pill text-bg-secondary"> {{ control.get_frequency_display }} </span>
                 </a>
