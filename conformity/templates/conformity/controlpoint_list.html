@@ -2,19 +2,29 @@
 {% load render_table from django_tables2 %}
 
 {% block header %}
-    <h1 class="h1 bi bi-clipboard2-check"> Control Point</h1>
+    <h1 class="h1 bi bi-clipboard2-check position-relative col-7">
+        Control Point
+    </h1>
+    <h2 class="col-5 text-center">
+        {% if controlpoint_list.0.control.level == 1 %} <span class="badge mx-2 text-bg-primary">
+        {% elif controlpoint_list.0.control.level == 2 %} <span class="badge mx-2 text-bg-success">
+        {%endif %} {{ controlpoint_list.0.control.get_level_display }} </span>
+        <span class="badge mx-2 text-bg-secondary"> <i class="bi bi-clock-history"></i> {{ controlpoint_list.0.control.get_frequency_display }}</span>
+        <span class="badge mx-2 text-bg-secondary"> <i class="bi bi-building"></i> {{ controlpoint_list.0.control.organization }}</span>
+    </h2>
 {% endblock %}
 
 {% block content %}
+<p><strong>Titre : </strong> {{ controlpoint_list.0.control.title }} </p>
+<p><strong>Description : </strong> {{ controlpoint_list.0.control.description }} </p>
 
+<div class="container text-center">
+  <div class="row justify-content-md-center">
+<div class="col-8">
 <table class="table table-striped align-middle">
   <caption class="d-none">List of all controls</caption>
     <thead>
         <tr>
-            <th scope="col" class="">Titre</th>
-            <th scope="col" class="">Organization</th>
-            <th scope="col" class="">Level</th>
-            <th scope="col" class="">Frequency</th>
             <th scope="col" class="">Start Date</th>
             <th scope="col" class="">End Date</th>
             <th scope="col" class="">Owner</th>
@@ -26,34 +36,13 @@
     {% for cp in controlpoint_list %}
         <tr>
             <td class="col">
-                {{ cp.control.title }}
-            </td>
-            <td class="col">
-                {{ cp.control.organization }}
-            </td>
-            <td class="col">
-                <a href="{% url 'conformity:control_index' %}?control__level={{cp.control.level}}">
-                {% if cp.control.level == 1 %}
-                    <span class="badge rounded-pill text-bg-primary">
-                {% endif %}
-                {% if cp.control.level == 2 %}
-                    <span class="badge rounded-pill text-bg-success">
-                {%endif %}
-                            {{ cp.control.get_level_display }}
-                    </span>
-                </a>
-            </td>
-            <td class="col">
-                {{ cp.control.get_frequency_display }}
-            </td>
-            <td class="col">
                 {{ cp.period_start_date | date:'d-M-Y'}}
             </td>
             <td class="col">
                 {{ cp.period_end_date | date:'d-M-Y'}}
             </td>
             <td class="col">
-                {{ cp.control.owner | default_if_none:"" }}
+                {{ cp.control_user| default_if_none:"" }}
             </td>
             <td class="col">
                 {% if cp.status == "SCHD" %}
@@ -96,4 +85,7 @@
             </a>
         </td></tr>
 </table>
+    </div>
+  </div>
+</div>
 {% endblock %}
