@@ -321,7 +321,7 @@ class Audit(models.Model):
 
     def get_frameworks(self):
         """return all Framework within the Audit scope"""
-        return self.audited_framworks.all()
+        return self.audited_frameworks.all()
 
     def get_type(self):
         """return the readable version of the Audit Type"""
