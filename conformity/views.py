@@ -190,6 +190,12 @@ class ControlUpdateView(LoginRequiredMixin, UpdateView):
     form_class = ControlForm
 
 
+class ControlDetailView(LoginRequiredMixin, DetailView):
+    model = Control
+    template_name = 'conformity/control_detail_list.html'
+
+
+
 class ControlPointIndexView(LoginRequiredMixin, FilterView):
     model = ControlPoint
     filterset_class = ControlPointFilter

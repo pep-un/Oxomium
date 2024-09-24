@@ -18,4 +18,4 @@ class ControlFilter(FilterSet):
 class ControlPointFilter(FilterSet):
     class Meta:
         model = ControlPoint
-        fields = [ 'control__id' ]
+        fields = [ 'control__id', 'status' ]
