@@ -1,0 +1,92 @@
+{% extends "conformity/main.html" %}
+{% load render_table from django_tables2 %}
+
+{% block header %}
+    <h1 class="h1 bi bi-clipboard2-check position-relative col-7">
+        Control detail
+    </h1>
+    <h2 class="col-5 text-center">
+        {% if control.level == 1 %} <span class="badge mx-2 text-bg-primary">
+        {% elif control.level == 2 %} <span class="badge mx-2 text-bg-success">
+        {%endif %} {{ control.get_level_display }} </span>
+        <span class="badge mx-2 text-bg-secondary"> <i class="bi bi-clock-history"></i> {{ control.get_frequency_display }}</span>
+        <span class="badge mx-2 text-bg-secondary"> <i class="bi bi-building"></i> {{ control.organization }}</span>
+    </h2>
+{% endblock %}
+
+{% block content %}
+<p><strong>Titre : </strong> {{ control.title }} </p>
+<p><strong>Description : </strong> {{ control.description }} </p>
+<p><strong>Control history : </strong> </p>
+
+<div class="container text-center">
+  <div class="row justify-content-md-center">
+<div class="col-8">
+<table class="table table-striped align-middle">
+  <caption class="d-none">List of all controls</caption>
+    <thead>
+        <tr>
+            <th scope="col" class="">Start Date</th>
+            <th scope="col" class="">End Date</th>
+            <th scope="col" class="">Owner</th>
+            <th scope="col" class="">Status</th>
+            <th scope="col" class="text-center">Edit</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for cp in control.controlpoint %}
+        <tr>
+            <td class="col">
+                {{ cp.period_start_date | date:'d-M-Y'}}
+            </td>
+            <td class="col">
+                {{ cp.period_end_date | date:'d-M-Y'}}
+            </td>
+            <td class="col">
+                {{ cp.control_user| default_if_none:"" }}
+            </td>
+            <td class="col">
+                {% if cp.status == "SCHD" %}
+                    <i class="bi bi-hexagon text-secondary"></i>
+                {% endif %}
+                {% if cp.status == "TOBE" %}
+                    <i class="bi bi-hexagon-fill text-secondary"></i>
+                {% endif %}
+                {% if cp.status == "NOK" %}
+                    <i class="bi bi-hexagon-fill text-danger"></i>
+                {% endif %}
+                {% if cp.status == "OK" %}
+                    <i class="bi bi-hexagon-fill text-success"></i>
+                {% endif %}
+                {% if cp.status == "MISS" %}
+                    <i class="bi bi-hexagon text-danger"></i>
+                {% endif %}
+                {{ cp.get_status_display }}
+            </td>
+            <td class="col text-center">
+                <a href="{% url 'conformity:controlpoint_form' cp.id %}" >
+                    {% if cp.status == "TOBE" %}
+                    <i class="bi bi-pencil-square"></i>
+                    {% else %}
+                    <i class="bi bi-eye"></i>
+                    {% endif %}
+                </a>
+            </td>
+        </tr>
+    {% empty %}
+        <div class="alert alert-info" role="alert">
+            No control recorded.
+        </div>
+        <tr><td colspan="9">No data to display</td></tr>
+    {% endfor %}
+        <tr><td colspan="9" class="text-center">
+            <br />
+            <a href="{% url 'conformity:control_index' %}">
+                <button type="button" class="btn btn-secondary bi bi-caret-left-square"> Return to control</button>
+            </a>
+        </td></tr>
+</table>
+    </div>
+  </div>
+</div>
+{% endblock %}
