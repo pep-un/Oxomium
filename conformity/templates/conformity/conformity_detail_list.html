@@ -89,7 +89,7 @@
                 </td>
                 <td class="col-1 text-center">
                     {% if con.get_control %}
-                        <a href="{% url 'conformity:control_index' %}?control__conformity__id={{con.id}}">
+                        <a href="{% url 'conformity:control_index' %}?conformity__id={{con.id}}">
                             <button type="button" class="btn btn-outline-primary btn-sm">{{ con.get_control | length }}</button>
                         </a>
                     {% endif %}
