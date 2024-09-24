@@ -65,6 +65,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'auditlog.middleware.AuditlogMiddleware',
+    'conformity.middleware.SanityCheckMiddleware',
 ]
 
 ROOT_URLCONF = 'oxomium.urls'
