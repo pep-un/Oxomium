@@ -5,6 +5,7 @@
     <h1 class="h1 bi bi-clipboard2-check position-relative col-7">
         Control Point
     </h1>
+    {% if '?control__id=' in request.build_absolute_uri %}
     <h2 class="col-5 text-center">
         {% if controlpoint_list.0.control.level == 1 %} <span class="badge mx-2 text-bg-primary">
         {% elif controlpoint_list.0.control.level == 2 %} <span class="badge mx-2 text-bg-success">
@@ -12,11 +13,14 @@
         <span class="badge mx-2 text-bg-secondary"> <i class="bi bi-clock-history"></i> {{ controlpoint_list.0.control.get_frequency_display }}</span>
         <span class="badge mx-2 text-bg-secondary"> <i class="bi bi-building"></i> {{ controlpoint_list.0.control.organization }}</span>
     </h2>
+    {% endif %}
 {% endblock %}
 
 {% block content %}
+{% if '?control__id=' in request.build_absolute_uri %}
 <p><strong>Titre : </strong> {{ controlpoint_list.0.control.title }} </p>
 <p><strong>Description : </strong> {{ controlpoint_list.0.control.description }} </p>
+{% endif %}
 
 <div class="container text-center">
   <div class="row justify-content-md-center">
