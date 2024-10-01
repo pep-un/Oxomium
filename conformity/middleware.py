@@ -27,15 +27,21 @@ class SanityCheckMiddleware:
     @staticmethod
     def check_control_points(today):
         """Checks and updates the status of ControlPoint."""
-        missed_controls = ControlPoint.objects.filter(period_end_date__lte=today, status="TOBE")
-        missed_controls.update(status='MISS')
+        yesterday=today - relativedelta(days=1)
 
+        """Update SCHD to TOBE when period start"""
         s=today.replace(day=1)
         e=today.replace(day=1) + relativedelta(months=1)
-        scheduled_controls = ControlPoint.objects.filter(period_start_date__gte=s,
-                                                         period_end_date__lte=e,
+        scheduled_controls = ControlPoint.objects.filter(period_start_date__lte=today,
+                                                         period_end_date__gte=today,
                                                          status="SCHD")
         scheduled_controls.update(status='TOBE')
+
+        """Update expired TOBE to MISS """
+        missed_controls = ControlPoint.objects.filter(period_start_date__lt=today,
+                                                      period_end_date__lt=today,
+                                                      status="TOBE")
+        missed_controls.update(status='MISS')
 
 
 # Connect the user login signal
