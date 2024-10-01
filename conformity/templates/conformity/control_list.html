@@ -11,15 +11,18 @@
         <div class="row">
             <div class="col">
                 <div class="card">
+                    <div class="card-header">
+                        Inventory
+                    </div>
                     <ul class="list-group list-group-flush">
                         <li class="list-group-item">
                             <span>Control </span> <span class="badge text-bg-secondary float-end w-25">{{ control_list.count | default:"-" }} </span>
                         </li>
                         <li class="list-group-item">
-                            <span>- 1st level </span> <span class="badge text-bg-primary float-end w-25">{{ c1st | default:"-" }} </span>
+                            <span><i class="bi bi-caret-right-fill"></i> 1st level </span> <span class="badge text-bg-primary float-end w-25">{{ c1st | default:"-" }} </span>
                         </li>
                         <li class="list-group-item">
-                            <span>- 2nd level </span> <span class="badge text-bg-success float-end w-25">{{ c2nd | default:"-" }} </span>
+                            <span><i class="bi bi-caret-right-fill"></i> 2nd level </span> <span class="badge text-bg-success float-end w-25">{{ c2nd | default:"-" }} </span>
                         </li>
                         <li class="list-group-item">
                             <span>Control Point </span> <span class="badge text-bg-secondary float-end w-25">{{ controlpoint_list.count | default:"-" }} </span>
@@ -30,14 +33,14 @@
         </div>
     </div>
 
-    <div class="col-10">
-        <h3>Control to evaluate</h3>
-        <div class="row">
+    <div class="col">
+        <h3 class="mx-4">Controls to evaluate</h3>
+        <div class="row mx-3">
             <div class="col">
                 <div class="card">
                     <div class="card-body">
-                        <h4>{{ cp0x }}</h4>
-                        <p class="m-0">Total</p>
+                        <h4 class="text-primary display-5">{{ cp0x }}</h4>
+                        <p class="m-0">All controls</p>
                     </div>
                     <div class="card-footer text-end">
                         <a href="{% url 'conformity:controlpoint_index' %}?status=TOBE" class="small">See more ></a>
@@ -47,7 +50,7 @@
             <div class="col">
                 <div class="card">
                     <div class="card-body">
-                        <h4>{{ cp1x }}</h4>
+                        <h4 class="text-primary display-5">{{ cp1x }}</h4>
                         <p class="m-0">Yearly</p>
                     </div>
                     <div class="card-footer text-end">
@@ -58,7 +61,7 @@
             <div class="col">
                 <div class="card">
                     <div class="card-body">
-                        <h4>{{ cp2x }}</h4>
+                        <h4 class="text-primary display-5">{{ cp2x }}</h4>
                         <p class="m-0">Half-Yearly</p>
                     </div>
                     <div class="card-footer text-end">
@@ -69,7 +72,7 @@
             <div class="col">
                 <div class="card">
                     <div class="card-body">
-                        <h4>{{ cp4x }}</h4>
+                        <h4 class="text-primary display-5">{{ cp4x }}</h4>
                         <p class="m-0">Quarterly</p>
                     </div>
                     <div class="card-footer text-end">
@@ -80,7 +83,7 @@
             <div class="col">
                 <div class="card">
                     <div class="card-body">
-                        <h4>{{ cp6x }}</h4>
+                        <h4 class="text-primary display-5">{{ cp6x }}</h4>
                         <p class="m-0">Bimonthly</p>
                     </div>
                     <div class="card-footer text-end">
@@ -91,7 +94,7 @@
             <div class="col">
                 <div class="card">
                     <div class="card-body">
-                        <h4>{{ cp12x }}</h4>
+                        <h4 class="text-primary display-5">{{ cp12x }}</h4>
                         <p class="m-0">Monthly</p>
                     </div>
                     <div class="card-footer text-end">
@@ -110,10 +113,10 @@
     <thead>
         <tr>
             <th scope="col" class="">Titre</th>
-            <th scope="col" class="">Organization</th>
-            <th scope="col" class="">Level</th>
+            <th scope="col" class="text-center">Organization</th>
+            <th scope="col" class="text-center">Level</th>
             <th scope="col" class="text-center">Frequency</th>
-            <th scope="col" class="text-center">Control Point</th>
+            <th scope="col" class="text-center">Control Points</th>
             <th scope="col" class="text-center">Edit</th>
         </tr>
     </thead>
@@ -123,16 +126,16 @@
             <td class="col">
                 {{ control.title }}
             </td>
-            <td class="col">
-                {{ control.organization }}
+            <td class="col text-center">
+                <span class="badge mx-2 text-bg-dark w-50"> <i class="bi bi-building text-start"></i> {{ control.organization }}</span>
             </td>
-            <td class="col">
+            <td class="col text-center">
                 <a href="{% url 'conformity:control_index' %}?level={{control.level}}">
                 {% if control.level == 1 %}
-                    <span class="badge rounded-pill text-bg-primary">
+                    <span class="badge rounded-pill text-bg-primary w-75">
                 {% endif %}
                 {% if control.level == 2 %}
-                    <span class="badge rounded-pill text-bg-success">
+                    <span class="badge rounded-pill text-bg-success w-75">
                 {%endif %}
                             {{ control.get_level_display }}
                     </span>
@@ -140,12 +143,12 @@
             </td>
             <td class="col text-center">
                 <a href="{% url 'conformity:control_index' %}?frequency={{control.frequency}}">
-                    <span class="badge rounded-pill text-bg-secondary"> {{ control.get_frequency_display }} </span>
+                    <span class="badge rounded-pill text-bg-secondary w-75"> {{ control.get_frequency_display }} </span>
                 </a>
             </td>
             <td class="col text-center">
                 <a href="{% url 'conformity:controlpoint_index' %}?control__id={{control.id}}">
-                    <button type="button" class="btn btn-outline-primary btn-sm">{{ control.get_controlpoint | length }}</button>
+                    <button type="button" class="btn btn-outline-primary btn-sm w-25">{{ control.get_controlpoint | length }}</button>
                 </a>
             </td>
             <td class="col text-center">
