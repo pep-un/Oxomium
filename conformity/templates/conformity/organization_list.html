@@ -28,7 +28,7 @@
                 <td class="text-center">
                     {% for item in org.get_frameworks %}
                         <a href="{% url 'conformity:conformity_detail_index' org.id item.id %}">
-                           <div class="btn btn-primary my-1" style="width:15em;">
+                           <div class="btn btn-primary my-1 w-75" style="width:15em;">
                             {{ item }}
                            </div>
                         </a>
