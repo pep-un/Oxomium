@@ -184,6 +184,21 @@ class ControlIndexView(LoginRequiredMixin, FilterView):
     filterset_class = ControlFilter
     template_name = 'conformity/control_list.html'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        context['controlpoint_list'] = ControlPoint.objects.all()
+        context['c1st'] = Control.objects.filter(level="1").count()
+        context['c2nd'] = Control.objects.filter(level="2").count()
+        context['cp0x'] = ControlPoint.objects.filter(status="TOBE").count()
+        context['cp1x'] = ControlPoint.objects.filter(control__frequency="1").filter(status="TOBE").count()
+        context['cp2x'] = ControlPoint.objects.filter(control__frequency="2").filter(status="TOBE").count()
+        context['cp4x'] = ControlPoint.objects.filter(control__frequency="4").filter(status="TOBE").count()
+        context['cp6x'] = ControlPoint.objects.filter(control__frequency="6").filter(status="TOBE").count()
+        context['cp12x'] = ControlPoint.objects.filter(control__frequency="12").filter(status="TOBE").count()
+
+        return context
+
 
 class ControlUpdateView(LoginRequiredMixin, UpdateView):
     model = Control
