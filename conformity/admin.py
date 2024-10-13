@@ -5,7 +5,7 @@ Customize Django Admin Site to manage my Models instances
 from django.contrib import admin
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
-from .models import Organization, Policy, Measure, Conformity, Audit, Finding, Action, Control, ControlPoint
+from .models import Organization, Framework, Requirement, Conformity, Audit, Finding, Action, Control, ControlPoint, Attachment
 
 
 class OrganizationResources(resources.ModelResource):
@@ -17,22 +17,22 @@ class OrganizationAdmin(ImportExportModelAdmin):
     ressource_class = Organization
 
 
-class PolicyResources(resources.ModelResource):
+class FrameworkResources(resources.ModelResource):
     class Meta:
-        model = Policy
+        model = Framework
 
 
-class PolicyAdmin(ImportExportModelAdmin):
-    ressource_class = Policy
+class FrameworkAdmin(ImportExportModelAdmin):
+    ressource_class = Framework
 
 
-class MeasureResources(resources.ModelResource):
+class RequirementResources(resources.ModelResource):
     class Meta:
-        model = Measure
+        model = Requirement
 
 
-class MeasureAdmin(ImportExportModelAdmin):
-    ressource_class = Measure
+class RequirementAdmin(ImportExportModelAdmin):
+    ressource_class = Requirement
 
 
 class ConformityResources(resources.ModelResource):
@@ -55,8 +55,8 @@ class ActionAdmin(ImportExportModelAdmin):
 
 
 # Registration
-admin.site.register(Policy, PolicyAdmin)
-admin.site.register(Measure, MeasureAdmin)
+admin.site.register(Framework, FrameworkAdmin)
+admin.site.register(Requirement, RequirementAdmin)
 admin.site.register(Conformity, ConformityAdmin)
 admin.site.register(Action, ActionAdmin)
 admin.site.register(Audit)
@@ -64,3 +64,4 @@ admin.site.register(Finding)
 admin.site.register(Organization, OrganizationAdmin)
 admin.site.register(Control)
 admin.site.register(ControlPoint)
+admin.site.register(Attachment)

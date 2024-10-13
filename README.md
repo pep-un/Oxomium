@@ -16,7 +16,7 @@
 
 Oxomium is an opensource project build to help company to manage the cybersecurity compliance of organisations. 
 
-It provides help to CISO or other security people to follow conformity to a Policy.
+It provides help to CISO or other security people to follow conformity to a Framework.
 
 More information on [Oxomium Website](https://www.oxomium.org).
 

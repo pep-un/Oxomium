@@ -1,11 +1,12 @@
 """
 Conformity module manage all the manual declarative aspect of conformity management.
-It's Organized around Organization, Policy, Measure and Conformity classes.
+It's Organized around Organization, Framework, Requirement and Conformity classes.
 """
 from calendar import monthrange
 from statistics import mean
 from datetime import date, timedelta
 from django.db import models
+from django.db.models import Q
 from django.db.models.signals import m2m_changed, pre_save, post_save, post_init
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.dispatch import receiver
@@ -15,23 +16,24 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
 from auditlog.context import set_actor
+import magic
 
 User = get_user_model()
 
 
-class PolicyManager(models.Manager):
+class FrameworkManager(models.Manager):
     def get_by_natural_key(self, name):
         return self.get(name=name)
 
 
-class Policy(models.Model):
+class Framework(models.Model):
     """
-    Policy class represent the conformity policy you will apply on Organization.
-    A Policy is simply a collections of Measure with publication parameter.
+    Framework class represent the conformity framework you will apply on Organization.
+    A Framework is simply a collections of Requirement with publication parameter.
     """
 
     class Type(models.TextChoices):
-        """ List of the Type of policy """
+        """ List of the Type of framework """
         INTERNATIONAL = 'INT', _('International Standard')
         NATIONAL = 'NAT', _('National Standard')
         TECHNICAL = 'TECH', _('Technical Standard')
@@ -39,7 +41,7 @@ class Policy(models.Model):
         POLICY = 'POL', _('Internal Policy')
         OTHER = 'OTHER', _('Other')
 
-    objects = PolicyManager()
+    objects = FrameworkManager()
     name = models.CharField(max_length=256, unique=True)
     version = models.IntegerField(default=0)
     publish_by = models.CharField(max_length=256)
@@ -48,48 +50,50 @@ class Policy(models.Model):
         choices=Type.choices,
         default=Type.OTHER,
     )
+    attachment = models.ManyToManyField('Attachment', blank=True, related_name='frameworks')
 
     class Meta:
         ordering = ['name']
-        verbose_name = 'Policy'
-        verbose_name_plural = 'Policies'
+        verbose_name = 'Framework'
+        verbose_name_plural = 'Frameworks'
 
     def __str__(self):
         return str(self.name)
 
     def natural_key(self):
-        return self.name
+        return (self.name)
 
     def get_type(self):
-        """return the readable version of the Policy Type"""
+        """return the readable version of the Framework Type"""
         return self.Type(self.type).label
 
-    def get_measures(self):
-        """return all Measure related to the Policy"""
-        return Measure.objects.filter(policy=self.id)
+    def get_requirements(self):
+        """return all Requirement related to the Framework"""
+        return Requirement.objects.filter(framework=self.id)
 
-    def get_measures_number(self):
-        """return the number of leaf Measure related to the Policy"""
-        return Measure.objects.filter(policy=self.id).filter(measure__is_parent=False).count()
+    def get_requirements_number(self):
+        """return the number of leaf Requirement related to the Framework"""
+        return Requirement.objects.filter(framework=self.id).filter(requirement__is_parent=False).count()
 
-    def get_root_measure(self):
-        """return the root Measure of the Policy"""
-        return Measure.objects.filter(policy=self.id).filter(level=0).order_by('order')
+    def get_root_requirement(self):
+        """return the root Requirement of the Framework"""
+        return Requirement.objects.filter(framework=self.id).filter(level=0).order_by('order')
 
-    def get_first_measures(self):
-        """return the Measure of the first hierarchical level of the Policy"""
-        return Measure.objects.filter(policy=self.id).filter(level=1).order_by('order')
+    def get_first_requirements(self):
+        """return the Requirement of the first hierarchical level of the Framework"""
+        return Requirement.objects.filter(framework=self.id).filter(level=1).order_by('order')
 
 
 class Organization(models.Model):
     """
-    Organization class is a representation of a company, a division of company, a administration...
-    The Organization may answer to one or several Policy.
+    Organization class is a representation of a company, a division of company, an administration...
+    The Organization may answer to one or several Framework.
     """
     name = models.CharField(max_length=256, unique=True)
     administrative_id = models.CharField(max_length=256, blank=True)
     description = models.TextField(max_length=4096, blank=True)
-    applicable_policies = models.ManyToManyField(Policy, blank=True)
+    applicable_frameworks = models.ManyToManyField(Framework, blank=True)
+    attachment = models.ManyToManyField('Attachment', blank=True, related_name='organizations')
 
     class Meta:
         ordering = ['name']
@@ -98,50 +102,50 @@ class Organization(models.Model):
         return str(self.name)
 
     def natural_key(self):
-        return self.name
+        return (self.name)
 
     @staticmethod
     def get_absolute_url():
         """return the absolute URL for Forms, could probably do better"""
         return reverse('conformity:organization_index')
 
-    def get_policies(self):
-        """return all Policy applicable to the Organization"""
-        return self.applicable_policies.all()
+    def get_frameworks(self):
+        """return all Framework applicable to the Organization"""
+        return self.applicable_frameworks.all()
 
     def remove_conformity(self, pid):
         """Cascade deletion of conformity"""
         with set_actor('system'):
-            measure_set = Measure.objects.filter(policy=pid)
-            for measure in measure_set:
-                Conformity.objects.filter(measure=measure.id).filter(organization=self.id).delete()
+            requirement_set = Requirement.objects.filter(framework=pid)
+            for requirement in requirement_set:
+                Conformity.objects.filter(requirement=requirement.id).filter(organization=self.id).delete()
 
     def add_conformity(self, pid):
         """Automatic creation of conformity"""
         with set_actor('system'):
-            measure_set = Measure.objects.filter(policy=pid)
-            for measure in measure_set:
-                conformity = Conformity(organization=self, measure=measure)
+            requirement_set = Requirement.objects.filter(framework=pid)
+            for requirement in requirement_set:
+                conformity = Conformity(organization=self, requirement=requirement)
                 conformity.save()
 
 
-class MeasureManager(models.Manager):
+class RequirementManager(models.Manager):
     def get_by_natural_key(self, name):
         return self.get(name=name)
 
 
-class Measure(models.Model):
+class Requirement(models.Model):
     """
-    A Measure is a precise requirement.
-    Measure can be hierarchical in order to form a collection of Measure, aka Policy.
-    A Measure is not representing the conformity level, see Conformity class.
+    A Requirement is a precise requirement.
+    Requirement can be hierarchical in order to form a collection of Requirement, aka Framework.
+    A Requirement is not representing the conformity level, see Conformity class.
     """
-    objects = MeasureManager()
+    objects = RequirementManager()
     code = models.CharField(max_length=5, blank=True)
     name = models.CharField(max_length=50, blank=True, unique=True)
     level = models.IntegerField(default=0)
     order = models.IntegerField(default=1)
-    policy = models.ForeignKey(Policy, on_delete=models.CASCADE)
+    framework = models.ForeignKey(Framework, on_delete=models.CASCADE)
     parent = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True)
     title = models.CharField(max_length=256, blank=True)
     description = models.TextField(blank=True)
@@ -151,57 +155,57 @@ class Measure(models.Model):
         ordering = ['name']
 
     def __str__(self):
-        return str(self.name + ": " + self.title)
+        return str(self.name) + ": " + str(self.title)
 
     def natural_key(self):
-        return self.name
+        return (self.name)
 
-    natural_key.dependencies = ['conformity.policy']
+    natural_key.dependencies = ['conformity.framework']
 
     def get_children(self):
-        """Return all children of the measure"""
-        return Measure.objects.filter(parent=self.id).order_by('order')
+        """Return all children of the requirement"""
+        return Requirement.objects.filter(parent=self.id).order_by('order')
 
 
 class Conformity(models.Model):
     """
-    Conformity represent the conformity of an Organization to a Measure.
-    Value are automatically update for parent measure conformity
+    Conformity represent the conformity of an Organization to a Requirement.
+    Value are automatically update for parent requirement conformity
     """
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, null=True)
-    measure = models.ForeignKey(Measure, on_delete=models.CASCADE, null=True)
+    requirement = models.ForeignKey(Requirement, on_delete=models.CASCADE, null=True)
     applicable = models.BooleanField(default=True)
     status = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)], null=True, blank=True)
     responsible = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
     comment = models.TextField(max_length=4096, blank=True)
 
     class Meta:
-        ordering = ['organization', 'measure']
+        ordering = ['organization', 'requirement']
         verbose_name = 'Conformity'
         verbose_name_plural = 'Conformities'
-        unique_together = (('organization', 'measure'),)
+        unique_together = (('organization', 'requirement'),)
 
     def __str__(self):
-        return "[" + str(self.organization) + "] " + str(self.measure)
+        return "[" + str(self.organization) + "] " + str(self.requirement)
 
     def natural_key(self):
-        return self.organization, self.measure
+        return self.organization, self.requirement
 
-    natural_key.dependencies = ['conformity.policy', 'conformity.measure', 'conformity.organization']
+    natural_key.dependencies = ['conformity.framework', 'conformity.requirement', 'conformity.organization']
 
     def get_absolute_url(self):
         """Return the absolute URL of the class for Form, probably not the best way to do it"""
-        return reverse('conformity:conformity_orgpol_index',
-                       kwargs={'org': self.organization.id, 'pol': self.measure.policy.id})
+        return reverse('conformity:conformity_detail_index',
+                       kwargs={'org': self.organization.id, 'pol': self.requirement.framework.id})
 
     def get_children(self):
-        """Return all children Conformity based on Measure hierarchy"""
+        """Return all children Conformity based on Requirement hierarchy"""
         return Conformity.objects.filter(organization=self.organization) \
-            .filter(measure__parent=self.measure.id).order_by('measure__order')
+            .filter(requirement__parent=self.requirement.id).order_by('requirement__order')
 
     def get_parent(self):
-        """Return the parent Conformity based on Measure hierarchy"""
-        p = Conformity.objects.filter(organization=self.organization).filter(measure=self.measure.parent)
+        """Return the parent Conformity based on Requirement hierarchy"""
+        p = Conformity.objects.filter(organization=self.organization).filter(requirement=self.requirement.parent)
         if len(p) == 1:
             return p[0]
         else:
@@ -247,10 +251,9 @@ class Conformity(models.Model):
 # Callback functions
 
 
-
-@receiver(pre_save, sender=Measure)
+@receiver(pre_save, sender=Requirement)
 def post_init_callback(instance, **kwargs):
-    """This function keep hierarchy of the Measure working on each Measure instantiation"""
+    """This function keep hierarchy of the Requirement working on each Requirement instantiation"""
     if instance.parent:
         instance.name = instance.parent.name + "-" + instance.code
         instance.level = instance.parent.level + 1
@@ -259,8 +262,8 @@ def post_init_callback(instance, **kwargs):
         instance.name = instance.code
 
 
-@receiver(m2m_changed, sender=Organization.applicable_policies.through)
-def change_policy(instance, action, pk_set, *args, **kwargs):
+@receiver(m2m_changed, sender=Organization.applicable_frameworks.through)
+def change_framework(instance, action, pk_set, *args, **kwargs):
     if action == "post_add":
         for pk in pk_set:
             instance.add_conformity(pk)
@@ -288,7 +291,7 @@ class Audit(models.Model):
     description = models.TextField(max_length=4096, blank=True)
     conclusion = models.TextField(max_length=4096, blank=True)
     auditor = models.CharField(max_length=256)
-    audited_policies = models.ManyToManyField(Policy, blank=True)
+    audited_frameworks = models.ManyToManyField(Framework, blank=True)
     start_date = models.DateField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
     report_date = models.DateField(null=True, blank=True)
@@ -297,30 +300,32 @@ class Audit(models.Model):
         choices=Type.choices,
         default=Type.OTHER,
     )
+    attachment = models.ManyToManyField('Attachment', blank=True, related_name='audits')
 
     class Meta:
         ordering = ['report_date']
 
     def __str__(self):
+
         if self.report_date:
-            date = self.report_date.strftime('%b %Y')
+            display_date = self.report_date.strftime('%b %Y')
         elif self.start_date:
-            date = self.start_date.strftime('%b %Y')
+            display_date = self.start_date.strftime('%b %Y')
         elif self.end_date:
-            date = self.end_date.strftime('%b %Y')
+            display_date = self.end_date.strftime('%b %Y')
         else:
-            date = "xx-xxxx"
+            display_date = "xx-xxxx"
             
-        return "[" + str(self.organization) + "] " + str(self.auditor) + " (" + date + ")"
+        return "[" + str(self.organization) + "] " + str(self.auditor) + " (" + display_date + ")"
 
     @staticmethod
     def get_absolute_url():
         """return the absolute URL for Forms, could probably do better"""
         return reverse('conformity:audit_index')
 
-    def get_policies(self):
-        """return all Policy within the Audit scope"""
-        return self.audited_policies.all()
+    def get_frameworks(self):
+        """return all Framework within the Audit scope"""
+        return self.audited_frameworks.all()
 
     def get_type(self):
         """return the readable version of the Audit Type"""
@@ -391,7 +396,7 @@ class Finding(models.Model):
         return self.Severity(self.severity).label
 
     def get_absolute_url(self):
-        """"return somewhere else when a edit has work """
+        """"return somewhere else when an edit has work """
         return reverse('conformity:audit_detail', kwargs={'pk': self.audit_id})
 
     def get_action(self):
@@ -401,7 +406,7 @@ class Finding(models.Model):
 
 class Control(models.Model):
     """
-    Control class represent the periodic control needed to verify the security and the effectiveness of the security measure.
+    Control class represent the periodic control needed to verify the security and the effectiveness of the security requirement.
     """
 
     class Frequency(models.IntegerChoices):
@@ -432,7 +437,7 @@ class Control(models.Model):
     )
 
     def __str__(self):
-        return "[" + str(self.organization) + "] " + self.title
+        return "[" + str(self.organization) + "] " + str(self.title)
 
     @staticmethod
     def get_absolute_url():
@@ -441,6 +446,8 @@ class Control(models.Model):
 
     @staticmethod
     def post_init_callback(instance, **kwargs):
+        ControlPoint.objects.filter(control=instance.id).filter(Q(status='SCHD') | Q(status='TOBE')).delete()
+
         num_cp = instance.frequency
         today = date.today()
         start_date = date(today.year, 1, 1)
@@ -449,13 +456,19 @@ class Control(models.Model):
         for _ in range(num_cp):
             period_start_date = date(start_date.year, start_date.month, 1)
             period_end_date = date(end_date.year, end_date.month, monthrange(end_date.year, end_date.month)[1])
-            ControlPoint.objects.create(
-                control=instance,
-                period_start_date=period_start_date,
-                period_end_date=period_end_date,
-            )
+            if not ControlPoint.objects.filter(control=instance.id).filter(period_start_date=period_start_date).filter(period_end_date=period_end_date) :
+                ControlPoint.objects.create(
+                    control=instance,
+                    period_start_date=period_start_date,
+                    period_end_date=period_end_date,
+                )
             start_date = period_end_date + timedelta(days=1)
             end_date = start_date + delta - timedelta(days=1)
+
+
+    def get_controlpoint(self):
+        """Return all control point based on this control"""
+        return ControlPoint.objects.filter(control=self.id).order_by('period_start_date')
 
 
 class ControlPoint(models.Model):
@@ -478,6 +491,7 @@ class ControlPoint(models.Model):
     period_end_date = models.DateField()
     status = models.CharField(choices=Status.choices, max_length=4, default=Status.SCHEDULED)
     comment = models.TextField(max_length=4096, blank=True)
+    attachment = models.ManyToManyField('Attachment', blank=True, related_name='ControlPoint')
 
     @staticmethod
     def get_absolute_url():
@@ -486,13 +500,14 @@ class ControlPoint(models.Model):
 
     @staticmethod
     def pre_save(sender, instance, *args, **kwargs):
-        today = date.today()
-        if instance.period_end_date < today:
-            instance.status = ControlPoint.Status.MISSED
-        elif instance.period_start_date <= today <= instance.period_end_date:
-            instance.status = ControlPoint.Status.TOBEEVALUATED
-        else:
-            instance.status = ControlPoint.Status.SCHEDULED
+        if instance.status != ControlPoint.Status.COMPLIANT and instance.status != ControlPoint.Status.NONCOMPLIANT:
+            today = date.today()
+            if instance.period_end_date < today:
+                instance.status = ControlPoint.Status.MISSED
+            elif instance.period_start_date <= today <= instance.period_end_date:
+                instance.status = ControlPoint.Status.TOBEEVALUATED
+            else:
+                instance.status = ControlPoint.Status.SCHEDULED
 
 
     def __str__(self):
@@ -580,6 +595,25 @@ class Action(models.Model):
         return super(Action, self).save(*args, **kwargs)
 
 
+class Attachment(models.Model):
+    file = models.FileField(upload_to='attachments/')
+    comment = models.TextField(max_length=4096, blank=True)
+    mime_type = models.CharField(max_length=255, blank=True)
+    create_date = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.file.name.split("/")[1]
+
+    @staticmethod
+    def pre_save(sender, instance, *args, **kwargs):
+        # Read file and set mime_type
+        file_content = instance.file.read()
+        instance.file.seek(0)
+        mime = magic.Magic(mime=True)
+        instance.mime_type = mime.from_buffer(file_content)
+
+        # TODO filter on mime type
+
 #
 # Signal
 #
@@ -587,3 +621,4 @@ class Action(models.Model):
 
 post_save.connect(Control.post_init_callback, sender=Control)
 pre_save.connect(ControlPoint.pre_save, sender=ControlPoint)
+pre_save.connect(Attachment.pre_save, sender=Attachment)

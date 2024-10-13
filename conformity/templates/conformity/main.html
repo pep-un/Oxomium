@@ -1,8 +1,10 @@
 {% load django_bootstrap5 %}
 {% load static %}
+{% load l10n %}
 {% load render_table from django_tables2 %}
 
 <!DOCTYPE html>
+<!--suppress ALL -->
 <html  lang="en">
     <head>
         <meta charset="utf-8" />
@@ -67,9 +69,9 @@
                         </h6>
                         <ul class="nav flex-column">
                             <li class="nav-item">
-                                <a class="nav-link" href="{% url 'conformity:policy_index' %}">
+                                <a class="nav-link" href="{% url 'conformity:framework_index' %}">
                                     <span class="bi bi-card-checklist"></span>
-                                    Policies
+                                    Frameworks
                                 </a>
                             </li>
                             <li class="nav-item">
@@ -81,7 +83,7 @@
                             <li class="nav-item">
                                 <a class="nav-link" href="{% url 'conformity:conformity_index' %}">
                                     <span class="bi bi-shield-shaded"></span>
-                                    Policies Conformity
+                                    Conformities
                                 </a>
                             </li>
                         </ul>
@@ -91,12 +93,6 @@
                         </h6>
                         <ul class="nav flex-column">
                             <li class="nav-item">
-                                <a class="nav-link" href="{% url 'conformity:action_index' %}">
-                                    <span class="bi bi-arrow-repeat"></span>
-                                    Actions
-                                </a>
-                            </li>
-                            <li class="nav-item">
                                 <a class="nav-link" href="{% url 'conformity:control_index' %}">
                                     <span class="bi bi-clipboard2-check"></span>
                                     Controls
@@ -105,7 +101,13 @@
                             <li class="nav-item">
                                 <a class="nav-link" href="{% url 'conformity:audit_index' %}">
                                     <span class="bi bi-ui-checks-grid"></span>
-                                    Externals Audits
+                                    Audits
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'conformity:action_index' %}">
+                                    <span class="bi bi-arrow-repeat"></span>
+                                    Actions
                                 </a>
                             </li>
                         </ul>
@@ -115,14 +117,26 @@
                         </h6>
                         <ul class="nav flex-column">
                             <li class="nav-item">
+                                <a class="nav-link" href="{% url 'conformity:attachment_index' %}">
+                                    <span class="bi bi-paperclip"></span>
+                                    Attachments library
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/django-backend/">
+                                    <span class="bi bi-gear-fill"></span> Django Backend
+                                </a>
+                            </li>
+                            <li class="nav-item">
                                 <a class="nav-link" href="{% url 'conformity:auditlog_index' %}">
                                     <span class="bi bi-journal-text"></span>
                                     Audit Log
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="/django-backend/">
-                                    <span class="bi bi-gear-fill"></span> Backend
+                                <a class="nav-link" href="{% url 'conformity:help' %}">
+                                    <span class="bi bi-info-circle"></span>
+                                    Help
                                 </a>
                             </li>
                         </ul>

@@ -47,7 +47,7 @@ class Migration(migrations.Migration):
                 ('name', models.CharField(max_length=256)),
                 ('administrative_id', models.CharField(blank=True, max_length=256)),
                 ('description', models.CharField(blank=True, max_length=256)),
-                ('applicable_policies', models.ManyToManyField(blank=True, to='conformity.policy')),
+                ('applicable_frameworks', models.ManyToManyField(blank=True, to='conformity.policy')),
             ],
         ),
         migrations.CreateModel(

@@ -1,12 +1,12 @@
 {% extends "conformity/main.html" %}
 
 {% block header %}
-<h1 class="h2 bi bi-card-checklist"> Policy: {{ policy.name }} (v{{policy.version}})</h1>
+<h1 class="h2 bi bi-card-checklist"> Framework: {{ framework.name }} {% if framework.version %} <sup>{{ framework.version }}</sup> {% endif %}</h1>
 {% endblock %}
 
 {% block content %}
-    {% if policy.get_root_measure %}
-        {% for m in policy.get_first_measures %}
+    {% if framework.get_root_requirement %}
+        {% for m in framework.get_first_requirements %}
             <h3 class="text-primary position-relative">
                 {{ m.title }}
             </h3>
@@ -48,7 +48,22 @@
         {% endfor %}
     {% else %}
         <div class="alert alert-info" role="alert">
-          No Measure defined for this policy.
+          No requirement defined for this framework.
         </div>
     {% endif %}
+
+    <br />
+
+    <div class="alert alert-info">
+        <h3 class="h3 bi bi-paperclip" id="attachments"> Attachments </h3>
+        <ul>
+            {% for attachment in framework.attachment.all %}
+            <li><a href="{% url 'conformity:attachment_download' attachment.id %}"> {{ attachment }} </a></li>
+            {% empty %}
+            <i>No attachment</i>
+            {% endfor %}
+        </ul>
+    </div>
+
+
 {% endblock %}

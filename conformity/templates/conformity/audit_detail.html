@@ -7,12 +7,12 @@
 {% block content %}
     <h2 class="h4">Audit information</h2>
     <p>{{ audit.get_type }} realized by {{ audit.auditor }} from {{ audit.start_date }} to {{ audit.end_date }}.</p>
-    <p>The following policies were within the audit scope : </p>
+    <p>The following frameworks were within the audit scope : </p>
     <ul>
-        {% for policy in audit.get_policies %}
-            <li>{{ policy }}</li>
+        {% for framework in audit.get_frameworks %}
+            <li>{{ framework }}</li>
         {% empty %}
-            <li>No policy within the audit scope.</li>
+            <li>No framework within the audit scope.</li>
         {% endfor %}
     </ul>
 
@@ -114,6 +114,19 @@
             </div>
             <br />
         </div>
+    </div>
+
+    <br />
+
+    <div class="alert alert-info">
+        <h2 class="h4 bi bi-paperclip"> Attachments </h2>
+        <ul>
+            {% for attachment in audit.attachment.all %}
+            <li><a href="{% url 'conformity:attachment_download' attachment.id %}"> {{ attachment }} </a></li>
+            {% empty %}
+            <i>No attachment</i>
+            {% endfor %}
+        </ul>
     </div>
 
     <br />

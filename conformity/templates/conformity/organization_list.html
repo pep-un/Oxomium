@@ -11,7 +11,8 @@
         <tr>
             <th scope="col" class="col-1">Organization</th>
             <th scope="col" class="col ">Description</th>
-            <th scope="col" class="col-4 text-center">Applicable policies</th>
+            <th scope="col" class="col-4 text-center">Applicable frameworks</th>
+            <th scope="col" class="col-1 text-center">View</th>
             <th scope="col" class="col-1 text-center">Edit</th>
         </tr>
     </thead>
@@ -26,14 +27,17 @@
                     <p>{{ org.administrative_id }}</p>
                 </td>
                 <td class="text-center">
-                    {% for item in org.get_policies %}
-                        <a href="{% url 'conformity:conformity_orgpol_index' org.id item.id %}">
-                           <div class="btn btn-primary my-1" style="width:15em;">
+                    {% for item in org.get_frameworks %}
+                        <a href="{% url 'conformity:conformity_detail_index' org.id item.id %}">
+                           <div class="btn btn-primary my-1 w-75" style="width:15em;">
                             {{ item }}
                            </div>
                         </a>
                         <br />
                     {% endfor %}
+                </td>
+                <td class="text-center">
+                    <a href="{% url 'conformity:organization_detail' org.id %}" class="bi bi-eye"></a>
                 </td>
                 <td class="text-center">
                     <a href="{% url 'conformity:organization_form' org.id %}" class="bi bi-pencil-square"></a>
@@ -44,7 +48,7 @@
                 No organization defined.
             </div>
         {% endfor %}
-            <tr><td colspan="4" class="text-center">
+            <tr><td colspan="5" class="text-center">
             <br />
             <a href="{% url 'conformity:organization_create' %}">
                 <button type="button" class="btn btn-success bi bi-plus-circle"> Register a new organization</button>

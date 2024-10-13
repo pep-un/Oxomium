@@ -2,11 +2,11 @@
 {% load django_bootstrap5 %}
 
 {% block header %}
-<h1 class="h1 bi bi-pencil-square" xmlns="http://www.w3.org/1999/html"> Edit of an audit record</h1>
+<h1 class="h1 bi bi-pencil-square"> Edit of an audit record</h1>
 {% endblock %}
 
 {% block content %}
-    <form class="form" method="post" action="">
+    <form class="form" method="post" action="" enctype="multipart/form-data">
         {% csrf_token %}
         <div class="row justify-content-center">
             <div class="col col-6">

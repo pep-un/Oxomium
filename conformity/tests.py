@@ -1,8 +1,10 @@
 import glob
 import importlib
 from calendar import monthrange
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 
+from dateutil.utils import today
+from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.db import IntegrityError
 from django.test import TestCase, Client
@@ -11,94 +13,96 @@ from django.urls import reverse
 from django.utils import timezone, inspect
 from django.views import View
 
-from .models import Policy, Organization, Audit, Finding, Measure, Conformity, Action, User, Control, ControlPoint
+from .models import Framework, Organization, Audit, Finding, Requirement, Conformity, Action, User, Control, ControlPoint
 from .views import *
+from .middleware import SanityCheckMiddleware
+
 import random, inspect
 from statistics import mean
 
+# pylint: disable=no-member
 
-
-class PolicyModelTest(TestCase):
+class FrameworkModelTest(TestCase):
 
     def setUp(self):
-        self.policy = Policy.objects.create(name='Test Policy', version=1, publish_by='Test Publisher',
-                                            type=Policy.Type.INTERNATIONAL)
+        self.framework = Framework.objects.create(name='Test Framework', version=1, publish_by='Test Publisher',
+                                            type=Framework.Type.INTERNATIONAL)
 
     def test_str_representation(self):
-        """Test the string representation of the Policy model"""
-        self.assertEqual(str(self.policy), 'Test Policy')
+        """Test the string representation of the Framework model"""
+        self.assertEqual(str(self.framework), 'Test Framework')
 
     def test_natural_key(self):
-        """Test the natural key of the Policy model"""
-        self.assertEqual(self.policy.natural_key(), 'Test Policy')
+        """Test the natural key of the Framework model"""
+        self.assertEqual(self.framework.natural_key(), 'Test Framework')
 
     def test_get_by_natural_key_does_not_exist(self):
-        with self.assertRaises(Policy.DoesNotExist):
-            Policy.objects.get_by_natural_key("Non Existing Policy")
+        with self.assertRaises(Framework.DoesNotExist):
+            Framework.objects.get_by_natural_key("Non Existing Framework")
 
     def test_get_type(self):
-        """Test the get_type method of the Policy model"""
-        self.assertEqual(self.policy.get_type(), 'International Standard')
+        """Test the get_type method of the Framework model"""
+        self.assertEqual(self.framework.get_type(), 'International Standard')
 
-    def test_get_measures(self):
-        """Test the get_measures method of the Policy model"""
-        measures = self.policy.get_measures()
-        self.assertQuerysetEqual(measures, [])
+    def test_get_requirement(self):
+        """Test the get_requirements method of the Framework model"""
+        requirements = self.framework.get_requirements()
+        self.assertQuerysetEqual(requirements, [])
 
-    def test_get_measures_number(self):
-        """Test the get_measures_number method of the Policy model"""
-        measures_number = self.policy.get_measures_number()
-        self.assertEqual(measures_number, 0)
+    def test_get_requirements_number(self):
+        """Test the get_requirements_number method of the Framework model"""
+        requirements_number = self.framework.get_requirements_number()
+        self.assertEqual(requirements_number, 0)
 
-    def test_get_root_measure(self):
-        """Test the get_root_measure method of the Policy model"""
-        root_measure = self.policy.get_root_measure()
-        self.assertQuerysetEqual(root_measure, [])
+    def test_get_root_requirement(self):
+        """Test the get_root_requirement method of the Framework model"""
+        root_requirement = self.framework.get_root_requirement()
+        self.assertQuerysetEqual(root_requirement, [])
 
-    def test_get_first_measures(self):
-        """Test the get_first_measures method of the Policy model"""
-        first_measures = self.policy.get_first_measures()
-        self.assertQuerysetEqual(first_measures, [])
+    def test_get_first_requirements(self):
+        """Test the get_first_requirements method of the Framework model"""
+        first_requirements = self.framework.get_first_requirements()
+        self.assertQuerysetEqual(first_requirements, [])
 
     def test_unique_name(self):
         """Test if the name field is unique"""
-        policy = Policy(name='Test Policy', version=1, publish_by='Test Publisher', type=Policy.Type.INTERNATIONAL)
+        framework = Framework(name='Test Framework', version=1, publish_by='Test Publisher', type=Framework.Type.INTERNATIONAL)
         with self.assertRaises(IntegrityError):
-            policy.save()
+            framework.save()
 
     def test_default_version(self):
         """Test if the version field has a default value of 0"""
-        policy = Policy.objects.create(
-            name='Test Policy 2',
+        framework = Framework.objects.create(
+            name='Test Framework 2',
             publish_by='Test Publisher 2',
-            type=Policy.Type.NATIONAL
+            type=Framework.Type.NATIONAL
         )
-        self.assertEqual(policy.version, 0)
+        self.assertEqual(framework.version, 0)
 
     def test_default_type(self):
         """Test if the type field has a default value of 'OTHER'"""
-        policy = Policy.objects.create(
-            name='Test Policy 3',
+        framework = Framework.objects.create(
+            name='Test Framework 3',
             version=1,
             publish_by='Test Publisher 3',
         )
-        self.assertEqual(policy.type, Policy.Type.OTHER)
+        self.assertEqual(framework.type, Framework.Type.OTHER)
 
 
 class OrganizationModelTest(TestCase):
     def setUp(self):
-        self.policy1 = Policy.objects.create(name="Policy 1", version=1, publish_by="Publisher 1")
-        self.policy2 = Policy.objects.create(name="Policy 2", version=2, publish_by="Publisher 2")
-        self.measure1 = Measure.objects.create(code='1', name='Test Measure 1', policy=self.policy1)
-        self.measure2 = Measure.objects.create(code='2000', name='Test Measure 2', policy=self.policy2)
-        self.measure3 = Measure.objects.create(code='2100', name='Test Measure 2.1',
-                                               policy=self.policy2, parent=self.measure2)
-        self.measure4 = Measure.objects.create(code='2110', name='Test Measure 2.1.1',
-                                               policy=self.policy2, parent=self.measure3)
-        self.measure5 = Measure.objects.create(code='2120', name='Test Measure 2.1.2',
-                                               policy=self.policy2, parent=self.measure4)
-        self.measure6 = Measure.objects.create(code='2200', name='Test Measure 2.2',
-                                               policy=self.policy2, parent=self.measure2)
+        self.framework1 = Framework.objects.create(name="Framework 1", version=1, publish_by="Publisher 1")
+        self.framework2 = Framework.objects.create(name="Framework 2", version=2, publish_by="Publisher 2")
+        self.requirement1 = Requirement.objects.create(code='1', name='Test Requirement 1', framework=self.framework1)
+        self.requirement2 = Requirement.objects.create(code='2000', name='Test Requirement 2', framework=self.framework2)
+        self.requirement3 = Requirement.objects.create(code='2100', name='Test Requirement 2.1',
+                                               framework=self.framework2, parent=self.requirement2)
+        self.requirement4 = Requirement.objects.create(code='2110', name='Test Requirement 2.1.1',
+                                               framework=self.framework2, parent=self.requirement3)
+        self.requirement5 = Requirement.objects.create(code='2120', name='Test Requirement 2.1.2',
+                                               framework=self.framework2, parent=self.requirement4)
+        self.requirement6 = Requirement.objects.create(code='2200', name='Test Requirement 2.2',
+                                               framework=self.framework2, parent=self.requirement2)
         self.organization = Organization.objects.create(name="Organization 1", administrative_id="Admin ID 1",
                                                         description="Organization 1 description")
 
@@ -112,35 +116,35 @@ class OrganizationModelTest(TestCase):
         self.assertEqual(self.organization.get_absolute_url(), '/organization/')
 
     def test_add_remove_conformity(self):
-        # Add the policies to the organization
-        self.organization.add_conformity(self.policy1)
-        self.organization.add_conformity(self.policy2)
+        # Add the frameworks to the organization
+        self.organization.add_conformity(self.framework1)
+        self.organization.add_conformity(self.framework2)
 
-        # Check if the conformity is created for the policies
+        # Check if the conformity is created for the frameworks
         conformities = Conformity.objects.filter(organization=self.organization)
         self.assertEqual(conformities.count(), 6)
 
-        # Remove conformity for policy1
-        self.organization.remove_conformity(self.policy2)
+        # Remove conformity for framework1
+        self.organization.remove_conformity(self.framework2)
         conformities = Conformity.objects.filter(organization=self.organization)
         self.assertEqual(conformities.count(), 1)
 
-    def test_get_policies(self):
-        self.organization.applicable_policies.add(self.policy1)
-        self.organization.applicable_policies.add(self.policy2)
-        policies = self.organization.get_policies()
-        self.assertIn(self.policy1, policies)
-        self.assertIn(self.policy2, policies)
+    def test_get_framworks(self):
+        self.organization.applicable_frameworks.add(self.framework1)
+        self.organization.applicable_frameworks.add(self.framework2)
+        frameworks = self.organization.get_frameworks()
+        self.assertIn(self.framework1, frameworks)
+        self.assertIn(self.framework2, frameworks)
 
 
 class AuditModelTests(TestCase):
     def setUp(self):
         organization = Organization.objects.create(name='Organization A')
-        policy = Policy.objects.create(name='Policy A', organization=organization)
+        framework = Framework.objects.create(name='Framework A', organization=organization)
         audit = Audit.objects.create(organization=organization, description='Test Audit', conclusion='Test Conclusion',
                                      auditor='Test Auditor', start_date=timezone.now(), end_date=timezone.now(),
                                      report_date=timezone.now())
-        audit.audited_policies.add(policy)
+        audit.audited_frameworks.add(framework)
         finding = Finding.objects.create(short_description='Test Finding', description='Test Description',
                                          reference='Test Reference', audit=audit, severity=Finding.Severity.CRITICAL)
 
@@ -152,9 +156,9 @@ class AuditModelTests(TestCase):
         audit = Audit.objects.get(id=1)
         self.assertEqual(audit.get_absolute_url(), '/audit/')
 
-    def test_policies(self):
+    def test_frameworks(self):
         audit = Audit.objects.get(id=1)
-        self.assertEqual(audit.get_policies().count(), 1)
+        self.assertEqual(audit.get_frameworks().count(), 1)
 
     def test_type(self):
         audit = Audit.objects.get(id=1)
@@ -220,32 +224,32 @@ class FindingModelTest(TestCase):
         self.assertEqual(str(finding), 'Test Short Description')
 
 
-class MeasureModelTest(TestCase):
+class RequirementModelTest(TestCase):
     def setUp(self):
-        policy = Policy.objects.create(name='test policy')
-        self.measure1 = Measure.objects.create(code="m1", name='Measure 1', policy=policy, title='Measure 1 Title',
-                                               description='Measure 1 Description')
-        self.measure2 = Measure.objects.create(code="m2", name='Measure 2', policy=policy, title='Measure 2 Title',
-                                               description='Measure 2 Description', parent=self.measure1)
-        self.measure3 = Measure.objects.create(code="m3", name='Measure 3', policy=policy, title='Measure 3 Title',
-                                               description='Measure 3 Description', parent=self.measure1)
+        framework = Framework.objects.create(name='test framework')
+        self.requirement1 = Requirement.objects.create(code="m1", name='Requirement 1', framework=framework, title='Requirement 1 Title',
+                                               description='Requirement 1 Description')
+        self.requirement2 = Requirement.objects.create(code="m2", name='Requirement 2', framework=framework, title='Requirement 2 Title',
+                                               description='Requirement 2 Description', parent=self.requirement1)
+        self.requirement3 = Requirement.objects.create(code="m3", name='Requirement 3', framework=framework, title='Requirement 3 Title',
+                                               description='Requirement 3 Description', parent=self.requirement1)
 
     def test_str(self):
-        self.assertEqual(str(self.measure1), 'm1: Measure 1 Title')
+        self.assertEqual(str(self.requirement1), 'm1: Requirement 1 Title')
 
     def test_get_by_natural_key(self):
-        self.assertEqual(self.measure1.natural_key(), 'm1')
+        self.assertEqual(self.requirement1.natural_key(), 'm1')
 
     def test_get_children(self):
-        children = self.measure1.get_children()
+        children = self.requirement1.get_children()
         self.assertEqual(len(children), 2)
-        self.assertIn(self.measure2, children)
-        self.assertIn(self.measure3, children)
+        self.assertIn(self.requirement2, children)
+        self.assertIn(self.requirement3, children)
 
-    def test_measure_without_policy(self):
-        measure = Measure(name="Measure without policy", title="Test measure without policy")
+    def test_requirement_without_framework(self):
+        requirement = Requirement(name="Requirement without framework", title="Test requirement without framework")
         with self.assertRaises(Exception):
-            measure.save()
+            requirement.save()
 
 
 class ConformityModelTest(TestCase):
@@ -253,18 +257,18 @@ class ConformityModelTest(TestCase):
     def setUp(self):
         # create a user
         self.organization = Organization.objects.create(name='Test Organization')
-        self.policy = Policy.objects.create(name='test policy')
-        self.measure0 = Measure.objects.create(policy=self.policy, code='TEST-00', name='Test Measure Root')
-        self.measure1 = Measure.objects.create(policy=self.policy, code='TEST-01',
-                                               name='Test Measure 01', parent=self.measure0)
-        self.measure2 = Measure.objects.create(policy=self.policy, code='TEST-02',
-                                               name='Test Measure 02', parent=self.measure0)
-        self.measure3 = Measure.objects.create(policy=self.policy, code='TEST-03',
-                                               name='Test Measure 03', parent=self.measure2)
-        self.measure4 = Measure.objects.create(policy=self.policy, code='TEST-04',
-                                               name='Test Measure 04', parent=self.measure2)
+        self.framework = Framework.objects.create(name='test framework')
+        self.requirement0 = Requirement.objects.create(framework=self.framework, code='TEST-00', name='Test Requirement Root')
+        self.requirement1 = Requirement.objects.create(framework=self.framework, code='TEST-01',
+                                               name='Test Requirement 01', parent=self.requirement0)
+        self.requirement2 = Requirement.objects.create(framework=self.framework, code='TEST-02',
+                                               name='Test Requirement 02', parent=self.requirement0)
+        self.requirement3 = Requirement.objects.create(framework=self.framework, code='TEST-03',
+                                               name='Test Requirement 03', parent=self.requirement2)
+        self.requirement4 = Requirement.objects.create(framework=self.framework, code='TEST-04',
+                                               name='Test Requirement 04', parent=self.requirement2)
 
-        self.organization.add_conformity(self.policy)
+        self.organization.add_conformity(self.framework)
 
     def test_str(self):
         conformity = Conformity.objects.get(id=1)
@@ -272,7 +276,7 @@ class ConformityModelTest(TestCase):
 
     def test_get_absolute_url(self):
         conformity = Conformity.objects.get(id=1)
-        self.assertEqual(conformity.get_absolute_url(), '/conformity/org/1/pol/1/')
+        self.assertEqual(conformity.get_absolute_url(), '/conformity/organization/1/framework/1/')
 
     def test_get_children(self):
         conformity = Conformity.objects.get(id=1)
@@ -348,17 +352,17 @@ class AuthenticationTest(TestCase):
             OrganizationDetailView,
             OrganizationUpdateView,
             OrganizationCreateView,
-            PolicyIndexView,
-            PolicyDetailView,
+            FrameworkIndexView,
+            FrameworkDetailView,
             ConformityIndexView,
-            ConformityOrgPolIndexView,
+            ConformityDetailIndexView,
             ConformityUpdateView,
             ActionCreateView,
             ActionIndexView,
             ActionUpdateView,
             AuditLogDetailView,
             # Form
-            #ConformityForm, #TODO issue with the references at the Form instanciation. Exclude from test.
+            #ConformityForm, #TODO issue with the references at the Form instantiation. Exclude from test.
             OrganizationForm,
             AuditForm,
             FindingForm,
@@ -466,3 +470,145 @@ class ControlPointTest(TestCase):
 
     def test_get_absolute_url(self):
         self.assertEqual(ControlPoint.objects.first().get_absolute_url(), '/control/')
+
+
+class SanityCheckMiddlewareTest(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        """Set up test data for all tests."""
+        today = datetime.today().date()
+
+        # Create a user and a control instance as they are foreign keys in ControlPoint
+        cls.user = User.objects.create_user(username='testuser', password='password')
+        cls.control = Control.objects.create(title="Test Control")
+
+        # Control points that should be marked as 'MISS'
+        cls.missed_control_1 = ControlPoint.objects.create(
+            control=cls.control,
+            control_user=cls.user,
+            period_start_date=today - relativedelta(days=10),
+            period_end_date=today - relativedelta(days=1),  # missed yesterday
+            status="TOBE"
+        )
+        cls.missed_control_3 = ControlPoint.objects.create(
+            control=cls.control,
+            control_user=cls.user,
+            period_start_date=today - relativedelta(days=10),
+            period_end_date=today - relativedelta(days=5),  # missed 5 days ago
+            status="TOBE"
+        )
+
+        # Control points that should not be updated (not in TOBE status)
+        cls.not_missed_control = ControlPoint.objects.create(
+            control=cls.control,
+            control_user=cls.user,
+            period_start_date=today - relativedelta(days=10),
+            period_end_date=today - relativedelta(days=5),  # missed but not in TOBE
+            status="MISS"
+        )
+        cls.not_missed_control_2 = ControlPoint.objects.create(
+            control=cls.control,
+            control_user=cls.user,
+            period_start_date=today - relativedelta(days=10),
+            period_end_date=today,  # today is not miss
+            status="TOBE"
+        )
+
+        # Control points that should be marked as 'TOBE'
+        cls.scheduled_control_1 = ControlPoint.objects.create(
+            control=cls.control,
+            control_user=cls.user,
+            period_start_date=today.replace(day=1),
+            period_end_date=today.replace(day=1) + relativedelta(months=1) - relativedelta(days=1),
+            status="SCHD"
+        )
+        cls.scheduled_control_2 = ControlPoint.objects.create(
+            control=cls.control,
+            control_user=cls.user,
+            period_start_date=today.replace(day=1) - relativedelta(months=3),
+            period_end_date=today.replace(day=1) + relativedelta(months=2),
+            status="SCHD"
+        )
+
+        # Control point that should stay in SCHED
+        cls.scheduled_control_3 = ControlPoint.objects.create(
+            control=cls.control,
+            control_user=cls.user,
+            period_start_date=today + relativedelta(days=1),
+            period_end_date=today + relativedelta(days=30),
+            status="SCHD"
+        )
+
+        # Control point that should not be updated (not in SCHD status)
+        cls.not_scheduled_control = ControlPoint.objects.create(
+            control=cls.control,
+            control_user=cls.user,
+            period_start_date=today.replace(day=1),
+            period_end_date=today.replace(day=1) + relativedelta(months=1) - relativedelta(days=1),
+            status="TOBE"
+        )
+
+        # Control point that should not be updated (OK ou NOK)
+        cls.ok_control = ControlPoint.objects.create(
+            control=cls.control,
+            control_user=cls.user,
+            period_start_date=today.replace(day=1),
+            period_end_date=today.replace(day=1) + relativedelta(months=1) - relativedelta(days=1),
+            status="OK"
+        )
+        cls.nok_control = ControlPoint.objects.create(
+            control=cls.control,
+            control_user=cls.user,
+            period_start_date=today.replace(day=1) - relativedelta(months=3),
+            period_end_date=today.replace(day=1) - relativedelta(days=1),
+            status="NOK"
+        )
+
+    def test_missed_controls_update(self):
+        """Test that missed controls are updated to 'MISS'."""
+        today = datetime.today().date()
+        SanityCheckMiddleware.check_control_points(today)
+
+        self.missed_control_1.refresh_from_db()
+        self.not_missed_control_2.refresh_from_db()
+        self.missed_control_3.refresh_from_db()
+
+        self.assertEqual(self.missed_control_1.status, 'MISS')
+        self.assertEqual(self.not_missed_control_2.status, 'TOBE')
+        self.assertEqual(self.missed_control_3.status, 'MISS')
+
+    def test_scheduled_controls_update(self):
+        """Test that scheduled controls are updated to 'TOBE'."""
+        today = datetime.today().date()
+        SanityCheckMiddleware.check_control_points(today)
+
+        self.scheduled_control_1.refresh_from_db()
+        self.scheduled_control_2.refresh_from_db()
+        self.scheduled_control_3.refresh_from_db()
+
+        self.assertEqual(self.scheduled_control_1.status, 'TOBE')
+        self.assertEqual(self.scheduled_control_2.status, 'TOBE')
+        self.assertEqual(self.scheduled_control_3.status, 'SCHD')
+
+    def test_no_update(self):
+        """Test some control that should not be updated"""
+        today = datetime.today().date()
+        SanityCheckMiddleware.check_control_points(today)
+
+        """Test a SCHD control that should not switch to TOBE"""
+        self.scheduled_control_3.refresh_from_db()
+        self.assertEqual(self.scheduled_control_3.status, 'SCHD')
+
+        """Test that controls not in 'TOBE' or 'SCHD' are not updated."""
+        self.not_missed_control.refresh_from_db()
+        self.not_scheduled_control.refresh_from_db()
+
+        self.assertEqual(self.not_missed_control.status, 'MISS')
+        self.assertEqual(self.not_scheduled_control.status, 'TOBE')
+
+        """Test that controls not in 'OK' or 'NOK' are not updated."""
+        self.ok_control.refresh_from_db()
+        self.nok_control.refresh_from_db()
+
+        self.assertEqual(self.ok_control.status, 'OK')
+        self.assertEqual(self.nok_control.status, 'NOK')
