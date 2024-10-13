@@ -9,38 +9,33 @@
     <caption class="d-none">Attachment library</caption>
     <thead>
         <tr>
-            <th scope="col" class="col-3">Attachment</th>
-            <th scope="col" class="col-3 ">Comment</th>
+            <th scope="col" class="col">Attachment</th>
             <th scope="col" class="col-2 text-center">Creation date</th>
-            <th scope="col" class="col-4 text-center">References</th>
+            <th scope="col" class="col-6 text-center">References</th>
         </tr>
     </thead>
     <tbody>
         {% for attachment in attachment_list %}
             <tr>
                 <td>
-                    <i class="bi bi-file-earmark"></i>
-                    <a href="{% url 'conformity:attachment_download' attachment.id %}">{{ attachment | truncatechars:40}}</a>
-                </td>
-                <td>
-                    <p>{{ attachment.comment }}</p>
+                    <span><i class="bi bi-file-earmark"></i> <a href="{% url 'conformity:attachment_download' attachment.id %}">{{ attachment | truncatechars:40 }}</a> </span>
                 </td>
                 <td class="text-center">
                     <span>{{ attachment.create_date }}</span>
                 </td>
-                <td class="text-center">
-                    {% if attachment.organizations.all %}
-                    <span class="badge mx-2 text-bg-secondary"> <i class="bi bi-building"></i> {{ attachment.organizations.all | join:", " }} </span>
-                    {% endif %}
-                    {% if attachment.frameworks.all %}
-                    <span class="badge mx-2 text-bg-secondary"> <i class="bi bi-card-checklist"></i> {{ attachment.frameworks.all | join:", " }} </span>
-                    {% endif %}
-                    {% if attachment.ControlPoint.all %}
-                    <span class="badge mx-2 text-bg-secondary"> <i class="bi bi-clipboard2-check "></i> {{ attachment.ControlPoint.all | join:", " }} </span>
-                    {% endif %}
-                    {% if attachment.audits.all %}
-                    <span class="badge mx-2 text-bg-secondary"> <i class="bi bi-ui-checks-grid"></i> {{ attachment.audits.all | join:", " }} </span>
-                    {% endif %}
+                <td class="">
+                    {% for org in attachment.organizations.all %}
+                    <a href="{% url 'conformity:organization_detail' org.id %}"><span class="badge mx-2 text-bg-dark px-3"> <i class="bi bi-building pe-2"></i> {{ org }} </span></a>
+                    {% endfor %}
+                    {% for framework in attachment.frameworks.all %}
+                    <a href="{% url 'conformity:framework_detail' framework.id %}#attachments"><span class="badge mx-2 text-bg-primary px-3"> <i class="bi bi-card-checklist pe-2"></i> {{ framework }} </span></a>
+                    {% endfor %}
+                    {% for cp in attachment.ControlPoint.all %}
+                    <a href="{% url 'conformity:controlpoint_form' cp.id %}"><span class="badge mx-2 text-bg-secondary px-3"> <i class="bi bi-clipboard2-check pe-2"></i> {{ cp }} </span></a>
+                    {% endfor %}
+                    {% for audit in attachment.audits.all %}
+                    <a href="{% url 'conformity:audit_detail' audit.id %}"><span class="badge mx-2 text-bg-success px-3"> <i class="bi bi-ui-checks-grid pe-2"></i> {{ audit }} </span></a>
+                    {% endfor %}
                 </td>
             </tr>
         {% empty %}

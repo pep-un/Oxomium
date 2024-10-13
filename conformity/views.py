@@ -108,12 +108,8 @@ class OrganizationIndexView(LoginRequiredMixin, ListView):
     ordering = ['name']
 
 
-class OrganizationDetailView(LoginRequiredMixin, ListView):
-    model = Conformity
-    template = "conformity/template/conformity/conformity_list.html"
-
-    def get_queryset(self, **kwargs):
-        return Conformity.objects.filter(organization__id=self.kwargs['pk'])
+class OrganizationDetailView(LoginRequiredMixin, DetailView):
+    model = Organization
 
 
 class OrganizationUpdateView(LoginRequiredMixin, UpdateView):
