@@ -55,12 +55,12 @@
     <br />
 
     <div class="alert alert-info">
-        <h3 class="h3 bi bi-paperclip"> Attachments </h3>
+        <h3 class="h3 bi bi-paperclip" id="attachments"> Attachments </h3>
         <ul>
             {% for attachment in framework.attachment.all %}
             <li><a href="{% url 'conformity:attachment_download' attachment.id %}"> {{ attachment }} </a></li>
             {% empty %}
-            <i>No attachment attached</i>
+            <i>No attachment</i>
             {% endfor %}
         </ul>
     </div>

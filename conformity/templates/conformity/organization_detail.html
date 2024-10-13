@@ -1,0 +1,34 @@
+{% extends "conformity/main.html" %}
+
+{% block header %}
+    <h1 class="h1 bi bi-building"> Organizations {{ organization }}</h1>
+    <span class="badge text-bg-secondary ms-3"> {{ organization.administrative_id|default:'ø' }}</span>
+{% endblock %}
+
+{% block content %}
+    <p> {{ organization.description }}</p>
+
+    <h2 class="h4">Applicable policy : </h2>
+    {% for item in organization.get_frameworks %}
+        <a href="{% url 'conformity:conformity_detail_index' organization.id item.id %}">
+           <div class="btn btn-primary my-1 mx-5 w-25" style="width:15em;">
+            {{ item }}
+           </div>
+        </a>
+        <br />
+    {% endfor %}
+
+    <br />
+
+    <div class="alert alert-info">
+        <h2 class="h4 bi bi-paperclip"> Attachments </h2>
+        <ul>
+            {% for attachment in organization.attachment.all %}
+            <li><a href="{% url 'conformity:attachment_download' attachment.id %}"> {{ attachment }} </a></li>
+            {% empty %}
+            <i>No attachment</i>
+            {% endfor %}
+        </ul>
+    </div>
+
+{% endblock %}

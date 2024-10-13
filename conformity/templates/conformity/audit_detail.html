@@ -124,7 +124,7 @@
             {% for attachment in audit.attachment.all %}
             <li><a href="{% url 'conformity:attachment_download' attachment.id %}"> {{ attachment }} </a></li>
             {% empty %}
-            <i>No attachment attached</i>
+            <i>No attachment</i>
             {% endfor %}
         </ul>
     </div>
