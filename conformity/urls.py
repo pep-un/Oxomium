@@ -44,6 +44,9 @@ urlpatterns = [
     path('controlpoint/', views.ControlPointIndexView.as_view(), name='controlpoint_index'),
     path('controlpoint/update/<int:pk>', views.ControlPointUpdateView.as_view(), name='controlpoint_form'),
 
+    path('attachment/', views.AttachmentIndexView.as_view(), name='attachment_index'),
+    path('attachment/<int:pk>/', views.AttachmentDownloadView.as_view(), name='attachment_download'),
+
     path('help/', TemplateView.as_view(template_name='help.html'), name='help'),
     path('auditlog/', views.AuditLogDetailView.as_view(), name='auditlog_index'),
 ]

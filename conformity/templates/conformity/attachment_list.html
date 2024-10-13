@@ -1,0 +1,53 @@
+{% extends "conformity/main.html" %}
+
+{% block header %}
+    <h1 class="h1 bi bi-paperclip"> Attachment library</h1>
+{% endblock %}
+
+{% block content %}
+    <table class="table table-striped align-middle">
+    <caption class="d-none">Attachment library</caption>
+    <thead>
+        <tr>
+            <th scope="col" class="col-3">Attachment</th>
+            <th scope="col" class="col-3 ">Comment</th>
+            <th scope="col" class="col-2 text-center">Creation date</th>
+            <th scope="col" class="col-4 text-center">References</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for attachment in attachment_list %}
+            <tr>
+                <td>
+                    <i class="bi bi-file-earmark"></i>
+                    <a href="{% url 'conformity:attachment_download' attachment.id %}">{{ attachment | truncatechars:40}}</a>
+                </td>
+                <td>
+                    <p>{{ attachment.comment }}</p>
+                </td>
+                <td class="text-center">
+                    <span>{{ attachment.create_date }}</span>
+                </td>
+                <td class="text-center">
+                    {% if attachment.organizations.all %}
+                    <span class="badge mx-2 text-bg-secondary"> <i class="bi bi-building"></i> {{ attachment.organizations.all | join:", " }} </span>
+                    {% endif %}
+                    {% if attachment.frameworks.all %}
+                    <span class="badge mx-2 text-bg-secondary"> <i class="bi bi-card-checklist"></i> {{ attachment.frameworks.all | join:", " }} </span>
+                    {% endif %}
+                    {% if attachment.ControlPoint.all %}
+                    <span class="badge mx-2 text-bg-secondary"> <i class="bi bi-clipboard2-check "></i> {{ attachment.ControlPoint.all | join:", " }} </span>
+                    {% endif %}
+                    {% if attachment.audits.all %}
+                    <span class="badge mx-2 text-bg-secondary"> <i class="bi bi-ui-checks-grid"></i> {{ attachment.audits.all | join:", " }} </span>
+                    {% endif %}
+                </td>
+            </tr>
+        {% empty %}
+            <div class="alert alert-info" role="alert">
+                No attachment in the library.
+            </div>
+        {% endfor %}
+    </tbody>
+    </table>
+{% endblock %}

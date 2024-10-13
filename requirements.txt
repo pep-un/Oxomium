@@ -5,3 +5,4 @@ django-auditlog
 django-tinymce
 django-filter
 django-tables2
+python-magic

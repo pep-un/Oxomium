@@ -118,6 +118,19 @@
 
     <br />
 
+    <div class="alert alert-info">
+        <h2 class="h4 bi bi-paperclip"> Attachments </h2>
+        <ul>
+            {% for attachment in audit.attachment.all %}
+            <li><a href="{% url 'conformity:attachment_download' attachment.id %}"> {{ attachment }} </a></li>
+            {% empty %}
+            <i>No attachment attached</i>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <br />
+
     <a href="{% url 'conformity:audit_form' audit.id %}">
         <button type="button" class="btn btn-primary bi bi-pencil-square"> Edit the audit</button>
     </a>

@@ -12,6 +12,7 @@
             <th scope="col" class="col-1">Organization</th>
             <th scope="col" class="col ">Description</th>
             <th scope="col" class="col-4 text-center">Applicable frameworks</th>
+            <th scope="col" class="col-1 text-center">Attachment</th>
             <th scope="col" class="col-1 text-center">Edit</th>
         </tr>
     </thead>
@@ -36,6 +37,11 @@
                     {% endfor %}
                 </td>
                 <td class="text-center">
+                    {% if org.attachment.count %}
+                        <span title="{{ org.attachment.all | join:', '}}" class="bi bi-paperclip"></span>
+                    {% endif %}
+                </td>
+                <td class="text-center">
                     <a href="{% url 'conformity:organization_form' org.id %}" class="bi bi-pencil-square"></a>
                 </td>
             </tr>
@@ -44,7 +50,7 @@
                 No organization defined.
             </div>
         {% endfor %}
-            <tr><td colspan="4" class="text-center">
+            <tr><td colspan="5" class="text-center">
             <br />
             <a href="{% url 'conformity:organization_create' %}">
                 <button type="button" class="btn btn-success bi bi-plus-circle"> Register a new organization</button>

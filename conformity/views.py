@@ -11,8 +11,12 @@ from auditlog.models import LogEntry
 
 from .filterset import ActionFilter, ControlFilter, ControlPointFilter
 from .forms import ConformityForm, AuditForm, FindingForm, ActionForm, OrganizationForm, ControlForm, ControlPointForm
-from .models import Organization, Framework, Conformity, Audit, Action, Finding, Control, ControlPoint
+from .models import Organization, Framework, Conformity, Audit, Action, Finding, Control, ControlPoint, Attachment
 
+from django.views import View
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
+import os
 
 #
 # Home
@@ -52,10 +56,27 @@ class AuditUpdateView(LoginRequiredMixin, UpdateView):
     model = Audit
     form_class = AuditForm
 
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        attachments = self.request.FILES.getlist('attachments')
+        for file in attachments:
+            attachment = Attachment.objects.create(file=file)
+            self.object.attachment.add(attachment)
+        return response
+
+
 
 class AuditCreateView(LoginRequiredMixin, CreateView):
     model = Audit
     form_class = AuditForm
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        attachments = self.request.FILES.getlist('attachments')
+        for file in attachments:
+            attachment = Attachment.objects.create(file=file)
+            self.object.attachment.add(attachment)
+        return response
 
 
 #
@@ -99,10 +120,26 @@ class OrganizationUpdateView(LoginRequiredMixin, UpdateView):
     model = Organization
     form_class = OrganizationForm
 
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        attachments = self.request.FILES.getlist('attachments')
+        for file in attachments:
+            attachment = Attachment.objects.create(file=file)
+            self.object.attachment.add(attachment)
+        return response
+
 
 class OrganizationCreateView(LoginRequiredMixin, CreateView):
     model = Organization
     form_class = OrganizationForm
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        attachments = self.request.FILES.getlist('attachments')
+        for file in attachments:
+            attachment = Attachment.objects.create(file=file)
+            self.object.attachment.add(attachment)
+        return response
 
 #
 # Framework
@@ -226,6 +263,37 @@ class ControlPointUpdateView(LoginRequiredMixin, UpdateView):
         kwargs = super().get_form_kwargs()
         kwargs['user'] = self.request.user
         return kwargs
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        attachments = self.request.FILES.getlist('attachments')
+        for file in attachments:
+            attachment = Attachment.objects.create(file=file)
+            self.object.attachment.add(attachment)
+        return response
+
+
+#
+# Attachment
+#
+
+
+class AttachmentIndexView(LoginRequiredMixin, ListView):
+    model = Attachment
+    ordering = ['-create_date', 'file']
+
+
+class AttachmentDownloadView(View):
+    def get(self, request, pk):
+        attachment = get_object_or_404(Attachment, id=pk)
+
+        file_path = attachment.file.path
+        file_name = os.path.basename(file_path)
+
+        response = HttpResponse(open(file_path, 'rb'), content_type='application/octet-stream')
+        response['Content-Disposition'] = f'attachment; filename="{file_name}"'
+        return response
+
 
 #
 # AuditLog
