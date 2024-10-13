@@ -16,6 +16,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
 from auditlog.context import set_actor
+import magic
 
 User = get_user_model()
 
@@ -49,6 +50,7 @@ class Framework(models.Model):
         choices=Type.choices,
         default=Type.OTHER,
     )
+    attachment = models.ManyToManyField('Attachment', blank=True, related_name='frameworks')
 
     class Meta:
         ordering = ['name']
@@ -91,6 +93,7 @@ class Organization(models.Model):
     administrative_id = models.CharField(max_length=256, blank=True)
     description = models.TextField(max_length=4096, blank=True)
     applicable_frameworks = models.ManyToManyField(Framework, blank=True)
+    attachment = models.ManyToManyField('Attachment', blank=True, related_name='organizations')
 
     class Meta:
         ordering = ['name']
@@ -297,6 +300,7 @@ class Audit(models.Model):
         choices=Type.choices,
         default=Type.OTHER,
     )
+    attachment = models.ManyToManyField('Attachment', blank=True, related_name='audits')
 
     class Meta:
         ordering = ['report_date']
@@ -487,6 +491,7 @@ class ControlPoint(models.Model):
     period_end_date = models.DateField()
     status = models.CharField(choices=Status.choices, max_length=4, default=Status.SCHEDULED)
     comment = models.TextField(max_length=4096, blank=True)
+    attachment = models.ManyToManyField('Attachment', blank=True, related_name='ControlPoint')
 
     @staticmethod
     def get_absolute_url():
@@ -590,6 +595,25 @@ class Action(models.Model):
         return super(Action, self).save(*args, **kwargs)
 
 
+class Attachment(models.Model):
+    file = models.FileField(upload_to='attachments/')
+    comment = models.TextField(max_length=4096, blank=True)
+    mime_type = models.CharField(max_length=255, blank=True)
+    create_date = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.file.name.split("/")[1]
+
+    @staticmethod
+    def pre_save(sender, instance, *args, **kwargs):
+        # Read file and set mime_type
+        file_content = instance.file.read()
+        instance.file.seek(0)
+        mime = magic.Magic(mime=True)
+        instance.mime_type = mime.from_buffer(file_content)
+
+        # TODO filter on mime type
+
 #
 # Signal
 #
@@ -597,3 +621,4 @@ class Action(models.Model):
 
 post_save.connect(Control.post_init_callback, sender=Control)
 pre_save.connect(ControlPoint.pre_save, sender=ControlPoint)
+pre_save.connect(Attachment.pre_save, sender=Attachment)

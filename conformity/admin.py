@@ -5,7 +5,7 @@ Customize Django Admin Site to manage my Models instances
 from django.contrib import admin
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
-from .models import Organization, Framework, Requirement, Conformity, Audit, Finding, Action, Control, ControlPoint
+from .models import Organization, Framework, Requirement, Conformity, Audit, Finding, Action, Control, ControlPoint, Attachment
 
 
 class OrganizationResources(resources.ModelResource):
@@ -64,3 +64,4 @@ admin.site.register(Finding)
 admin.site.register(Organization, OrganizationAdmin)
 admin.site.register(Control)
 admin.site.register(ControlPoint)
+admin.site.register(Attachment)

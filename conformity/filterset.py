@@ -1,5 +1,5 @@
 from django_filters import FilterSet, CharFilter
-from .models import Action, Control, ControlPoint
+from .models import Action, Control, ControlPoint, Attachment
 
 
 class ActionFilter(FilterSet):
@@ -19,3 +19,4 @@ class ControlPointFilter(FilterSet):
     class Meta:
         model = ControlPoint
         fields = [ 'control__id', 'control__frequency', 'status' ]
+
