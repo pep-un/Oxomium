@@ -3,24 +3,21 @@
 
 {% block header %}
     <h1 class="h1 bi bi-clipboard2-check position-relative col-7">
-        Control Point
+        Control detail
     </h1>
-    {% if '?control__id=' in request.build_absolute_uri %}
     <h2 class="col-5 text-center">
-        {% if controlpoint_list.0.control.level == 1 %} <span class="badge mx-2 text-bg-primary">
-        {% elif controlpoint_list.0.control.level == 2 %} <span class="badge mx-2 text-bg-success">
-        {%endif %} {{ controlpoint_list.0.control.get_level_display }} </span>
-        <span class="badge mx-2 text-bg-secondary"> <i class="bi bi-clock-history"></i> {{ controlpoint_list.0.control.get_frequency_display }}</span>
-        <span class="badge mx-2 text-bg-secondary"> <i class="bi bi-building"></i> {{ controlpoint_list.0.control.organization }}</span>
+        {% if control.level == 1 %} <span class="badge mx-2 text-bg-primary">
+        {% elif control.level == 2 %} <span class="badge mx-2 text-bg-success">
+        {%endif %} {{ control.get_level_display }} </span>
+        <span class="badge mx-2 text-bg-secondary"> <i class="bi bi-clock-history"></i> {{ control.get_frequency_display }}</span>
+        <span class="badge mx-2 text-bg-secondary"> <i class="bi bi-building"></i> {{ control.organization }}</span>
     </h2>
-    {% endif %}
 {% endblock %}
 
 {% block content %}
-{% if '?control__id=' in request.build_absolute_uri %}
-<p><strong>Titre : </strong> {{ controlpoint_list.0.control.title }} </p>
-<p><strong>Description : </strong> {{ controlpoint_list.0.control.description }} </p>
-{% endif %}
+<p><strong>Titre : </strong> {{ control.title }} </p>
+<p><strong>Description : </strong> {{ control.description }} </p>
+<p><strong>Control history : </strong> </p>
 
 <div class="container text-center">
   <div class="row justify-content-md-center">
@@ -37,7 +34,7 @@
         </tr>
     </thead>
     <tbody>
-    {% for cp in controlpoint_list %}
+    {% for cp in control.controlpoint %}
         <tr>
             <td class="col">
                 {{ cp.period_start_date | date:'d-M-Y'}}

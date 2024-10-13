@@ -2,21 +2,21 @@
 
 {% block header %}
     <h1 class="h1 bi bi-shield-shaded">
-        {{ conformity_list.0.organization }} conformity to {{ conformity_list.0.measure.policy }}:
+        {{ conformity_list.0.organization }} conformity to {{ conformity_list.0.requirement.framework }}:
         <span class="badge rounded-pill bg-primary ms-3"> Conformity: {{ conformity_list.0.status }} %</span>
     </h1>
 {% endblock %}
 
 {% block content %}
 <table class="table align-middle">
-  <caption class="d-none">List and status if the security controls</caption>
+  <caption class="d-none">List and status of framework requirements for the organisation.</caption>
     <thead>
         <tr>
-            <th scope="col" class="">Measure</th>
+            <th scope="col" class="">Requirement</th>
             <th scope="col" class="text-center">Status</th>
             <th scope="col" class="text-center">Owner</th>
-            <th scope="col" class="text-center">Controls</th>
-            <th scope="col" class="text-center">Actions</th>
+            <th scope="col" class="text-center">Control</th>
+            <th scope="col" class="text-center">Action</th>
             <th scope="col" class="text-center">Comment</th>
             <th scope="col" class="text-center">Edit</th>
         </tr>
@@ -24,7 +24,7 @@
     <tbody>
     {% for con in conformity_list.0.get_children %}
         <tr class="table-primary">
-            <th scope="col" class="col">{{ con.measure.title }}</th>
+            <th scope="col" class="col">{{ con.requirement.title }}</th>
             <td class="col-3 text-center">
                 <div class="progress">
                     {% if not con.applicable %}
@@ -67,7 +67,7 @@
         {% for con in con.get_children %}
             <tr>
                 <th scope="col">
-                    <span class="ps-2 bi bi-arrow-return-right">{{ con.measure.title }}</span>
+                    <span class="ps-2 bi bi-arrow-return-right">{{ con.requirement.title }}</span>
                 </th>
                 <td class="text-center">
                     <div class="progress">
@@ -89,7 +89,7 @@
                 </td>
                 <td class="col-1 text-center">
                     {% if con.get_control %}
-                        <a href="{% url 'conformity:control_index' %}?control__conformity__id={{con.id}}">
+                        <a href="{% url 'conformity:control_index' %}?conformity__id={{con.id}}">
                             <button type="button" class="btn btn-outline-primary btn-sm">{{ con.get_control | length }}</button>
                         </a>
                     {% endif %}
@@ -113,7 +113,7 @@
                 {% for con in con.get_children %}
                     <tr>
                         <th scope="col">
-                            <span class="ps-4 bi bi-arrow-return-right">{{ con.measure.title }}</span>
+                            <span class="ps-4 bi bi-arrow-return-right">{{ con.requirement.title }}</span>
                         </th>
                         <td class="text-center">
                             <div class="progress">
@@ -160,7 +160,7 @@
         {% endfor %}
     {% empty %}
         <div class="alert alert-info" role="alert">
-            No conformity review for this organization and this policy.
+            No conformity review for this organization and this framework.
         </div>
         <tr><td colspan="4">No data to display</td></tr>
     {% endfor %}

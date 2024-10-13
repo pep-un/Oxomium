@@ -2,7 +2,7 @@
 Forms for front-end editing of Models instance
 """
 
-from django.forms import ModelForm
+from django.forms import ModelForm, FileField, ClearableFileInput
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import request
 from django.utils import timezone
@@ -22,15 +22,18 @@ class ConformityForm(LoginRequiredMixin, ModelForm):
 
 
 class OrganizationForm(LoginRequiredMixin, ModelForm):
+    attachments = FileField(required=False, widget=ClearableFileInput())
     class Meta:
         model = Organization
-        fields = '__all__'
+        fields = ['name', 'administrative_id', 'description', 'applicable_frameworks']
 
 
 class AuditForm(LoginRequiredMixin, ModelForm):
+    attachments = FileField(required=False, widget=ClearableFileInput())
     class Meta:
         model = Audit
         fields = '__all__'
+        exclude = ['attachment']
 
 
 class FindingForm(LoginRequiredMixin, ModelForm):
@@ -77,15 +80,29 @@ class ControlForm(LoginRequiredMixin, ModelForm):
 
 
 class ControlPointForm(LoginRequiredMixin, ModelForm):
+    attachments = FileField(required=False, widget=ClearableFileInput())
     class Meta:
         model = ControlPoint
-        fields = ['control_date', 'control_user', 'status', 'comment']
+        fields = ['control_date', 'control_user', 'status', 'comment', 'attachments']
 
     def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
         super(ControlPointForm, self).__init__(*args, **kwargs)
-        self.initial['control_date'] = timezone.now()
-        self.fields['control_date'].disabled = True
 
-        if self.get_initial_for_field(self.fields['status'], 'status') != ControlPoint.Status.TOBEEVALUATED.value:
+        # Set some value for all situation
+        self.fields['control_date'].disabled = True
+        self.fields['control_user'].disabled = True
+
+        # Set some value if the ControlPoint has to be evaluated
+        if self.get_initial_for_field(self.fields['status'], 'status') == ControlPoint.Status.TOBEEVALUATED.value:
+            self.initial['control_date'] = timezone.now()
+            self.initial['control_user'] = self.user
+            self.fields['status'].widget.choices = [
+                (ControlPoint.Status.COMPLIANT, ControlPoint.Status.COMPLIANT.label),
+                (ControlPoint.Status.NONCOMPLIANT, ControlPoint.Status.NONCOMPLIANT.label),
+            ]
+        # Switch to display mode if ControlPoint is not to be evaluated
+        else:
+            del self.fields['attachments']
             for field in self.fields:
                 self.fields[field].disabled = True

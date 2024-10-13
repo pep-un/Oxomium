@@ -40,7 +40,7 @@ class Migration(migrations.Migration):
                 ('name', models.CharField(max_length=256, unique=True)),
                 ('administrative_id', models.CharField(blank=True, max_length=256)),
                 ('description', models.TextField(blank=True, max_length=4096)),
-                ('applicable_policies', models.ManyToManyField(blank=True, to='conformity.policy')),
+                ('applicable_frameworks', models.ManyToManyField(blank=True, to='conformity.policy')),
             ],
             options={
                 'ordering': ['name'],

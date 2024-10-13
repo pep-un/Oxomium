@@ -6,11 +6,11 @@
 
 {% block content %}
 <table class="table table-striped align-middle">
-  <caption class="d-none">Overview of the organizations conformity to there policies</caption>
+  <caption class="d-none">Overview of the organizations conformity to there Frameworks</caption>
     <thead>
         <tr>
             <th scope="col" class="">Organization</th>
-            <th scope="col" class="">Policy</th>
+            <th scope="col" class="">Framework</th>
             <th scope="col" class="text-center">Status</th>
         </tr>
     </thead>
@@ -21,10 +21,10 @@
                 {{ con.organization }}
             </th>
             <th scope="col" class="col-2">
-                {{ con.measure.policy.name }}
+                {{ con.requirement.framework.name }}
             </th>
             <td class="col text-center">
-                <a href="{% url 'conformity:conformity_orgpol_index' con.organization.id con.measure.policy.id %}">
+                <a href="{% url 'conformity:conformity_detail_index' con.organization.id con.requirement.framework.id %}">
                     <div class="progress">
                         <div class="progress-bar" role="progressbar" style="width: {{ con.status }}%" aria-valuenow="{{ con.status }}" aria-valuemin="0" aria-valuemax="100">{{ con.status }}%</div>
                     </div>

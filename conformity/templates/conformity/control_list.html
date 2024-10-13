@@ -1,0 +1,171 @@
+{% extends "conformity/main.html" %}
+{% load render_table from django_tables2 %}
+
+{% block header %}
+    <h1 class="h1 bi bi-clipboard2-check"> Controls </h1>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-2">
+        <div class="row">
+            <div class="col">
+                <div class="card">
+                    <div class="card-header">
+                        Inventory
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <span>Control </span> <span class="badge text-bg-secondary float-end w-25">{{ control_list.count | default:"-" }} </span>
+                        </li>
+                        <li class="list-group-item">
+                            <span><i class="bi bi-caret-right-fill"></i> 1st level </span> <span class="badge text-bg-primary float-end w-25">{{ c1st | default:"-" }} </span>
+                        </li>
+                        <li class="list-group-item">
+                            <span><i class="bi bi-caret-right-fill"></i> 2nd level </span> <span class="badge text-bg-success float-end w-25">{{ c2nd | default:"-" }} </span>
+                        </li>
+                        <li class="list-group-item">
+                            <span>Control Point </span> <span class="badge text-bg-secondary float-end w-25">{{ controlpoint_list.count | default:"-" }} </span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col">
+        <h3 class="mx-4">Controls to evaluate</h3>
+        <div class="row mx-3">
+            <div class="col">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="text-primary display-5">{{ cp0x }}</h4>
+                        <p class="m-0">All controls</p>
+                    </div>
+                    <div class="card-footer text-end">
+                        <a href="{% url 'conformity:controlpoint_index' %}?status=TOBE" class="small">See more ></a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="text-primary display-5">{{ cp1x }}</h4>
+                        <p class="m-0">Yearly</p>
+                    </div>
+                    <div class="card-footer text-end">
+                        <a href="{% url 'conformity:controlpoint_index' %}?status=TOBE&control__frequency=1"  class="small">See more ></a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="text-primary display-5">{{ cp2x }}</h4>
+                        <p class="m-0">Half-Yearly</p>
+                    </div>
+                    <div class="card-footer text-end">
+                        <a href="{% url 'conformity:controlpoint_index' %}?status=TOBE&control__frequency=2" class="small">See more ></a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="text-primary display-5">{{ cp4x }}</h4>
+                        <p class="m-0">Quarterly</p>
+                    </div>
+                    <div class="card-footer text-end">
+                        <a href="{% url 'conformity:controlpoint_index' %}?status=TOBE&control__frequency=4" class="small">See more ></a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="text-primary display-5">{{ cp6x }}</h4>
+                        <p class="m-0">Bimonthly</p>
+                    </div>
+                    <div class="card-footer text-end">
+                        <a href="{% url 'conformity:controlpoint_index' %}?status=TOBE&control__frequency=6" class="small">See more ></a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="text-primary display-5">{{ cp12x }}</h4>
+                        <p class="m-0">Monthly</p>
+                    </div>
+                    <div class="card-footer text-end">
+                        <a href="{% url 'conformity:controlpoint_index' %}?status=TOBE&control__frequency=12" class="small">See more ></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<hr class="mb-3" />
+
+<table class="table table-striped align-middle">
+  <caption class="d-none">List of all controls</caption>
+    <thead>
+        <tr>
+            <th scope="col" class="">Titre</th>
+            <th scope="col" class="text-center">Organization</th>
+            <th scope="col" class="text-center">Level</th>
+            <th scope="col" class="text-center">Frequency</th>
+            <th scope="col" class="text-center">Control Points</th>
+            <th scope="col" class="text-center">Edit</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for control in control_list %}
+        <tr>
+            <td class="col">
+                {{ control.title }}
+            </td>
+            <td class="col text-center">
+                <span class="badge mx-2 text-bg-dark w-50"> <i class="bi bi-building text-start"></i> {{ control.organization }}</span>
+            </td>
+            <td class="col text-center">
+                <a href="{% url 'conformity:control_index' %}?level={{control.level}}">
+                {% if control.level == 1 %}
+                    <span class="badge rounded-pill text-bg-primary w-75">
+                {% endif %}
+                {% if control.level == 2 %}
+                    <span class="badge rounded-pill text-bg-success w-75">
+                {%endif %}
+                            {{ control.get_level_display }}
+                    </span>
+                </a>
+            </td>
+            <td class="col text-center">
+                <a href="{% url 'conformity:control_index' %}?frequency={{control.frequency}}">
+                    <span class="badge rounded-pill text-bg-secondary w-75"> {{ control.get_frequency_display }} </span>
+                </a>
+            </td>
+            <td class="col text-center">
+                <a href="{% url 'conformity:controlpoint_index' %}?control__id={{control.id}}">
+                    <button type="button" class="btn btn-outline-primary btn-sm w-25">{{ control.get_controlpoint | length }}</button>
+                </a>
+            </td>
+            <td class="col text-center">
+                <a href="{% url 'conformity:control_form' control.id %}" class="bi bi-pencil-square"></a>
+            </td>
+        </tr>
+    {% empty %}
+        <div class="alert alert-info" role="alert">
+            No control recorded.
+        </div>
+        <tr><td colspan="6">No data to display</td></tr>
+    {% endfor %}
+        <tr><td colspan="6" class="text-center">
+            <br />
+            <a href="{% url 'conformity:control_create' %}">
+                <button type="button" class="btn btn-success bi bi-plus-circle"> Register a new control</button>
+            </a>
+        </td></tr>
+</table>
+{% endblock %}

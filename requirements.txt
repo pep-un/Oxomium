@@ -1,7 +1,8 @@
-Django
+Django == 4.2.*
 django-bootstrap5
 django-import-export
 django-auditlog
 django-tinymce
 django-filter
 django-tables2
+python-magic

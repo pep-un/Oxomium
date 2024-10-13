@@ -1,0 +1,39 @@
+{% extends "conformity/main.html" %}
+
+{% block header %}
+    <h1 class="h1 bi bi-card-checklist"> Frameworks</h1>
+{% endblock %}
+
+{% block content %}
+    {% if framework_list %}
+        <table class="table table-striped align-middle">
+            <caption class="d-none">List of frameworks</caption>
+            <thead class="">
+                <tr>
+                    <th scope="col">Framework</th>
+                    <th scope="col">Published by</th>
+                    <th scope="col">Type</th>
+                    <th scope="col" class="text-center">Requirements</th>
+                </tr>
+            </thead>
+            <tbody>
+        {% for framework in framework_list %}
+            <tr>
+                <td>{{ framework.name }} {% if framework.version %} <sup>{{ framework.version }}</sup> {% endif %}</td>
+                <td>{{ framework.publish_by }}</td>
+                <td>{{ framework.get_type }}</td>
+                <td class="text-center">
+                    <a href="{% url 'conformity:framework_detail' framework.id %}">
+                        <button type="button" class="btn btn-primary btn-sm w-75">{{ framework.get_requirements_number }} Requirements</button>
+                    </a>
+                </td>
+            </tr>
+        {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="alert alert-info" role="alert">
+          No framework registered.
+        </div>
+    {% endif %}
+{% endblock %}

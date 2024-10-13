@@ -11,7 +11,7 @@ User=www-data
 Group=www-data
 DynamicUser=yes
 
-PrivateDevies=yes
+PrivateDevices=yes
 PrivateUsers=yes
 PrivateDevices=yes
 PrivateTmp=yes
