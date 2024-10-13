@@ -36,6 +36,7 @@ class HomeView(LoginRequiredMixin, TemplateView):
         context['action_list'] = Action.objects.all()
         context['my_action'] = Action.objects.filter(owner=user).filter(active=True).order_by('status')[:50]
         context['my_conformity'] = Conformity.objects.filter(responsible=user).order_by('status')[:50]
+        context['cp_list'] = ControlPoint.objects.filter(status='TOBE').order_by('period_end_date')[:50]
 
         return context
 

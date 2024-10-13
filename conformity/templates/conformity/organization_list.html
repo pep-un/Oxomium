@@ -12,7 +12,7 @@
             <th scope="col" class="col-1">Organization</th>
             <th scope="col" class="col ">Description</th>
             <th scope="col" class="col-4 text-center">Applicable frameworks</th>
-            <th scope="col" class="col-1 text-center">Attachment</th>
+            <th scope="col" class="col-1 text-center">View</th>
             <th scope="col" class="col-1 text-center">Edit</th>
         </tr>
     </thead>
@@ -37,9 +37,7 @@
                     {% endfor %}
                 </td>
                 <td class="text-center">
-                    {% if org.attachment.count %}
-                        <span title="{{ org.attachment.all | join:', '}}" class="bi bi-paperclip"></span>
-                    {% endif %}
+                    <a href="{% url 'conformity:organization_detail' org.id %}" class="bi bi-eye"></a>
                 </td>
                 <td class="text-center">
                     <a href="{% url 'conformity:organization_form' org.id %}" class="bi bi-pencil-square"></a>
