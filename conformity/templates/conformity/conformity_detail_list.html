@@ -3,8 +3,8 @@
 {% block header %}
     <h1 class="h1 bi bi-shield-shaded">
         {{ conformity_list.0.organization }} conformity to {{ conformity_list.0.requirement.framework }}:
-        <span class="badge rounded-pill bg-primary ms-3"> Conformity: {{ conformity_list.0.status }} %</span>
     </h1>
+    <span class="badge rounded-pill bg-primary me-4 fs-3"> Conformity: {{ conformity_list.0.status }} %</span>
 {% endblock %}
 
 {% block content %}
@@ -12,157 +12,23 @@
   <caption class="d-none">List and status of framework requirements for the organisation.</caption>
     <thead>
         <tr>
-            <th scope="col" class="">Requirement</th>
-            <th scope="col" class="text-center">Status</th>
-            <th scope="col" class="text-center">Owner</th>
-            <th scope="col" class="text-center">Control</th>
-            <th scope="col" class="text-center">Action</th>
-            <th scope="col" class="text-center">Comment</th>
-            <th scope="col" class="text-center">Edit</th>
+            <th scope="col" class="text-start col">Requirement</th>
+            <th scope="col" class="text-center col-2">Status</th>
+            <th scope="col" class="text-center col-1">Owner</th>
+            <th scope="col" class="text-center col-1">Control</th>
+            <th scope="col" class="text-center col-1">Action</th>
+            <th scope="col" class="text-center col-1">Comment</th>
+            <th scope="col" class="text-center col-1">Edit</th>
         </tr>
     </thead>
     <tbody>
     {% for con in conformity_list.0.get_children %}
-        <tr class="table-primary">
-            <th scope="col" class="col">{{ con.requirement.title }}</th>
-            <td class="col-3 text-center">
-                <div class="progress">
-                    {% if not con.applicable %}
-                        <div class="progress-bar progress-bar-striped bg-secondary" role="progressbar" style="width: 100%" aria-valuenow="Not applicable" aria-valuemin="0" aria-valuemax="100">Not applicable</div>
-                    {% else %}
-                        {% if con.status is 100 %}
-                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ con.status }}%" aria-valuenow="{{ con.status }}" aria-valuemin="0" aria-valuemax="100">{{ con.status }}%</div>
-                        {% else %}
-                            <div class="progress-bar" role="progressbar" style="width: {{ con.status }}%" aria-valuenow="{{ con.status }}" aria-valuemin="0" aria-valuemax="100">{{ con.status }}%</div>
-                        {% endif %}
-                    {% endif %}
-                </div>
-            </td>
-            <td class="col-1 text-center">
-                {% if con.applicable %}
-                    {{ con.responsible|capfirst }}
-                {% endif %}
-            </td>
-            <td class="col-1 text-center">
-                {% if con.get_control %}
-                    <a href="{% url 'conformity:control_index' %}?control__conformity__id={{con.id}}">
-                        <button type="button" class="btn btn-outline-primary btn-sm">{{ con.get_control | length }}</button>
-                    </a>
-                {% endif %}
-            </td>
-            <td class="col-1 text-center">
-                {% if con.get_action %}
-                    <a href="{% url 'conformity:action_index' %}?associated_conformity__id={{con.id}}">
-                        <button type="button" class="btn btn-outline-primary btn-sm">{{ con.get_action | length }}</button>
-                    </a>
-                {% endif %}
-            </td>
-            <td class="col-1 text-center">
-                {% if con.comment %}
-                    <i class="bi bi-chat-text" title="{{ con.comment }}"></i>
-                {% endif %}
-            </td>
-            <td class="col-1 text-center"> <a href="{% url 'conformity:conformity_form' con.id %}"> <i class="bi bi-pencil-square"></i> </a> </td>
-        </tr>
-        {% for con in con.get_children %}
-            <tr>
-                <th scope="col">
-                    <span class="ps-2 bi bi-arrow-return-right">{{ con.requirement.title }}</span>
-                </th>
-                <td class="text-center">
-                    <div class="progress">
-                        {% if not con.applicable %}
-                            <div class="progress-bar progress-bar-striped bg-secondary" role="progressbar" style="width: 100%" aria-valuenow="Not applicable" aria-valuemin="0" aria-valuemax="100">Not applicable</div>
-                        {% else %}
-                            {% if con.status is 100 %}
-                                <div class="progress-bar bg-success" role="progressbar" style="width: {{ con.status }}%" aria-valuenow="{{ con.status }}" aria-valuemin="0" aria-valuemax="100">{{ con.status }}%</div>
-                            {% else %}
-                                <div class="progress-bar" role="progressbar" style="width: {{ con.status }}%" aria-valuenow="{{ con.status }}" aria-valuemin="0" aria-valuemax="100">{{ con.status }}%</div>
-                            {% endif %}
-                        {% endif %}
-                    </div>
-                </td>
-                <td class="text-center">
-                    {% if con.applicable %}
-                        {{ con.responsible|capfirst }}
-                    {% endif %}
-                </td>
-                <td class="col-1 text-center">
-                    {% if con.get_control %}
-                        <a href="{% url 'conformity:control_index' %}?conformity__id={{con.id}}">
-                            <button type="button" class="btn btn-outline-primary btn-sm">{{ con.get_control | length }}</button>
-                        </a>
-                    {% endif %}
-                </td>
-                <td class="col-1 text-center">
-                    {% if con.get_action %}
-                    <a href="{% url 'conformity:action_index' %}?associated_conformity__id={{con.id}}">
-                        <button type="button" class="btn btn-outline-primary btn-sm">{{ con.get_action | length }}</button>
-                    </a>
-                    {% endif %}
-                </td>
-                <td class="col-1 text-center">
-                    {% if con.comment %}
-                    <i class="bi bi-chat-text" title="{{ con.comment }}"></i>
-                    {% endif %}
-                </td>
-                <td class="text-center">
-                    <a href="{% url 'conformity:conformity_form' con.id %}"> <i class="bi bi-pencil-square"></i> </a>
-                </td>
-            </tr>
-                {% for con in con.get_children %}
-                    <tr>
-                        <th scope="col">
-                            <span class="ps-4 bi bi-arrow-return-right">{{ con.requirement.title }}</span>
-                        </th>
-                        <td class="text-center">
-                            <div class="progress">
-                                {% if not con.applicable %}
-                                    <div class="progress-bar progress-bar-striped bg-secondary" role="progressbar" style="width: 100%" aria-valuenow="Not applicable" aria-valuemin="0" aria-valuemax="100">Not applicable</div>
-                                {% else %}
-                                    {% if con.status is 100 %}
-                                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ con.status }}%" aria-valuenow="{{ con.status }}" aria-valuemin="0" aria-valuemax="100">{{ con.status }}%</div>
-                                    {% else %}
-                                        <div class="progress-bar" role="progressbar" style="width: {{ con.status }}%" aria-valuenow="{{ con.status }}" aria-valuemin="0" aria-valuemax="100">{{ con.status }}%</div>
-                                    {% endif %}
-                                {% endif %}
-                            </div>
-                        </td>
-                        <td class="text-center">
-                            {% if con.applicable %}
-                                {{ con.responsible|capfirst }}
-                            {% endif %}
-                        </td>
-                        <td class="col-1 text-center">
-                            {% if con.get_control %}
-                                <a href="{% url 'conformity:control_index' %}?control_conformity__id={{con.id}}">
-                                    <button type="button" class="btn btn-outline-primary btn-sm">{{ con.get_control | length }}</button>
-                                </a>
-                            {% endif %}
-                        </td>
-                        <td class="col-1 text-center">
-                            {% if con.get_action %}
-                                <a href="{% url 'conformity:action_index' %}?associated_conformity__id={{con.id}}">
-                                <button type="button" class="btn btn-outline-primary btn-sm">{{ con.get_action | length }}</button>
-                                </a>
-                            {% endif %}
-                        </td>
-                        <td class="col-1 text-center">
-                            {% if con.comment %}
-                            <i class="bi bi-chat-text" title="{{ con.comment }}"></i>
-                            {% endif %}
-                        </td>
-                        <td class="text-center">
-                            <a href="{% url 'conformity:conformity_form' con.id %}"> <i class="bi bi-pencil-square"></i> </a>
-                        </td>
-                    </tr>
-                {% endfor %}
-        {% endfor %}
+        {% include 'conformity/conformity_detail_list_item.html' with con=con style="primary" %}
     {% empty %}
         <div class="alert alert-info" role="alert">
             No conformity review for this organization and this framework.
         </div>
-        <tr><td colspan="4">No data to display</td></tr>
+        <tr><td colspan="8">No data to display</td></tr>
     {% endfor %}
 </table>
 {% endblock %}

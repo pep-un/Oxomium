@@ -23,8 +23,12 @@
                     {{ org.name }}
                 </td>
                 <td>
-                    <p>{{ org.description }}</p>
-                    <p>{{ org.administrative_id }}</p>
+                    <p>{{ org.description | linebreaksbr}}</p>
+                    {% if org.administrative_id %}
+                        <p class="alert alert-info"> Company identifier : {{ org.administrative_id }}</p>
+                    {% else %}
+                        <p class="alert alert-warning"> No identifier</p>
+                    {%endif %}
                 </td>
                 <td class="text-center">
                     {% for item in org.get_frameworks %}

@@ -5,52 +5,23 @@
 {% endblock %}
 
 {% block content %}
-    {% if framework.get_root_requirement %}
-        {% for m in framework.get_first_requirements %}
-            <h3 class="text-primary position-relative">
-                {{ m.title }}
-            </h3>
-            <div class="ms-1 ps-3 border-start border-primary">
-                <p>{{ m.description|safe }}</p>
-                {% if m.get_children %}
-                    {% for m in m.get_children %}
-                        <h4 class="text-secondary position-relative">
-                            {{ m.title }}
-                        </h4>
-                        <div class="ms-1 ps-3 border-start border-secondary">
-                            <p>{{ m.description|safe }}</p>
-                            {% if m.get_children %}
-                                {% if m.get_children %}
-                                        {% for m in m.get_children %}
-                                            <h5 class="text-info position-relative">
-                                                {{ m.title }}
-                                            </h5>
-                                            <div class="ms-1 ps-3 border-start border-info">
-                                                <p>{{ m.description|safe }}</p>
-                                                {% if m.get_children %}
-                                                    {% for m in m.get_children %}
-                                                        <h5 class="text-info">
-                                                            {{ m.title }}
-                                                        </h5>
-                                                        <div class="ms-1 ps-3 border-start border-secondary">
-                                                            <p>{{ m.description|safe }}</p>
-                                                        </div>
-                                                    {% endfor %}
-                                                {% endif %}
-                                            </div>
-                                    {% endfor %}
-                                {% endif %}
-                            {% endif %}
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            </div>
-        {% endfor %}
-    {% else %}
+    {% for requirement in framework.get_requirements %}
+            {% if requirement.level == 1 %}
+                <h2><button class="btn btn-sm rounded-pill border border-0 text-bg-primary" disabled>{{ requirement.name }}</button> {{ requirement.title }}</h2>
+                <p class="ms-1">{{ requirement.description }}</p>
+            {% elif requirement.level == 2 %}
+                <h3 class="ms-1"><button class="btn btn-sm rounded-pill border border-0 text-bg-info" disabled>{{ requirement.name }}</button> {{ requirement.title }}</h3>
+                <p class="ms-2">{{ requirement.description }}</p>
+            {% else %}
+                <h4 class="ms-4"><button class="btn btn-sm rounded-pill border border-0 text-bg-secondary" disabled>{{ requirement.name }}</button> {{ requirement.title }}</h4>
+                <p class="ms-5">{{ requirement.description }}</p>
+            {% endif %}
+
+    {% empty %}
         <div class="alert alert-info" role="alert">
           No requirement defined for this framework.
         </div>
-    {% endif %}
+    {% endfor %}
 
     <br />
 
@@ -64,6 +35,5 @@
             {% endfor %}
         </ul>
     </div>
-
 
 {% endblock %}

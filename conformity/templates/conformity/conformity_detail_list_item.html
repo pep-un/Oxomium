@@ -1,0 +1,89 @@
+{% if con.requirement.is_parent and con.requirement.level < 3 %}
+<tr class="table-{{style}}">
+{% else %}
+<tr class="">
+{% endif %}
+
+    {% if con.requirement.is_parent %}
+    <td class="text-{{style}}">
+        {% if style == "primary" %}
+            <button class="btn btn-sm rounded-pill btn-{{style}} me-1" disabled>{{ con.requirement.name }}</button>
+        {% elif style == "info" %}
+            <button class="btn btn-sm rounded-pill btn-{{style}} me-1 ms-3" disabled>{{ con.requirement.name }}</button>
+        {% else %}
+            <button class="btn btn-sm rounded-pill btn-{{style}} me-1 ms-5 " disabled>{{ con.requirement.name }}</button>
+        {% endif %}
+        <b>{{ con.requirement.title }}</b>
+    {% else %}
+    <td class="text-secondary">
+        {% if style == "primary" %}
+            <button class="btn btn-sm rounded-pill btn-outline-secondary me-1" disabled>{{ con.requirement.name }}</button>
+        {% elif style == "info" %}
+            <button class="btn btn-sm rounded-pill btn-outline-secondary me-1 ms-3" disabled>{{ con.requirement.name }}</button>
+        {% else %}
+            <button class="btn btn-sm rounded-pill btn-outline-secondary me-1 ms-5" disabled>{{ con.requirement.name }}</button>
+        {% endif %}
+        {{ con.requirement.title }}
+    {% endif %}
+    </td>
+
+    <td class="text-center">
+        <div class="progress">
+            {% if not con.applicable %}
+                <div class="progress-bar progress-bar-striped bg-secondary" role="progressbar" style="width: 100%" aria-valuenow="Not applicable" aria-valuemin="0" aria-valuemax="100">Not applicable</div>
+            {% else %}
+                {% if con.status is 100 %}
+                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ con.status }}%" aria-valuenow="{{ con.status }}" aria-valuemin="0" aria-valuemax="100">{{ con.status }}%</div>
+                {% else %}
+                    <div class="progress-bar" role="progressbar" style="width: {{ con.status }}%" aria-valuenow="{{ con.status }}" aria-valuemin="0" aria-valuemax="100">{{ con.status }}%</div>
+                {% endif %}
+            {% endif %}
+        </div>
+    </td>
+
+    <td class="text-center">
+        {% if con.applicable %}
+            {{ con.responsible|capfirst }}
+        {% endif %}
+    </td>
+
+    <td class="text-center">
+        {% if con.get_control %}
+            <a href="{% url 'conformity:control_index' %}?control__conformity__id={{con.id}}">
+                <button type="button" class="btn btn-outline-primary btn-sm rounded-pill"">{{ con.get_control | length }}</button>
+            </a>
+        {% else %}
+            <a href="{% url 'conformity:control_create' %}">
+                <i class="text-success bi bi-plus-circle"> </i>
+            </a>
+        {% endif %}
+    </td>
+
+    <td class="text-center">
+        {% if con.get_action %}
+            <a href="{% url 'conformity:action_index' %}?associated_conformity__id={{con.id}}">
+                <button type="button" class="btn btn-outline-primary btn-sm rounded-pill"">{{ con.get_action | length }}</button>
+            </a>
+        {% endif %}
+    </td>
+
+    <td class="text-center">
+        {% if con.comment %}
+            <i class="bi bi-chat-text" title="{{ con.comment }}"></i>
+        {% endif %}
+    </td>
+
+    <td class="text-center">
+        <a href="{% url 'conformity:conformity_form' con.id %}"> <i class="bi bi-pencil-square"></i> </a>
+    </td>
+</tr>
+
+{% for con in con.get_children %}
+        {% if con.requirement.level == 1 %}
+            {% include 'conformity/conformity_detail_list_item.html' with con=con style="primary" %}
+        {% elif con.requirement.level == 2 %}
+            {% include 'conformity/conformity_detail_list_item.html' with con=con style="info" %}
+        {% else %}
+            {% include 'conformity/conformity_detail_list_item.html' with con=con style="secondary" %}
+        {% endif %}
+{% endfor %}
