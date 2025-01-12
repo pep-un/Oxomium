@@ -7,20 +7,15 @@
 {% block content %}
     {% for requirement in framework.get_requirements %}
             {% if requirement.level == 1 %}
-                <h2><span class="badge text-bg-primary">{{ requirement.name }}</span> {{ requirement.title }}</h2>
+                <h2><button class="btn btn-sm rounded-pill border border-0 text-bg-primary" disabled>{{ requirement.name }}</button> {{ requirement.title }}</h2>
                 <p class="ms-1">{{ requirement.description }}</p>
             {% elif requirement.level == 2 %}
-                <h3 class="ms-1"><span class="badge text-bg-info">{{ requirement.name }}</span> {{ requirement.title }}</h3>
+                <h3 class="ms-1"><button class="btn btn-sm rounded-pill border border-0 text-bg-info" disabled>{{ requirement.name }}</button> {{ requirement.title }}</h3>
                 <p class="ms-2">{{ requirement.description }}</p>
-            {% elif requirement.level == 3 %}
-                <h4 class="ms-2"><span class="badge text-bg-warning">{{ requirement.name }}</span> {{ requirement.title }}</h4>
-                <p class="ms-3">{{ requirement.description }}</p>
             {% else %}
-                <strong class="ms-4"><span class="badge text-bg-secondary">{{ requirement.name }}</span> {{ requirement.title }}</strong>
+                <h4 class="ms-4"><button class="btn btn-sm rounded-pill border border-0 text-bg-secondary" disabled>{{ requirement.name }}</button> {{ requirement.title }}</h4>
                 <p class="ms-5">{{ requirement.description }}</p>
             {% endif %}
-
-
 
     {% empty %}
         <div class="alert alert-info" role="alert">
