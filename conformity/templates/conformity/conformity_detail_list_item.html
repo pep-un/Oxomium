@@ -50,7 +50,7 @@
     <td class="text-center">
         {% if con.get_control %}
             <a href="{% url 'conformity:control_index' %}?control__conformity__id={{con.id}}">
-                <button type="button" class="btn btn-outline-primary btn-sm">{{ con.get_control | length }}</button>
+                <button type="button" class="btn btn-outline-primary btn-sm rounded-pill"">{{ con.get_control | length }}</button>
             </a>
         {% else %}
             <a href="{% url 'conformity:control_create' %}">
@@ -62,7 +62,7 @@
     <td class="text-center">
         {% if con.get_action %}
             <a href="{% url 'conformity:action_index' %}?associated_conformity__id={{con.id}}">
-                <button type="button" class="btn btn-outline-primary btn-sm">{{ con.get_action | length }}</button>
+                <button type="button" class="btn btn-outline-primary btn-sm rounded-pill"">{{ con.get_action | length }}</button>
             </a>
         {% endif %}
     </td>
