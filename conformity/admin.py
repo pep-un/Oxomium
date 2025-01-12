@@ -44,7 +44,6 @@ class ConformityAdmin(ImportExportModelAdmin):
     ressource_class = Conformity
 
 
-# Action
 class ActionResources(resources.ModelResource):
     class Meta:
         model = Action
@@ -54,14 +53,59 @@ class ActionAdmin(ImportExportModelAdmin):
     ressource_class = Action
 
 
+class ControlResources(resources.ModelResource):
+    class Meta:
+        model = Control
+
+
+class ControlAdmin(ImportExportModelAdmin):
+    ressource_class = Control
+
+
+class ControlPointResources(resources.ModelResource):
+    class Meta:
+        model = ControlPoint
+
+
+class ControlPointAdmin(ImportExportModelAdmin):
+    ressource_class = ControlPoint
+
+
+class FindingResources(resources.ModelResource):
+    class Meta:
+        model = Finding
+
+
+class FindingAdmin(ImportExportModelAdmin):
+    ressource_class = Finding
+
+
+class AuditResources(resources.ModelResource):
+    class Meta:
+        model = Audit
+
+
+class AuditAdmin(ImportExportModelAdmin):
+    ressource_class = Audit
+
+
+class AttachmentResources(resources.ModelResource):
+    class Meta:
+        model = Attachment
+
+
+class AttachmentAdmin(ImportExportModelAdmin):
+    ressource_class = Attachment
+
+
 # Registration
-admin.site.register(Framework, FrameworkAdmin)
-admin.site.register(Requirement, RequirementAdmin)
-admin.site.register(Conformity, ConformityAdmin)
 admin.site.register(Action, ActionAdmin)
-admin.site.register(Audit)
-admin.site.register(Finding)
+admin.site.register(Attachment, AttachmentAdmin)
+admin.site.register(Audit, AuditAdmin)
+admin.site.register(Conformity, ConformityAdmin)
+admin.site.register(Control, ControlAdmin)
+admin.site.register(ControlPoint, ControlPointAdmin)
+admin.site.register(Finding, FindingAdmin)
+admin.site.register(Framework, FrameworkAdmin)
 admin.site.register(Organization, OrganizationAdmin)
-admin.site.register(Control)
-admin.site.register(ControlPoint)
-admin.site.register(Attachment)
+admin.site.register(Requirement, RequirementAdmin)
