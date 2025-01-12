@@ -3,8 +3,8 @@
 {% block header %}
     <h1 class="h1 bi bi-shield-shaded">
         {{ conformity_list.0.organization }} conformity to {{ conformity_list.0.requirement.framework }}:
-        <span class="badge rounded-pill bg-primary ms-3"> Conformity: {{ conformity_list.0.status }} %</span>
     </h1>
+    <span class="badge rounded-pill bg-primary me-4 fs-3"> Conformity: {{ conformity_list.0.status }} %</span>
 {% endblock %}
 
 {% block content %}
