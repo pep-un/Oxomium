@@ -6,3 +6,4 @@ django-tinymce
 django-filter
 django-tables2
 python-magic
+python-decouple
