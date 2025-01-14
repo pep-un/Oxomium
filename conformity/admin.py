@@ -15,6 +15,7 @@ class OrganizationResources(resources.ModelResource):
 
 class OrganizationAdmin(ImportExportModelAdmin):
     ressource_class = Organization
+    list_select_related = ['applicable_frameworks']
 
 
 class FrameworkResources(resources.ModelResource):
@@ -24,6 +25,7 @@ class FrameworkResources(resources.ModelResource):
 
 class FrameworkAdmin(ImportExportModelAdmin):
     ressource_class = Framework
+    list_select_related = ['attachment']
 
 
 class RequirementResources(resources.ModelResource):
@@ -33,6 +35,7 @@ class RequirementResources(resources.ModelResource):
 
 class RequirementAdmin(ImportExportModelAdmin):
     ressource_class = Requirement
+    list_select_related = ['framework', 'parent']
 
 
 class ConformityResources(resources.ModelResource):
@@ -42,6 +45,7 @@ class ConformityResources(resources.ModelResource):
 
 class ConformityAdmin(ImportExportModelAdmin):
     ressource_class = Conformity
+    list_select_related = ['organization', 'requirement']
 
 
 class ActionResources(resources.ModelResource):
@@ -51,6 +55,7 @@ class ActionResources(resources.ModelResource):
 
 class ActionAdmin(ImportExportModelAdmin):
     ressource_class = Action
+    list_select_related = ['organization', 'responsible']
 
 
 class ControlResources(resources.ModelResource):
@@ -60,6 +65,7 @@ class ControlResources(resources.ModelResource):
 
 class ControlAdmin(ImportExportModelAdmin):
     ressource_class = Control
+    list_select_related = ['organization']
 
 
 class ControlPointResources(resources.ModelResource):
@@ -69,6 +75,7 @@ class ControlPointResources(resources.ModelResource):
 
 class ControlPointAdmin(ImportExportModelAdmin):
     ressource_class = ControlPoint
+    list_select_related = ['control', 'control_user']
 
 
 class FindingResources(resources.ModelResource):
@@ -78,6 +85,7 @@ class FindingResources(resources.ModelResource):
 
 class FindingAdmin(ImportExportModelAdmin):
     ressource_class = Finding
+    list_select_related = ['audit']
 
 
 class AuditResources(resources.ModelResource):
@@ -87,6 +95,7 @@ class AuditResources(resources.ModelResource):
 
 class AuditAdmin(ImportExportModelAdmin):
     ressource_class = Audit
+    list_select_related = ['organization', 'auditor']
 
 
 class AttachmentResources(resources.ModelResource):
