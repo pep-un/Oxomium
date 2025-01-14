@@ -1,0 +1,20 @@
+---
+services:
+    web:
+        container_name: oxomium
+        build:
+            context: ./
+            target: app_dev
+        ports:
+            - "3000:3000"
+        volumes:
+            - ./app/:/app/
+        env_file:
+            - ./app/oxomium/env-example
+        networks:
+            - oxomium
+
+networks:
+    oxomium:
+        name: oxomium
+        external: true
