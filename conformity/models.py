@@ -69,7 +69,7 @@ class Framework(models.Model):
 
     def get_requirements(self):
         """return all Requirement related to the Framework"""
-        return Requirement.objects.filter(framework=self.id)
+        return Requirement.objects.filter(framework=self.id).filter(level__gt=0).order_by('name')
 
     def get_requirements_number(self):
         """return the number of leaf Requirement related to the Framework"""
