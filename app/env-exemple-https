@@ -21,4 +21,6 @@ SECURE_HSTS_SECONDS = '15768000'
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 
-ALLOWED_HOSTS = '127.0.0.1'
+ALLOWED_HOSTS = '127.0.0.1,localhost'
+
+GUNICORN_CMD_ARGS=--bind=127.0.0.1:3001 --workers=3 --timeout=300 --error-logfile=/var/log/gunicorn-error.log

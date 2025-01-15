@@ -1,0 +1,26 @@
+DEBUG = True
+SECRET_KEY='django-insecure-oy-h!94w($b%mb2l-jv&g!1-7iqa9(jc!c=guv=%31_z%yyghr'
+LANGUAGE_CODE = 'en-us'
+TIME_ZONE = 'UTC'
+USE_I18N = True
+USE_TZ = True
+
+STATIC_URL = 'static/'
+STATIC_ROOT = 'static'
+DB_NAME = 'db.sqlite3'
+
+#SESSION_COOKIE_SECURE = True
+#SESSION_COOKIE_HTTPONLY = True
+#SESSION_COOKIE_SAMESITE = 'Strict'
+#SESSION_COOKIE_NAME = '__Host-sessionid'
+#
+#CSRF_USE_SESSIONS = True
+#
+#SECURE_SSL_REDIRECT = True
+#SECURE_HSTS_SECONDS = '15768000'
+#SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+#SECURE_HSTS_PRELOAD = True
+
+ALLOWED_HOSTS = '127.0.0.1,localhost'
+
+GUNICORN_CMD_ARGS=--bind=127.0.0.1:3001 --workers=3 --timeout=300 --error-logfile=/var/log/gunicorn-error.log
