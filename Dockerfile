@@ -9,7 +9,7 @@ ENV PYTHONUNBUFFERED 1
 
 WORKDIR /app/
 
-RUN apt update && apt install -y procps less netcat-traditional gcc nginx-light pkg-config
+RUN apt update && apt install -y procps less netcat-traditional gcc nginx-light pkg-config python3-magic
 
 COPY ./docker/nginx/oxomium.conf /etc/nginx/sites-enabled/oxomium.conf
 RUN rm -f /etc/nginx/sites-enabled/default
@@ -24,10 +24,7 @@ COPY ./docker/scripts/entrypoint.dev.sh /usr/local/bin/entrypoint
 RUN chmod +x /usr/local/bin/entrypoint
 
 COPY ./app/ .
-COPY ./app/env-example ./app/.env
-
-RUN python /app/manage.py makemigrations
-RUN python /app/manage.py makemigrations dashboard
+COPY ./app/env-exemple ./app/.env
 
 RUN rm -f ./app/.env
 

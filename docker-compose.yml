@@ -10,11 +10,10 @@ services:
         volumes:
             - ./app/:/app/
         env_file:
-            - ./app/oxomium/env-example
+            - ./app/env-exemple
         networks:
             - oxomium
 
 networks:
     oxomium:
         name: oxomium
-        external: true

@@ -5,5 +5,6 @@ django-auditlog
 django-tinymce
 django-filter
 django-tables2
+gunicorn
 python-magic
 python-decouple
