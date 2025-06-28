@@ -1,0 +1,14 @@
+services:
+ oxomium-web:
+   build: .
+   container_name: oxomium
+   ports:
+     - "8000:8000"
+   environment:
+     SECRET_KEY: ${SECRET_KEY}
+     DEBUG: ${DEBUG}
+       #LOGLEVEL: ${LOGLEVEL}
+     ALLOWED_HOSTS: ${ALLOWED_HOSTS}
+ 
+   env_file:
+     - .env
