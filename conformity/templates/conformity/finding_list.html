@@ -1,0 +1,86 @@
+{% extends "conformity/main.html" %}
+
+{% block header %}
+    <h1 class="h1 bi bi-exclamation-diamond"> Findings </h1>
+{% endblock %}
+
+{% block content %}
+<p class="alert alert-info" role="alert">
+    <i class="bi bi-info-circle"> </i> &nbsp
+    Only <span class="badge rounded-pill bg-dark">Critical</span>,
+    <span class="badge rounded-pill bg-danger">Major</span>,
+    <span class="badge rounded-pill bg-warning">Minor</span> finding and
+    <span class="badge rounded-pill bg-info">Opportunity</span> for improvement are listed.
+    <span class="badge rounded-pill bg-secondary">Remark</span> and
+    <span class="badge rounded-pill bg-success">Positive</span> finding does not need follow up and are not displayed on this page.
+</p>
+
+<table class="table table-striped align-middle">
+  <caption class="d-none">List of Critical, Major, Minor finding and Opportunity for improvement.</caption>
+    <thead>
+        <tr>
+            <th scope="col" class="text-center">Severity</th>
+            <th scope="col" class="">Description</th>
+            <th scope="col" class="text-center">Audit campaign</th>
+            <th scope="col" class="text-center"> Actions </th>
+            <th scope="col" class="text-center">View</th>
+            <th scope="col" class="text-center">Edit</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for finding in finding_list %}
+        <tr>
+            <td class="col text-center">
+                {% if finding.severity == "CRT" %}
+                    <span class="badge rounded-pill w-50 bg-dark">Critical</span>
+                {% endif %}
+                {% if finding.severity == "MAJ" %}
+                    <span class="badge rounded-pill w-50 bg-danger">Major</span>
+                {% endif %}
+                {% if finding.severity == "MIN" %}
+                    <span class="badge rounded-pill w-50 bg-warning">Minor</span>
+                {% endif %}
+                {% if finding.severity == "OBS" %}
+                    <span class="badge rounded-pill w-50 bg-info">Opportunity</span>
+                {% endif %}
+                {% if finding.severity == "OTHER" %}
+                    <span class="badge rounded-pill w-50 bg-secondary">Remark</span>
+                {% endif %}
+                {% if finding.severity == "POS" %}
+                    <span class="badge rounded-pill w-50 bg-success">Positive</span>
+                {% endif %}
+            </td>
+            <td class="col">
+                {{ finding.short_description }}
+            </td>
+            <td class="col text-center">
+                <a href="{% url 'conformity:audit_detail' finding.audit.id %}">
+                    <button type="button" class="btn btn-outline-primary btn-sm w-75">
+                        {{ finding.audit }}
+                    </button>
+                </a>
+            </td>
+            <td class="col text-center">
+                {% if finding.get_action %}
+                    <a href="{% url 'conformity:action_index' %}?associated_findings__id={{finding.id}}">
+                        <button type="button" class="btn btn-outline-primary btn-sm">
+                            {{ finding.get_action | length}} associated actions
+                        </button>
+                    </a>
+                {% endif %}
+            </td>
+            <td class="col text-center">
+                <a href="{% url 'conformity:finding_detail' finding.id  %}" class="bi bi-eye"></a>
+            </td>
+            <td class="col text-center">
+                <a href="{% url 'conformity:finding_form' finding.id %}" class="bi bi-pencil-square"></a>
+            </td>
+        </tr>
+    {% empty %}
+        <div class="alert alert-info" role="alert">
+            No finding recorded.
+        </div>
+        <tr><td colspan="6">No data to display</td></tr>
+    {% endfor %}
+</table>
+{% endblock %}

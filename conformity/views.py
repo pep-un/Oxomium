@@ -83,6 +83,12 @@ class AuditCreateView(LoginRequiredMixin, CreateView):
 #
 # Findings
 #
+class FindingIndexView(LoginRequiredMixin, ListView):
+    model = Finding
+    ordering = ['severity']
+
+    def get_queryset(self, **kwargs):
+        return Finding.objects.filter(severity__in=["CRT","MAJ","MIN", "OBS"]).order_by(*self.get_ordering())
 
 
 class FindingCreateView(LoginRequiredMixin, CreateView):
