@@ -1,0 +1,35 @@
+{
+    "listeners": {
+        "*:8080": {
+            "pass": "routes",
+            "forwarded": {
+                "client_ip": "X-Forwarded-For",
+                "protocol": "X-Forwarded-Proto",
+                "source": ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "127.0.0.1/8"]
+            }
+        }
+    },
+    "routes": [
+        {
+            "match": {
+                "uri": "/static/*"
+            },
+            "action": {
+                "share": "/app/static${uri}"
+            }
+        },
+        {
+            "action": {
+                "pass": "applications/oxomium"
+            }
+        }
+    ],
+    "applications": {
+        "oxomium": {
+            "type": "python 3",
+            "path": "/app/",
+            "module": "oxomium.wsgi"
+        }
+    },
+  "access_log": "/dev/stdout"
+}

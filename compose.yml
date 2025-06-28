@@ -1,5 +1,5 @@
 services:
- oxomium-web:
+  oxomium-web:
    build: .
    container_name: oxomium
    ports:
@@ -9,6 +9,5 @@ services:
      DEBUG: ${DEBUG}
        #LOGLEVEL: ${LOGLEVEL}
      ALLOWED_HOSTS: ${ALLOWED_HOSTS}
- 
    env_file:
      - .env

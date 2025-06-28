@@ -1,15 +1,17 @@
 # Dockerfile
 
-FROM python:3.9
+FROM unit:python3.12
 
 WORKDIR /app
 
-COPY . /app
+COPY . /app/
 
-RUN pip install --no-cache-dir -r requirements.txt
-    && pip install --no-cache-dir gunicorn
+RUN pip install --no-cache-dir -r requirements.txt \
+    && python manage.py collectstatic --noinput\
     && python manage.py migrate
+
+COPY unit.json /docker-entrypoint.d/
 
 EXPOSE 8000
 
-CMD ["gunicorn", "Oxomium.wsgi:conformity", "--bind", "0.0.0.0:8000"]
+CMD ["unitd", "--no-daemon", "--control", "unix:/run/control.unit.sock"]
