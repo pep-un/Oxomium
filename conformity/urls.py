@@ -20,9 +20,10 @@ urlpatterns = [
          name='conformity_detail_index'),
     path('conformity/update/<int:pk>', views.ConformityUpdateView.as_view(), name='conformity_form'),
 
-    path('finding/create', views.FindingCreateView.as_view(), name='finding_create'),
+    path('finding/', views.FindingIndexView.as_view(), name='finding_index'),
     path('finding/<int:pk>', views.FindingDetailView.as_view(), name='finding_detail'),
-    path('finding/update/<int:pk>', views.FindingUpdateView.as_view(), name='finding_edit'),
+    path('finding/create', views.FindingCreateView.as_view(), name='finding_create'),
+    path('finding/update/<int:pk>', views.FindingUpdateView.as_view(), name='finding_form'),
 
     path('organization/', views.OrganizationIndexView.as_view(), name='organization_index'),
     path('organization/<int:pk>', views.OrganizationDetailView.as_view(), name='organization_detail'),

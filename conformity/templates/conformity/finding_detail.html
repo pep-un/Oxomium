@@ -58,7 +58,7 @@
         <p> {{ finding.reference }} </p>
     {% endif %}
 
-    <a href="{% url 'conformity:finding_edit' finding.id %}">
+    <a href="{% url 'conformity:finding_form' finding.id %}">
         <button type="button" class="my-3 btn btn-primary bi bi-pencil-square"> Edit the finding</button>
     </a>
 
