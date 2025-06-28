@@ -40,7 +40,7 @@ class SanityCheckMiddleware:
         """Update expired TOBE to MISS """
         missed_controls = ControlPoint.objects.filter(period_start_date__lt=today,
                                                       period_end_date__lt=today,
-                                                      status="TOBE")
+                                                      status__in=["TOBE","SCHD"])
         missed_controls.update(status='MISS')
 
 
