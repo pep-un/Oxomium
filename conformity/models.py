@@ -399,7 +399,7 @@ class Finding(models.Model):
         return self.Severity(self.severity).label
 
     def get_absolute_url(self):
-        """"return somewhere else when an edit has work """
+        """"return somewhere else when an edit has work"""
         return reverse('conformity:audit_detail', kwargs={'pk': self.audit_id})
 
     def get_action(self):
@@ -500,7 +500,7 @@ class ControlPoint(models.Model):
     attachment = models.ManyToManyField('Attachment', blank=True, related_name='ControlPoint')
 
     class Meta:
-        ordering = ['status','period_end_date']
+        ordering = ['period_end_date']
 
     @staticmethod
     def get_absolute_url():
