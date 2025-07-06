@@ -303,7 +303,7 @@ class Audit(models.Model):
     attachment = models.ManyToManyField('Attachment', blank=True, related_name='audits')
 
     class Meta:
-        ordering = ['report_date']
+        ordering = ['-report_date','-start_date']
 
     def __str__(self):
 
@@ -388,6 +388,9 @@ class Finding(models.Model):
         default=Severity.OBSERVATION,
     )
 
+    class Meta:
+        ordering = ['severity']
+
     def __str__(self):
         return str(self.short_description)
 
@@ -435,6 +438,9 @@ class Control(models.Model):
         choices=Level.choices,
         default=Level.FIRST,
     )
+
+    class Meta:
+        ordering = ['level','frequency','title']
 
     def __str__(self):
         return "[" + str(self.organization) + "] " + str(self.title)
@@ -492,6 +498,9 @@ class ControlPoint(models.Model):
     status = models.CharField(choices=Status.choices, max_length=4, default=Status.SCHEDULED)
     comment = models.TextField(max_length=4096, blank=True)
     attachment = models.ManyToManyField('Attachment', blank=True, related_name='ControlPoint')
+
+    class Meta:
+        ordering = ['status','period_end_date']
 
     @staticmethod
     def get_absolute_url():
@@ -575,6 +584,9 @@ class Action(models.Model):
     control_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
                                      null=True, blank=True, related_name='controller')
 
+    class Meta :
+        ordering = ['status', '-update_date']
+
     def __str__(self):
         return "[" + str(self.organization) + "] " + str(self.title)
 
@@ -600,6 +612,9 @@ class Attachment(models.Model):
     comment = models.TextField(max_length=4096, blank=True)
     mime_type = models.CharField(max_length=255, blank=True)
     create_date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-create_date', 'file']
 
     def __str__(self):
         return self.file.name.split("/")[1]
