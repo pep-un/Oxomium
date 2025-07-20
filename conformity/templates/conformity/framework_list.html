@@ -11,15 +11,19 @@
             <thead class="">
                 <tr>
                     <th scope="col">Framework</th>
-                    <th scope="col">Published by</th>
-                    <th scope="col">Type</th>
-                    <th scope="col" class="text-center">Requirements</th>
+                    <th scope="col" class="col-1 text-center">Version</th>
+                    <th scope="col" class="col-1 text-center">Language</th>
+                    <th scope="col" class="col-2">Published by</th>
+                    <th scope="col" class="col-2">Type</th>
+                    <th scope="col" class="col-3 text-center">Requirements</th>
                 </tr>
             </thead>
             <tbody>
         {% for framework in framework_list %}
             <tr>
-                <td>{{ framework.name }} {% if framework.version %} <sup>{{ framework.version }}</sup> {% endif %}</td>
+                <td>{{ framework.name }}</td>
+                <td class="text-center">{{ framework.version | default:'-'}}</td>
+                <td class="text-center">{{ framework.get_language_display }}</td>
                 <td>{{ framework.publish_by }}</td>
                 <td>{{ framework.get_type }}</td>
                 <td class="text-center">

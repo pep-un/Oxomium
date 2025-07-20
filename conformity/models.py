@@ -16,7 +16,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
 from auditlog.context import set_actor
-import magic
+import magic, pycountry
 
 User = get_user_model()
 
@@ -41,16 +41,18 @@ class Framework(models.Model):
         POLICY = 'POL', _('Internal Policy')
         OTHER = 'OTHER', _('Other')
 
+    class Language():
+        @classmethod
+        def choices(cls):
+            return[(lang.alpha_2, lang.name) for lang in pycountry.languages if hasattr(lang, 'alpha_2')]
+
     objects = FrameworkManager()
     name = models.CharField(max_length=256, unique=True)
     version = models.IntegerField(default=0)
     publish_by = models.CharField(max_length=256)
-    type = models.CharField(
-        max_length=5,
-        choices=Type.choices,
-        default=Type.OTHER,
-    )
+    type = models.CharField(max_length=5, choices=Type.choices, default=Type.OTHER)
     attachment = models.ManyToManyField('Attachment', blank=True, related_name='frameworks')
+    language = models.CharField(max_length=2,choices=Language.choices(),default='en')
 
     class Meta:
         ordering = ['name']
