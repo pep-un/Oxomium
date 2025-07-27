@@ -31,7 +31,10 @@
                 </div>
                 <ul class="list-group list-group-flush">
                     {% for finding in audit.get_critical_findings %}
-                        <a href="{% url 'conformity:finding_detail' finding.id %}" class="list-group-item list-group-item-dark"> {{ finding.short_description }} </a>
+                        <a href="{% url 'conformity:finding_detail' finding.id %}" class="list-group-item list-group-item-dark">
+                            {% if finding.archived %}<i class="bi bi-archive"></i> {% endif%}
+                            {{ finding.short_description }}
+                        </a>
                     {% empty %}
                         <li class="list-group-item bi-check2-circle"> No critical finding !</li>
                     {% endfor %}
@@ -46,7 +49,10 @@
                 </div>
                 <ul class="list-group list-group-flush">
                     {% for finding in audit.get_major_findings %}
-                        <a href="{% url 'conformity:finding_detail' finding.id %}" class="list-group-item list-group-item-danger"> {{ finding.short_description }} </a>
+                        <a href="{% url 'conformity:finding_detail' finding.id %}" class="list-group-item list-group-item-danger">
+                            {% if finding.archived %}<i class="bi bi-archive"></i> {% endif%}
+                            {{ finding.short_description }}
+                        </a>
                     {% empty %}
                         <li class="list-group-item bi-check2-circle"> No major findings !</li>
                     {% endfor %}
@@ -61,7 +67,10 @@
                 </div>
                 <ul class="list-group list-group-flush">
                     {% for finding in audit.get_minor_findings %}
-                        <a href="{% url 'conformity:finding_detail' finding.id %}" class="list-group-item list-group-item-warning"> {{ finding.short_description }} </a>
+                        <a href="{% url 'conformity:finding_detail' finding.id %}" class="list-group-item list-group-item-warning">
+                            {% if finding.archived %}<i class="bi bi-archive"></i> {% endif%}
+                            {{ finding.short_description }}
+                        </a>
                     {% empty %}
                         <li class="list-group-item bi-check2-circle"> No minor findings ! </li>
                     {% endfor %}
@@ -76,7 +85,10 @@
                 </div>
                 <ul class="list-group list-group-flush">
                     {% for finding in audit.get_observation_findings %}
-                        <a href="{% url 'conformity:finding_detail' finding.id %}" class="list-group-item list-group-item-info"> {{ finding.short_description }} </a>
+                        <a href="{% url 'conformity:finding_detail' finding.id %}" class="list-group-item list-group-item-info">
+                            {% if finding.archived %}<i class="bi bi-archive"></i> {% endif%}
+                            {{ finding.short_description }}
+                        </a>
                     {% empty %}
                         <li class="list-group-item"> No observations.</li>
                     {% endfor %}
@@ -91,7 +103,10 @@
                 </div>
                 <ul class="list-group list-group-flush">
                     {% for finding in audit.get_other_findings %}
-                        <a href="{% url 'conformity:finding_detail' finding.id %}" class="list-group-item list-group-item-secondary"> {{ finding.short_description }} </a>
+                        <a href="{% url 'conformity:finding_detail' finding.id %}" class="list-group-item list-group-item-secondary">
+                            {% if finding.archived %}<i class="bi bi-archive"></i> {% endif%}
+                            {{ finding.short_description }}
+                        </a>
                     {% empty %}
                         <li class="list-group-item"> No other remark.</li>
                     {% endfor %}
@@ -106,7 +121,10 @@
                 </div>
                 <ul class="list-group list-group-flush">
                     {% for finding in audit.get_positive_findings %}
-                        <a href="{% url 'conformity:finding_detail' finding.id %}" class="list-group-item list-group-item-positive"> {{ finding.short_description }} </a>
+                        <a href="{% url 'conformity:finding_detail' finding.id %}" class="list-group-item list-group-item-positive">
+                            {% if finding.archived %}<i class="bi bi-archive"></i> {% endif%}
+                            {{ finding.short_description }}
+                        </a>
                     {% empty %}
                         <li class="list-group-item"> No positive finding.</li>
                     {% endfor %}

@@ -372,7 +372,7 @@ class Finding(models.Model):
     """
 
     class Severity(models.TextChoices):
-        """ List of the Type of audit """
+        """ List of the Type of finding """
         CRITICAL = 'CRT', _('Critical non-conformity')
         MAJOR = 'MAJ', _('Major non-conformity')
         MINOR = 'MIN', _('Minor non-conformity')
@@ -389,6 +389,7 @@ class Finding(models.Model):
         choices=Severity.choices,
         default=Severity.OBSERVATION,
     )
+    archived = models.BooleanField(default=False)
 
     class Meta:
         ordering = ['severity']
@@ -402,7 +403,7 @@ class Finding(models.Model):
 
     def get_absolute_url(self):
         """"return somewhere else when an edit has work"""
-        return reverse('conformity:audit_detail', kwargs={'pk': self.audit_id})
+        return reverse('conformity:finding_detail', kwargs={'pk': self.id})
 
     def get_action(self):
         """Return the list of Action associated with this Findings"""

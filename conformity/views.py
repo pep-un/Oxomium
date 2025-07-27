@@ -86,7 +86,7 @@ class FindingIndexView(LoginRequiredMixin, ListView):
     model = Finding
 
     def get_queryset(self, **kwargs):
-        return Finding.objects.filter(severity__in=["CRT","MAJ","MIN", "OBS"])
+        return Finding.objects.filter(severity__in=["CRT","MAJ","MIN", "OBS"]).filter(archived=False)
 
 
 class FindingCreateView(LoginRequiredMixin, CreateView):
@@ -101,7 +101,6 @@ class FindingDetailView(LoginRequiredMixin, DetailView):
 class FindingUpdateView(LoginRequiredMixin, UpdateView):
     model = Finding
     form_class = FindingForm
-
 
 #
 # Organizations

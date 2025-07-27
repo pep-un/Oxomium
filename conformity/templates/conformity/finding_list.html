@@ -1,18 +1,21 @@
 {% extends "conformity/main.html" %}
 
 {% block header %}
-    <h1 class="h1 bi bi-exclamation-diamond"> Findings </h1>
+    <h1 class="h1 bi bi-exclamation-diamond"> Actives findings </h1>
 {% endblock %}
 
 {% block content %}
 <p class="alert alert-info" role="alert">
     <i class="bi bi-info-circle"> </i> &nbsp
-    Only <span class="badge rounded-pill bg-dark">Critical</span>,
+    Only actives findings from level
+    <span class="badge rounded-pill bg-dark">Critical</span>,
     <span class="badge rounded-pill bg-danger">Major</span>,
-    <span class="badge rounded-pill bg-warning">Minor</span> finding and
-    <span class="badge rounded-pill bg-info">Opportunity</span> for improvement are listed.
+    <span class="badge rounded-pill bg-warning">Minor</span> and
+    <span class="badge rounded-pill bg-info">Opportunity</span> for improvement are listed for follow-up.
+    Others findings like
+    <i class="bi bi-archive"></i> Archived findings,
     <span class="badge rounded-pill bg-secondary">Remark</span> and
-    <span class="badge rounded-pill bg-success">Positive</span> finding does not need follow up and are not displayed on this page.
+    <span class="badge rounded-pill bg-success">Positive</span> finding are not be displayed.
 </p>
 
 <table class="table table-striped align-middle">
