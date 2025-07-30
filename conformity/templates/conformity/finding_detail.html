@@ -21,12 +21,23 @@
         {% if finding.severity == "POS" %}
             <span class="badge rounded-pill bg-success">Positive</span>
         {% endif %}
+
     </h1>
 {% endblock %}
 
 {% block content %}
+    <p class="alert alert-dark" role="alert">
+        <i class="bi bi-archive"></i> This finding is archived.
+    </p>
     <h2 class="h4">Audit information</h2>
-    <p>{{ finding.audit.get_type }} realized by {{ finding.audit.auditor }} on {{ finding.audit.organization }} from {{ finding.audit.start_date }} to {{ finding.audit.end_date }}.</p>
+    <p>
+        {{ finding.audit.get_type }} realized by {{ finding.audit.auditor }} on {{ finding.audit.organization }} f
+        rom {{ finding.audit.start_date }} to {{ finding.audit.end_date }}.
+        <a class="btn btn-sm btn-primary ms-3" role="button" href="{% url 'conformity:audit_detail' finding.audit_id %}">
+            <i class="bi bi-ui-checks-grid"></i>
+            Audit detail
+        </a>
+    </p>
     {% if finding.audit.get_frameworks %}
     <p>The following policies were within the audit scope : </p>
     <ul>
@@ -48,9 +59,11 @@
         {% empty %}
             <p class="list-group-item list-group-item-warning text-center my-0">No action associated</p>
         {% endfor %}
+        {% if not finding.archived %}
             <a class="list-group-item list-group-item-action list-group-item-success text-center text-success"  href="{% url 'conformity:action_create' %}">
                 <i class="bi bi-plus-circle"></i> Register a corrective action
             </a>
+        {% endif %}
     </div>
 
     {% if finding.reference %}
@@ -58,8 +71,11 @@
         <p> {{ finding.reference }} </p>
     {% endif %}
 
-    <a href="{% url 'conformity:finding_edit' finding.id %}">
-        <button type="button" class="my-3 btn btn-primary bi bi-pencil-square"> Edit the finding</button>
-    </a>
+
+    {% if not finding.archived %}
+        <a href="{% url 'conformity:finding_form' finding.id %}">
+            <button type="button" class="my-3 btn btn-primary bi bi-pencil-square"> Edit the finding</button>
+        </a>
+    {% endif %}
 
 {% endblock %}

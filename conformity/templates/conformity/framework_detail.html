@@ -1,7 +1,13 @@
 {% extends "conformity/main.html" %}
 
 {% block header %}
-<h1 class="h2 bi bi-card-checklist"> Framework: {{ framework.name }} {% if framework.version %} <sup>{{ framework.version }}</sup> {% endif %}</h1>
+<h1 class="h2 bi bi-card-checklist"> Framework: {{ framework.name }}</h1>
+<h4>
+    <span class="badge text-bg-secondary"> Version : {{ framework.version | default:'-' }} </span>
+    <span class="badge text-bg-secondary"> Language : {{ framework.get_language_display | default:'-' }} </span>
+    <span class="badge text-bg-secondary"> Published by : {{ framework.publish_by | default:'-' }} </span>
+    <span class="badge text-bg-secondary"> Type : {{ framework.get_type | default:'-' }} </span>
+</h4>
 {% endblock %}
 
 {% block content %}
