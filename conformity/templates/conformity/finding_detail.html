@@ -26,9 +26,11 @@
 {% endblock %}
 
 {% block content %}
+    {% if finding.archived %}
     <p class="alert alert-dark" role="alert">
         <i class="bi bi-archive"></i> This finding is archived.
     </p>
+    {% endif %}
     <h2 class="h4">Audit information</h2>
     <p>
         {{ finding.audit.get_type }} realized by {{ finding.audit.auditor }} on {{ finding.audit.organization }} f
