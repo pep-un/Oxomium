@@ -39,8 +39,15 @@ class AuditForm(LoginRequiredMixin, ModelForm):
 class FindingForm(LoginRequiredMixin, ModelForm):
     class Meta:
         model = Finding
-        fields = ['audit', 'severity', 'short_description', 'description', 'reference']
+        fields = ['audit', 'severity', 'short_description', 'description', 'reference', 'archived']
         # TODO add a preselection and a disable selector for 'audit' field when the form is open from an audit.
+
+    def __init__(self, *args, **kwargs):
+        super(FindingForm, self).__init__(*args, **kwargs)
+
+        if self.get_initial_for_field(self.fields['archived'], 'archived') :
+            for key, value in self.fields.items():
+                self.fields[key].disabled = True
 
 
 class ActionForm(LoginRequiredMixin, ModelForm):

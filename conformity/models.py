@@ -16,7 +16,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
 from auditlog.context import set_actor
-import magic
+import magic, pycountry
 
 User = get_user_model()
 
@@ -41,16 +41,18 @@ class Framework(models.Model):
         POLICY = 'POL', _('Internal Policy')
         OTHER = 'OTHER', _('Other')
 
+    class Language():
+        @classmethod
+        def choices(cls):
+            return[(lang.alpha_2, lang.name) for lang in pycountry.languages if hasattr(lang, 'alpha_2')]
+
     objects = FrameworkManager()
     name = models.CharField(max_length=256, unique=True)
     version = models.IntegerField(default=0)
     publish_by = models.CharField(max_length=256)
-    type = models.CharField(
-        max_length=5,
-        choices=Type.choices,
-        default=Type.OTHER,
-    )
+    type = models.CharField(max_length=5, choices=Type.choices, default=Type.OTHER)
     attachment = models.ManyToManyField('Attachment', blank=True, related_name='frameworks')
+    language = models.CharField(max_length=2,choices=Language.choices(),default='en')
 
     class Meta:
         ordering = ['name']
@@ -69,7 +71,7 @@ class Framework(models.Model):
 
     def get_requirements(self):
         """return all Requirement related to the Framework"""
-        return Requirement.objects.filter(framework=self.id)
+        return Requirement.objects.filter(framework=self.id).filter(level__gt=0).order_by('name')
 
     def get_requirements_number(self):
         """return the number of leaf Requirement related to the Framework"""
@@ -298,7 +300,7 @@ class Audit(models.Model):
     attachment = models.ManyToManyField('Attachment', blank=True, related_name='audits')
 
     class Meta:
-        ordering = ['report_date']
+        ordering = ['-report_date','-start_date']
 
     def __str__(self):
 
@@ -365,7 +367,7 @@ class Finding(models.Model):
     """
 
     class Severity(models.TextChoices):
-        """ List of the Type of audit """
+        """ List of the Type of finding """
         CRITICAL = 'CRT', _('Critical non-conformity')
         MAJOR = 'MAJ', _('Major non-conformity')
         MINOR = 'MIN', _('Minor non-conformity')
@@ -382,6 +384,10 @@ class Finding(models.Model):
         choices=Severity.choices,
         default=Severity.OBSERVATION,
     )
+    archived = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['severity']
 
     def __str__(self):
         return str(self.short_description)
@@ -391,8 +397,8 @@ class Finding(models.Model):
         return self.Severity(self.severity).label
 
     def get_absolute_url(self):
-        """"return somewhere else when an edit has work """
-        return reverse('conformity:audit_detail', kwargs={'pk': self.audit_id})
+        """"return somewhere else when an edit has work"""
+        return reverse('conformity:finding_detail', kwargs={'pk': self.id})
 
     def get_action(self):
         """Return the list of Action associated with this Findings"""
@@ -430,6 +436,9 @@ class Control(models.Model):
         choices=Level.choices,
         default=Level.FIRST,
     )
+
+    class Meta:
+        ordering = ['level','frequency','title']
 
     def __str__(self):
         return "[" + str(self.organization) + "] " + str(self.title)
@@ -487,6 +496,9 @@ class ControlPoint(models.Model):
     status = models.CharField(choices=Status.choices, max_length=4, default=Status.SCHEDULED)
     comment = models.TextField(max_length=4096, blank=True)
     attachment = models.ManyToManyField('Attachment', blank=True, related_name='ControlPoint')
+
+    class Meta:
+        ordering = ['period_end_date']
 
     @staticmethod
     def get_absolute_url():
@@ -570,6 +582,9 @@ class Action(models.Model):
     control_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
                                      null=True, blank=True, related_name='controller')
 
+    class Meta :
+        ordering = ['status', '-update_date']
+
     def __str__(self):
         return "[" + str(self.organization) + "] " + str(self.title)
 
@@ -595,6 +610,9 @@ class Attachment(models.Model):
     comment = models.TextField(max_length=4096, blank=True)
     mime_type = models.CharField(max_length=255, blank=True)
     create_date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-create_date', 'file']
 
     def __str__(self):
         return self.file.name.split("/")[1]

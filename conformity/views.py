@@ -46,7 +46,6 @@ class HomeView(LoginRequiredMixin, TemplateView):
 #
 class AuditIndexView(LoginRequiredMixin, ListView):
     model = Audit
-    ordering = ['-start_date']
 
 
 class AuditDetailView(LoginRequiredMixin, DetailView):
@@ -83,6 +82,11 @@ class AuditCreateView(LoginRequiredMixin, CreateView):
 #
 # Findings
 #
+class FindingIndexView(LoginRequiredMixin, ListView):
+    model = Finding
+
+    def get_queryset(self, **kwargs):
+        return Finding.objects.filter(severity__in=["CRT","MAJ","MIN", "OBS"]).filter(archived=False)
 
 
 class FindingCreateView(LoginRequiredMixin, CreateView):
@@ -98,7 +102,6 @@ class FindingUpdateView(LoginRequiredMixin, UpdateView):
     model = Finding
     form_class = FindingForm
 
-
 #
 # Organizations
 #
@@ -106,7 +109,6 @@ class FindingUpdateView(LoginRequiredMixin, UpdateView):
 
 class OrganizationIndexView(LoginRequiredMixin, ListView):
     model = Organization
-    ordering = ['name']
 
 
 class OrganizationDetailView(LoginRequiredMixin, DetailView):
@@ -193,7 +195,6 @@ class ActionCreateView(LoginRequiredMixin, CreateView):
 
 class ActionIndexView(LoginRequiredMixin, FilterView):
     model = Action
-    ordering = ['status', '-update_date']
     filterset_class = ActionFilter
     template_name = "conformity/action_list.html"
 
@@ -244,7 +245,6 @@ class ControlDetailView(LoginRequiredMixin, DetailView):
     template_name = 'conformity/control_detail_list.html'
 
 
-
 class ControlPointIndexView(LoginRequiredMixin, FilterView):
     model = ControlPoint
     filterset_class = ControlPointFilter
@@ -277,7 +277,6 @@ class ControlPointUpdateView(LoginRequiredMixin, UpdateView):
 
 class AttachmentIndexView(LoginRequiredMixin, ListView):
     model = Attachment
-    ordering = ['-create_date', 'file']
 
 
 class AttachmentDownloadView(View):
