@@ -22,8 +22,9 @@
   <caption class="d-none">List of Critical, Major, Minor finding and Opportunity for improvement.</caption>
     <thead>
         <tr>
-            <th scope="col" class="text-center">Severity</th>
+            <th scope="col" class="text-center">Finding</th>
             <th scope="col" class="">Description</th>
+            <th scope="col" class="text-center">CVSS</th>
             <th scope="col" class="text-center">Audit campaign</th>
             <th scope="col" class="text-center"> Actions </th>
             <th scope="col" class="text-center">View</th>
@@ -33,28 +34,31 @@
     <tbody>
     {% for finding in finding_list %}
         <tr>
-            <td class="col text-center">
+            <td class="col-2 text-center">
                 {% if finding.severity == "CRT" %}
-                    <span class="badge rounded-pill w-50 bg-dark">Critical</span>
+                    <span class="badge rounded-pill w-75 bg-dark">{{ finding.name | default:"Critical" }}</span>
                 {% endif %}
                 {% if finding.severity == "MAJ" %}
-                    <span class="badge rounded-pill w-50 bg-danger">Major</span>
+                    <span class="badge rounded-pill w-75 bg-danger">{{ finding.name | default:"Major" }}</span>
                 {% endif %}
                 {% if finding.severity == "MIN" %}
-                    <span class="badge rounded-pill w-50 bg-warning">Minor</span>
+                    <span class="badge rounded-pill w-75 bg-warning">{{ finding.name | default:"Minor" }}</span>
                 {% endif %}
                 {% if finding.severity == "OBS" %}
-                    <span class="badge rounded-pill w-50 bg-info">Opportunity</span>
+                    <span class="badge rounded-pill w-75 bg-info">{{ finding.name | default:"Opportunity" }}</span>
                 {% endif %}
                 {% if finding.severity == "OTHER" %}
-                    <span class="badge rounded-pill w-50 bg-secondary">Remark</span>
+                    <span class="badge rounded-pill w-75 bg-secondary">{{ finding.name | default:"Remark" }}</span>
                 {% endif %}
                 {% if finding.severity == "POS" %}
-                    <span class="badge rounded-pill w-50 bg-success">Positive</span>
+                    <span class="badge rounded-pill w-75 bg-success">{{ finding.name | default:"Positive" }}</span>
                 {% endif %}
             </td>
             <td class="col">
                 {{ finding.short_description }}
+            </td>
+            <td class="col-1 text-center">
+                {{ finding.cvss | default:'-'}}
             </td>
             <td class="col text-center">
                 <a href="{% url 'conformity:audit_detail' finding.audit.id %}">

@@ -9,19 +9,23 @@
   <caption class="d-none">List of all Audits</caption>
     <thead>
         <tr>
+            <th scope="col" class="">Name/Code</th>
             <th scope="col" class="">Organization</th>
             <th scope="col" class="">Auditor</th>
             <th scope="col" class="">Type</th>
             <th scope="col" class="">Start</th>
             <th scope="col" class="">End</th>
-            <th scope="col" class="text-center">Findings</th>
+            <th scope="col" class="text-center">Findings details</th>
             <th scope="col" class="text-center">Edit</th>
         </tr>
     </thead>
     <tbody>
     {% for audit in audit_list %}
         <tr>
-            <td class="col">
+            <td class="col-1">
+                {{ audit.name }}
+            </td>
+            <td class="col-2">
                 {{ audit.organization }}
             </td>
             <td class="col-2">
@@ -30,18 +34,18 @@
             <td class="col-2">
                 {{ audit.get_type }}
             </td>
-            <td class="col-2">
+            <td class="col-1">
                 {{ audit.start_date }}
             </td>
-            <td class="col-2">
+            <td class="col-1">
                 {{ audit.end_date }}
             </td>
             <td class="col-2 text-center">
                 <a href="{% url 'conformity:audit_detail' audit.id %}">
-                    <button type="button" class="btn btn-primary btn-sm">{{ audit.get_findings_number }} Findings</button>
+                    <button type="button" class="btn btn-primary btn-sm w-75">{{ audit.get_findings_number }} findings</button>
                 </a>
             </td>
-            <td class="text-center">
+            <td class="col-1 text-center">
                 <a href="{% url 'conformity:audit_form' audit.id %}" class="bi bi-pencil-square"></a>
             </td>
         </tr>
@@ -49,9 +53,9 @@
         <div class="alert alert-info" role="alert">
             No audit recorded.
         </div>
-        <tr><td colspan="7">No data to display</td></tr>
+        <tr><td colspan="8">No data to display</td></tr>
     {% endfor %}
-        <tr><td colspan="7" class="text-center">
+        <tr><td colspan="8" class="text-center">
             <br />
             <a href="{% url 'conformity:audit_create' %}">
                 <button type="button" class="btn btn-success bi bi-plus-circle"> Register a new audit</button>
