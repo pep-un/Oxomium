@@ -1,20 +1,24 @@
 {% extends "conformity/main.html" %}
 
 {% block header %}
-    <h1 class="h2 bi bi-ui-checks-grid"> Audit of {{ audit.organization }} by {{ audit.auditor }} on the {{ audit.report_date }}</h1>
+    <h1 class="h2 bi bi-ui-checks-grid"> Audit {{ audit.name }}</h1>
 {% endblock %}
 
 {% block content %}
     <h2 class="h4">Audit information</h2>
-    <p>{{ audit.get_type }} realized by {{ audit.auditor }} from {{ audit.start_date }} to {{ audit.end_date }}.</p>
+    <p>
+        Audit of {{ audit.organization }} realised by {{ audit.auditor }} ({{ audit.get_type }}). <br />
+        Performed from {{ audit.start_date }} to {{ audit.end_date }}.
+        Report submitted on the {{ audit.report_date }}.
+    </p>
+    {% if finding.audit.get_frameworks %}
     <p>The following frameworks were within the audit scope : </p>
     <ul>
         {% for framework in audit.get_frameworks %}
             <li>{{ framework }}</li>
-        {% empty %}
-            <li>No framework within the audit scope.</li>
         {% endfor %}
     </ul>
+    {% endif %}
 
     <h2 class="h4">Audit description</h2>
     <p> {{ audit.description }} </p>

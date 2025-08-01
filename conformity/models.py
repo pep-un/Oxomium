@@ -5,6 +5,8 @@ It's Organized around Organization, Framework, Requirement and Conformity classe
 from calendar import monthrange
 from statistics import mean
 from datetime import date, timedelta
+
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 from django.db.models.signals import m2m_changed, pre_save, post_save, post_init
@@ -284,6 +286,7 @@ class Audit(models.Model):
         AUDITOR = 'AUD', _('3rd party auditor')
         OTHER = 'OTHER', _('Other')
 
+    name = models.CharField(max_length=256, blank=True)
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
     description = models.TextField(max_length=4096, blank=True)
     conclusion = models.TextField(max_length=4096, blank=True)
@@ -311,9 +314,12 @@ class Audit(models.Model):
         elif self.end_date:
             display_date = self.end_date.strftime('%b %Y')
         else:
-            display_date = "xx-xxxx"
-            
-        return "[" + str(self.organization) + "] " + str(self.auditor) + " (" + display_date + ")"
+            display_date = ""
+
+        if self.name :
+            return self.name
+        else :
+            return str(self.auditor) + "/" + str(self.organization) + " (" + display_date + ")"
 
     @staticmethod
     def get_absolute_url():
@@ -375,8 +381,11 @@ class Finding(models.Model):
         POSITIVE = 'POS', _('Positive finding')
         OTHER = 'OTHER', _('Other remark')
 
+    name = models.CharField(max_length=256, blank=True)
     short_description = models.CharField(max_length=256)
     description = models.TextField(max_length=4096, blank=True)
+    observation = models.TextField(max_length=4096, blank=True)
+    recommendation = models.TextField(max_length=4096, blank=True)
     reference = models.TextField(max_length=4096, blank=True)
     audit = models.ForeignKey(Audit, on_delete=models.CASCADE)
     severity = models.CharField(
@@ -385,9 +394,16 @@ class Finding(models.Model):
         default=Severity.OBSERVATION,
     )
     archived = models.BooleanField(default=False)
+    cvss = models.FloatField(blank=True, null=True, default=None)
+    cvss_descriptor = models.CharField(max_length=256, blank=True)
 
     class Meta:
         ordering = ['severity']
+
+    def clean(self):
+        if self.cvss is not None and (self.cvss < 0.1 or self.cvss > 10.0):
+            raise ValidationError('CVSS must be between 0.1 and 10.0.')
+        super().clean()
 
     def __str__(self):
         return str(self.short_description)
