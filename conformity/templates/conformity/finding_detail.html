@@ -4,22 +4,22 @@
     <h1 class="h2 bi bi-exclamation-diamond">
         Finding "{{ finding.short_description }}"
         {% if finding.severity == "CRT" %}
-            <span class="badge rounded-pill bg-dark">Critical</span>
+            <span class="badge rounded-pill bg-dark">Critical ({{ finding.cvss }})</span>
         {% endif %}
         {% if finding.severity == "MAJ" %}
-            <span class="badge rounded-pill bg-danger">Major</span>
+            <span class="badge rounded-pill bg-danger">Major ({{ finding.cvss }})</span>
         {% endif %}
         {% if finding.severity == "MIN" %}
-            <span class="badge rounded-pill bg-warning">Minor</span>
+            <span class="badge rounded-pill bg-warning">Minor ({{ finding.cvss }})</span>
         {% endif %}
         {% if finding.severity == "OBS" %}
-            <span class="badge rounded-pill bg-info">Opportunity</span>
+            <span class="badge rounded-pill bg-info">Opportunity ({{ finding.cvss }})</span>
         {% endif %}
         {% if finding.severity == "OTHER" %}
-            <span class="badge rounded-pill bg-secondary">Remark</span>
+            <span class="badge rounded-pill bg-secondary">Remark ({{ finding.cvss }})</span>
         {% endif %}
         {% if finding.severity == "POS" %}
-            <span class="badge rounded-pill bg-success">Positive</span>
+            <span class="badge rounded-pill bg-success">Positive ({{ finding.cvss }})</span>
         {% endif %}
 
     </h1>
@@ -31,53 +31,81 @@
         <i class="bi bi-archive"></i> This finding is archived.
     </p>
     {% endif %}
-    <h2 class="h4">Audit information</h2>
-    <p>
-        {{ finding.audit.get_type }} realized by {{ finding.audit.auditor }} on {{ finding.audit.organization }} f
-        rom {{ finding.audit.start_date }} to {{ finding.audit.end_date }}.
+    <h2>
+        Audit information
         <a class="btn btn-sm btn-primary ms-3" role="button" href="{% url 'conformity:audit_detail' finding.audit_id %}">
             <i class="bi bi-ui-checks-grid"></i>
             Audit detail
         </a>
-    </p>
-    {% if finding.audit.get_frameworks %}
-    <p>The following policies were within the audit scope : </p>
-    <ul>
-        {% for framework in finding.audit.get_frameworks %}
-            <li>{{ framework }}</li>
-        {% endfor %}
-    </ul>
-    {% endif %}
+    </h2>
+    <div class="ps-2">
+        <p>
+        Audit of {{ audit.organization }} realised by {{ audit.auditor }} ({{ audit.get_type }}). <br />
+        Performed from {{ audit.start_date }} to {{ audit.end_date }}.
+        Report submitted on the {{ audit.report_date }}.
+        </p>
 
-    <h2 class="h4">Full finding description</h2>
-    <p> {{ finding.description }} </p>
-
-    <h2 class="h4">Associated actions</h2>
-    <div class="col-4 list-group mb-3">
-        {% for action in finding.get_action %}
-            <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-start" href="{% url 'conformity:action_form' action.id %}">
-                {{action}} <span class="badge bg-primary rounded-pill"> {{ action.get_status_display }} </span>
-            </a>
-        {% empty %}
-            <p class="list-group-item list-group-item-warning text-center my-0">No action associated</p>
-        {% endfor %}
-        {% if not finding.archived %}
-            <a class="list-group-item list-group-item-action list-group-item-success text-center text-success"  href="{% url 'conformity:action_create' %}">
-                <i class="bi bi-plus-circle"></i> Register a corrective action
-            </a>
+        {% if finding.audit.get_frameworks %}
+        <p>The following policies were within the audit scope :</p>
+        <ul>
+            {% for framework in finding.audit.get_frameworks %}
+                <li>{{ framework }}</li>
+            {% endfor %}
+        </ul>
         {% endif %}
     </div>
 
-    {% if finding.reference %}
-        <h2 class="h4">External References</h2>
-        <p> {{ finding.reference }} </p>
-    {% endif %}
+    <h2 class="pt-1">Finding detail</h2>
+        <div class="ps-2">
+        <h3>CVSS</h3>
+        <ul>
+            <li>CVSS Score: {{finding.cvss}}</li>
+            <li>CVSS Descriptor :
+                    {% if finding.cvss_descriptor %}
+                    <a class="btn btn-primary" href="https://www.first.org/cvss/calculator/#{{finding.cvss_descriptor}}" target="_blank" role="button">
+                        {{ finding.cvss_descriptor }}
+                        <i class="bi bi-box-arrow-up-right"></i>
+                    </a>
+                    {% else %}
+                    No descriptor
+                    {%endif%}
+                </span>
+            </li>
+        </ul>
+        <h3>Description</h3>
+        <p> {{ finding.description | default:"No detail provided"}} </p>
+        <h3>Observation</h3>
+        <p> {{ finding.observation | default:"No detail provided"}} </p>
+        <h3>Recommendation</h3>
+        <p> {{ finding.recommendation | default:"No detail provided"}} </p>
+
+        <h2  class="pt-1">Associated actions</h2>
+        <div class="col-4 list-group mb-3">
+            {% for action in finding.get_action %}
+                <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-start" href="{% url 'conformity:action_form' action.id %}">
+                    {{action}} <span class="badge bg-primary rounded-pill"> {{ action.get_status_display }} </span>
+                </a>
+            {% empty %}
+                <p class="list-group-item list-group-item-warning text-center my-0">No action associated</p>
+            {% endfor %}
+            {% if not finding.archived %}
+                <a class="list-group-item list-group-item-action list-group-item-success text-center text-success"  href="{% url 'conformity:action_create' %}">
+                    <i class="bi bi-plus-circle"></i> Register a corrective action
+                </a>
+            {% endif %}
+        </div>
+
+        {% if finding.reference %}
+            <h2>External References</h2>
+            <p> {{ finding.reference }} </p>
+        {% endif %}
 
 
-    {% if not finding.archived %}
-        <a href="{% url 'conformity:finding_form' finding.id %}">
-            <button type="button" class="my-3 btn btn-primary bi bi-pencil-square"> Edit the finding</button>
-        </a>
-    {% endif %}
+        {% if not finding.archived %}
+            <a href="{% url 'conformity:finding_form' finding.id %}">
+                <button type="button" class="my-3 btn btn-primary bi bi-pencil-square"> Edit the finding</button>
+            </a>
+        {% endif %}
+    </div>
 
 {% endblock %}
