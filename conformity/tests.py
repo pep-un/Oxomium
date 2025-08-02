@@ -47,7 +47,7 @@ class FrameworkModelTest(TestCase):
     def test_get_requirement(self):
         """Test the get_requirements method of the Framework model"""
         requirements = self.framework.get_requirements()
-        self.assertQuerysetEqual(requirements, [])
+        self.assertEqual(list(requirements), [])
 
     def test_get_requirements_number(self):
         """Test the get_requirements_number method of the Framework model"""
@@ -57,12 +57,12 @@ class FrameworkModelTest(TestCase):
     def test_get_root_requirement(self):
         """Test the get_root_requirement method of the Framework model"""
         root_requirement = self.framework.get_root_requirement()
-        self.assertQuerysetEqual(root_requirement, [])
+        self.assertEqual(list(root_requirement), [])
 
     def test_get_first_requirements(self):
         """Test the get_first_requirements method of the Framework model"""
         first_requirements = self.framework.get_first_requirements()
-        self.assertQuerysetEqual(first_requirements, [])
+        self.assertEqual(list(first_requirements), [])
 
     def test_unique_name(self):
         """Test if the name field is unique"""
@@ -150,7 +150,7 @@ class AuditModelTests(TestCase):
 
     def test_str(self):
         audit = Audit.objects.get(id=1)
-        self.assertEqual(str(audit), "[Organization A] Test Auditor (" + timezone.now().strftime('%b %Y') + ")")
+        self.assertEqual(str(audit), "Test Auditor/Organization A (" + timezone.now().strftime('%b %Y') + ")")
 
     def test_absolute_url(self):
         audit = Audit.objects.get(id=1)
