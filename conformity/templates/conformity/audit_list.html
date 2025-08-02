@@ -15,15 +15,17 @@
             <th scope="col" class="">Type</th>
             <th scope="col" class="">Start</th>
             <th scope="col" class="">End</th>
-            <th scope="col" class="text-center">Findings details</th>
+            <th scope="col" class="text-center">Finding</th>
             <th scope="col" class="text-center">Edit</th>
         </tr>
     </thead>
     <tbody>
     {% for audit in audit_list %}
         <tr>
-            <td class="col-1">
-                {{ audit.name }}
+            <td class="col-2">
+                <a href="{% url 'conformity:audit_detail' audit.id %}">
+                    <span class="badge rounded-pill w-75 bg-primary"> {{ audit.name | default:"<i>Anonymous audit</i>"}} </span>
+                </a>
             </td>
             <td class="col-2">
                 {{ audit.organization }}
@@ -40,10 +42,8 @@
             <td class="col-1">
                 {{ audit.end_date }}
             </td>
-            <td class="col-2 text-center">
-                <a href="{% url 'conformity:audit_detail' audit.id %}">
-                    <button type="button" class="btn btn-primary btn-sm w-75">{{ audit.get_findings_number }} findings</button>
-                </a>
+            <td class="col-1 text-center">
+                    <span class="badge rounded-pill w-50 bg-primary">{{ audit.get_findings_number }}</span>
             </td>
             <td class="col-1 text-center">
                 <a href="{% url 'conformity:audit_form' audit.id %}" class="bi bi-pencil-square"></a>
