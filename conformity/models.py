@@ -307,12 +307,14 @@ class Audit(models.Model):
 
     def __str__(self):
 
+        date_format='%b %Y'
+
         if self.report_date:
-            display_date = self.report_date.strftime('%b %Y')
+            display_date = self.report_date.strftime(date_format)
         elif self.start_date:
-            display_date = self.start_date.strftime('%b %Y')
+            display_date = self.start_date.strftime(date_format)
         elif self.end_date:
-            display_date = self.end_date.strftime('%b %Y')
+            display_date = self.end_date.strftime(date_format)
         else:
             display_date = ""
 
