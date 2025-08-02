@@ -21,10 +21,10 @@
     {% endif %}
 
     <h2 class="h4">Description</h2>
-    <p> {{ audit.description }} </p>
+    <p> {{ audit.description  | linebreaksbr }} </p>
 
     <h2 class="h4">Conclusion</h2>
-    <p> {{ audit.conclusion }} </p>
+    <p> {{ audit.conclusion  | linebreaksbr }} </p>
 
     <h2 class="h4">Finding</h2>
     <div class="row">
