@@ -46,7 +46,7 @@
                     <span class="badge rounded-pill w-50 bg-primary">{{ audit.get_findings_number }}</span>
             </td>
             <td class="col-1 text-center">
-                <a href="{% url 'conformity:audit_form' audit.id %}" class="bi bi-pencil-square"></a>
+                <a href="{% url 'conformity:audit_form' audit.id %}" class="bi bi-pencil-square" title="Edit"></a>
             </td>
         </tr>
     {% empty %}

@@ -27,11 +27,8 @@ class SanityCheckMiddleware:
     @staticmethod
     def check_control_points(today):
         """Checks and updates the status of ControlPoint."""
-        yesterday=today - relativedelta(days=1)
 
         """Update SCHD to TOBE when period start"""
-        s=today.replace(day=1)
-        e=today.replace(day=1) + relativedelta(months=1)
         scheduled_controls = ControlPoint.objects.filter(period_start_date__lte=today,
                                                          period_end_date__gte=today,
                                                          status="SCHD")
