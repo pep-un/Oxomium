@@ -37,10 +37,10 @@
     </p>
 
     <h2>Description</h2>
-    <p> {{ finding.description | default:"No detail provided"}} </p>
+    <p> {{ finding.description | default:"No detail provided" | linebreaksbr }} </p>
 
     <h2>Observation</h2>
-    <p> {{ finding.observation | default:"No detail provided"}} </p>
+    <p> {{ finding.observation | default:"No detail provided" | linebreaksbr }} </p>
 
     <h2>Scoring</h2>
     <p>
@@ -57,7 +57,7 @@
     </p>
 
     <h2>Recommendation</h2>
-    <p> {{ finding.recommendation | default:"No detail provided"}} </p>
+    <p> {{ finding.recommendation | linebreaksbr }} </p>
 
     <h2  class="pt-1">Associated action</h2>
     <div class="col-4 list-group mb-3">
