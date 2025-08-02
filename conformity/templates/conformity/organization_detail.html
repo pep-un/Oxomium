@@ -2,11 +2,11 @@
 
 {% block header %}
     <h1 class="h1 bi bi-building"> Organizations {{ organization }}</h1>
-    <span class="badge text-bg-secondary ms-3"> {{ organization.administrative_id|default:'ø' }}</span>
+    <span class="badge text-bg-secondary ms-3"> {{ organization.administrative_id | default:'ø' }}</span>
 {% endblock %}
 
 {% block content %}
-    <p> {{ organization.description }}</p>
+    <p> {{ organization.description  | linebreaksbr }}</p>
 
     <h2 class="h4">Applicable policy : </h2>
     {% for item in organization.get_frameworks %}
