@@ -379,7 +379,7 @@ class Finding(models.Model):
         MINOR = 'MIN', _('Minor non-conformity')
         OBSERVATION = 'OBS', _('Opportunity For Improvement')
         POSITIVE = 'POS', _('Positive finding')
-        OTHER = 'OTHER', _('Other remark')
+        OTHER = 'OTHER', _('Other comment')
 
     name = models.CharField(max_length=256, blank=True)
     short_description = models.CharField(max_length=256)
@@ -394,8 +394,8 @@ class Finding(models.Model):
         default=Severity.OBSERVATION,
     )
     archived = models.BooleanField(default=False)
-    cvss = models.FloatField(blank=True, null=True, default=None)
-    cvss_descriptor = models.CharField(max_length=256, blank=True)
+    cvss = models.FloatField('CVSS', blank=True, null=True, default=None)
+    cvss_descriptor = models.CharField('CVSS Vector',max_length=256, blank=True)
 
     class Meta:
         ordering = ['severity']

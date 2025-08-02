@@ -1,21 +1,21 @@
 {% extends "conformity/main.html" %}
 
 {% block header %}
-    <h1 class="h1 bi bi-exclamation-diamond"> Actives findings </h1>
+    <h1 class="h1 bi bi-exclamation-diamond"> Active findings </h1>
 {% endblock %}
 
 {% block content %}
 <p class="alert alert-info" role="alert">
     <i class="bi bi-info-circle"> </i> &nbsp
-    Only actives findings from level
+    Only active findings from level
     <span class="badge rounded-pill bg-dark">Critical</span>,
     <span class="badge rounded-pill bg-danger">Major</span>,
     <span class="badge rounded-pill bg-warning">Minor</span> and
     <span class="badge rounded-pill bg-info">Opportunity</span> for improvement are listed for follow-up.
-    Others findings like
+    Other findings like
     <i class="bi bi-archive"></i> Archived findings,
     <span class="badge rounded-pill bg-secondary">Remark</span> and
-    <span class="badge rounded-pill bg-success">Positive</span> finding are not be displayed.
+    <span class="badge rounded-pill bg-success">Positive</span> findings are not displayed.
 </p>
 
 <table class="table table-striped align-middle">
@@ -26,8 +26,7 @@
             <th scope="col" class="">Description</th>
             <th scope="col" class="text-center">CVSS</th>
             <th scope="col" class="text-center">Audit campaign</th>
-            <th scope="col" class="text-center"> Actions </th>
-            <th scope="col" class="text-center">View</th>
+            <th scope="col" class="text-center">Action</th>
             <th scope="col" class="text-center">Edit</th>
         </tr>
     </thead>
@@ -35,6 +34,7 @@
     {% for finding in finding_list %}
         <tr>
             <td class="col-2 text-center">
+                <a href="{% url 'conformity:finding_detail' finding.id  %}" class="">
                 {% if finding.severity == "CRT" %}
                     <span class="badge rounded-pill w-75 bg-dark">{{ finding.name | default:"Critical" }}</span>
                 {% endif %}
@@ -53,6 +53,7 @@
                 {% if finding.severity == "POS" %}
                     <span class="badge rounded-pill w-75 bg-success">{{ finding.name | default:"Positive" }}</span>
                 {% endif %}
+                </a>
             </td>
             <td class="col">
                 {{ finding.short_description }}
@@ -75,9 +76,6 @@
                         </button>
                     </a>
                 {% endif %}
-            </td>
-            <td class="col text-center">
-                <a href="{% url 'conformity:finding_detail' finding.id  %}" class="bi bi-eye"></a>
             </td>
             <td class="col text-center">
                 <a href="{% url 'conformity:finding_form' finding.id %}" class="bi bi-pencil-square"></a>
