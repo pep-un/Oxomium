@@ -5,6 +5,9 @@
 {% endblock %}
 
 {% block content %}
+
+{% include "includes/pagination.html" with page_obj=page_obj %}
+
 <table class="table table-striped align-middle">
     <caption class="d-none">Audit trail of the actions on Oxomium</caption>
     <thead>
@@ -70,4 +73,7 @@
         {% endfor %}
     </tbody>
 </table>
+
+{% include "includes/pagination.html" with page_obj=page_obj %}
+
 {% endblock %}
