@@ -19,7 +19,8 @@
 {% block content %}
 {% if '?control__id=' in request.build_absolute_uri %}
 <p><strong>Titre : </strong> {{ controlpoint_list.0.control.title }} </p>
-<p><strong>Description : </strong> {{ controlpoint_list.0.control.description }} </p>
+<p><strong>Description : </strong></p>
+<p> {{ controlpoint_list.0.control.description | linebreaksbr  }} </p>
 {% endif %}
 
 <div class="container text-center">
