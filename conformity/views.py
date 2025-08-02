@@ -298,6 +298,7 @@ class AttachmentDownloadView(View):
 
 class AuditLogDetailView(LoginRequiredMixin, ListView):
     model = LogEntry
+    paginate_by = 20
 
     def get_queryset(self, **kwargs):
         return LogEntry.objects.all().order_by('-timestamp')
