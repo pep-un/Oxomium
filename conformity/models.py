@@ -120,17 +120,15 @@ class Organization(models.Model):
     def remove_conformity(self, pid):
         """Cascade deletion of conformity"""
         with set_actor('system'):
-            requirement_set = Requirement.objects.filter(framework=pid)
-            for requirement in requirement_set:
-                Conformity.objects.filter(requirement=requirement.id).filter(organization=self.id).delete()
-
+            requirement_set = Requirement.objects.filter(framework=pid).values_list('id', flat=True)
+            Conformity.objects.filter(requirement__in=requirement_set, organization=self.id).delete()
+    
     def add_conformity(self, pid):
         """Automatic creation of conformity"""
         with set_actor('system'):
             requirement_set = Requirement.objects.filter(framework=pid)
-            for requirement in requirement_set:
-                conformity = Conformity(organization=self, requirement=requirement)
-                conformity.save()
+            conformities = [Conformity(organization=self, requirement=requirement) for requirement in requirement_set]
+            Conformity.objects.bulk_create(conformities)
 
 
 class RequirementManager(models.Manager):
@@ -237,16 +235,13 @@ class Conformity(models.Model):
             child.set_responsible(resp)
 
     def update(self):
+        """Update conformity to recursivly update conformity when change"""
         with set_actor('system'):
             children = self.get_children().filter(applicable=True)
-
             if children.exists():
-                children_stat = [child.status for child in children]
-                self.status = mean(children_stat)
+                self.status = children.aggregate(mean_status=models.Avg('status'))['mean_status']
                 self.applicable = True
-
             self.save()
-
             parent = self.get_parent()
             if parent:
                 parent.update()
