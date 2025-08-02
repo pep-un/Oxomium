@@ -52,10 +52,6 @@
             <a href="{% url 'conformity:control_index' %}?control__conformity__id={{con.id}}">
                 <button type="button" class="btn btn-outline-primary btn-sm rounded-pill">{{ con.get_control | length }}</button>
             </a>
-        {% else %}
-            <a href="{% url 'conformity:control_create' %}">
-                <i class="text-success bi bi-plus-circle"> </i>
-            </a>
         {% endif %}
     </td>
 
