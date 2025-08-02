@@ -69,8 +69,12 @@
                 <div class="form-check form-switch my-3">
                     <label class="form-check-label" for="id_applicable">Measure is applicable</label>
                     <input class="form-check-input" type="checkbox" role="switch" id="id_applicable" name="applicable"
-                        {% if conformity.applicable %} checked {% endif %}
-                        >
+                        {% if conformity.applicable %}
+                           checked aria-checked="true"
+                        {% else %}
+                           aria-checked="false"
+                        {% endif %}
+                    >
                 </div>
                 {% bootstrap_field form.responsible %}
                 {% bootstrap_field form.status %}
