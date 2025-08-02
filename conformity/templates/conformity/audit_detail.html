@@ -5,7 +5,7 @@
 {% endblock %}
 
 {% block content %}
-    <h2 class="h4">Audit information</h2>
+    <h2 class="h4">Information</h2>
     <p>
         Audit of {{ audit.organization }} realised by {{ audit.auditor }} ({{ audit.get_type }}). <br />
         Performed from {{ audit.start_date }} to {{ audit.end_date }}.
@@ -20,17 +20,17 @@
     </ul>
     {% endif %}
 
-    <h2 class="h4">Audit description</h2>
+    <h2 class="h4">Description</h2>
     <p> {{ audit.description }} </p>
 
-    <h2 class="h4">Audit conclusion</h2>
+    <h2 class="h4">Conclusion</h2>
     <p> {{ audit.conclusion }} </p>
 
-    <h2 class="h4">Audit findings</h2>
+    <h2 class="h4">Finding</h2>
     <div class="row">
         <div class="col-md-4">
             <div class="card bg-dark text-white">
-                <div class="card-header position-relative"> Critical non-conformity
+                <div class="card-header position-relative"> Critical
                     <span class="badge bg-light text-black position-absolute top-50 end-0 translate-middle-y me-3"> {{ audit.get_critical_findings | length }} </span>
                 </div>
                 <ul class="list-group list-group-flush">
@@ -48,7 +48,7 @@
         </div>
         <div class="col-md-4">
             <div class="card bg-danger text-white">
-                <div class="card-header position-relative"> Major non-conformity
+                <div class="card-header position-relative"> Major
                     <span class="badge bg-light text-black position-absolute top-50 end-0 translate-middle-y me-3"> {{ audit.get_major_findings | length }} </span>
                 </div>
                 <ul class="list-group list-group-flush">
@@ -66,7 +66,7 @@
         </div>
         <div class="col-md-4">
             <div class="card bg-warning text-white">
-                <div class="card-header position-relative"> Minor non-conformity
+                <div class="card-header position-relative"> Minor
                     <span class="badge bg-light text-black position-absolute top-50 end-0 translate-middle-y me-3"> {{ audit.get_minor_findings | length }} </span>
                 </div>
                 <ul class="list-group list-group-flush">
@@ -102,7 +102,7 @@
         </div>
         <div class="col-md-4">
             <div class="card bg-secondary text-white">
-                <div class="card-header position-relative"> Other remark
+                <div class="card-header position-relative"> Comment
                     <span class="badge bg-light text-black position-absolute top-50 end-0 translate-middle-y me-3"> {{ audit.get_other_findings | length }} </span>
                 </div>
                 <ul class="list-group list-group-flush">
@@ -120,7 +120,7 @@
         </div>
         <div class="col-md-4">
             <div class="card bg-success text-white">
-                <div class="card-header position-relative"> Positive finding
+                <div class="card-header position-relative"> Positive comment
                     <span class="badge bg-light text-black position-absolute top-50 end-0 translate-middle-y me-3"> {{ audit.get_positive_findings | length }} </span>
                 </div>
                 <ul class="list-group list-group-flush">
@@ -141,7 +141,7 @@
     <br />
 
     <div class="alert alert-info">
-        <h2 class="h4 bi bi-paperclip"> Attachments </h2>
+        <h2 class="h4 bi bi-paperclip"> Attachment </h2>
         <ul>
             {% for attachment in audit.attachment.all %}
             <li><a href="{% url 'conformity:attachment_download' attachment.id %}"> {{ attachment }} </a></li>
