@@ -177,7 +177,7 @@ class Conformity(models.Model):
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, null=True)
     requirement = models.ForeignKey(Requirement, on_delete=models.CASCADE, null=True)
     applicable = models.BooleanField(default=True)
-    status = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)], null=True, blank=True)
+    status = models.IntegerField(default=None, validators=[MinValueValidator(0), MaxValueValidator(100)], null=True, blank=True)
     responsible = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
     comment = models.TextField(max_length=4096, blank=True)
 
@@ -237,7 +237,7 @@ class Conformity(models.Model):
     def update(self):
         """Update conformity to recursivly update conformity when change"""
         with set_actor('system'):
-            children = self.get_children().filter(applicable=True)
+            children = self.get_children().filter(applicable=True).filter(status__gte=0,status__lte=100)
             if children.exists():
                 self.status = children.aggregate(mean_status=models.Avg('status'))['mean_status']
                 self.applicable = True

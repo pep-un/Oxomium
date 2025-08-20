@@ -33,12 +33,18 @@
                 <div class="progress-bar progress-bar-striped bg-secondary" role="progressbar" style="width: 100%"
                      aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-disabled="true" aria-label="Not applicable">Not applicable</div>
             {% else %}
-                {% if con.status is 100 %}
-                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ con.status }}%"
-                         aria-valuenow="{{ con.status }}" aria-valuemin="0" aria-valuemax="100">{{ con.status }}%</div>
+                {% if con.status is Null %}
+                    <div class="progress-bar bg-light text-black" role="progressbar" style="width: 100%"
+                         aria-valuenow="{{ con.status }}" aria-valuemin="0" aria-valuemax="100"> Not Evaluated</div>
+                {% elif con.status > 79 %}
+                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ con.status }}%; min-width:3em"
+                         aria-valuenow="{{ con.status }}" aria-valuemin="0" aria-valuemax="100">{{ con.status }} %</div>
+                {% elif con.status > 49 %}
+                    <div class="progress-bar bg-warning" role="progressbar" style="width: {{ con.status }}%; min-width:3em"
+                         aria-valuenow="{{ con.status }}" aria-valuemin="0" aria-valuemax="100">{{ con.status }} %</div>
                 {% else %}
-                    <div class="progress-bar" role="progressbar" style="width: {{ con.status }}%"
-                         aria-valuenow="{{ con.status }}" aria-valuemin="0" aria-valuemax="100">{{ con.status }}%</div>
+                    <div class="progress-bar bg-danger" role="progressbar" style="width: {{ con.status }}%; min-width:3em"
+                         aria-valuenow="{{ con.status }}" aria-valuemin="0" aria-valuemax="100">{{ con.status }} %</div>
                 {% endif %}
             {% endif %}
         </div>
