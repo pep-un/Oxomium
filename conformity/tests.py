@@ -240,8 +240,8 @@ class RequirementModelTest(TestCase):
     def test_get_by_natural_key(self):
         self.assertEqual(self.requirement1.natural_key(), 'm1')
 
-    def test_get_children(self):
-        children = self.requirement1.get_children()
+    def test_get_descendants(self):
+        children = self.requirement1.get_descendants()
         self.assertEqual(len(children), 2)
         self.assertIn(self.requirement2, children)
         self.assertIn(self.requirement3, children)
@@ -278,9 +278,9 @@ class ConformityModelTest(TestCase):
         conformity = Conformity.objects.get(id=1)
         self.assertEqual(conformity.get_absolute_url(), '/conformity/organization/1/framework/1/')
 
-    def test_get_children(self):
+    def test_get_descendants(self):
         conformity = Conformity.objects.get(id=1)
-        children = conformity.get_children()
+        children = conformity.get_descendants()
         self.assertEqual(len(children), 2)
         self.assertIn(Conformity.objects.get(id=2), children)
         self.assertIn(Conformity.objects.get(id=3), children)

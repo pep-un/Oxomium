@@ -17,7 +17,7 @@ class ConformityForm(LoginRequiredMixin, ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(ConformityForm, self).__init__(*args, **kwargs)
-        if self.instance.get_children().exists():
+        if self.instance.get_descendants().exists():
             self.fields['status'].disabled = True
 
 
