@@ -19,6 +19,7 @@ from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
 from auditlog.context import set_actor
 import magic, pycountry
+from mptt.models import MPTTModel, TreeForeignKey
 
 User = get_user_model()
 
@@ -72,20 +73,24 @@ class Framework(models.Model):
         return self.Type(self.type).label
 
     def get_requirements(self):
-        """return all Requirement related to the Framework"""
-        return Requirement.objects.filter(framework=self.id).filter(level__gt=0).order_by('name')
+        """return all non-root requirements for this framework"""
+        return (Requirement.objects
+                .filter(framework=self)
+                .exclude(parent__isnull=True)
+                .order_by('tree_id', 'lft'))
 
     def get_requirements_number(self):
         """return the number of leaf Requirement related to the Framework"""
-        return Requirement.objects.filter(framework=self.id).filter(requirement__is_parent=False).count()
+        from django.db.models import F
+        return Requirement.objects.filter(framework=self, rght=F('lft') + 1).count()
 
     def get_root_requirement(self):
         """return the root Requirement of the Framework"""
-        return Requirement.objects.filter(framework=self.id).filter(level=0).order_by('order')
+        return Requirement.objects.filter(framework=self, parent__isnull=True)
 
     def get_first_requirements(self):
         """return the Requirement of the first hierarchical level of the Framework"""
-        return Requirement.objects.filter(framework=self.id).filter(level=1).order_by('order')
+        return Requirement.objects.filter(framework=self, parent__parent__isnull=True).order_by('order')
 
 
 class Organization(models.Model):
@@ -136,7 +141,7 @@ class RequirementManager(models.Manager):
         return self.get(name=name)
 
 
-class Requirement(models.Model):
+class Requirement(MPTTModel):
     """
     A Requirement is a precise requirement.
     Requirement can be hierarchical in order to form a collection of Requirement, aka Framework.
@@ -145,16 +150,14 @@ class Requirement(models.Model):
     objects = RequirementManager()
     code = models.CharField(max_length=5, blank=True)
     name = models.CharField(max_length=50, blank=True, unique=True)
-    level = models.IntegerField(default=0)
     order = models.IntegerField(default=1)
     framework = models.ForeignKey(Framework, on_delete=models.CASCADE)
-    parent = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True)
+    parent = TreeForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='children')
     title = models.CharField(max_length=256, blank=True)
     description = models.TextField(blank=True)
-    is_parent = models.BooleanField(default=False)
 
-    class Meta:
-        ordering = ['name']
+    class MPTTMeta:
+        order_insertion_by = ['order']
 
     def __str__(self):
         return str(self.name) + ": " + str(self.title)
@@ -163,10 +166,6 @@ class Requirement(models.Model):
         return (self.name)
 
     natural_key.dependencies = ['conformity.framework']
-
-    def get_children(self):
-        """Return all children of the requirement"""
-        return Requirement.objects.filter(parent=self.id).order_by('order')
 
 
 class Conformity(models.Model):
@@ -200,18 +199,21 @@ class Conformity(models.Model):
         return reverse('conformity:conformity_detail_index',
                        kwargs={'org': self.organization.id, 'pol': self.requirement.framework.id})
 
-    def get_children(self):
+    def get_descendants(self):
         """Return all children Conformity based on Requirement hierarchy"""
-        return Conformity.objects.filter(organization=self.organization) \
-            .filter(requirement__parent=self.requirement.id).order_by('requirement__order')
+        return (Conformity.objects
+                .filter(organization=self.organization,
+                        requirement__in=self.requirement.get_descendants())
+                .order_by('requirement__order'))
 
     def get_parent(self):
         """Return the parent Conformity based on Requirement hierarchy"""
-        p = Conformity.objects.filter(organization=self.organization).filter(requirement=self.requirement.parent)
-        if len(p) == 1:
-            return p[0]
-        else:
+        req_parent = self.requirement.get_parent()
+        if not req_parent:
             return None
+        return (Conformity.objects
+                .filter(organization=self.organization, requirement=req_parent)
+                .first())
 
     def get_action(self):
         """Return the list of Action associated with this Conformity"""
@@ -231,13 +233,13 @@ class Conformity(models.Model):
         """Update the responsible and apply to child"""
         self.responsible = resp
         self.save()
-        for child in self.get_children():
+        for child in self.get_descendants():
             child.set_responsible(resp)
 
     def update(self):
         """Update conformity to recursivly update conformity when change"""
         with set_actor('system'):
-            children = self.get_children().filter(applicable=True).filter(status__gte=0,status__lte=100)
+            children = self.get_descendants().filter(applicable=True).filter(status__gte=0,status__lte=100)
             if children.exists():
                 self.status = children.aggregate(mean_status=models.Avg('status'))['mean_status']
                 self.applicable = True
@@ -254,9 +256,7 @@ class Conformity(models.Model):
 def post_init_callback(instance, **kwargs):
     """This function keep hierarchy of the Requirement working on each Requirement instantiation"""
     if instance.parent:
-        instance.name = instance.parent.name + "-" + instance.code
-        instance.level = instance.parent.level + 1
-        instance.parent.is_parent = 1
+        instance.name = f"{instance.parent.name}-{instance.code}"
     else:
         instance.name = instance.code
 

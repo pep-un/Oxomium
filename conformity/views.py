@@ -8,10 +8,11 @@ from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import UpdateView, CreateView, DeleteView
 from django_filters.views import FilterView
 from auditlog.models import LogEntry
+from mptt.templatetags.mptt_tags import cache_tree_children
 
 from .filterset import ActionFilter, ControlFilter, ControlPointFilter
 from .forms import ConformityForm, AuditForm, FindingForm, ActionForm, OrganizationForm, ControlForm, ControlPointForm
-from .models import Organization, Framework, Conformity, Audit, Action, Finding, Control, ControlPoint, Attachment
+from .models import Organization, Framework, Conformity, Audit, Action, Finding, Control, ControlPoint, Attachment, Requirement
 
 from django.views import View
 from django.http import HttpResponse
@@ -151,6 +152,12 @@ class FrameworkIndexView(LoginRequiredMixin, ListView):
 
 class FrameworkDetailView(LoginRequiredMixin, DetailView):
     model = Framework
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        qs = Requirement.objects.filter(framework=self.object).order_by('tree_id', 'lft')
+        context['requirement_list'] = cache_tree_children(qs)
+        return context
 
 
 #
