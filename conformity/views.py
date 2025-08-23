@@ -153,6 +153,7 @@ class FrameworkIndexView(LoginRequiredMixin, ListView):
 class FrameworkDetailView(LoginRequiredMixin, DetailView):
     model = Framework
 
+    # Not used yet, to be fixed (issue with recursetree)
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         qs = Requirement.objects.filter(framework=self.object).order_by('tree_id', 'lft')
@@ -178,7 +179,7 @@ class ConformityDetailIndexView(LoginRequiredMixin, ListView):
         return Conformity.objects.filter(organization__id=self.kwargs['org']) \
             .filter(requirement__framework__id=self.kwargs['pol']) \
             .filter(requirement__level=0) \
-            .order_by('requirement__order')
+            .order_by('requirement__tree_id','requirement__lft')
 
 
 class ConformityUpdateView(LoginRequiredMixin, UpdateView):

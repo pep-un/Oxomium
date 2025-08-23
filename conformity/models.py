@@ -181,7 +181,7 @@ class Conformity(models.Model):
     comment = models.TextField(max_length=4096, blank=True)
 
     class Meta:
-        ordering = ['organization', 'requirement']
+        ordering = ['organization', 'requirement__framework', 'requirement__tree_id', 'requirement__lft']
         verbose_name = 'Conformity'
         verbose_name_plural = 'Conformities'
         unique_together = (('organization', 'requirement'),)
@@ -203,8 +203,7 @@ class Conformity(models.Model):
         """Return all children Conformity based on Requirement hierarchy"""
         return (Conformity.objects
                 .filter(organization=self.organization,
-                        requirement__in=self.requirement.get_descendants())
-                .order_by('requirement__order'))
+                        requirement__in=self.requirement.get_descendants()))
 
     def get_parent(self):
         """Return the parent Conformity based on Requirement hierarchy"""
