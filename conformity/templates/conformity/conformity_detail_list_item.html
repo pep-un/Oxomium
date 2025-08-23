@@ -83,7 +83,7 @@
     </td>
 </tr>
 
-{% for con in con.get_children %}
+{% for con in con.get_descendants %}
         {% if con.requirement.level == 1 %}
             {% include 'conformity/conformity_detail_list_item.html' with con=con style="primary" %}
         {% elif con.requirement.level == 2 %}
