@@ -231,50 +231,47 @@ class Conformity(models.Model):
         """Return the list of Control associated with this Conformity"""
         return Control.objects.filter(conformity=self.id)
 
-    def set_status(self, i):
-        """Update the status and call recursive update function"""
-        self.status = i
-        self.save()
-        self.update()
+    def update_responsible(self):
+        """Update the responsible in the descendants when added"""
+        Conformity.objects.filter(
+            organization=self.organization,
+            requirement__in=self.requirement.get_descendants()
+        ).update(responsible=self.responsible)
 
-    def set_responsible(self, resp):
-        """Update the responsible and apply to child"""
-        self.responsible = resp
-        self.save()
-        for child in self.get_descendants():
-            child.set_responsible(resp)
+    def update_status(self):
+        """Update conformity on all ancestor of the updated node"""
+        with set_actor('system'):
+            agg = (Conformity.objects.filter(
+                    organization=self.organization,
+                    requirement__parent=self.requirement,
+                    applicable=True,
+                    status__range=(0, 100),
+                ).aggregate(mean_status=models.Avg("status"))
+            )
 
-    def update(self):
-        """Update conformity to recursively update conformity when change"""
+            if agg["mean_status"] is not None:
+                self.status = agg["mean_status"]
+                self.save()
 
-        # Disable descendant if node is not_applicable
-        if self.applicable == False and not self.requirement.is_leaf_node():
+            parent = self.get_parent()
+            if parent:
+                parent.update_status()
+
+    def update_applicable(self):
+        """Update conformity to recursively apply the non-applicable flax to all descendant"""
+        if not self.applicable and not self.requirement.is_leaf_node():
             descendants = Conformity.objects.filter(
-                requirement__in=self.requirement.get_descendants(include_self=True)
+                organization=self.organization,
+                requirement__in=self.requirement.get_descendants()
             )
             descendants.update(applicable=False)
 
-        # If not disable calculate status
-        else :
-            with set_actor('system'):
-                agg = (Conformity.objects.filter(
-                        organization=self.organization,
-                        requirement__parent=self.requirement,
-                        applicable=True,
-                        status__range=(0, 100),
-                    ).aggregate(mean_status=models.Avg("status"))
-                )
-
-                if agg["mean_status"] is not None:
-                    self.status = agg["mean_status"]
-
-
-        # In both case, save and force parent update
-            self.save()
-            parent = self.get_parent()
-            if parent:
-                parent.update()
-
+        elif self.applicable and self.requirement.is_child_node():
+            ancestors = Conformity.objects.filter(
+                organization=self.organization,
+                requirement__in=self.requirement.get_ancestors()
+            )
+            ancestors.update(applicable=True)
 
 
 # Callback functions
@@ -606,9 +603,9 @@ class Action(models.Model):
     ' Analyse Phase'
     description = models.TextField(max_length=4096, blank=True)
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, blank=True, null=True)
-    associated_conformity = models.ManyToManyField(Conformity, blank=True)
-    associated_findings = models.ManyToManyField(Finding, blank=True)
-    associated_controlPoints = models.ManyToManyField(ControlPoint, blank=True)
+    associated_conformity = models.ManyToManyField(Conformity, blank=True, related_name='actions')
+    associated_findings = models.ManyToManyField(Finding, blank=True, related_name='actions')
+    associated_controlPoints = models.ManyToManyField(ControlPoint, blank=True, related_name='actions')
     #TODO associated_risks = models.ManyToManyField(Risk, blank=True)
 
     ' PLAN phase'
