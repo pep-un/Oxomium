@@ -167,6 +167,10 @@ class Requirement(MPTTModel):
 
     natural_key.dependencies = ['conformity.framework']
 
+    def get_parent(self):
+        return self.get_ancestors().last()
+
+
 
 class Conformity(models.Model):
     """
@@ -205,6 +209,11 @@ class Conformity(models.Model):
                 .filter(organization=self.organization,
                         requirement__in=self.requirement.get_descendants()))
 
+    def get_children(self):
+        """Return all children Conformity based on Requirement hierarchy"""
+        return (Conformity.objects
+                .filter(organization=self.organization,
+                        requirement__in=self.requirement.get_children()))
     def get_parent(self):
         """Return the parent Conformity based on Requirement hierarchy"""
         req_parent = self.requirement.get_parent()
@@ -236,16 +245,36 @@ class Conformity(models.Model):
             child.set_responsible(resp)
 
     def update(self):
-        """Update conformity to recursivly update conformity when change"""
-        with set_actor('system'):
-            children = self.get_descendants().filter(applicable=True).filter(status__gte=0,status__lte=100)
-            if children.exists():
-                self.status = children.aggregate(mean_status=models.Avg('status'))['mean_status']
-                self.applicable = True
+        """Update conformity to recursively update conformity when change"""
+
+        # Disable descendant if node is not_applicable
+        if self.applicable == False and not self.requirement.is_leaf_node():
+            descendants = Conformity.objects.filter(
+                requirement__in=self.requirement.get_descendants(include_self=True)
+            )
+            descendants.update(applicable=False)
+
+        # If not disable calculate status
+        else :
+            with set_actor('system'):
+                agg = (Conformity.objects.filter(
+                        organization=self.organization,
+                        requirement__parent=self.requirement,
+                        applicable=True,
+                        status__range=(0, 100),
+                    ).aggregate(mean_status=models.Avg("status"))
+                )
+
+                if agg["mean_status"] is not None:
+                    self.status = agg["mean_status"]
+
+
+        # In both case, save and force parent update
             self.save()
             parent = self.get_parent()
             if parent:
                 parent.update()
+
 
 
 # Callback functions

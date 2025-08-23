@@ -22,7 +22,7 @@
         </tr>
     </thead>
     <tbody>
-    {% for con in conformity_list.0.get_descendants %}
+    {% for con in conformity_list.0.get_children %}
         {% include 'conformity/conformity_detail_list_item.html' with con=con style="primary" %}
     {% empty %}
         <div class="alert alert-info" role="alert">
