@@ -51,7 +51,7 @@
     </td>
 
     <td class="text-center">
-        {% if con.applicable %}
+        {% if con.applicable and con.responsible%}
             {{ con.responsible|capfirst }}
         {% endif %}
     </td>

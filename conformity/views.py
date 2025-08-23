@@ -16,7 +16,7 @@ from .models import Organization, Framework, Conformity, Audit, Action, Finding,
 
 from django.views import View
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 import os
 
 #
@@ -187,7 +187,30 @@ class ConformityUpdateView(LoginRequiredMixin, UpdateView):
     form_class = ConformityForm
 
     def form_valid(self, form):
-        form.instance.set_status(form.cleaned_data['status'])
+        # starting point of the set_status and status tree update logic
+        self.object = form.save()
+
+        # Object is save, we juste have to update the tree, when needed.
+        if "applicable" in form.changed_data:
+            self.object.update_applicable()
+        if "responsible" in form.changed_data:
+            self.object.update_responsible()
+        if "status" in form.changed_data:
+            self.object.update_status()
+
+        # Manage Save&Next submitting to allow easy filling of the conformity
+        if self.request.POST.get("action") == "save_next":
+            nxt_req = self.object.requirement.get_next_sibling()
+            if nxt_req:
+                try:
+                    nxt = Conformity.objects.get(
+                        organization=self.object.organization,
+                        requirement=nxt_req,
+                    )
+                    return redirect("conformity:conformity_form", nxt.pk)
+                except Conformity.DoesNotExist:
+                    pass
+
         return super().form_valid(form)
 
 
