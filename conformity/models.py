@@ -2,24 +2,27 @@
 Conformity module manage all the manual declarative aspect of conformity management.
 It's Organized around Organization, Framework, Requirement and Conformity classes.
 """
+# Standard library
 from calendar import monthrange
-from statistics import mean
 from datetime import date, timedelta
+from typing import List, Literal, Optional, Tuple
 
-from django.core.exceptions import ValidationError
-from django.db import models
-from django.db.models import Q
-from django.db.models.signals import m2m_changed, pre_save, post_save, post_init
-from django.core.validators import MaxValueValidator, MinValueValidator
-from django.dispatch import receiver
+# Django (third-party)
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db import models
+from django.db.models import Q
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from django.urls import reverse
+
+# Third-party
 from auditlog.context import set_actor
-import magic, pycountry
+from magic import Magic
 from mptt.models import MPTTModel, TreeForeignKey
+from pycountry import languages
 
 User = get_user_model()
 
@@ -47,7 +50,7 @@ class Framework(models.Model):
     class Language():
         @classmethod
         def choices(cls):
-            return[(lang.alpha_2, lang.name) for lang in pycountry.languages if hasattr(lang, 'alpha_2')]
+            return[(lang.alpha_2, lang.name) for lang in languages if hasattr(lang, 'alpha_2')]
 
     objects = FrameworkManager()
     name = models.CharField(max_length=256, unique=True)
@@ -176,12 +179,27 @@ class Conformity(models.Model):
     Conformity represent the conformity of an Organization to a Requirement.
     Value are automatically update for parent requirement conformity
     """
+
+    class StatusJustification(models.TextChoices):
+        EXPERT = 'EXPT', _('From expert statement')
+        CONTROL = 'CTRL', _('From successful control')
+        ACTION = 'ACT', _('From completed action')
+        FINDING = 'FIN', _('From an audit finding')
+        CONFORMITY = 'CONF', _('From conformity aggregation')
+
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, null=True)
     requirement = models.ForeignKey(Requirement, on_delete=models.CASCADE, null=True)
     applicable = models.BooleanField(default=True)
-    status = models.IntegerField(default=None, validators=[MinValueValidator(0), MaxValueValidator(100)], null=True, blank=True)
     responsible = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
     comment = models.TextField(max_length=4096, blank=True)
+    status = models.IntegerField(default=None, validators=[MinValueValidator(0), MaxValueValidator(100)], null=True, blank=True)
+    status_last_update = models.DateTimeField(null=True, blank=True)
+    status_justification = models.CharField(
+        max_length=4,
+        choices=StatusJustification.choices,
+        default=StatusJustification.EXPERT,
+        blank=True,
+    )
 
     class Meta:
         ordering = ['organization', 'requirement__framework', 'requirement__tree_id', 'requirement__lft']
@@ -230,6 +248,96 @@ class Conformity(models.Model):
         """Return the list of Control associated with this Conformity"""
         return Control.objects.filter(conformity=self.id)
 
+    def get_related(self,*,include_actions: bool = True,include_controls: bool = True,
+            only_active: bool = False,negative_only: bool = False,
+            sort: Literal["type_then_title", "recent_first", "alpha"] = "type_then_title",
+            ) -> List[Tuple[Literal["action", "control", "controlpoint"], object]]:
+        """
+        Return a flat list of (kind, instance).
+
+        Modes:
+          - Default (negative_only=False):
+              * 'action'  -> all actions (optionally filtered by only_active -> active=True)
+              * 'control' -> Control objects (no 'active' notion)
+          - Negative evidence (negative_only=True):
+              * 'action'       -> actions IN PROGRESS (non-terminated)
+              * 'controlpoint' -> current-period ControlPoints with NEGATIVE result (NONCOMPLIANT)
+                (If you consider MISSED as negative too, add it in the status filter below.)
+
+        Notes:
+          - 'only_active' affects Actions only in the default mode.
+          - Sorting tries to do something sensible across mixed kinds.
+        """
+        items: List[Tuple[Literal["action", "control", "controlpoint"], object]] = []
+
+        if not negative_only:
+            # ---------- default mode ----------
+            if include_actions:
+                actions_qs = self.actions.filter(active=True) if only_active else self.actions.all()
+                for a in actions_qs:
+                    items.append(("action", a))
+
+            if include_controls:
+                for c in self.get_control():
+                    items.append(("control", c))
+
+        else:
+            # ---------- negative-only mode ----------
+            if include_actions:
+                actions_qs = self.actions.filter(
+                    status__in=[
+                        Action.Status.ANALYSING,
+                        Action.Status.PLANNING,
+                        Action.Status.IMPLEMENTING,
+                        Action.Status.CONTROLLING,
+                    ]
+                )
+                for a in actions_qs:
+                    items.append(("action", a))
+
+            if include_controls:
+                today = date.today()
+                cps = ControlPoint.objects.filter(
+                    control__conformity=self,
+                    period_start_date__lte=today,
+                    period_end_date__gte=today,
+                    status__in=[ControlPoint.Status.NONCOMPLIANT,ControlPoint.Status.MISSED,
+                                ControlPoint.Status.SCHEDULED,ControlPoint.Status.TOBEEVALUATED],
+                )
+
+                for cp in cps:
+                    items.append(("controlpoint", cp))
+
+        # ---------- sorting ----------
+        def _label(obj):
+            # Try common fields, fallback to __str__
+            return (
+                    getattr(obj, "title", None)
+                    or getattr(obj, "name", None)
+                    or getattr(obj, "short_description", None)
+                    or str(obj)
+            )
+
+        if sort == "type_then_title":
+            order_kind = {"action": 0, "control": 1, "controlpoint": 2}
+            items.sort(key=lambda t: (order_kind.get(t[0], 99), _label(t[1])))
+
+        elif sort == "recent_first":
+            # Use whatever "date-ish" we can find: update_date for Action, period_end_date for CP, fallback very old
+            def _updated(obj):
+                return (
+                        getattr(obj, "update_date", None)
+                        or getattr(obj, "period_end_date", None)
+                        or date.min
+                )
+
+            items.sort(key=lambda t: (_updated(t[1]), _label(t[1])), reverse=True)
+
+        elif sort == "alpha":
+            items.sort(key=lambda t: _label(t[1]))
+
+        return items
+
     def update_responsible(self):
         """Update the responsible in the descendants when added"""
         Conformity.objects.filter(
@@ -250,7 +358,9 @@ class Conformity(models.Model):
 
             if agg["mean_status"] is not None:
                 self.status = agg["mean_status"]
-                self.save()
+                self.status_justification = Conformity.StatusJustification.CONFORMITY
+                self.status_last_update = timezone.now()
+                self.save(update_fields=['status', 'status_justification', 'status_last_update'])
 
             parent = self.get_parent()
             if parent:
@@ -271,6 +381,19 @@ class Conformity(models.Model):
                 requirement__in=self.requirement.get_ancestors()
             )
             ancestors.update(applicable=True)
+
+    def set_status_from(self, value: int, justification: "Conformity.StatusJustification"):
+        """Single point to update status + provenance + timestamp."""
+        changed = (self.status != value) or (self.status_justification != justification)
+
+        if changed :
+            related = self.get_related(negative_only=True)
+            if (related and value == 0) or (not related and value == 100) :
+                self.applicable = True
+                self.status = value
+                self.status_justification = justification
+                self.status_last_update = timezone.now()
+                self.save()
 
 
 class Audit(models.Model):
@@ -423,6 +546,9 @@ class Finding(models.Model):
         """Return the list of Action associated with this Findings"""
         return Action.objects.filter(associated_findings=self.id)
 
+    def is_active(self) -> bool:
+        return (not self.archived) and (self.severity != Finding.Severity.POSITIVE)
+
     def update_archived(self):
         """
         Keep `archived` in sync with linked Actions:
@@ -549,16 +675,21 @@ class ControlPoint(models.Model):
             else:
                 instance.status = ControlPoint.Status.SCHEDULED
 
-
     def __str__(self):
         return "[" + str(self.control.organization) + "] " + self.control.title + " (" \
             + self.period_start_date.strftime('%b-%Y') + "⇒" \
             + self.period_end_date.strftime('%b-%Y') + ")"
 
-
     def get_action(self):
         """Return the list of Action associated with this Findings"""
         return Action.objects.filter(associated_controlPoints=self.id)
+
+    def is_current_period(self, when: date | None = None) -> bool:
+        when = when or date.today()
+        return self.period_start_date <= when <= self.period_end_date
+
+    def is_final_status(self) -> bool:
+        return self.status in (ControlPoint.Status.COMPLIANT, ControlPoint.Status.NONCOMPLIANT)
 
 
 class Action(models.Model):
@@ -627,6 +758,17 @@ class Action(models.Model):
         """return the absolute URL for Forms, could probably do better"""
         return reverse('conformity:action_index')
 
+    def is_in_progress(self) -> bool:
+        return self.status in (
+            Action.Status.ANALYSING,
+            Action.Status.PLANNING,
+            Action.Status.IMPLEMENTING,
+            Action.Status.CONTROLLING,
+        )
+
+    def is_completed(self) -> bool:
+        return self.status == Action.Status.ENDED
+
     def save(self, *args, **kwargs):
         """ On save, update timestamps """
         if not self.id:
@@ -659,7 +801,7 @@ class Attachment(models.Model):
         # Read file and set mime_type
         file_content = instance.file.read()
         instance.file.seek(0)
-        mime = magic.Magic(mime=True)
+        mime = Magic(mime=True)
         instance.mime_type = mime.from_buffer(file_content)
 
         # TODO filter on mime type
