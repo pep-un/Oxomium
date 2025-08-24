@@ -385,15 +385,25 @@ class Conformity(models.Model):
     def set_status_from(self, value: int, justification: "Conformity.StatusJustification"):
         """Single point to update status + provenance + timestamp."""
         changed = (self.status != value) or (self.status_justification != justification)
+        if not changed:
+            return False
 
-        if changed :
-            related = self.get_related(negative_only=True)
-            if (related and value == 0) or (not related and value == 100) :
-                self.applicable = True
-                self.status = value
-                self.status_justification = justification
-                self.status_last_update = timezone.now()
-                self.save()
+        if justification == Conformity.StatusJustification.EXPERT and not self.requirement.is_leaf_node():
+            return False
+
+        if justification in [Conformity.StatusJustification.ACTION, Conformity.StatusJustification.CONTROL]:
+            negatives_exist = bool(self.get_related(negative_only=True))
+            if value == 0 and not negatives_exist:
+                return False
+            if value == 100 and negatives_exist:
+                return False
+
+        self.applicable = True
+        self.status = value
+        self.status_justification = justification
+        self.status_last_update = timezone.now()
+        self.save()
+        return True
 
 
 class Audit(models.Model):

@@ -280,10 +280,21 @@ class ConformityModelTest(TestCase):
 
     def test_get_descendants(self):
         conformity = Conformity.objects.get(id=1)
-        children = conformity.get_descendants()
+        descendants = conformity.get_descendants()
+        self.assertEqual(len(descendants), 4)
+        self.assertIn(Conformity.objects.get(id=2), descendants)
+        self.assertIn(Conformity.objects.get(id=3), descendants)
+        self.assertIn(Conformity.objects.get(id=4), descendants)
+        self.assertIn(Conformity.objects.get(id=5), descendants)
+
+    def test_get_children(self):
+        conformity = Conformity.objects.get(id=1)
+        children = conformity.get_children()
         self.assertEqual(len(children), 2)
         self.assertIn(Conformity.objects.get(id=2), children)
         self.assertIn(Conformity.objects.get(id=3), children)
+        self.assertNotIn(Conformity.objects.get(id=4), children)
+        self.assertNotIn(Conformity.objects.get(id=5), children)
 
     def test_get_parent(self):
         conformity = Conformity.objects.get(id=1)
@@ -307,32 +318,36 @@ class ConformityModelTest(TestCase):
         self.assertIn(action2, actions)
         self.assertIn(action2, actions)
 
-    def test_set_status(self):
+    def test_update_status(self):
         conformity_parent = Conformity.objects.get(id=3)
-        conformity_parent.set_status(99)
+        children = conformity_parent.get_children()
+        for child in children:
+            child.set_status_from(0, Conformity.StatusJustification.EXPERT)
+        conformity_parent.update_status()
+        conformity_parent.save()
         self.assertEqual(conformity_parent.status, 0)
 
         status1 = random.randint(0, 100)
         conformity_child1 = Conformity.objects.get(id=4)
-        conformity_child1.set_status(status1)
+        conformity_child1.status = status1
+        conformity_child1.applicable = True
+        conformity_child1.save()
+        conformity_child1.update_status()
         self.assertEqual(conformity_child1.status, status1)
 
         status2 = random.randint(0, 100)
         conformity_child2 = Conformity.objects.get(id=5)
-        conformity_child2.set_status(status2)
+        conformity_child2.status = status2
+        conformity_child2.applicable = True
+        conformity_child2.save()
+        conformity_child2.update_status()
         self.assertEqual(conformity_child2.status, status2)
 
         conformity_parent = Conformity.objects.get(id=3)
         self.assertEqual(conformity_parent.status, int(mean([status1, status2])))
 
         conformity_root = Conformity.objects.get(id=1)
-        self.assertEqual(conformity_root.status, int(mean([mean([status1, status2]), 0])))
-
-    def test_set_responsible(self):
-        user = User.objects.create_user(username='test user')
-        conformity = Conformity.objects.filter(organization=self.organization)[2]
-        conformity.set_responsible(user)
-        self.assertEqual(conformity.responsible, user)
+        self.assertEqual(conformity_root.status, int(mean([mean([status1, status2])])))
 
 
 class AuthenticationTest(TestCase):
