@@ -1,6 +1,6 @@
 from django.db.models.signals import m2m_changed, pre_save, post_save
 from django.dispatch import receiver
-from .models import Organization, Requirement, Control, ControlPoint, Attachment, Action, Finding
+from .models import Organization, Requirement, Control, ControlPoint, Attachment, Action, Finding, Conformity
 
 
 @receiver(post_save, sender=Control)
@@ -60,3 +60,30 @@ def sync_findings_on_m2m(sender, instance, action, reverse, pk_set, **kwargs):
 
     for f in findings:
         f.update_archived()
+
+@receiver(post_save, sender=ControlPoint)
+def on_cp_saved(sender, instance: ControlPoint, **kwargs):
+    """
+    Transactional rule:
+      - NONCOMPLIANT (current period) -> conformity = 0 (CTRL)
+      - COMPLIANT    (current period) -> try conformity = 100 (CTRL) if no negatives remain
+    """
+    if instance.is_current_period() and instance.is_final_status():
+        for conf in instance.control.conformity.all():
+            if instance.status == ControlPoint.Status.NONCOMPLIANT:
+                conf.set_status_from(0, Conformity.StatusJustification.CONTROL)
+            elif instance.status == ControlPoint.Status.COMPLIANT:
+                conf.set_status_from(100, Conformity.StatusJustification.CONTROL)
+
+@receiver(post_save, sender=Action)
+def on_action_saved(sender, instance: Action, **kwargs):
+    """
+    Transactional rule:
+      - in progress -> conformity = 0 (ACT)
+      - ended       -> try conformity = 100 (ACT) if no negatives remain
+    """
+    for conf in instance.associated_conformity.all():
+        if instance.is_in_progress():
+            conf.set_status_from(0, Conformity.StatusJustification.ACTION)
+        elif instance.is_completed():
+            conf.set_status_from(100, Conformity.StatusJustification.ACTION)
