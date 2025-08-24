@@ -171,7 +171,6 @@ class Requirement(MPTTModel):
         return self.get_ancestors().last()
 
 
-
 class Conformity(models.Model):
     """
     Conformity represent the conformity of an Organization to a Requirement.
@@ -272,29 +271,6 @@ class Conformity(models.Model):
                 requirement__in=self.requirement.get_ancestors()
             )
             ancestors.update(applicable=True)
-
-
-# Callback functions
-
-
-@receiver(pre_save, sender=Requirement)
-def post_init_callback(instance, **kwargs):
-    """This function keep hierarchy of the Requirement working on each Requirement instantiation"""
-    if instance.parent:
-        instance.name = f"{instance.parent.name}-{instance.code}"
-    else:
-        instance.name = instance.code
-
-
-@receiver(m2m_changed, sender=Organization.applicable_frameworks.through)
-def change_framework(instance, action, pk_set, *args, **kwargs):
-    if action == "post_add":
-        for pk in pk_set:
-            instance.add_conformity(pk)
-
-    if action == "post_remove":
-        for pk in pk_set:
-            instance.remove_conformity(pk)
 
 
 class Audit(models.Model):
@@ -445,7 +421,21 @@ class Finding(models.Model):
 
     def get_action(self):
         """Return the list of Action associated with this Findings"""
-        return Action.objects.filter(associated_findings=self.id).filter(active=True)
+        return Action.objects.filter(associated_findings=self.id)
+
+    def update_archived(self):
+        """
+        Keep `archived` in sync with linked Actions:
+        - Archive if there are NO active actions.
+        - Unarchive as soon as at least one active action exists.
+        Idempotent: writes only when a change is needed.
+        """
+        has_active_actions = self.actions.filter(active=True).exists()
+        new_archived = not has_active_actions
+
+        if self.archived != new_archived:
+            self.archived = new_archived
+            self.save(update_fields=['archived'])
 
 
 class Control(models.Model):
@@ -570,6 +560,7 @@ class ControlPoint(models.Model):
         """Return the list of Action associated with this Findings"""
         return Action.objects.filter(associated_controlPoints=self.id)
 
+
 class Action(models.Model):
     """
     Action class represent the actions taken by the Organization to improve security.
@@ -642,8 +633,11 @@ class Action(models.Model):
             self.create_date = timezone.now()
         self.update_date = timezone.now()
 
+        """Update active flag depending on status."""
         if self.status in [Action.Status.FROZEN, Action.Status.ENDED, Action.Status.CANCELED]:
             self.active = False
+        else :
+            self.active = True
 
         return super(Action, self).save(*args, **kwargs)
 
@@ -670,11 +664,3 @@ class Attachment(models.Model):
 
         # TODO filter on mime type
 
-#
-# Signal
-#
-
-
-post_save.connect(Control.post_init_callback, sender=Control)
-pre_save.connect(ControlPoint.pre_save, sender=ControlPoint)
-pre_save.connect(Attachment.pre_save, sender=Attachment)
