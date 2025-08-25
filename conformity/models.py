@@ -5,7 +5,7 @@ It's Organized around Organization, Framework, Requirement and Conformity classe
 # Standard library
 from calendar import monthrange
 from datetime import date, timedelta
-from typing import List, Literal, Optional, Tuple
+from typing import List, Literal, Tuple
 
 # Django (third-party)
 from django.conf import settings
@@ -549,7 +549,7 @@ class Finding(models.Model):
         return self.Severity(self.severity).label
 
     def get_absolute_url(self):
-        """"return somewhere else when an edit has work"""
+        """return somewhere else when an edit has work"""
         return reverse('conformity:finding_detail', kwargs={'pk': self.id})
 
     def get_action(self):
