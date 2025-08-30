@@ -10,7 +10,7 @@ from django.utils import timezone
 from .models import Conformity, Organization, Audit, Finding, Action, Control, ControlPoint
 
 
-class ConformityForm(LoginRequiredMixin, ModelForm):
+class ConformityForm(ModelForm):
     class Meta:
         model = Conformity
         fields = ['applicable', 'responsible', 'status', 'comment']
@@ -21,14 +21,14 @@ class ConformityForm(LoginRequiredMixin, ModelForm):
             self.fields['status'].disabled = True
 
 
-class OrganizationForm(LoginRequiredMixin, ModelForm):
+class OrganizationForm(ModelForm):
     attachments = FileField(required=False, widget=ClearableFileInput())
     class Meta:
         model = Organization
         fields = ['name', 'administrative_id', 'description', 'applicable_frameworks']
 
 
-class AuditForm(LoginRequiredMixin, ModelForm):
+class AuditForm(ModelForm):
     attachments = FileField(required=False, widget=ClearableFileInput())
     class Meta:
         model = Audit
@@ -36,7 +36,7 @@ class AuditForm(LoginRequiredMixin, ModelForm):
         exclude = ['attachment']
 
 
-class FindingForm(LoginRequiredMixin, ModelForm):
+class FindingForm(ModelForm):
     class Meta:
         model = Finding
         fields = ['name', 'audit', 'severity', 'short_description', 'description', 'observation', 'recommendation', 'reference', 'cvss', 'cvss_descriptor', 'archived']
@@ -50,7 +50,7 @@ class FindingForm(LoginRequiredMixin, ModelForm):
                 self.fields[key].disabled = True
 
 
-class ActionForm(LoginRequiredMixin, ModelForm):
+class ActionForm(ModelForm):
     class Meta:
         model = Action
         fields = '__all__'
@@ -80,13 +80,13 @@ class ActionForm(LoginRequiredMixin, ModelForm):
                 self.fields[key].disabled = True
 
 
-class ControlForm(LoginRequiredMixin, ModelForm):
+class ControlForm(ModelForm):
     class Meta:
         model = Control
         fields = '__all__'
 
 
-class ControlPointForm(LoginRequiredMixin, ModelForm):
+class ControlPointForm(ModelForm):
     attachments = FileField(required=False, widget=ClearableFileInput())
     class Meta:
         model = ControlPoint
