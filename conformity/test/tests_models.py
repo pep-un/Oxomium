@@ -1,23 +1,9 @@
-import glob
-import importlib
-from calendar import monthrange
-from datetime import date, timedelta, datetime
-
-from dateutil.utils import today
-from dateutil.relativedelta import relativedelta
-from django.conf import settings
 from django.db import IntegrityError
-from django.test import TestCase, Client
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.urls import reverse
-from django.utils import timezone, inspect
-from django.views import View
+from django.test import TestCase
 
-from .models import Framework, Organization, Audit, Finding, Requirement, Conformity, Action, User, Control, ControlPoint
-from .views import *
-from .middleware import SanityCheckMiddleware
+from conformity.models import *
 
-import random, inspect
+import random
 from statistics import mean
 
 # pylint: disable=no-member
@@ -350,48 +336,7 @@ class ConformityModelTest(TestCase):
         self.assertEqual(conformity_root.status, int(mean([mean([status1, status2])])))
 
 
-class AuthenticationTest(TestCase):
-    def setUp(self):
-        self.client = Client()
-        self.views = [
-            # View
-            HomeView,
-            AuditIndexView,
-            AuditDetailView,
-            AuditUpdateView,
-            AuditCreateView,
-            FindingCreateView,
-            FindingDetailView,
-            FindingUpdateView,
-            OrganizationIndexView,
-            OrganizationDetailView,
-            OrganizationUpdateView,
-            OrganizationCreateView,
-            FrameworkIndexView,
-            FrameworkDetailView,
-            ConformityIndexView,
-            ConformityDetailIndexView,
-            ConformityUpdateView,
-            ActionCreateView,
-            ActionIndexView,
-            ActionUpdateView,
-            AuditLogDetailView,
-            # Form
-            #ConformityForm, #TODO issue with the references at the Form instantiation. Exclude from test.
-            OrganizationForm,
-            AuditForm,
-            FindingForm,
-            ActionForm,
-        ]
-
-    def test_auth_view(self):
-        for view in self.views:
-            view_instance = view()
-            mixins = view_instance.__class__.__bases__
-            self.assertTrue(LoginRequiredMixin in mixins, f"{view.__name__} does not have LoginRequiredMixin")
-
-
-class ControlTest(TestCase):
+class ControlModelTest(TestCase):
     def setUp(self):
         self.yearly_control = Control.objects.create(title='Yearly control', frequency=Control.Frequency.YEARLY)
         self.halfyearly_control = Control.objects.create(title='Half-yearly control', frequency=Control.Frequency.HALFYEARLY)
@@ -464,7 +409,7 @@ class ControlTest(TestCase):
             self.assertEqual(monthly_cp_list[i-1].period_end_date, date(year, i, end_day))
 
 
-class ControlPointTest(TestCase):
+class ControlPointModelTest(TestCase):
     def setUp(self):
         today = date.today()
         self.ctrl = Control.objects.create(title='Yearly', frequency=Control.Frequency.YEARLY)
@@ -485,145 +430,3 @@ class ControlPointTest(TestCase):
 
     def test_get_absolute_url(self):
         self.assertEqual(ControlPoint.objects.first().get_absolute_url(), '/control/')
-
-
-class SanityCheckMiddlewareTest(TestCase):
-    @classmethod
-    def setUpTestData(cls):
-        """Set up test data for all tests."""
-        today = datetime.today().date()
-
-        # Create a user and a control instance as they are foreign keys in ControlPoint
-        cls.user = User.objects.create_user(username='testuser', password='password')
-        cls.control = Control.objects.create(title="Test Control")
-
-        # Control points that should be marked as 'MISS'
-        cls.missed_control_1 = ControlPoint.objects.create(
-            control=cls.control,
-            control_user=cls.user,
-            period_start_date=today - relativedelta(days=10),
-            period_end_date=today - relativedelta(days=1),  # missed yesterday
-            status="TOBE"
-        )
-        cls.missed_control_3 = ControlPoint.objects.create(
-            control=cls.control,
-            control_user=cls.user,
-            period_start_date=today - relativedelta(days=10),
-            period_end_date=today - relativedelta(days=5),  # missed 5 days ago
-            status="TOBE"
-        )
-
-        # Control points that should not be updated (not in TOBE status)
-        cls.not_missed_control = ControlPoint.objects.create(
-            control=cls.control,
-            control_user=cls.user,
-            period_start_date=today - relativedelta(days=10),
-            period_end_date=today - relativedelta(days=5),  # missed but not in TOBE
-            status="MISS"
-        )
-        cls.not_missed_control_2 = ControlPoint.objects.create(
-            control=cls.control,
-            control_user=cls.user,
-            period_start_date=today - relativedelta(days=10),
-            period_end_date=today,  # today is not miss
-            status="TOBE"
-        )
-
-        # Control points that should be marked as 'TOBE'
-        cls.scheduled_control_1 = ControlPoint.objects.create(
-            control=cls.control,
-            control_user=cls.user,
-            period_start_date=today.replace(day=1),
-            period_end_date=today.replace(day=1) + relativedelta(months=1) - relativedelta(days=1),
-            status="SCHD"
-        )
-        cls.scheduled_control_2 = ControlPoint.objects.create(
-            control=cls.control,
-            control_user=cls.user,
-            period_start_date=today.replace(day=1) - relativedelta(months=3),
-            period_end_date=today.replace(day=1) + relativedelta(months=2),
-            status="SCHD"
-        )
-
-        # Control point that should stay in SCHED
-        cls.scheduled_control_3 = ControlPoint.objects.create(
-            control=cls.control,
-            control_user=cls.user,
-            period_start_date=today + relativedelta(days=1),
-            period_end_date=today + relativedelta(days=30),
-            status="SCHD"
-        )
-
-        # Control point that should not be updated (not in SCHD status)
-        cls.not_scheduled_control = ControlPoint.objects.create(
-            control=cls.control,
-            control_user=cls.user,
-            period_start_date=today.replace(day=1),
-            period_end_date=today.replace(day=1) + relativedelta(months=1) - relativedelta(days=1),
-            status="TOBE"
-        )
-
-        # Control point that should not be updated (OK ou NOK)
-        cls.ok_control = ControlPoint.objects.create(
-            control=cls.control,
-            control_user=cls.user,
-            period_start_date=today.replace(day=1),
-            period_end_date=today.replace(day=1) + relativedelta(months=1) - relativedelta(days=1),
-            status="OK"
-        )
-        cls.nok_control = ControlPoint.objects.create(
-            control=cls.control,
-            control_user=cls.user,
-            period_start_date=today.replace(day=1) - relativedelta(months=3),
-            period_end_date=today.replace(day=1) - relativedelta(days=1),
-            status="NOK"
-        )
-
-    def test_missed_controls_update(self):
-        """Test that missed controls are updated to 'MISS'."""
-        today = datetime.today().date()
-        SanityCheckMiddleware.check_control_points(today)
-
-        self.missed_control_1.refresh_from_db()
-        self.not_missed_control_2.refresh_from_db()
-        self.missed_control_3.refresh_from_db()
-
-        self.assertEqual(self.missed_control_1.status, 'MISS')
-        self.assertEqual(self.not_missed_control_2.status, 'TOBE')
-        self.assertEqual(self.missed_control_3.status, 'MISS')
-
-    def test_scheduled_controls_update(self):
-        """Test that scheduled controls are updated to 'TOBE'."""
-        today = datetime.today().date()
-        SanityCheckMiddleware.check_control_points(today)
-
-        self.scheduled_control_1.refresh_from_db()
-        self.scheduled_control_2.refresh_from_db()
-        self.scheduled_control_3.refresh_from_db()
-
-        self.assertEqual(self.scheduled_control_1.status, 'TOBE')
-        self.assertEqual(self.scheduled_control_2.status, 'TOBE')
-        self.assertEqual(self.scheduled_control_3.status, 'SCHD')
-
-    def test_no_update(self):
-        """Test some control that should not be updated"""
-        today = datetime.today().date()
-        SanityCheckMiddleware.check_control_points(today)
-
-        """Test a SCHD control that should not switch to TOBE"""
-        self.scheduled_control_3.refresh_from_db()
-        self.assertEqual(self.scheduled_control_3.status, 'SCHD')
-
-        """Test that controls not in 'TOBE' or 'SCHD' are not updated."""
-        self.not_missed_control.refresh_from_db()
-        self.not_scheduled_control.refresh_from_db()
-
-        self.assertEqual(self.not_missed_control.status, 'MISS')
-        self.assertEqual(self.not_scheduled_control.status, 'TOBE')
-
-        """Test that controls not in 'OK' or 'NOK' are not updated."""
-        self.ok_control.refresh_from_db()
-        self.nok_control.refresh_from_db()
-
-        self.assertEqual(self.ok_control.status, 'OK')
-        self.assertEqual(self.nok_control.status, 'NOK')
