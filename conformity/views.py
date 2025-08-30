@@ -310,7 +310,7 @@ class AttachmentIndexView(LoginRequiredMixin, ListView):
     model = Attachment
 
 
-class AttachmentDownloadView(View):
+class AttachmentDownloadView(LoginRequiredMixin, View):
     def get(self, request, pk):
         attachment = get_object_or_404(Attachment, id=pk)
 
