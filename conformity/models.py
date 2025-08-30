@@ -13,7 +13,7 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -561,17 +561,23 @@ class Finding(models.Model):
 
     def update_archived(self):
         """
-        Keep `archived` in sync with linked Actions:
-        - Archive if there are NO active actions.
-        - Unarchive as soon as at least one active action exists.
-        Idempotent: writes only when a change is needed.
+        Keep `archived` consistent with linked Actions, using a single DB query:
+        - If there are actions AND none is active -> archived = True
+        - Otherwise (no actions OR at least one active) -> archived = False
+        Idempotent: only writes when the value actually changes.
         """
-        has_active_actions = self.actions.filter(active=True).exists()
-        new_archived = not has_active_actions
+        agg = self.actions.aggregate(
+            total=Count("pk"),
+            active=Count("pk", filter=Q(active=True)),
+        )
+        total = agg["total"] or 0
+        active = agg["active"] or 0
+
+        new_archived = (total > 0 and active == 0)
 
         if self.archived != new_archived:
             self.archived = new_archived
-            self.save(update_fields=['archived'])
+            self.save(update_fields=["archived"])
 
 
 class Control(models.Model):
