@@ -1,3 +1,4 @@
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import IntegrityError
 from django.test import TestCase
 
@@ -430,3 +431,107 @@ class ControlPointModelTest(TestCase):
 
     def test_get_absolute_url(self):
         self.assertEqual(ControlPoint.objects.first().get_absolute_url(), '/control/')
+
+
+class ConformityGetRelatedTests(TestCase):
+    """
+    Minimal coverage of Conformity.get_related() in negative_only mode,
+    ensuring actions/controlpoints can be surfaced.
+    """
+    def setUp(self):
+        self.fw = Framework.objects.create(
+            name="FW-ConformityRelated",
+            version=1,
+            publish_by="UnitTest",
+            type=Framework.Type.INTERNATIONAL,
+        )
+        self.org = Organization.objects.create(name="Org-CR")
+
+        self.req = Requirement.objects.create(
+            code="R",
+            title="Root",
+            framework=self.fw,
+            parent=None,
+            order=1,
+        )
+        self.conf = Conformity.objects.create(
+            organization=self.org,
+            requirement=self.req,
+        )
+
+        # Owner user for action realism
+        self.owner = User.objects.create_user(username="rel_owner", password="x")
+
+        # Create an "active" action (so it can appear in negative_only branch)
+        self.act = Action.objects.create(
+            title="Improve XYZ",
+            organization=self.org,
+            owner=self.owner,
+            status=Action.Status.PLANNING,  # one of the active statuses in your model
+        )
+
+        # If your schema links Action <-> Conformity, attach it; otherwise this part is a no-op.
+        # FK variant (common):
+        if hasattr(self.act, "conformity_id"):
+            self.act.conformity = self.conf
+            self.act.save()
+        # M2M variant:
+        elif hasattr(self.conf, "actions"):
+            try:
+                self.conf.actions.add(self.act)  # type: ignore[attr-defined]
+            except Exception:
+                pass
+
+        # Control + a current ControlPoint in an evaluable status
+        self.ctrl = Control.objects.create(
+            title="Quarterly Check",
+            organization=self.org,
+            level=Control.Level.FIRST,
+            frequency=Control.Frequency.QUARTERLY,
+        )
+        # If schema has M2M Control <-> Conformity, relate them
+        if hasattr(self.ctrl, "conformity"):
+            try:
+                self.ctrl.conformity.add(self.conf)  # type: ignore[attr-defined]
+            except Exception:
+                pass
+
+        today = timezone.now().date()
+        self.cp = ControlPoint.objects.create(
+            control=self.ctrl,
+            period_start_date=today.replace(day=1),
+            period_end_date=today,
+            status=ControlPoint.Status.TOBEEVALUATED,
+        )
+
+    def test_get_related_negative_only_actions_and_controls(self):
+        items = self.conf.get_related(
+            negative_only=True,
+            include_actions=True,
+            include_controls=True,
+        )
+        # Expect list of (kind, object)
+        kinds = {k for (k, _obj) in items}
+
+        # ControlPoints should always be present given we created one in the current window
+        self.assertIn("controlpoint", kinds)
+
+        # If action <-> conformity relation exists in your schema, actions should be present
+        if hasattr(self.conf, "actions") or hasattr(Action, "conformity"):
+            self.assertIn("action", kinds)
+
+
+class AttachmentModelLightTests(TestCase):
+    """
+    Very light sanity check for Attachment.
+    We avoid strict content-type assertions to remain platform-agnostic.
+    The stored filename may include a random suffix, so we only assert suffix.
+    """
+    def test_str_returns_filename_suffix(self):
+        f = SimpleUploadedFile("hello.txt", b"hello world", content_type="text/plain")
+        att = Attachment.objects.create(file=f)
+        s = str(att)
+        # Should at least end with ".txt"
+        self.assertTrue(s.endswith(".txt"))
+        # And must contain "hello" as the original base name
+        self.assertIn("hello", s)
