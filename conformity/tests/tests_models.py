@@ -1,6 +1,7 @@
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import IntegrityError
 from django.test import TestCase
+from django.urls import NoReverseMatch
 
 from conformity.models import *
 
@@ -535,3 +536,229 @@ class AttachmentModelLightTests(TestCase):
         self.assertTrue(s.endswith(".txt"))
         # And must contain "hello" as the original base name
         self.assertIn("hello", s)
+
+
+class FrameworkLanguageChoicesTests(TestCase):
+    """Minimal sanity checks for Framework.Language.choices()"""
+    def test_language_choices_shape(self):
+        tuples = Framework.Language.choices()
+        self.assertIsInstance(tuples, list)
+        if tuples:
+            code, label = tuples[0]
+            self.assertIsInstance(code, str)
+            self.assertLessEqual(len(code), 3)  # usually alpha-2, sometimes others
+            self.assertIsInstance(label, str)
+
+class ConformityRelationAndGuardsTests(TestCase):
+    def setUp(self):
+        self.org = Organization.objects.create(name="Org X")
+        self.fw = Framework.objects.create(name="FW-Appended", version=1, publish_by="X",
+                                           type=Framework.Type.POLICY)
+        # Build a tiny requirement tree
+        self.root = Requirement.objects.create(framework=self.fw, name="R", level=0)
+        self.child = Requirement.objects.create(framework=self.fw, name="R.1", level=1, parent=self.root)
+        # Create conformities
+        self.org.add_conformity(self.fw)
+        self.c_root = Conformity.objects.get(organization=self.org, requirement=self.root)
+        self.c_child = Conformity.objects.get(organization=self.org, requirement=self.child)
+
+    def test_get_control(self):
+        ctl = Control.objects.create(title="C1", organization=self.org)
+        ctl.conformity.add(self.c_child)
+        res = list(self.c_child.get_control())
+        self.assertEqual(res, [ctl])
+
+    def test_get_related_default_and_negative_modes(self):
+        # Action linked to conformity
+        a = Action.objects.create(title="A1", organization=self.org, status=Action.Status.ANALYSING)
+        a.associated_conformity.add(self.c_child)
+
+        # ControlPoint for "today" window and set as NONCOMPLIANT
+        ctl = Control.objects.create(title="C2", organization=self.org)
+        ctl.conformity.add(self.c_child)
+        # generate CPs
+        Control.post_init_callback(ctl)
+        # grab a CP in current period or just take first and force dates around today
+        cp = ctl.get_controlpoint().first()
+        # ensure current period
+        from datetime import date, timedelta
+        cp.period_start_date = date.today() - timedelta(days=1)
+        cp.period_end_date = date.today() + timedelta(days=1)
+        ControlPoint.pre_save(ControlPoint, cp)
+        cp.status = ControlPoint.Status.NONCOMPLIANT
+        cp.save()
+
+        # Default mode: actions + controls
+        kinds = [k for k,_ in self.c_child.get_related()]
+        self.assertIn("action", kinds)
+        self.assertIn("control", kinds)
+
+        # Negative-only: actions in progress + negative controlpoints
+        kinds_neg = [k for k,_ in self.c_child.get_related(negative_only=True)]
+        self.assertIn("action", kinds_neg)
+        self.assertIn("controlpoint", kinds_neg)
+
+        # Sorting variants should not crash and return same elements as set
+        s1 = set(self.c_child.get_related(sort="alpha"))
+        s2 = set(self.c_child.get_related(sort="recent_first"))
+        self.assertSetEqual({t[0] for t in s1}, {t[0] for t in s2})
+
+    def test_update_applicable_descendants_and_ancestors(self):
+        # Turn root non-applicable -> child must become non-applicable as well
+        self.c_root.applicable = False
+        self.c_root.save(update_fields=["applicable"])
+        self.c_root.update_applicable()
+        self.c_child.refresh_from_db()
+        self.assertFalse(self.c_child.applicable)
+
+        # Turn child applicable -> ancestors should be applicable
+        self.c_child.applicable = True
+        self.c_child.save(update_fields=["applicable"])
+        self.c_child.update_applicable()
+        self.c_root.refresh_from_db()
+        self.assertTrue(self.c_root.applicable)
+
+    def test_update_responsible_propagates(self):
+        user = get_user_model().objects.create(username="bob")
+        self.c_root.responsible = user
+        self.c_root.save(update_fields=["responsible"])
+        self.c_root.update_responsible()
+        self.c_child.refresh_from_db()
+        self.assertEqual(self.c_child.responsible, user)
+
+    def test_set_status_from_guards(self):
+        # EXPERT must be refused on non-leaf
+        before = (self.c_root.status, self.c_root.status_justification)
+        changed = self.c_root.set_status_from(50, Conformity.StatusJustification.EXPERT)
+        self.assertFalse(changed)
+        self.c_root.refresh_from_db()
+        self.assertEqual((self.c_root.status, self.c_root.status_justification), before)
+
+        # ACTION 0% requires negative evidence -> with none, must refuse
+        changed = self.c_child.set_status_from(0, Conformity.StatusJustification.ACTION)
+        self.assertFalse(changed)
+
+        # With negative evidence present, 100% must be refused
+        a = Action.objects.create(title="A2", organization=self.org, status=Action.Status.ANALYSING)
+        a.associated_conformity.add(self.c_child)
+        ctl = Control.objects.create(title="C3", organization=self.org)
+        ctl.conformity.add(self.c_child)
+        Control.post_init_callback(ctl)
+        cp = ctl.get_controlpoint().first()
+        from datetime import date, timedelta
+        cp.period_start_date = date.today() - timedelta(days=1)
+        cp.period_end_date = date.today() + timedelta(days=1)
+        ControlPoint.pre_save(ControlPoint, cp)
+        cp.status = ControlPoint.Status.NONCOMPLIANT
+        cp.save()
+        changed = self.c_child.set_status_from(100, Conformity.StatusJustification.CONTROL)
+        self.assertFalse(changed)
+
+class AuditAndFindingExtraTests(TestCase):
+    def setUp(self):
+        self.org = Organization.objects.create(name="Org Y")
+        self.fw = Framework.objects.create(name="FW-Audit", version=1, publish_by="X",
+                                           type=Framework.Type.POLICY)
+        self.audit = Audit.objects.create(name="Audit1", auditor="Auditor 1", organization=self.org)
+
+    def test_audit_positive_and_other_filters(self):
+        Finding.objects.create(short_description="pos", audit=self.audit, severity=Finding.Severity.POSITIVE)
+        Finding.objects.create(short_description="other", audit=self.audit, severity=Finding.Severity.OTHER)
+        self.assertEqual(self.audit.get_positive_findings().count(), 1)
+        self.assertEqual(self.audit.get_other_findings().count(), 1)
+
+    def test_finding_helpers_and_archived_logic(self):
+        f = Finding.objects.create(short_description="x", audit=self.audit, severity=Finding.Severity.MAJOR)
+        # is_active True by default (not archived, not positive)
+        self.assertTrue(f.is_active())
+
+        # cvss validation
+        f.cvss = 10.1
+        with self.assertRaises(ValidationError):
+            f.clean()
+        f.cvss = 0.05
+        with self.assertRaises(ValidationError):
+            f.clean()
+
+        # update_archived with actions
+        a1 = Action.objects.create(title="A", organization=self.org, status=Action.Status.ANALYSING)
+        a1.associated_findings.add(f)
+        f.update_archived()
+        f.refresh_from_db()
+        self.assertFalse(f.archived)  # at least one active
+
+        # all actions inactive -> archived True
+        a1.status = Action.Status.ENDED
+        a1.save()
+        f.update_archived()
+        f.refresh_from_db()
+        self.assertTrue(f.archived)
+
+    def test_get_absolute_urls_exist(self):
+        f = Finding.objects.create(short_description="url", audit=self.audit, severity=Finding.Severity.MINOR)
+        try:
+            url = f.get_absolute_url()
+            self.assertIsInstance(url, str)
+        except NoReverseMatch:
+            self.skipTest("URLconf for 'conformity:finding_detail' not available")
+        a = Action.objects.create(title="A-URL", organization=self.org, status=Action.Status.ANALYSING)
+        try:
+            url2 = a.get_absolute_url()
+            self.assertIsInstance(url2, str)
+        except NoReverseMatch:
+            self.skipTest("URLconf for 'conformity:action_index' not available")
+
+class ControlAndControlPointExtrasTests(TestCase):
+    def setUp(self):
+        self.org = Organization.objects.create(name="Org Z")
+        self.ctl = Control.objects.create(title="Ctl", organization=self.org)
+
+    def test_control_str_and_get_controlpoint_and_signal_idempotent(self):
+        # initial creation generates CPs via callback
+        Control.post_init_callback(self.ctl)
+        cps = list(self.ctl.get_controlpoint())
+        self.assertTrue(len(cps) >= 1)
+        # running again shouldn't duplicate the same periods
+        Control.post_init_callback(self.ctl)
+        cps2 = list(self.ctl.get_controlpoint())
+        # By comparing (start,end) pairs
+        pairs = {(c.period_start_date, c.period_end_date) for c in cps2}
+        self.assertEqual(len(pairs), len(cps2))
+
+        s = str(self.ctl)
+        self.assertIn("Ctl", s)
+
+    def test_controlpoint_helpers_and_boundaries(self):
+        Control.post_init_callback(self.ctl)
+        cp = self.ctl.get_controlpoint().first()
+        # Force dates around today and compute status via pre_save
+        from datetime import date, timedelta
+        cp.period_start_date = date.today()
+        cp.period_end_date = date.today()
+        ControlPoint.pre_save(ControlPoint, cp)
+        self.assertEqual(cp.status, ControlPoint.Status.TOBEEVALUATED)
+        # helper methods
+        self.assertTrue(cp.is_current_period(date.today()))
+        self.assertTrue(cp.is_final_status() in (False, True))  # just ensure it returns a bool
+
+        # get_action linkage
+        act = Action.objects.create(title="AC", organization=self.org, status=Action.Status.ANALYSING)
+        act.associated_controlPoints.add(cp)
+        acts = list(cp.get_action())
+        self.assertEqual(acts, [act])
+
+class ActionExtrasTests(TestCase):
+    def setUp(self):
+        self.org = Organization.objects.create(name="Org A")
+
+    def test_action_basic_helpers_and_save_side_effects(self):
+        a = Action.objects.create(title="T", organization=self.org, status=Action.Status.ANALYSING)
+        self.assertTrue(a.is_in_progress())
+        self.assertFalse(a.is_completed())
+        # saving with ENDED should flip active False
+        a.status = Action.Status.ENDED
+        a.save()
+        self.assertFalse(a.active)
+        # and __str__ should include organization and title
+        s = str(a)
+        self.assertIn("T", s)
