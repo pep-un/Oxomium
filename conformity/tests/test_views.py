@@ -2,6 +2,7 @@ from unittest import mock
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase, RequestFactory
+from django.urls import reverse
 from django.utils import timezone
 
 from conformity import views
@@ -9,6 +10,7 @@ from conformity.models import (
     Organization, Framework, Requirement, Conformity,
     Audit, Action, Finding, Control, ControlPoint, Attachment
 )
+from conformity.views import ConformityUpdateView
 
 User = get_user_model()
 
@@ -103,7 +105,7 @@ class BaseDataMixin:
         )
 
 
-class TestLoginRequired(BaseDataMixin, TestCase):
+class LoginRequired(BaseDataMixin, TestCase):
     FRAMEWORK_NAME = "FW-LoginRequired"
 
     def test_home_requires_login(self):
@@ -114,7 +116,7 @@ class TestLoginRequired(BaseDataMixin, TestCase):
         self.assertIn(response.status_code, (301, 302))
 
 
-class TestHomeViewContext(BaseDataMixin, TestCase):
+class HomeViewContext(BaseDataMixin, TestCase):
     FRAMEWORK_NAME = "FW-HomeView"
 
     def test_context_lists_and_filters(self):
@@ -134,7 +136,7 @@ class TestHomeViewContext(BaseDataMixin, TestCase):
         self.assertIn(self.cp, list(ctx["cp_list"]))
 
 
-class TestFindingIndexView(BaseDataMixin, TestCase):
+class FindingIndexView(BaseDataMixin, TestCase):
     FRAMEWORK_NAME = "FW-FindingIndex"
 
     def test_queryset_filters_severity_and_archived(self):
@@ -149,7 +151,7 @@ class TestFindingIndexView(BaseDataMixin, TestCase):
         self.assertNotIn(self.find_maj_arch, qs)
 
 
-class TestConformityIndexViews(BaseDataMixin, TestCase):
+class ConformityIndexViews(BaseDataMixin, TestCase):
     FRAMEWORK_NAME = "FW-ConformityIndex"
 
     def test_conformity_index_queryset_level0(self):
@@ -169,3 +171,38 @@ class TestConformityIndexViews(BaseDataMixin, TestCase):
         self.assertEqual(resp.status_code, 200)
         objs = list(resp.context_data["object_list"])
         self.assertEqual(objs, [self.c_root])
+
+class ConformitySaveNextTests(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.user = User.objects.create_user(username="u1", password="p")
+        self.org = Organization.objects.create(name="Org-SaveNext")
+        self.fw = Framework.objects.create(name="FW-SaveNext")
+        self.root = Requirement.objects.create(framework=self.fw, code="R")
+        self.a = Requirement.objects.create(framework=self.fw, code="A", parent=self.root, order=1)
+        self.b = Requirement.objects.create(framework=self.fw, code="B", parent=self.root, order=2)
+        # Conformities for A and B (root is auto via signals in ton setup, sinon crée-les)
+        self.ca = Conformity.objects.create(organization=self.org, requirement=self.a)
+        self.cb = Conformity.objects.create(organization=self.org, requirement=self.b)
+
+    def test_save_next_redirects_to_sibling(self):
+        # Simulate POST with "save_next"
+        url = reverse("conformity:conformity_form", args=[self.ca.pk])
+        data = {"status": 100, "applicable": True, "action": "save_next"}
+        request = self.factory.post(url, data=data)
+        request.user = self.user
+
+        resp = ConformityUpdateView.as_view()(request, pk=self.ca.pk)
+        self.assertIn(resp.status_code, (301, 302))
+        self.assertIn(str(self.cb.pk), resp.url, "Should redirect to the next sibling conformity")
+
+    def test_save_next_no_sibling_falls_back(self):
+        # Remove B so A has no next sibling -> should behave like normal valid POST (redirect to success_url)
+        self.cb.delete()
+        url = reverse("conformity:conformity_form", args=[self.ca.pk])
+        data = {"status": 0, "applicable": True, "action": "save_next"}
+        request = self.factory.post(url, data=data)
+        request.user = self.user
+
+        resp = ConformityUpdateView.as_view()(request, pk=self.ca.pk)
+        self.assertIn(resp.status_code, (301, 302), "Should still redirect (normal success flow)")
