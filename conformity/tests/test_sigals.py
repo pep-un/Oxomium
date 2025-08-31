@@ -170,9 +170,10 @@ class SignalTests(TestCase):
     def test_attachment_presave_sets_mime_type(self):
         """
         Attachment pre_save should populate mime_type.
-        Uses a temporary file and ensures no trace is left in DB or FS after the test.
+        Keep it simple: create a regular uploaded file, assert mime_type, then
+        delete both DB row and underlying file from the default storage.
         """
-        import sys, types, tempfile, os
+        import sys, types
         from unittest.mock import patch
         from django.core.files.uploadedfile import SimpleUploadedFile
 
@@ -183,33 +184,30 @@ class SignalTests(TestCase):
             def from_buffer(self, _buf):
                 return "text/plain"
 
-        # If python-magic is not present, inject a minimal stub so the model code can import it
+        # Provide a minimal 'magic' if python-magic is not installed.
         if "magic" not in sys.modules:
             sys.modules["magic"] = types.SimpleNamespace(Magic=FakeMagic)
 
-        # Create a temporary file for upload
-        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".txt")
-        tmp.write(b"hello world")
-        tmp.flush()
-        tmp.close()
+        with patch("magic.Magic", FakeMagic, create=True):
+            uploaded = SimpleUploadedFile("note.txt", b"hello world", content_type="text/plain")
 
-        try:
-            with open(tmp.name, "rb") as f:
-                uploaded = SimpleUploadedFile("note.txt", f.read(), content_type="text/plain")
+            att = Attachment.objects.create(file=uploaded)
+            att.refresh_from_db()
+            self.assertEqual(att.mime_type, "text/plain")
 
-            # Patch Magic so mime_type is deterministic
-            with patch("magic.Magic", FakeMagic, create=True):
-                att = Attachment.objects.create(file=uploaded)
-                att.refresh_from_db()
-                self.assertEqual(att.mime_type, "text/plain")
+            # Cleanup: remove DB row, then ensure the file is also removed from storage.
+            stored_path = att.file.name
+            storage = att.file.storage
 
-            # Clean DB record explicitly
-            att.delete()
+            att.delete()  # may or may not remove the file depending on your model/storage
 
-        finally:
-            # Ensure the temporary file is removed
-            if os.path.exists(tmp.name):
-                os.unlink(tmp.name)
+            if storage.exists(stored_path):
+                storage.delete(stored_path)
+
+            self.assertFalse(
+                storage.exists(stored_path),
+                "Stored file must be deleted at the end of the test",
+            )
 
     def test_findings_archiving_updates_on_action_save_and_m2m(self):
         """
