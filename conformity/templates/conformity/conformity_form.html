@@ -52,6 +52,7 @@
                 {% bootstrap_field form.comment %}
                 <div class="text-center">
                     {% bootstrap_button button_type="submit" name="action" value="save" content="Save" extra_classes="col-2 mx-2" %}
+                    {% bootstrap_button button_type="submit" name="action" value="save_stay" content="Save & Stay" extra_classes="col-2 mx-2" %}
                     {% if conformity.requirement.get_next_sibling and conformity.requirement.is_leaf_node %}
                         {% bootstrap_button button_type="submit" name="action" value="save_next" content="Save & Next" extra_classes="col-2 mx-2" %}
                     {% else %}
