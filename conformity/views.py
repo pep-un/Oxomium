@@ -200,7 +200,7 @@ class ConformityUpdateView(LoginRequiredMixin, UpdateView):
         if "status" in form.changed_data:
             self.object.update_status()
 
-        # Manage Save&Next submitting to allow easy filling of the conformity
+        # Manage Save&Next and Save&Stay submitting to allow easy filling of the conformity
         if self.request.POST.get("action") == "save_next":
             nxt_req = self.object.requirement.get_next_sibling()
             if nxt_req:
@@ -212,6 +212,9 @@ class ConformityUpdateView(LoginRequiredMixin, UpdateView):
                     return redirect("conformity:conformity_form", nxt.pk)
                 except Conformity.DoesNotExist:
                     pass
+
+        elif self.request.POST.get("action") == "save_stay":
+            return redirect("conformity:conformity_form", self.object.pk)
 
         return super().form_valid(form)
 
