@@ -216,6 +216,20 @@ class Conformity(models.Model):
 
     natural_key.dependencies = ['conformity.framework', 'conformity.requirement', 'conformity.organization']
 
+    def get_leaf(self):
+        """Get all leaf from a node"""
+        return [n for n in self.get_descendants() if n.requirement.is_leaf_node()]
+
+    def get_completeness(self):
+        leaves = self.get_leaf() or []
+        total = len(self.get_leaf())
+        if total ==0:
+            return 0
+
+        complete = sum(1 for n in leaves if n.status is not None)
+
+        return round( (complete / total) * 100)
+
     def get_absolute_url(self):
         """Return the absolute URL of the class for Form, probably not the best way to do it"""
         return reverse('conformity:conformity_detail_index',
