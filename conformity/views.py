@@ -11,8 +11,10 @@ from auditlog.models import LogEntry
 from mptt.templatetags.mptt_tags import cache_tree_children
 
 from .filterset import ActionFilter, ControlFilter, ControlPointFilter
-from .forms import ConformityForm, AuditForm, FindingForm, ActionForm, OrganizationForm, ControlForm, ControlPointForm
-from .models import Organization, Framework, Conformity, Audit, Action, Finding, Control, ControlPoint, Attachment, Requirement
+from .forms import ConformityForm, AuditForm, FindingForm, ActionForm, OrganizationForm, ControlForm, ControlPointForm, \
+    IndicatorForm, IndicatorPointForm
+from .models import Organization, Framework, Conformity, Audit, Action, Finding, Control, ControlPoint, Attachment, \
+    Requirement, Indicator, IndicatorPoint
 
 from django.views import View
 from django.http import HttpResponse
@@ -299,6 +301,30 @@ class ControlPointUpdateView(LoginRequiredMixin, UpdateView):
             attachment = Attachment.objects.create(file=file)
             self.object.attachment.add(attachment)
         return response
+
+
+#
+# Indicator
+#
+
+
+class IndicatorCreateView(LoginRequiredMixin, CreateView):
+    model = Indicator
+    form_class = IndicatorForm
+
+
+class IndicatorIndexView(LoginRequiredMixin, ListView):
+    model = Indicator
+
+
+class IndicatorUpdateView(LoginRequiredMixin, UpdateView):
+    model = Indicator
+    form_class = IndicatorForm
+
+
+class IndicatorPointUpdateView(LoginRequiredMixin, UpdateView):
+    model = IndicatorPoint
+    form_class = IndicatorPointForm
 
 
 #
