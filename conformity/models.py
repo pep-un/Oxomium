@@ -775,6 +775,14 @@ class Action(models.Model):
         """return the absolute URL for Forms, could probably do better"""
         return reverse('conformity:action_index')
 
+    def get_associated(self):
+        conformities = list(self.associated_conformity.all())
+        findings = list(self.associated_findings.all())
+        control_points = list(self.associated_controlPoints.all())
+
+        return conformities + findings + control_points
+
+
     def is_in_progress(self) -> bool:
         return self.status in (
             Action.Status.ANALYSING,
