@@ -1,6 +1,7 @@
 from django.db.models.signals import m2m_changed, pre_save, post_save
 from django.dispatch import receiver
-from .models import Organization, Requirement, Control, ControlPoint, Attachment, Action, Finding, Conformity
+from .models import Organization, Requirement, Control, ControlPoint, Attachment, Action, Finding, Conformity, \
+    Indicator, IndicatorPoint
 
 
 @receiver(post_save, sender=Control)
@@ -87,3 +88,11 @@ def on_action_saved(sender, instance: Action, **kwargs):
             conf.set_status_from(0, Conformity.StatusJustification.ACTION)
         elif instance.is_completed():
             conf.set_status_from(100, Conformity.StatusJustification.ACTION)
+
+@receiver(post_save, sender=Indicator)
+def indicator_post_save_bootstrap(sender, instance: Indicator, **kwargs):
+    instance.indicator_point_init()
+
+@receiver(pre_save, sender=IndicatorPoint)
+def indicator_point_pre_save_ctrl(sender, instance: IndicatorPoint, **kwargs):
+    instance.status_update()

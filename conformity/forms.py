@@ -7,7 +7,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import request
 from django.utils import timezone
 
-from .models import Conformity, Organization, Audit, Finding, Action, Control, ControlPoint
+from .models import Conformity, Organization, Audit, Finding, Action, Control, ControlPoint, Indicator, IndicatorPoint
 
 
 class ConformityForm(ModelForm):
@@ -113,3 +113,16 @@ class ControlPointForm(ModelForm):
             del self.fields['attachments']
             for field in self.fields:
                 self.fields[field].disabled = True
+
+
+
+class IndicatorForm(ModelForm):
+    class Meta:
+        model = Indicator
+        fields = '__all__'
+
+
+class IndicatorPointForm(ModelForm):
+    class Meta:
+        model = IndicatorPoint
+        fields = ['value', 'comment', 'attachment']

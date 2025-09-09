@@ -23,6 +23,7 @@ from auditlog.context import set_actor
 from magic import Magic
 from mptt.models import MPTTModel, TreeForeignKey
 from pycountry import languages
+from tomlkit import integer
 
 User = get_user_model()
 
@@ -822,3 +823,119 @@ class Attachment(models.Model):
 
         # TODO filter on mime type
 
+
+class Indicator (models.Model):
+    """ Indicator used to measure risk level or performance """
+
+    class Frequency(models.IntegerChoices):
+        """ List of frequency possible for a control or an indicator"""
+        YEARLY = 1, _('Yearly')
+        HALFYEARLY = 2, _('Half-Yearly')
+        QUARTERLY = 4, _('Quarterly')
+        BIMONTHLY = 6, _('Bimonthly')
+        MONTHLY = 12, _('Monthly')
+
+    name = models.CharField(max_length=256)
+    goal = models.TextField(max_length=4096, blank=True)
+    source = models.TextField(max_length=4096, blank=True)
+    formula = models.TextField(max_length=4096, blank=True)
+    worst = models.IntegerField(default=0)
+    best = models.IntegerField(default=100)
+    warning = models.IntegerField(default=80)
+    critical = models.IntegerField(default=90)
+    responsible = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, blank=True, null=True)
+    conformity = models.ManyToManyField(Conformity, blank=True)
+    frequency = models.IntegerField(
+        choices=Frequency.choices,
+        default=Frequency.QUARTERLY,
+    )
+
+    @staticmethod
+    def get_absolute_url():
+        """return the absolute URL for Forms, could probably do better"""
+        return reverse('conformity:indicator_index')
+
+    def indicator_point_init(self):
+        IndicatorPoint.objects.filter(indicator=self.id).filter(Q(status='SCHD') | Q(status='TOBE')).delete()
+
+        num_cp = self.frequency
+        today = date.today()
+        start_date = date(today.year, 1, 1)
+        delta = timedelta(days=365 // num_cp - 2)
+        end_date = start_date + delta
+        for _ in range(num_cp):
+            period_start_date = date(start_date.year, start_date.month, 1)
+            period_end_date = date(end_date.year, end_date.month, monthrange(end_date.year, end_date.month)[1])
+            if not IndicatorPoint.objects.filter(indicator=self, period_start_date=period_start_date, period_end_date=period_end_date).exists() :
+                IndicatorPoint.objects.create(
+                    indicator=self,
+                    period_start_date=period_start_date,
+                    period_end_date=period_end_date,
+                )
+            start_date = period_end_date + timedelta(days=1)
+            end_date = start_date + delta - timedelta(days=1)
+
+    def get_current_point(self):
+        today = timezone.now().date()
+        return (
+            IndicatorPoint.objects
+            .filter(indicator=self, period_start_date__lte=today, period_end_date__gte=today)
+            .first()
+        )
+
+
+class IndicatorPoint(models.Model):
+    """ Measurement point of an Indicator """
+
+    class Status(models.TextChoices):
+        """ List of status possible for a IndicatorPoint"""
+        SCHEDULED = 'SCHD', _('Scheduled')
+        TOBEEVALUATED = 'TOBE', _('To evaluate')
+        COMPLIANT = 'OK', _('Compliant')
+        WARNING = 'WARN', _('Warning')
+        CRITICAL = 'CRIT', _('Critical')
+        MISSED = 'MISS', _('Missed')
+
+    indicator = models.ForeignKey(Indicator, on_delete=models.CASCADE, null=True, blank=True)
+    control_date = models.DateTimeField(blank=True, null=True)
+    control_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
+    period_start_date = models.DateField()
+    period_end_date = models.DateField()
+    status = models.CharField(choices=Status.choices, max_length=4, default=Status.SCHEDULED)
+    comment = models.TextField(max_length=4096, blank=True)
+    value = models.IntegerField(null=True)
+    attachment = models.ManyToManyField('Attachment', blank=True, related_name='IndicatorPoint')
+
+    @staticmethod
+    def get_absolute_url():
+        """return the absolute URL for Forms, could probably do better"""
+        return reverse('conformity:indicator_index')
+
+    def status_update(self):
+        """ This function update the status depending on the value and the Indicator configuration """
+        if not self.value:
+            return
+
+        if self.indicator.best > self.indicator.worst :
+            if self.indicator.best >= self.value > self.indicator.warning :
+                self.status = IndicatorPoint.Status.COMPLIANT
+            elif self.indicator.warning >= self.value > self.indicator.critical :
+                self.status = IndicatorPoint.Status.WARNING
+            elif self.indicator.critical >= self.value >= self.indicator.worst :
+                self.status = IndicatorPoint.Status.CRITICAL
+            else:
+                self.status = IndicatorPoint.Status.MISSED
+
+        elif self.indicator.best < self.indicator.worst :
+            if self.indicator.best <= self.value < self.indicator.warning :
+                self.status = IndicatorPoint.Status.COMPLIANT
+            elif self.indicator.warning <= self.value < self.indicator.critical :
+                self.status = IndicatorPoint.Status.WARNING
+            elif self.indicator.critical <= self.value <= self.indicator.worst :
+                self.status = IndicatorPoint.Status.CRITICAL
+            else:
+                self.status = IndicatorPoint.Status.MISSED
+
+        else:
+            self.status = IndicatorPoint.Status.MISSED

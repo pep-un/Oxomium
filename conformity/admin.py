@@ -5,7 +5,8 @@ Customize Django Admin Site to manage my Models instances
 from django.contrib import admin
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
-from .models import Organization, Framework, Requirement, Conformity, Audit, Finding, Action, Control, ControlPoint, Attachment
+from .models import Organization, Framework, Requirement, Conformity, Audit, Finding, Action, Control, ControlPoint, \
+    Attachment, Indicator, IndicatorPoint
 
 
 class OrganizationResources(resources.ModelResource):
@@ -102,9 +103,22 @@ class AttachmentResources(resources.ModelResource):
     class Meta:
         model = Attachment
 
-
 class AttachmentAdmin(ImportExportModelAdmin):
     ressource_class = Attachment
+
+class IndicatorResources(resources.ModelResource):
+    class Meta:
+        model = Indicator
+
+class IndicatorAdmin(ImportExportModelAdmin):
+    ressource_class = Indicator
+
+class IndicatorPointResources(resources.ModelResource):
+    class Meta:
+        model = IndicatorPoint
+
+class IndicatorPointAdmin(ImportExportModelAdmin):
+    ressource_class = IndicatorPoint
 
 
 # Registration
@@ -118,3 +132,5 @@ admin.site.register(Finding, FindingAdmin)
 admin.site.register(Framework, FrameworkAdmin)
 admin.site.register(Organization, OrganizationAdmin)
 admin.site.register(Requirement, RequirementAdmin)
+admin.site.register(Indicator, IndicatorAdmin)
+admin.site.register(IndicatorPoint, IndicatorPointAdmin)
