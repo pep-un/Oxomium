@@ -10,11 +10,11 @@ def control_post_save_bootstrap(instance: Control, **kwargs):
 
 @receiver(pre_save, sender=ControlPoint)
 def controlpoint_pre_save_status(sender, instance: ControlPoint, **kwargs):
-    ControlPoint.update_status(sender, instance)
+    ControlPoint.update_status(instance)
 
 @receiver(pre_save, sender=Attachment)
 def attachment_pre_autoset_mimetype(sender, instance: Attachment, **kwargs):
-    Attachment.autoset_mimetype(sender, instance)
+    Attachment.autoset_mimetype(instance)
 
 @receiver(pre_save, sender=Requirement)
 def requirement_pre_save_naming(instance, **kwargs):

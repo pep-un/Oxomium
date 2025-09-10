@@ -584,7 +584,7 @@ class ConformityRelationAndGuardsTests(TestCase):
         from datetime import date, timedelta
         cp.period_start_date = date.today() - timedelta(days=1)
         cp.period_end_date = date.today() + timedelta(days=1)
-        ControlPoint.update_status(ControlPoint, cp)
+        ControlPoint.update_status(cp)
         cp.status = ControlPoint.Status.NONCOMPLIANT
         cp.save()
 
@@ -648,7 +648,7 @@ class ConformityRelationAndGuardsTests(TestCase):
         from datetime import date, timedelta
         cp.period_start_date = date.today() - timedelta(days=1)
         cp.period_end_date = date.today() + timedelta(days=1)
-        ControlPoint.update_status(ControlPoint, cp)
+        ControlPoint.update_status(cp)
         cp.status = ControlPoint.Status.NONCOMPLIANT
         cp.save()
         changed = self.c_child.set_status_from(100, Conformity.StatusJustification.CONTROL)
@@ -735,7 +735,7 @@ class ControlAndControlPointExtrasTests(TestCase):
         from datetime import date, timedelta
         cp.period_start_date = date.today()
         cp.period_end_date = date.today()
-        ControlPoint.update_status(ControlPoint, cp)
+        ControlPoint.update_status(cp)
         self.assertEqual(cp.status, ControlPoint.Status.TOBEEVALUATED)
         # helper methods
         self.assertTrue(cp.is_current_period(date.today()))
