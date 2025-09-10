@@ -23,7 +23,6 @@ from auditlog.context import set_actor
 from magic import Magic
 from mptt.models import MPTTModel, TreeForeignKey
 from pycountry import languages
-from tomlkit import integer
 
 User = get_user_model()
 
