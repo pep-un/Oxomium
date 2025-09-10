@@ -2,6 +2,7 @@
 
 {% block header %}
     <h1 class="h1 bi bi-arrow-repeat"> Actions </h1>
+    <span class="badge rounded-pill text-bg-primary fs-4"> {{ object_list | length }} Actions</span>
 {% endblock %}
 
 {% block content %}
@@ -9,13 +10,14 @@
   <caption class="d-none">List of all actions</caption>
     <thead>
         <tr>
-            <th scope="col" class="">Titre</th>
-            <th scope="col" class="">Organization</th>
-            <th scope="col" class="">Owner</th>
-            <th scope="col" class="">Status</th>
-            <th scope="col" class="">Last Update</th>
-            <th scope="col" class="text-center">Ref.</th>
-            <th scope="col" class="text-center">Edit</th>
+            <th class="">Titre</th>
+            <th class="">Organization</th>
+            <th class="">Owner</th>
+            <th class="">Status</th>
+            <th class="">Last Update</th>
+            <th class="text-center">Association</th>
+            <th class="text-center">Ref.</th>
+            <th class="text-center">Edit</th>
         </tr>
     </thead>
     <tbody>
@@ -56,6 +58,13 @@
             </td>
             <td class="col">
                 {{ action.update_date | date:'d-M-Y'}}
+            </td>
+            <td class="text-center">
+                {% if action.get_associated %}
+                <button type="button" class="btn btn-outline-primary btn-sm rounded-pill">
+                    {{ action.get_associated | length }}
+                </button>
+                {% endif %}
             </td>
             <td class="text-center">
                 {% if action.reference %}

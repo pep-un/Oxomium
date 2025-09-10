@@ -45,6 +45,11 @@ urlpatterns = [
     path('controlpoint/', views.ControlPointIndexView.as_view(), name='controlpoint_index'),
     path('controlpoint/update/<int:pk>', views.ControlPointUpdateView.as_view(), name='controlpoint_form'),
 
+    path('indicator/', views.IndicatorIndexView.as_view(), name='indicator_index'),
+    path('indicator/create', views.IndicatorCreateView.as_view(), name='indicator_create'),
+    path('indicator/<int:pk>/', views.IndicatorUpdateView.as_view(), name='indicator_form'),
+    path('indicatorpoint/<int:pk>/', views.IndicatorPointUpdateView.as_view(), name='indicatorpoint_form'),
+
     path('attachment/', views.AttachmentIndexView.as_view(), name='attachment_index'),
     path('attachment/<int:pk>/', views.AttachmentDownloadView.as_view(), name='attachment_download'),
 

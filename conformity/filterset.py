@@ -1,5 +1,5 @@
-from django_filters import FilterSet, CharFilter
-from .models import Action, Control, ControlPoint, Attachment
+from django_filters import FilterSet
+from .models import Action, Control, ControlPoint
 
 
 class ActionFilter(FilterSet):
