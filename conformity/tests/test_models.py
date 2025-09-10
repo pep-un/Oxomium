@@ -577,14 +577,14 @@ class ConformityRelationAndGuardsTests(TestCase):
         ctl = Control.objects.create(title="C2", organization=self.org)
         ctl.conformity.add(self.c_child)
         # generate CPs
-        Control.post_init_callback(ctl)
+        Control.controlpoint_bootstrap(ctl)
         # grab a CP in current period or just take first and force dates around today
         cp = ctl.get_controlpoint().first()
         # ensure current period
         from datetime import date, timedelta
         cp.period_start_date = date.today() - timedelta(days=1)
         cp.period_end_date = date.today() + timedelta(days=1)
-        ControlPoint.pre_save(ControlPoint, cp)
+        ControlPoint.update_status(ControlPoint, cp)
         cp.status = ControlPoint.Status.NONCOMPLIANT
         cp.save()
 
@@ -643,12 +643,12 @@ class ConformityRelationAndGuardsTests(TestCase):
         a.associated_conformity.add(self.c_child)
         ctl = Control.objects.create(title="C3", organization=self.org)
         ctl.conformity.add(self.c_child)
-        Control.post_init_callback(ctl)
+        Control.controlpoint_bootstrap(ctl)
         cp = ctl.get_controlpoint().first()
         from datetime import date, timedelta
         cp.period_start_date = date.today() - timedelta(days=1)
         cp.period_end_date = date.today() + timedelta(days=1)
-        ControlPoint.pre_save(ControlPoint, cp)
+        ControlPoint.update_status(ControlPoint, cp)
         cp.status = ControlPoint.Status.NONCOMPLIANT
         cp.save()
         changed = self.c_child.set_status_from(100, Conformity.StatusJustification.CONTROL)
@@ -715,11 +715,11 @@ class ControlAndControlPointExtrasTests(TestCase):
 
     def test_control_str_and_get_controlpoint_and_signal_idempotent(self):
         # initial creation generates CPs via callback
-        Control.post_init_callback(self.ctl)
+        Control.controlpoint_bootstrap(self.ctl)
         cps = list(self.ctl.get_controlpoint())
         self.assertTrue(len(cps) >= 1)
         # running again shouldn't duplicate the same periods
-        Control.post_init_callback(self.ctl)
+        Control.controlpoint_bootstrap(self.ctl)
         cps2 = list(self.ctl.get_controlpoint())
         # By comparing (start,end) pairs
         pairs = {(c.period_start_date, c.period_end_date) for c in cps2}
@@ -729,13 +729,13 @@ class ControlAndControlPointExtrasTests(TestCase):
         self.assertIn("Ctl", s)
 
     def test_controlpoint_helpers_and_boundaries(self):
-        Control.post_init_callback(self.ctl)
+        Control.controlpoint_bootstrap(self.ctl)
         cp = self.ctl.get_controlpoint().first()
-        # Force dates around today and compute status via pre_save
+        # Force dates around today and compute status via update_status
         from datetime import date, timedelta
         cp.period_start_date = date.today()
         cp.period_end_date = date.today()
-        ControlPoint.pre_save(ControlPoint, cp)
+        ControlPoint.update_status(ControlPoint, cp)
         self.assertEqual(cp.status, ControlPoint.Status.TOBEEVALUATED)
         # helper methods
         self.assertTrue(cp.is_current_period(date.today()))

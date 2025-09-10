@@ -4,9 +4,9 @@
     <h1 class="h1 bi bi-shield-shaded">
         {{ conformity_list.0.organization }} conformity to {{ conformity_list.0.requirement.framework }}:
     </h1>
-    <span class="badge rounded-pill bg-primary me-4 fs-3"> {{ conformity_list.0.get_leaf | length }} Exigences</span>
-    <span class="badge rounded-pill bg-primary me-4 fs-3"> Completeness: {{ conformity_list.0.get_completeness }} % </span>
-    <span class="badge rounded-pill bg-primary me-4 fs-3"> Conformity: {{ conformity_list.0.status }} %</span>
+    <span class="badge rounded-pill bg-primary me-4 fs-4"> {{ conformity_list.0.get_leaf | length }} Requirements</span>
+    <span class="badge rounded-pill bg-primary me-4 fs-4"> Completeness: {{ conformity_list.0.get_completeness }} % </span>
+    <span class="badge rounded-pill bg-primary me-4 fs-4"> Conformity: {{ conformity_list.0.status }} %</span>
 {% endblock %}
 
 {% block content %}

@@ -2,6 +2,7 @@
 
 {% block header %}
     <h1 class="h1 bi bi-paperclip"> Attachment library</h1>
+    <span class="badge rounded-pill text-bg-primary fs-4"> {{ object_list | length }} Attachments</span>
 {% endblock %}
 
 {% block content %}
@@ -9,19 +10,29 @@
     <caption class="d-none">Attachment library</caption>
     <thead>
         <tr>
-            <th scope="col" class="col">Attachment</th>
+            <th scope="col" class="col-4">Attachment</th>
+            <th scope="col" class="col-2 text-center">MIME type</th>
             <th scope="col" class="col-2 text-center">Creation date</th>
-            <th scope="col" class="col-6 text-center">References</th>
+            <th scope="col" class="col-4 text-center">References</th>
         </tr>
     </thead>
     <tbody>
         {% for attachment in attachment_list %}
             <tr>
                 <td>
-                    <span><i class="bi bi-file-earmark"></i> <a href="{% url 'conformity:attachment_download' attachment.id %}">{{ attachment | truncatechars:40 }}</a> </span>
+                    <span>
+                        <i class="bi bi-file-earmark"></i>
+                        <a href="{% url 'conformity:attachment_download' attachment.id %}"
+                            title="{{ attachment }}">
+                            {{ attachment | truncatechars:50 }}
+                        </a>
+                    </span>
                 </td>
                 <td class="text-center">
-                    <span>{{ attachment.create_date }}</span>
+                    {{ attachment.mime_type }}
+                </td>
+                <td class="text-center">
+                    {{ attachment.create_date }}
                 </td>
                 <td class="">
                     {% for org in attachment.organizations.all %}

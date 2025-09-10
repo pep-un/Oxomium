@@ -2,6 +2,7 @@
 
 {% block header %}
     <h1 class="h1 bi bi-shield-shaded"> Conformities</h1>
+    <span class="badge rounded-pill text-bg-primary fs-4"> {{ object_list | length }} Conformities evaluations</span>
 {% endblock %}
 
 {% block content %}
@@ -9,26 +10,37 @@
   <caption class="d-none">Overview of the organizations conformity to there Frameworks</caption>
     <thead>
         <tr>
-            <th scope="col" class="">Organization</th>
             <th scope="col" class="">Framework</th>
-            <th scope="col" class="text-center">Status</th>
+            <th scope="col" class="">Organization</th>
+            <th scope="col" class="text-center">Requirement</th>
+            <th scope="col" class="text-center">Completeness</th>
+            <th scope="col" class="text-center">Conformity</th>
+            <th scope="col" class="text-center">Edit</th>
         </tr>
     </thead>
     <tbody>
     {% for con in conformity_list %}
         <tr>
-            <th scope="col" class="col-2">
-                {{ con.organization }}
-            </th>
-            <th scope="col" class="col-2">
+            <td scope="col" class="col-2">
                 {{ con.requirement.framework.name }}
-            </th>
+            </td>
+            <td scope="col" class="col-2">
+                {{ con.organization }}
+            </td>
+            <td scope="col" class="col-1 text-center">
+                {{ con.get_leaf | length }}
+            </td>
+            <td scope="col" class="col-1 text-center">
+                {{ con.get_completeness }} %
+            </td>
             <td class="col text-center">
-                <a href="{% url 'conformity:conformity_detail_index' con.organization.id con.requirement.framework.id %}">
-                    <div class="progress">
-                        <div class="progress-bar" role="progressbar" style="width: {{ con.status }}%" aria-valuenow="{{ con.status }}" aria-valuemin="0" aria-valuemax="100">{{ con.status }}%</div>
-                    </div>
-                </a>
+                <div class="progress">
+                    <div class="progress-bar" role="progressbar" style="width: {{ con.status }}%" aria-valuenow="{{ con.status }}" aria-valuemin="0" aria-valuemax="100">{{ con.status }}%</div>
+                </div>
+            </td>
+            <td scope="col" class="col-1 text-center">
+                <a href="{% url 'conformity:conformity_detail_index' con.organization.id con.requirement.framework.id %}"
+                   class="bi bi-pencil-square" title="Edit"></a>
             </td>
         </tr>
     {% empty %}
