@@ -361,7 +361,7 @@ class Conformity(models.Model):
         ).update(responsible=self.responsible)
 
     def update_status(self):
-        """Update conformity on all ancestor of the updated node"""
+        """Update this node's conformity status and propagate update to its parent."""
         with set_actor('system'):
             agg = (Conformity.objects.filter(
                     organization=self.organization,
@@ -639,7 +639,7 @@ class Control(models.Model):
         return reverse('conformity:control_index')
 
     @staticmethod
-    def post_init_callback(instance, **kwargs):
+    def controlpoint_bootstrap(instance, **kwargs):
         ControlPoint.objects.filter(control=instance.id).filter(Q(status='SCHD') | Q(status='TOBE')).delete()
 
         num_cp = instance.frequency
@@ -696,7 +696,7 @@ class ControlPoint(models.Model):
         return reverse('conformity:control_index')
 
     @staticmethod
-    def pre_save(sender, instance, *args, **kwargs):
+    def update_status(sender, instance, *args, **kwargs):
         if instance.status != ControlPoint.Status.COMPLIANT and instance.status != ControlPoint.Status.NONCOMPLIANT:
             today = date.today()
             if instance.period_end_date < today:
@@ -836,7 +836,7 @@ class Attachment(models.Model):
         return self.file.name.split("/")[1]
 
     @staticmethod
-    def pre_save(sender, instance, *args, **kwargs):
+    def autoset_mimetype(sender, instance, *args, **kwargs):
         # Read file and set mime_type
         file_content = instance.file.read()
         instance.file.seek(0)

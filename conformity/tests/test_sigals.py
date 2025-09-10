@@ -7,10 +7,10 @@ from conformity.models import (
 
 
 class SignalTests(TestCase):
-    """Signal-driven lifecycle tests (m2m, pre_save/post_save hooks)."""
+    """Signal-driven lifecycle tests (m2m, update_status/post_save hooks)."""
 
     def test_requirement_presave_sets_hierarchical_name(self):
-        """pre_save should build hierarchical 'name' from parent chain and code."""
+        """update_status should build hierarchical 'name' from parent chain and code."""
         fw = Framework.objects.create(name="FW-X")
         root = Requirement.objects.create(framework=fw, code="AX")
         child = Requirement.objects.create(framework=fw, code="01", parent=root)
@@ -139,7 +139,7 @@ class SignalTests(TestCase):
             )
 
     def test_controlpoint_presave_status_transitions(self):
-        """ControlPoint pre_save should set status based on the current period window."""
+        """ControlPoint update_status should set status based on the current period window."""
         ctrl = Control.objects.create(title="StatusCalc", frequency=Control.Frequency.YEARLY)
         today = date.today()
 
@@ -169,7 +169,7 @@ class SignalTests(TestCase):
 
     def test_attachment_presave_sets_mime_type(self):
         """
-        Attachment pre_save should populate mime_type.
+        Attachment update_status should populate mime_type.
         Keep it simple: create a regular uploaded file, assert mime_type, then
         delete both DB row and underlying file from the default storage.
         """

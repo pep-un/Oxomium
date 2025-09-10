@@ -2,6 +2,7 @@
 
 {% block header %}
     <h1 class="h1 bi bi-exclamation-diamond"> Active findings </h1>
+    <span class="badge rounded-pill text-bg-primary fs-4"> {{ object_list | length }} Findings</span>
 {% endblock %}
 
 {% block content %}
