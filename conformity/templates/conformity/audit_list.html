@@ -2,6 +2,7 @@
 
 {% block header %}
     <h1 class="h1 bi bi-ui-checks-grid"> Audits</h1>
+    <span class="badge rounded-pill text-bg-primary fs-4"> {{ object_list | length }} Audits</span>
 {% endblock %}
 
 {% block content %}
@@ -9,14 +10,14 @@
   <caption class="d-none">List of all Audits</caption>
     <thead>
         <tr>
-            <th scope="col" class="">Name/Code</th>
-            <th scope="col" class="">Organization</th>
-            <th scope="col" class="">Auditor</th>
-            <th scope="col" class="">Type</th>
-            <th scope="col" class="">Start</th>
-            <th scope="col" class="">End</th>
-            <th scope="col" class="text-center">Finding</th>
-            <th scope="col" class="text-center">Edit</th>
+            <th class="">Name/Code</th>
+            <th class="">Organization</th>
+            <th class="">Auditor</th>
+            <th class="">Type</th>
+            <th class="">Start</th>
+            <th class="">End</th>
+            <th class="text-center">Finding</th>
+            <th class="text-center">Edit</th>
         </tr>
     </thead>
     <tbody>

@@ -3,40 +3,37 @@ Forms for front-end editing of Models instance
 """
 
 from django.forms import ModelForm, FileField, ClearableFileInput
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import request
 from django.utils import timezone
+from .models import Conformity, Organization, Audit, Finding, Action, Control, ControlPoint, Indicator, IndicatorPoint
 
-from .models import Conformity, Organization, Audit, Finding, Action, Control, ControlPoint
 
-
-class ConformityForm(LoginRequiredMixin, ModelForm):
+class ConformityForm(ModelForm):
     class Meta:
         model = Conformity
         fields = ['applicable', 'responsible', 'status', 'comment']
 
     def __init__(self, *args, **kwargs):
         super(ConformityForm, self).__init__(*args, **kwargs)
-        if self.instance.get_children().exists():
+        if self.instance.get_descendants().exists():
             self.fields['status'].disabled = True
 
 
-class OrganizationForm(LoginRequiredMixin, ModelForm):
+class OrganizationForm(ModelForm):
     attachments = FileField(required=False, widget=ClearableFileInput())
     class Meta:
         model = Organization
         fields = ['name', 'administrative_id', 'description', 'applicable_frameworks']
 
 
-class AuditForm(LoginRequiredMixin, ModelForm):
+class AuditForm(ModelForm):
     attachments = FileField(required=False, widget=ClearableFileInput())
     class Meta:
         model = Audit
-        fields = '__all__'
-        exclude = ['attachment']
+        fields = ['name', 'organization', 'description', 'conclusion', 'auditor', 'audited_frameworks', 'start_date',
+                  'end_date', 'report_date', 'type', 'attachments']
 
 
-class FindingForm(LoginRequiredMixin, ModelForm):
+class FindingForm(ModelForm):
     class Meta:
         model = Finding
         fields = ['name', 'audit', 'severity', 'short_description', 'description', 'observation', 'recommendation', 'reference', 'cvss', 'cvss_descriptor', 'archived']
@@ -50,7 +47,7 @@ class FindingForm(LoginRequiredMixin, ModelForm):
                 self.fields[key].disabled = True
 
 
-class ActionForm(LoginRequiredMixin, ModelForm):
+class ActionForm(ModelForm):
     class Meta:
         model = Action
         fields = '__all__'
@@ -80,13 +77,13 @@ class ActionForm(LoginRequiredMixin, ModelForm):
                 self.fields[key].disabled = True
 
 
-class ControlForm(LoginRequiredMixin, ModelForm):
+class ControlForm(ModelForm):
     class Meta:
         model = Control
-        fields = '__all__'
+        fields = ['title', 'description', 'organization', 'conformity', 'control', 'frequency', 'level']
 
 
-class ControlPointForm(LoginRequiredMixin, ModelForm):
+class ControlPointForm(ModelForm):
     attachments = FileField(required=False, widget=ClearableFileInput())
     class Meta:
         model = ControlPoint
@@ -113,3 +110,15 @@ class ControlPointForm(LoginRequiredMixin, ModelForm):
             del self.fields['attachments']
             for field in self.fields:
                 self.fields[field].disabled = True
+
+
+class IndicatorForm(ModelForm):
+    class Meta:
+        model = Indicator
+        fields = '__all__'
+
+
+class IndicatorPointForm(ModelForm):
+    class Meta:
+        model = IndicatorPoint
+        fields = ['value', 'comment', 'attachment']

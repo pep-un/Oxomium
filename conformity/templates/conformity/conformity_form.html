@@ -1,24 +1,69 @@
 {% extends "conformity/main.html" %}
 {% load django_bootstrap5 %}
+{% load mptt_tags %}
 
 {% block header %}
-<h1 class="h1 bi bi-shield-shaded" > Update of a conformity item</h1>
+<h1 class="h1 bi bi-shield-shaded" >
+    Conformity for {{ conformity.requirement.name }} in {{ conformity.organization.name }}
+</h1>
 {% endblock %}
 
 {% block content %}
     <form class="form" method="post" action="">
         {% csrf_token %}
+
+        <div class="card border-info">
+            <div class="card-header border-info text-bg-info text-secondary h4">
+                <h6 class="card-subtitle text-body-secondary">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-0">
+                            {% for item in conformity.requirement.get_ancestors %}
+                                <li class="breadcrumb-item"> {{ item.title }} </li>
+                            {% endfor %}
+                        </ol>
+                    </nav>
+                </h6>
+            </div>
+            <div class="card-header border-info text-bg-info h4">
+                <h4 class="card-title">
+                    <span class="badge rounded-pill text-bg-primary" >{{ conformity.requirement.name }}</span>
+                    {{ conformity.requirement.title }}
+                </h4>
+            </div>
+            <div class="card-body bg-info bg-opacity-25">
+                <p class="card-text">{{ conformity.requirement.description }}</p>
+            </div>
+        </div>
+
         <div class="row justify-content-center">
-            <div class="col col-4">
-                <div class="card border-info">
-                  <div class="card-header border-info text-bg-info text-center h4">
-                    Requirement {{ conformity.requirement.name }}
-                  </div>
-                  <div class="card-body bg-info bg-opacity-25">
-                    <h5 class="card-title">{{ conformity.requirement.title }}</h5>
-                    <p class="card-text">{{ conformity.requirement.description }}</p>
-                  </div>
+            <div class="col">
+                <div class="form-check form-switch my-3">
+                    <label class="form-check-label" for="id_applicable">Requirement is applicable</label>
+                    <input class="form-check-input" type="checkbox" role="switch" id="id_applicable" name="applicable"
+                        {% if conformity.applicable %}
+                           checked aria-checked="true"
+                        {% else %}
+                           aria-checked="false"
+                        {% endif %}
+                    >
                 </div>
+                {% bootstrap_field form.responsible %}
+                {% bootstrap_field form.status %}
+                {% bootstrap_field form.comment %}
+                <div class="text-center">
+                    {% bootstrap_button button_type="submit" name="action" value="save" content="Save" extra_classes="col-2 mx-2" %}
+                    {% bootstrap_button button_type="submit" name="action" value="save_stay" content="Save & Stay" extra_classes="col-2 mx-2" %}
+                    {% if conformity.requirement.get_next_sibling and conformity.requirement.is_leaf_node %}
+                        {% bootstrap_button button_type="submit" name="action" value="save_next" content="Save & Next" extra_classes="col-2 mx-2" %}
+                    {% else %}
+                        {% bootstrap_button button_type="submit" name="action" value="save_next" content="Save & Next" disabled="true" extra_classes="col-2 mx-2" %}
+                    {% endif %}
+                </div>
+
+            </div>
+
+            <div class="col col-6">
+
 
                 <br />
 
@@ -60,28 +105,10 @@
                         </a>
                     </div>
                 </div>
-
-            </div>
-
-
-            <div class="col">
-                <h4>Conformity of {{ conformity.requirement.name }} for {{ conformity.organization.name }}</h4>
-                <div class="form-check form-switch my-3">
-                    <label class="form-check-label" for="id_applicable">Measure is applicable</label>
-                    <input class="form-check-input" type="checkbox" role="switch" id="id_applicable" name="applicable"
-                        {% if conformity.applicable %}
-                           checked aria-checked="true"
-                        {% else %}
-                           aria-checked="false"
-                        {% endif %}
-                    >
-                </div>
-                {% bootstrap_field form.responsible %}
-                {% bootstrap_field form.status %}
-                {% bootstrap_field form.comment %}
-                {% bootstrap_button button_type="submit" content="Save" %}
             </div>
         </div>
+
+
         <script>
             function applicable() {
                 if ( ! document.getElementById('id_applicable').checked ){

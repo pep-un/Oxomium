@@ -2,6 +2,7 @@
 
 {% block header %}
     <h1 class="h1 bi bi-card-checklist"> Frameworks</h1>
+    <span class="badge rounded-pill text-bg-primary fs-4"> {{ object_list | length }} Frameworks</span>
 {% endblock %}
 
 {% block content %}
@@ -11,11 +12,11 @@
             <thead class="">
                 <tr>
                     <th scope="col">Framework</th>
-                    <th scope="col" class="col-1 text-center">Version</th>
-                    <th scope="col" class="col-1 text-center">Language</th>
-                    <th scope="col" class="col-2">Published by</th>
-                    <th scope="col" class="col-2">Type</th>
-                    <th scope="col" class="col text-center">Requirements</th>
+                    <th class="col-1 text-center">Version</th>
+                    <th class="col-1 text-center">Language</th>
+                    <th class="col-2">Published by</th>
+                    <th class="col-2">Type</th>
+                    <th class="col text-center">Requirements</th>
                 </tr>
             </thead>
             <tbody>

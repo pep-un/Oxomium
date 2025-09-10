@@ -1,8 +1,7 @@
 from django.contrib.auth.signals import user_logged_in
 from django.dispatch import receiver
 from datetime import datetime
-from dateutil.relativedelta import relativedelta
-from .models import ControlPoint
+from .models import ControlPoint, IndicatorPoint
 
 
 class SanityCheckMiddleware:
@@ -22,6 +21,7 @@ class SanityCheckMiddleware:
 
         if SanityCheckMiddleware.last_checked != today:
             self.check_control_points(today)
+            self.check_indicator_points(today)
             SanityCheckMiddleware.last_checked = today
 
     @staticmethod
@@ -40,6 +40,21 @@ class SanityCheckMiddleware:
                                                       status__in=["TOBE","SCHD"])
         missed_controls.update(status='MISS')
 
+    @staticmethod
+    def check_indicator_points(today):
+        """Checks and updates the status of IndicatorPoint."""
+
+        """Update SCHD to TOBE when period start"""
+        scheduled_indicators = IndicatorPoint.objects.filter(period_start_date__lte=today,
+                                                         period_end_date__gte=today,
+                                                         status="SCHD")
+        scheduled_indicators.update(status='TOBE')
+
+        """Update expired TOBE to MISS """
+        missed_indicators = IndicatorPoint.objects.filter(period_start_date__lt=today,
+                                                      period_end_date__lt=today,
+                                                      status__in=["TOBE","SCHD"])
+        missed_indicators.update(status='MISS')
 
 # Connect the user login signal
 @receiver(user_logged_in)

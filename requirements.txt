@@ -9,3 +9,5 @@ python-magic
 python-decouple
 python-dateutil
 pycountry
+django-mptt
+django-constance

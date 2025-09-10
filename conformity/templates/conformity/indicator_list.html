@@ -1,0 +1,77 @@
+{% extends "conformity/main.html" %}
+{% load render_table from django_tables2 %}
+
+{% block header %}
+    <h1 class="h1 bi bi-speedometer"> Indicators </h1>
+    <span class="badge rounded-pill text-bg-primary fs-4"> {{ object_list | length }} Indicators</span>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    {% for indicator in indicator_list %}
+    <div class="col-3 my-2">
+        <div class="card">
+            <div class="card-header h4">
+                {{indicator.name}}
+                <a class="btn btn-sm btn-primary bi bi-pencil-square float-end"
+                   role="button" href="{% url 'conformity:indicator_form' indicator.pk %}"> </a>
+            </div>
+            <div class="card-body">
+            {% if indicator.get_current_point.status == "CRIT" %}
+                <h5 class="card-title fs-1 text-danger">
+                    {{ indicator.get_current_point.value }}
+            {% elif indicator.get_current_point.status == "WARN" %}
+                <h5 class="card-title fs-1 text-warning">
+                    {{ indicator.get_current_point.value }}
+            {% elif indicator.get_current_point.status == "OK" %}
+                <h5 class="card-title fs-1 text-success">
+                    {{ indicator.get_current_point.value }}
+            {% else %}
+                <h5 class="card-title fs-1 text-primary">
+                    <a class="btn btn-outline-primary bi bi-pencil-square"
+                       role="button" href="{% url 'conformity:indicatorpoint_form' indicator.get_current_point.pk %}">
+                    Add a value
+                    </a>
+            {% endif %}
+
+            {% if indicator.get_current_point.value %}
+                {% if indicator.best == 100 and indicator.worst == 0 %} %
+                {% elif indicator.best == 0 and indicator.worst == 100 %} %
+                {% else %} / {{indicator.best}} {% endif %}
+            {% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-subtitle text-body-secondary">
+                    {{indicator.goal }}
+                </p>
+            </div>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item"><span class="text-danger">Critical: </span> from {{ indicator.worst }} to {{ indicator.critical }}</li>
+                <li class="list-group-item"><span class="text-warning">Warning: </span> from {{ indicator.critical }} to {{ indicator.warning }}</li>
+                <li class="list-group-item"><span class="text-success">Compliant: </span> from {{ indicator.warning }} to {{ indicator.best }}</li>
+            </ul>
+            <div class="card-footer">
+                <small class="text-body-secondary">
+                    <i class="bi bi-journal-text"></i>
+                    Last updated {{ indicator.get_current_point.control_date }} by {{ indicator.get_current_point.control_user }}
+                </small>
+            </div>
+        </div>
+    </div>
+
+    {% empty %}
+    <div class="alert alert-info" role="alert">
+        No indicator recorded.
+    </div>
+
+    {% endfor %}
+</div>
+
+<div class="text-center mt-3">
+    <a href="{% url 'conformity:indicator_create' %}">
+        <button type="button" class="btn btn-success bi bi-plus-circle"> Register a new indicator</button>
+    </a>
+</div>
+
+{% endblock %}

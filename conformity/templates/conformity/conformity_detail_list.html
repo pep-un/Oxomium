@@ -4,7 +4,9 @@
     <h1 class="h1 bi bi-shield-shaded">
         {{ conformity_list.0.organization }} conformity to {{ conformity_list.0.requirement.framework }}:
     </h1>
-    <span class="badge rounded-pill bg-primary me-4 fs-3"> Conformity: {{ conformity_list.0.status }} %</span>
+    <span class="badge rounded-pill bg-primary me-4 fs-4"> {{ conformity_list.0.get_leaf | length }} Requirements</span>
+    <span class="badge rounded-pill bg-primary me-4 fs-4"> Completeness: {{ conformity_list.0.get_completeness }} % </span>
+    <span class="badge rounded-pill bg-primary me-4 fs-4"> Conformity: {{ conformity_list.0.status }} %</span>
 {% endblock %}
 
 {% block content %}
@@ -12,13 +14,13 @@
   <caption class="d-none">List and status of framework requirements for the organisation.</caption>
     <thead>
         <tr>
-            <th scope="col" class="text-start col">Requirement</th>
-            <th scope="col" class="text-center col-2">Status</th>
-            <th scope="col" class="text-center col-1">Owner</th>
-            <th scope="col" class="text-center col-1">Control</th>
-            <th scope="col" class="text-center col-1">Action</th>
-            <th scope="col" class="text-center col-1">Comment</th>
-            <th scope="col" class="text-center col-1">Edit</th>
+            <th class="text-start col">Requirement</th>
+            <th class="text-center col-2">Status</th>
+            <th class="text-center col-1">Owner</th>
+            <th class="text-center col-1">Control</th>
+            <th class="text-center col-1">Action</th>
+            <th class="text-center col-1">Comment</th>
+            <th class="text-center col-1">Edit</th>
         </tr>
     </thead>
     <tbody>

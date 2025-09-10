@@ -1,21 +1,23 @@
 """
 View of the Conformity Module
 """
-from urllib import request
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import DetailView, ListView, TemplateView
-from django.views.generic.edit import UpdateView, CreateView, DeleteView
+from django.views.generic.edit import UpdateView, CreateView
 from django_filters.views import FilterView
 from auditlog.models import LogEntry
+from mptt.templatetags.mptt_tags import cache_tree_children
 
 from .filterset import ActionFilter, ControlFilter, ControlPointFilter
-from .forms import ConformityForm, AuditForm, FindingForm, ActionForm, OrganizationForm, ControlForm, ControlPointForm
-from .models import Organization, Framework, Conformity, Audit, Action, Finding, Control, ControlPoint, Attachment
+from .forms import ConformityForm, AuditForm, FindingForm, ActionForm, OrganizationForm, ControlForm, ControlPointForm, \
+    IndicatorForm, IndicatorPointForm
+from .models import Organization, Framework, Conformity, Audit, Action, Finding, Control, ControlPoint, Attachment, \
+    Requirement, Indicator, IndicatorPoint
 
 from django.views import View
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 import os
 
 #
@@ -152,6 +154,13 @@ class FrameworkIndexView(LoginRequiredMixin, ListView):
 class FrameworkDetailView(LoginRequiredMixin, DetailView):
     model = Framework
 
+    # Not used yet, to be fixed (issue with recursetree)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        qs = Requirement.objects.filter(framework=self.object).order_by('tree_id', 'lft')
+        context['requirement_list'] = cache_tree_children(qs)
+        return context
+
 
 #
 # Conformity
@@ -171,7 +180,7 @@ class ConformityDetailIndexView(LoginRequiredMixin, ListView):
         return Conformity.objects.filter(organization__id=self.kwargs['org']) \
             .filter(requirement__framework__id=self.kwargs['pol']) \
             .filter(requirement__level=0) \
-            .order_by('requirement__order')
+            .order_by('requirement__tree_id','requirement__lft')
 
 
 class ConformityUpdateView(LoginRequiredMixin, UpdateView):
@@ -179,7 +188,33 @@ class ConformityUpdateView(LoginRequiredMixin, UpdateView):
     form_class = ConformityForm
 
     def form_valid(self, form):
-        form.instance.set_status(form.cleaned_data['status'])
+        # starting point of the set_status and status tree update logic
+        self.object = form.save()
+
+        # Object is saved, we juste have to update the tree, when needed.
+        if "applicable" in form.changed_data:
+            self.object.update_applicable()
+        if "responsible" in form.changed_data:
+            self.object.update_responsible()
+        if "status" in form.changed_data:
+            self.object.update_status()
+
+        # Manage Save&Next and Save&Stay submitting to allow easy filling of the conformity
+        if self.request.POST.get("action") == "save_next":
+            nxt_req = self.object.requirement.get_next_sibling()
+            if nxt_req:
+                try:
+                    nxt = Conformity.objects.get(
+                        organization=self.object.organization,
+                        requirement=nxt_req,
+                    )
+                    return redirect("conformity:conformity_form", nxt.pk)
+                except Conformity.DoesNotExist:
+                    pass
+
+        elif self.request.POST.get("action") == "save_stay":
+            return redirect("conformity:conformity_form", self.object.pk)
+
         return super().form_valid(form)
 
 
@@ -271,6 +306,30 @@ class ControlPointUpdateView(LoginRequiredMixin, UpdateView):
 
 
 #
+# Indicator
+#
+
+
+class IndicatorCreateView(LoginRequiredMixin, CreateView):
+    model = Indicator
+    form_class = IndicatorForm
+
+
+class IndicatorIndexView(LoginRequiredMixin, ListView):
+    model = Indicator
+
+
+class IndicatorUpdateView(LoginRequiredMixin, UpdateView):
+    model = Indicator
+    form_class = IndicatorForm
+
+
+class IndicatorPointUpdateView(LoginRequiredMixin, UpdateView):
+    model = IndicatorPoint
+    form_class = IndicatorPointForm
+
+
+#
 # Attachment
 #
 
@@ -279,8 +338,8 @@ class AttachmentIndexView(LoginRequiredMixin, ListView):
     model = Attachment
 
 
-class AttachmentDownloadView(View):
-    def get(self, request, pk):
+class AttachmentDownloadView(LoginRequiredMixin, View):
+    def get(self, pk):
         attachment = get_object_or_404(Attachment, id=pk)
 
         file_path = attachment.file.path

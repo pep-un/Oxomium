@@ -2,6 +2,7 @@
 
 {% block header %}
     <h1 class="h1 bi bi-exclamation-diamond"> Active findings </h1>
+    <span class="badge rounded-pill text-bg-primary fs-4"> {{ object_list | length }} Findings</span>
 {% endblock %}
 
 {% block content %}
@@ -22,12 +23,12 @@
   <caption class="d-none">List of Critical, Major, Minor finding and Opportunity for improvement.</caption>
     <thead>
         <tr>
-            <th scope="col" class="text-center">Finding</th>
-            <th scope="col" class="">Description</th>
-            <th scope="col" class="text-center">CVSS</th>
-            <th scope="col" class="text-center">Audit campaign</th>
-            <th scope="col" class="text-center">Action</th>
-            <th scope="col" class="text-center">Edit</th>
+            <th class="text-center">Finding</th>
+            <th class="">Description</th>
+            <th class="text-center">CVSS</th>
+            <th class="text-center">Audit campaign</th>
+            <th class="text-center">Action</th>
+            <th class="text-center">Edit</th>
         </tr>
     </thead>
     <tbody>

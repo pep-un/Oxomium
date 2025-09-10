@@ -2,6 +2,7 @@
 
 {% block header %}
     <h1 class="h1 bi bi-building"> Organizations</h1>
+    <span class="badge rounded-pill text-bg-primary fs-4"> {{ object_list | length }} Organizations</span>
 {% endblock %}
 
 {% block content %}
@@ -9,11 +10,11 @@
     <caption class="d-none">List of the organizations</caption>
     <thead>
         <tr>
-            <th scope="col" class="col-1">Organization</th>
-            <th scope="col" class="col ">Description</th>
-            <th scope="col" class="col-4 text-center">Applicable frameworks</th>
-            <th scope="col" class="col-1 text-center">View</th>
-            <th scope="col" class="col-1 text-center">Edit</th>
+            <th class="col-1">Organization</th>
+            <th class="col ">Description</th>
+            <th class="col-4 text-center">Applicable frameworks</th>
+            <th class="col-1 text-center">View</th>
+            <th class="col-1 text-center">Edit</th>
         </tr>
     </thead>
     <tbody>
