@@ -3,10 +3,7 @@ Forms for front-end editing of Models instance
 """
 
 from django.forms import ModelForm, FileField, ClearableFileInput
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import request
 from django.utils import timezone
-
 from .models import Conformity, Organization, Audit, Finding, Action, Control, ControlPoint, Indicator, IndicatorPoint
 
 
@@ -32,8 +29,8 @@ class AuditForm(ModelForm):
     attachments = FileField(required=False, widget=ClearableFileInput())
     class Meta:
         model = Audit
-        fields = '__all__'
-        exclude = ['attachment']
+        fields = ['name', 'organization', 'description', 'conclusion', 'auditor', 'audited_frameworks', 'start_date',
+                  'end_date', 'report_date', 'type', 'attachments']
 
 
 class FindingForm(ModelForm):
@@ -83,7 +80,7 @@ class ActionForm(ModelForm):
 class ControlForm(ModelForm):
     class Meta:
         model = Control
-        fields = '__all__'
+        fields = ['title', 'description', 'organization', 'conformity', 'control', 'frequency', 'level']
 
 
 class ControlPointForm(ModelForm):
@@ -113,7 +110,6 @@ class ControlPointForm(ModelForm):
             del self.fields['attachments']
             for field in self.fields:
                 self.fields[field].disabled = True
-
 
 
 class IndicatorForm(ModelForm):
