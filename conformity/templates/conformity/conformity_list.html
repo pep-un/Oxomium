@@ -10,27 +10,27 @@
   <caption class="d-none">Overview of the organizations conformity to there Frameworks</caption>
     <thead>
         <tr>
-            <th scope="col" class="">Framework</th>
-            <th scope="col" class="">Organization</th>
-            <th scope="col" class="text-center">Requirement</th>
-            <th scope="col" class="text-center">Completeness</th>
-            <th scope="col" class="text-center">Conformity</th>
-            <th scope="col" class="text-center">Edit</th>
+            <th class="">Framework</th>
+            <th class="">Organization</th>
+            <th class="text-center">Requirement</th>
+            <th class="text-center">Completeness</th>
+            <th class="text-center">Conformity</th>
+            <th class="text-center">Edit</th>
         </tr>
     </thead>
     <tbody>
     {% for con in conformity_list %}
         <tr>
-            <td scope="col" class="col-2">
+            <td class="col-2">
                 {{ con.requirement.framework.name }}
             </td>
-            <td scope="col" class="col-2">
+            <td class="col-2">
                 {{ con.organization }}
             </td>
-            <td scope="col" class="col-1 text-center">
+            <td class="col-1 text-center">
                 {{ con.get_leaf | length }}
             </td>
-            <td scope="col" class="col-1 text-center">
+            <td class="col-1 text-center">
                 {{ con.get_completeness }} %
             </td>
             <td class="col text-center">
@@ -38,7 +38,7 @@
                     <div class="progress-bar" role="progressbar" style="width: {{ con.status }}%" aria-valuenow="{{ con.status }}" aria-valuemin="0" aria-valuemax="100">{{ con.status }}%</div>
                 </div>
             </td>
-            <td scope="col" class="col-1 text-center">
+            <td class="col-1 text-center">
                 <a href="{% url 'conformity:conformity_detail_index' con.organization.id con.requirement.framework.id %}"
                    class="bi bi-pencil-square" title="Edit"></a>
             </td>
