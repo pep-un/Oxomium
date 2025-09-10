@@ -47,7 +47,7 @@ class Framework(models.Model):
         POLICY = 'POL', _('Internal Policy')
         OTHER = 'OTHER', _('Other')
 
-    class Language():
+    class Language:
         @classmethod
         def choices(cls):
             return[(lang.alpha_2, lang.name) for lang in languages if hasattr(lang, 'alpha_2')]
@@ -69,7 +69,7 @@ class Framework(models.Model):
         return str(self.name)
 
     def natural_key(self):
-        return (self.name)
+        return self.name
 
     def get_type(self):
         """return the readable version of the Framework Type"""
@@ -114,7 +114,7 @@ class Organization(models.Model):
         return str(self.name)
 
     def natural_key(self):
-        return (self.name)
+        return self.name
 
     @staticmethod
     def get_absolute_url():
@@ -166,7 +166,7 @@ class Requirement(MPTTModel):
         return str(self.name) + ": " + str(self.title)
 
     def natural_key(self):
-        return (self.name)
+        return self.name
 
     natural_key.dependencies = ['conformity.framework']
 
@@ -638,7 +638,7 @@ class Control(models.Model):
         return reverse('conformity:control_index')
 
     @staticmethod
-    def controlpoint_bootstrap(instance, **kwargs):
+    def controlpoint_bootstrap(instance):
         ControlPoint.objects.filter(control=instance.id).filter(Q(status='SCHD') | Q(status='TOBE')).delete()
 
         num_cp = instance.frequency
@@ -661,7 +661,7 @@ class Control(models.Model):
 
     def get_controlpoint(self):
         """Return all control point based on this control"""
-        return ControlPoint.objects.filter(control=self.id).order_by('period_start_date')
+        return ControlPoint.objects.filter(control=self).order_by('period_start_date')
 
 
 class ControlPoint(models.Model):
@@ -695,7 +695,7 @@ class ControlPoint(models.Model):
         return reverse('conformity:control_index')
 
     @staticmethod
-    def update_status(sender, instance, *args, **kwargs):
+    def update_status(instance):
         if instance.status != ControlPoint.Status.COMPLIANT and instance.status != ControlPoint.Status.NONCOMPLIANT:
             today = date.today()
             if instance.period_end_date < today:
@@ -712,7 +712,7 @@ class ControlPoint(models.Model):
 
     def get_action(self):
         """Return the list of Action associated with this Findings"""
-        return Action.objects.filter(associated_controlPoints=self.id)
+        return Action.objects.filter(associated_controlPoints=self)
 
     def is_current_period(self, when: date | None = None) -> bool:
         when = when or date.today()
@@ -835,7 +835,7 @@ class Attachment(models.Model):
         return self.file.name.split("/")[1]
 
     @staticmethod
-    def autoset_mimetype(sender, instance, *args, **kwargs):
+    def autoset_mimetype(instance):
         # Read file and set mime_type
         file_content = instance.file.read()
         instance.file.seek(0)
@@ -878,7 +878,7 @@ class Indicator (models.Model):
         return reverse('conformity:indicator_index')
 
     def indicator_point_init(self):
-        IndicatorPoint.objects.filter(indicator=self.id).filter(Q(status='SCHD') | Q(status='TOBE')).delete()
+        IndicatorPoint.objects.filter(indicator=self).filter(Q(status='SCHD') | Q(status='TOBE')).delete()
 
         num_cp = self.frequency
         today = date.today()

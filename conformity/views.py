@@ -1,11 +1,10 @@
 """
 View of the Conformity Module
 """
-from urllib import request
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import DetailView, ListView, TemplateView
-from django.views.generic.edit import UpdateView, CreateView, DeleteView
+from django.views.generic.edit import UpdateView, CreateView
 from django_filters.views import FilterView
 from auditlog.models import LogEntry
 from mptt.templatetags.mptt_tags import cache_tree_children
@@ -192,7 +191,7 @@ class ConformityUpdateView(LoginRequiredMixin, UpdateView):
         # starting point of the set_status and status tree update logic
         self.object = form.save()
 
-        # Object is save, we juste have to update the tree, when needed.
+        # Object is saved, we juste have to update the tree, when needed.
         if "applicable" in form.changed_data:
             self.object.update_applicable()
         if "responsible" in form.changed_data:
@@ -340,7 +339,7 @@ class AttachmentIndexView(LoginRequiredMixin, ListView):
 
 
 class AttachmentDownloadView(LoginRequiredMixin, View):
-    def get(self, request, pk):
+    def get(self, pk):
         attachment = get_object_or_404(Attachment, id=pk)
 
         file_path = attachment.file.path

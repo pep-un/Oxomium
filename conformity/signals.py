@@ -5,7 +5,7 @@ from .models import Organization, Requirement, Control, ControlPoint, Attachment
 
 
 @receiver(post_save, sender=Control)
-def control_post_save_bootstrap(sender, instance: Control, **kwargs):
+def control_post_save_bootstrap(instance: Control, **kwargs):
     Control.controlpoint_bootstrap(instance)
 
 @receiver(pre_save, sender=ControlPoint)
@@ -25,7 +25,7 @@ def requirement_pre_save_naming(instance, **kwargs):
         instance.name = instance.code
 
 @receiver(m2m_changed, sender=Organization.applicable_frameworks.through)
-def change_framework(instance, action, pk_set, *args, **kwargs):
+def change_framework(instance, action, pk_set, **kwargs):
     if action == "post_add":
         for pk in pk_set:
             instance.add_conformity(pk)
@@ -35,7 +35,7 @@ def change_framework(instance, action, pk_set, *args, **kwargs):
             instance.remove_conformity(pk)
 
 @receiver(post_save, sender=Action)
-def action_post_save_sync_findings(sender, instance: Action, **kwargs):
+def action_post_save_sync_findings(instance: Action, **kwargs):
     """
     When an Action is saved (status/active may have changed),
     re-evaluate the archive state of all linked Findings.
@@ -44,7 +44,7 @@ def action_post_save_sync_findings(sender, instance: Action, **kwargs):
         f.update_archived()
 
 @receiver(m2m_changed, sender=Action.associated_findings.through)
-def action_finding_sync_on_m2m(sender, instance, action, reverse, pk_set, **kwargs):
+def action_finding_sync_on_m2m(instance, action, reverse, pk_set, **kwargs):
     """
     Keep Finding.archived consistent when Action<->Finding links change.
 
@@ -63,7 +63,7 @@ def action_finding_sync_on_m2m(sender, instance, action, reverse, pk_set, **kwar
         f.update_archived()
 
 @receiver(post_save, sender=ControlPoint)
-def controlpoint_post_save_sync(sender, instance: ControlPoint, **kwargs):
+def controlpoint_post_save_sync(instance: ControlPoint, **kwargs):
     """
     Transactional rule:
       - NONCOMPLIANT (current period) -> conformity = 0 (CTRL)
@@ -77,7 +77,7 @@ def controlpoint_post_save_sync(sender, instance: ControlPoint, **kwargs):
                 conf.set_status_from(100, Conformity.StatusJustification.CONTROL)
 
 @receiver(post_save, sender=Action)
-def action_post_save_sync(sender, instance: Action, **kwargs):
+def action_post_save_sync(instance: Action, **kwargs):
     """
     Transactional rule:
       - in progress -> conformity = 0 (ACT)
@@ -90,9 +90,9 @@ def action_post_save_sync(sender, instance: Action, **kwargs):
             conf.set_status_from(100, Conformity.StatusJustification.ACTION)
 
 @receiver(post_save, sender=Indicator)
-def indicator_post_save_bootstrap(sender, instance: Indicator, **kwargs):
+def indicator_post_save_bootstrap(instance: Indicator, **kwargs):
     instance.indicator_point_init()
 
 @receiver(pre_save, sender=IndicatorPoint)
-def indicatorpoint_pre_save_ctrl(sender, instance: IndicatorPoint, **kwargs):
+def indicatorpoint_pre_save_ctrl(instance: IndicatorPoint, **kwargs):
     instance.status_update()
