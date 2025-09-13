@@ -33,7 +33,7 @@
     {% endif %}
     <p class="alert alert-info">
         <i class="bi bi-ui-checks-grid"></i> Audit of {{ audit.organization }} realised by {{ audit.auditor }} ({{ audit.get_type }}).
-        <a class="text-info" href="{% url 'conformity:audit_detail' finding.audit_id %}"> See audit </a>
+        <a class="text-info" href="{% url 'conformity:audit_detail' finding.audit.id %}"> See audit </a>
     </p>
 
     <h2>Description</h2>

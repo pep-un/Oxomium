@@ -2,10 +2,12 @@
 
 {% block header %}
     <h1 class="h1 bi bi-card-checklist"> Frameworks</h1>
-    <span class="badge rounded-pill text-bg-primary fs-4"> {{ object_list | length }} Frameworks</span>
 {% endblock %}
 
 {% block content %}
+
+{% include "includes/filter_row.html" %}
+
     {% if framework_list %}
         <table class="table table-striped align-middle">
             <caption class="d-none">List of frameworks</caption>
@@ -29,7 +31,7 @@
                 <td>{{ framework.get_type }}</td>
                 <td class="text-center">
                     <a href="{% url 'conformity:framework_detail' framework.id %}">
-                        <button type="button" class="btn btn-primary btn-sm w-75">{{ framework.get_requirements_number }} Requirements</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm w-75">{{ framework.get_requirements_number }} Requirements</button>
                     </a>
                 </td>
             </tr>

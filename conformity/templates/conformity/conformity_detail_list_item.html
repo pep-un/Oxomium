@@ -4,26 +4,26 @@
 <tr class="">
 {% endif %}
 
-    {% if con.requirement.is_parent %}
-    <td class="text-{{style}}">
-        {% if style == "primary" %}
-            <button class="btn btn-sm rounded-pill btn-{{style}} me-1" disabled>{{ con.requirement.name }}</button>
-        {% elif style == "info" %}
-            <button class="btn btn-sm rounded-pill btn-{{style}} me-1 ms-3" disabled>{{ con.requirement.name }}</button>
+    {% if con.requirement.is_leaf_node %}
+    <td class="">
+        {% if con.requirement.level == 1 %}
+            <a class="btn btn-sm btn-outline-secondary me-1 disabled" >{{ con.requirement.name }}</a>
+        {% elif con.requirement.level == 2 %}
+            <a class="btn btn-sm btn-outline-secondary me-1 ms-3 disabled" >{{ con.requirement.name }}</a>
         {% else %}
-            <button class="btn btn-sm rounded-pill btn-{{style}} me-1 ms-5 " disabled>{{ con.requirement.name }}</button>
-        {% endif %}
-        <b>{{ con.requirement.title }}</b>
-    {% else %}
-    <td class="text-secondary">
-        {% if style == "primary" %}
-            <button class="btn btn-sm rounded-pill btn-outline-secondary me-1" disabled>{{ con.requirement.name }}</button>
-        {% elif style == "info" %}
-            <button class="btn btn-sm rounded-pill btn-outline-secondary me-1 ms-3" disabled>{{ con.requirement.name }}</button>
-        {% else %}
-            <button class="btn btn-sm rounded-pill btn-outline-secondary me-1 ms-5" disabled>{{ con.requirement.name }}</button>
+            <a class="btn btn-sm btn-outline-secondary me-1 ms-5 disabled" >{{ con.requirement.name }}</a>
         {% endif %}
         {{ con.requirement.title }}
+    {% else %}
+    <td class="">
+        {% if con.requirement.level == 1 %}
+            <a class="btn btn-sm btn-primary me-1" href="?root_id={{con.id}}">{{ con.requirement.name }}</a>
+        {% elif con.requirement.level == 2 %}
+            <a class="btn btn-sm btn-info me-1 ms-3" href="?root_id={{con.id}}">{{ con.requirement.name }}</a>
+        {% else %}
+            <a class="btn btn-sm btn-secondary me-1 ms-5" href="?root_id={{con.id}}">{{ con.requirement.name }}</a>
+        {% endif %}
+        <b>{{ con.requirement.title }}</b>
     {% endif %}
     </td>
 
@@ -58,10 +58,10 @@
 
     <td class="text-center">
         {% if con.get_control %}
-            <a href="{% url 'conformity:control_index' %}?control__conformity__id={{con.id}}">
-                <button type="button" class="btn btn-outline-primary btn-sm rounded-pill"
+            <a href="{% url 'conformity:control_index' %}?conformity={{con.id}}">
+                <button type="button" class="btn btn-outline-primary"
                     title="{% for c in con.get_control %}{{ c.title }}{% if not forloop.last %}&#10;{% endif %}{% endfor %}">
-                    {{ con.get_control | length }}
+                    {{ con.get_control | length }} controls
                 </button>
             </a>
         {% endif %}
@@ -69,10 +69,11 @@
 
     <td class="text-center">
         {% if con.get_action %}
-            <a href="{% url 'conformity:action_index' %}?associated_conformity__id={{con.id}}">
-                <button type="button" class="btn btn-outline-primary btn-sm rounded-pill"
+            <a href="{% url 'conformity:action_index' %}?associated_conformity={{con.id}}">
+                <button type="button" class="btn btn-outline-primary"
                     title="{% for a in con.get_action %}{{ a.title }}{% if not forloop.last %}&#10;{% endif %}{% endfor %}">
-                    {{ con.get_action | length }}</button>
+                    {{ con.get_action | length }} actions
+                </button>
             </a>
         {% endif %}
     </td>
@@ -84,7 +85,10 @@
     </td>
 
     <td class="text-center">
-        <a href="{% url 'conformity:conformity_form' con.id %}"> <i class="bi bi-pencil-square"></i> </a>
+        <div class="btn-group" role="group" aria-label="Action">
+            <a href="{% url 'conformity:conformity_form' con.id %}"
+               class="btn btn-warning bi bi-pencil-square"> </a>
+        </div>
     </td>
 </tr>
 
