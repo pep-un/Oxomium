@@ -4,26 +4,26 @@
 <tr class="">
 {% endif %}
 
-    {% if con.requirement.is_parent %}
-    <td class="text-{{style}}">
-        {% if style == "primary" %}
-            <button class="btn btn-sm rounded-pill btn-{{style}} me-1" disabled>{{ con.requirement.name }}</button>
-        {% elif style == "info" %}
-            <button class="btn btn-sm rounded-pill btn-{{style}} me-1 ms-3" disabled>{{ con.requirement.name }}</button>
+    {% if con.requirement.is_leaf_node %}
+    <td class="">
+        {% if con.requirement.level == 1 %}
+            <a class="btn btn-sm btn-outline-secondary me-1 disabled" >{{ con.requirement.name }}</a>
+        {% elif con.requirement.level == 2 %}
+            <a class="btn btn-sm btn-outline-secondary me-1 ms-3 disabled" >{{ con.requirement.name }}</a>
         {% else %}
-            <button class="btn btn-sm rounded-pill btn-{{style}} me-1 ms-5 " disabled>{{ con.requirement.name }}</button>
-        {% endif %}
-        <b>{{ con.requirement.title }}</b>
-    {% else %}
-    <td class="text-secondary">
-        {% if style == "primary" %}
-            <button class="btn btn-sm rounded-pill btn-outline-secondary me-1" disabled>{{ con.requirement.name }}</button>
-        {% elif style == "info" %}
-            <button class="btn btn-sm rounded-pill btn-outline-secondary me-1 ms-3" disabled>{{ con.requirement.name }}</button>
-        {% else %}
-            <button class="btn btn-sm rounded-pill btn-outline-secondary me-1 ms-5" disabled>{{ con.requirement.name }}</button>
+            <a class="btn btn-sm btn-outline-secondary me-1 ms-5 disabled" >{{ con.requirement.name }}</a>
         {% endif %}
         {{ con.requirement.title }}
+    {% else %}
+    <td class="">
+        {% if con.requirement.level == 1 %}
+            <a class="btn btn-sm btn-primary me-1" href="?root_id={{con.id}}">{{ con.requirement.name }}</a>
+        {% elif con.requirement.level == 2 %}
+            <a class="btn btn-sm btn-info me-1 ms-3" href="?root_id={{con.id}}">{{ con.requirement.name }}</a>
+        {% else %}
+            <a class="btn btn-sm btn-secondary me-1 ms-5" href="?root_id={{con.id}}">{{ con.requirement.name }}</a>
+        {% endif %}
+        <b>{{ con.requirement.title }}</b>
     {% endif %}
     </td>
 
@@ -88,6 +88,7 @@
         <div class="btn-group" role="group" aria-label="Action">
             <a href="{% url 'conformity:conformity_form' con.id %}"
                class="btn btn-warning bi bi-pencil-square"> </a>
+        </div>
     </td>
 </tr>
 

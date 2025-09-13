@@ -17,7 +17,7 @@ from .models import Organization, Framework, Conformity, Audit, Action, Finding,
     Requirement, Indicator, IndicatorPoint
 
 from django.views import View
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
 from django.shortcuts import get_object_or_404, redirect
 import os
 
@@ -189,10 +189,21 @@ class ConformityDetailIndexView(LoginRequiredMixin, ListView):
     template_name = 'conformity/conformity_detail_list.html'
 
     def get_queryset(self, **kwargs):
-        return Conformity.objects.filter(organization__id=self.kwargs['org']) \
-            .filter(requirement__framework__id=self.kwargs['pol']) \
-            .filter(requirement__level=0) \
-            .order_by('requirement__tree_id','requirement__lft')
+        root_id = self.request.GET.get('root_id')
+
+        if root_id:
+            try:
+                root = Conformity.objects.filter(id=root_id)
+            except Conformity.DoesNotExist:
+                raise Http404("Conformity with the given ID does not exist.")
+
+        else:
+            root = Conformity.objects.filter(organization__id=self.kwargs['org']) \
+                .filter(requirement__framework__id=self.kwargs['pol']) \
+                .filter(requirement__level=0)
+
+        print(f"root return = {root}")  #DEBUG
+        return root
 
 
 class ConformityUpdateView(LoginRequiredMixin, UpdateView):
