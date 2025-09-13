@@ -112,12 +112,11 @@
   <caption class="d-none">List of all controls</caption>
     <thead>
         <tr>
-            <th class="">Titre</th>
-            <th class="text-center">Organization</th>
-            <th class="text-center">Level</th>
-            <th class="text-center">Frequency</th>
-            <th class="text-center">Control Points</th>
-            <th class="text-center">Edit</th>
+            <th class="col-4">Titre</th>
+            <th class="text-center col-1">Level</th>
+            <th class="text-center col-1">Frequency</th>
+            <th class="text-center col">Associated Requirements</th>
+            <th class="text-center col-1">Actions</th>
         </tr>
     </thead>
     <tbody>
@@ -127,32 +126,26 @@
                 {{ control.title }}
             </td>
             <td class="col text-center">
-                <span class="badge mx-2 text-bg-dark w-50"> <i class="bi bi-building text-start"></i> {{ control.organization }}</span>
+                {{ control.get_level_display }}
             </td>
             <td class="col text-center">
-                <a href="{% url 'conformity:control_index' %}?level={{control.level}}">
-                {% if control.level == 1 %}
-                    <span class="badge rounded-pill text-bg-primary w-75">
-                {% endif %}
-                {% if control.level == 2 %}
-                    <span class="badge rounded-pill text-bg-success w-75">
-                {%endif %}
-                            {{ control.get_level_display }}
+                {{ control.get_frequency_display }}
+            </td>
+            <td class="col ">
+                {% for conformity in control.conformity.all %}
+                    <span class="badge rounded-pill text-bg-secondary"
+                        title="{{ conformity.requirement.title }}">
+                        {{ conformity.requirement.name }}
                     </span>
-                </a>
+                {% endfor %}
             </td>
             <td class="col text-center">
-                <a href="{% url 'conformity:control_index' %}?frequency={{control.frequency}}">
-                    <span class="badge rounded-pill text-bg-secondary w-75"> {{ control.get_frequency_display }} </span>
-                </a>
-            </td>
-            <td class="col text-center">
-                <a href="{% url 'conformity:controlpoint_index' %}?control__id={{control.id}}">
-                    <button type="button" class="btn btn-outline-primary btn-sm w-25">{{ control.get_controlpoint | length }}</button>
-                </a>
-            </td>
-            <td class="col text-center">
-                <a href="{% url 'conformity:control_form' control.id %}" class="bi bi-pencil-square" title="Edit"></a>
+                <div class="btn-group" role="group" aria-label="actions">
+                    <a href="{% url 'conformity:controlpoint_index' %}?control__id={{control.id}}"
+                        class="btn btn-primary btn-sm bi bi-eye" title="View"></a>
+                    <a href="{% url 'conformity:control_form' control.id %}"
+                       class="btn btn-sm btn-warning bi bi-pencil-square" title="Edit"></a>
+                </div>
             </td>
         </tr>
     {% empty %}

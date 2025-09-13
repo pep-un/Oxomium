@@ -5,92 +5,113 @@
     <h1 class="h1 bi bi-clipboard2-check position-relative col-7">
         Control Point
     </h1>
-    {% if '?control__id=' in request.build_absolute_uri %}
-    <h2 class="col-5 text-center">
-        {% if controlpoint_list.0.control.level == 1 %} <span class="badge mx-2 text-bg-primary">
-        {% elif controlpoint_list.0.control.level == 2 %} <span class="badge mx-2 text-bg-success">
-        {%endif %} {{ controlpoint_list.0.control.get_level_display }} </span>
-        <span class="badge mx-2 text-bg-secondary"> <i class="bi bi-clock-history"></i> {{ controlpoint_list.0.control.get_frequency_display }}</span>
-        <span class="badge mx-2 text-bg-secondary"> <i class="bi bi-building"></i> {{ controlpoint_list.0.control.organization }}</span>
-    </h2>
-    {% endif %}
 {% endblock %}
 
 {% block content %}
-{% if '?control__id=' in request.build_absolute_uri %}
-<p><strong>Titre : </strong> {{ controlpoint_list.0.control.title }} </p>
-<p><strong>Description : </strong></p>
-<p> {{ controlpoint_list.0.control.description | linebreaksbr  }} </p>
-{% endif %}
+<div class="row">
 
-<div class="container text-center">
-  <div class="row justify-content-md-center">
-<div class="col-8">
-<table class="table table-striped align-middle">
-  <caption class="d-none">List of all controls</caption>
-    <thead>
-        <tr>
-            <th class="">Start Date</th>
-            <th class="">End Date</th>
-            <th class="">Owner</th>
-            <th class="">Status</th>
-            <th class="text-center">Edit</th>
-        </tr>
-    </thead>
-    <tbody>
-    {% for cp in controlpoint_list %}
-        <tr>
-            <td class="col">
-                {{ cp.period_start_date | date:'d-M-Y'}}
-            </td>
-            <td class="col">
-                {{ cp.period_end_date | date:'d-M-Y'}}
-            </td>
-            <td class="col">
-                {{ cp.control_user| default_if_none:"" }}
-            </td>
-            <td class="col">
-                {% if cp.status == "SCHD" %}
-                    <i class="bi bi-hexagon text-secondary"></i>
-                {% endif %}
-                {% if cp.status == "TOBE" %}
-                    <i class="bi bi-hexagon-fill text-secondary"></i>
-                {% endif %}
-                {% if cp.status == "NOK" %}
-                    <i class="bi bi-hexagon-fill text-danger"></i>
-                {% endif %}
-                {% if cp.status == "OK" %}
-                    <i class="bi bi-hexagon-fill text-success"></i>
-                {% endif %}
-                {% if cp.status == "MISS" %}
-                    <i class="bi bi-hexagon text-danger"></i>
-                {% endif %}
-                {{ cp.get_status_display }}
-            </td>
-            <td class="col text-center">
-                <a href="{% url 'conformity:controlpoint_form' cp.id %}" >
-                    {% if cp.status == "TOBE" %}
-                    <i class="bi bi-pencil-square"></i>
-                    {% else %}
-                    <i class="bi bi-eye"></i>
-                    {% endif %}
-                </a>
-            </td>
-        </tr>
-    {% empty %}
-        <div class="alert alert-info" role="alert">
-            No control recorded.
+    {% if '?control__id=' in request.build_absolute_uri %}
+        <div class="col col-4">
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Control</h2>
+                    <h3 class="card-subtitle text-body-secondary">{{ controlpoint_list.0.control.title }}</h3>
+                </div>
+                <div class="card-body">
+
+                    <p> {{ controlpoint_list.0.control.description | linebreaksbr  }} </p>
+
+                    <ul>
+                        <li><b>Level:</b> {{ controlpoint_list.0.control.get_level_display }}</li>
+                        <li><b>Frequency:</b> {{ controlpoint_list.0.control.get_frequency_display }}</li>
+                        <li><b>Organization:</b> {{ controlpoint_list.0.control.organization }}</li>
+                    </ul>
+
+                    <b>Associated conformity:</b>
+                    <ul>
+                        {% for conformity in controlpoint_list.0.control.conformity.all %}
+                            <li>{{ conformity.requirement.name }}: {{ conformity.requirement.title }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
         </div>
-        <tr><td colspan="9">No data to display</td></tr>
-    {% endfor %}
-        <tr><td colspan="9" class="text-center">
-            <br />
-            <a href="{% url 'conformity:control_index' %}">
-                <button type="button" class="btn btn-secondary bi bi-caret-left-square"> Return to control</button>
-            </a>
-        </td></tr>
-</table>
+    {% endif %}
+
+    <div class="col">
+        <h2>Control Point List</h2>
+        <table class="table table-striped align-middle w-100">
+            <caption class="d-none">List of all control points</caption>
+            <thead>
+                <tr>
+                    <th class="">Start Date</th>
+                    <th class="">End Date</th>
+                    <th class="">Owner</th>
+                    <th class="">Status</th>
+                    <th class="text-center">Edit</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cp in controlpoint_list %}
+                    <tr>
+                        <td class="col">
+                            {{ cp.period_start_date | date:'d-M-Y'}}
+                        </td>
+                        <td class="col">
+                            {{ cp.period_end_date | date:'d-M-Y'}}
+                        </td>
+                        <td class="col">
+                            {{ cp.control_user| default_if_none:"" }}
+                        </td>
+                        <td class="col">
+                            {% if cp.status == "SCHD" %}
+                                <i class="bi bi-hexagon text-secondary"></i>
+                            {% endif %}
+                            {% if cp.status == "TOBE" %}
+                                <i class="bi bi-hexagon-fill text-secondary"></i>
+                            {% endif %}
+                            {% if cp.status == "NOK" %}
+                                <i class="bi bi-hexagon-fill text-danger"></i>
+                            {% endif %}
+                            {% if cp.status == "OK" %}
+                                <i class="bi bi-hexagon-fill text-success"></i>
+                            {% endif %}
+                            {% if cp.status == "MISS" %}
+                                <i class="bi bi-hexagon text-danger"></i>
+                            {% endif %}
+                            {{ cp.get_status_display }}
+                        </td>
+                        <td class="col text-center">
+                            <a href="{% url 'conformity:controlpoint_form' cp.id %}" >
+                                {% if cp.status == "TOBE" %}
+                                <i class="bi bi-pencil-square"></i>
+                                {% else %}
+                                <i class="bi bi-eye"></i>
+                                {% endif %}
+                            </a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <div class="alert alert-info" role="alert">
+                        No control recorded.
+                    </div>
+                    <tr><td colspan="9">No data to display</td></tr>
+                {% endfor %}
+                <tr><td colspan="9" class="text-center">
+                <br />
+                </td></tr>
+            </tbody>
+        </table>
     </div>
   </div>
+</div>
+<div class="row mt-4">
+    <div class="col text-center">
+                    <a href="{% url 'conformity:control_index' %}"
+                       class="btn btn-secondary bi bi-caret-left-square">
+                        Return to control list
+                    </a>
+    </div>
 </div>
 {% endblock %}

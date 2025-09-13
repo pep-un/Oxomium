@@ -11,12 +11,10 @@
     <thead>
         <tr>
             <th class="">Titre</th>
-            <th class="">Organization</th>
             <th class="">Owner</th>
             <th class="">Status</th>
             <th class="">Last Update</th>
             <th class="text-center">Association</th>
-            <th class="text-center">Ref.</th>
             <th class="text-center">Edit</th>
         </tr>
     </thead>
@@ -25,9 +23,6 @@
         <tr>
             <td class="col">
                 {{ action.title }}
-            </td>
-            <td class="col">
-                {{ action.organization | default_if_none:""}}
             </td>
             <td class="col">
                 {{ action.owner | default_if_none:"" }}
@@ -61,30 +56,31 @@
             </td>
             <td class="text-center">
                 {% if action.get_associated %}
-                <button type="button" class="btn btn-outline-primary btn-sm rounded-pill">
-                    {{ action.get_associated | length }}
+                <button type="button" class="btn btn-outline-primary btn-sm">
+                    {{ action.get_associated | length }} Associated actions
                 </button>
                 {% endif %}
             </td>
             <td class="text-center">
-                {% if action.reference %}
-                    <a href="{{ action.reference }}" class="bi bi-box-arrow-up-right" title="ITSM Reference link"></a>
-                {% endif %}
-            </td>
-            <td class="text-center">
-                <a href="{% url 'conformity:action_form' action.id %}" class="bi bi-pencil-square" title="Edit"></a>
+                <div class="btn-group" role="group" aria-label="Action">
+                    <a href="{% url 'conformity:action_form' action.id %}"
+                       class="btn btn-sm btn-warning bi bi-pencil-square" title="Edit"></a>
+                    <a href="{{ action.reference }}"
+                       class="btn btn-sm btn-secondary bi bi-box-arrow-up-right" title="ITSM Reference link"></a>
+                </div>
             </td>
         </tr>
     {% empty %}
         <div class="alert alert-info" role="alert">
             No action recorded.
         </div>
-        <tr><td colspan="7">No data to display</td></tr>
+        <tr><td colspan="6">No data to display</td></tr>
     {% endfor %}
-        <tr><td colspan="7" class="text-center">
+        <tr><td colspan="6" class="text-center">
             <br />
-            <a href="{% url 'conformity:action_create' %}">
-                <button type="button" class="btn btn-success bi bi-plus-circle"> Register a new action</button>
+            <a href="{% url 'conformity:action_create' %}"
+               class="btn btn-sm btn-primary bi bi-pencil-square">
+                    Register a new action</button>
             </a>
         </td></tr>
 </table>

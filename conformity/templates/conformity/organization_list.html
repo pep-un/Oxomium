@@ -13,8 +13,7 @@
             <th class="col-1">Organization</th>
             <th class="col ">Description</th>
             <th class="col-4 text-center">Applicable frameworks</th>
-            <th class="col-1 text-center">View</th>
-            <th class="col-1 text-center">Edit</th>
+            <th class="col-1 text-center">Actions</th>
         </tr>
     </thead>
     <tbody>
@@ -34,7 +33,7 @@
                 <td class="text-center">
                     {% for item in org.get_frameworks %}
                         <a href="{% url 'conformity:conformity_detail_index' org.id item.id %}">
-                           <div class="btn btn-primary my-1 w-75" style="width:15em;">
+                           <div class="btn btn-outline-primary my-1 w-75" style="width:15em;">
                             {{ item }}
                            </div>
                         </a>
@@ -42,10 +41,12 @@
                     {% endfor %}
                 </td>
                 <td class="text-center">
-                    <a href="{% url 'conformity:organization_detail' org.id %}" class="bi bi-eye" title="View"></a>
-                </td>
-                <td class="text-center">
-                    <a href="{% url 'conformity:organization_form' org.id %}" class="bi bi-pencil-square" title="Edit"></a>
+                    <div class="btn-group" role="group" aria-label="actions">
+                        <a href="{% url 'conformity:organization_detail' org.id %}"
+                           class="btn btn-sm btn-primary bi bi-eye" title="View"></a>
+                        <a href="{% url 'conformity:organization_form' org.id %}"
+                        class="btn btn-sm btn-warning bi bi-pencil-square" title="Edit"></a>
+                    </div>
                 </td>
             </tr>
         {% empty %}

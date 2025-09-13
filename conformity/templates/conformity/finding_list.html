@@ -27,40 +27,40 @@
             <th class="">Description</th>
             <th class="text-center">CVSS</th>
             <th class="text-center">Audit campaign</th>
+            <th class="text-center">Associated actions</th>
             <th class="text-center">Action</th>
-            <th class="text-center">Edit</th>
         </tr>
     </thead>
     <tbody>
     {% for finding in finding_list %}
         <tr>
             <td class="col-2 text-center">
-                <a href="{% url 'conformity:finding_detail' finding.id  %}" class="">
-                {% if finding.severity == "CRT" %}
-                    <span class="badge rounded-pill w-75 bg-dark">{{ finding.name | default:"Critical" }}</span>
-                {% endif %}
-                {% if finding.severity == "MAJ" %}
-                    <span class="badge rounded-pill w-75 bg-danger">{{ finding.name | default:"Major" }}</span>
-                {% endif %}
-                {% if finding.severity == "MIN" %}
-                    <span class="badge rounded-pill w-75 bg-warning">{{ finding.name | default:"Minor" }}</span>
-                {% endif %}
-                {% if finding.severity == "OBS" %}
-                    <span class="badge rounded-pill w-75 bg-info">{{ finding.name | default:"Opportunity" }}</span>
-                {% endif %}
-                {% if finding.severity == "OTHER" %}
-                    <span class="badge rounded-pill w-75 bg-secondary">{{ finding.name | default:"Remark" }}</span>
-                {% endif %}
-                {% if finding.severity == "POS" %}
-                    <span class="badge rounded-pill w-75 bg-success">{{ finding.name | default:"Positive" }}</span>
-                {% endif %}
-                </a>
+                {{ finding.name | default:"Unnamed finding" }}
             </td>
             <td class="col">
                 {{ finding.short_description }}
             </td>
             <td class="col-1 text-center">
+                {% if finding.severity == "CRT" %}
+                    <span class="badge rounded-pill w-75 text-bg-dark">
+                {% endif %}
+                {% if finding.severity == "MAJ" %}
+                    <span class="badge rounded-pill w-75 text-bg-danger">
+                {% endif %}
+                {% if finding.severity == "MIN" %}
+                    <span class="badge rounded-pill w-75 text-bg-warning">
+                {% endif %}
+                {% if finding.severity == "OBS" %}
+                    <span class="badge rounded-pill w-75 text-bg-info">
+                {% endif %}
+                {% if finding.severity == "OTHER" %}
+                    <span class="badge rounded-pill w-75 text-bg-secondary">
+                {% endif %}
+                {% if finding.severity == "POS" %}
+                    <span class="badge rounded-pill w-75 text-bg-success">
+                {% endif %}
                 {{ finding.cvss | default:'-'}}
+                </span>
             </td>
             <td class="col text-center">
                 <a href="{% url 'conformity:audit_detail' finding.audit.id %}">
@@ -79,7 +79,12 @@
                 {% endif %}
             </td>
             <td class="col text-center">
-                <a href="{% url 'conformity:finding_form' finding.id %}" class="bi bi-pencil-square" title="Edit"></a>
+                <div class="btn-group" role="group" aria-label="actions">
+                    <a href="{% url 'conformity:finding_detail' finding.id %}"
+                       class="btn btn-sm btn-primary bi bi-eye" title="View"></a>
+                    <a href="{% url 'conformity:finding_form' finding.id %}"
+                       class="btn btn-sm btn-warning bi bi-pencil-square" title="Edit"></a>
+                </div>
             </td>
         </tr>
     {% empty %}
