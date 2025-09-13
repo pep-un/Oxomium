@@ -108,6 +108,8 @@
 
 <hr class="mb-3" />
 
+{% include "includes/filter_row.html" %}
+
 <table class="table table-striped align-middle">
   <caption class="d-none">List of all controls</caption>
     <thead>
@@ -141,7 +143,7 @@
             </td>
             <td class="col text-center">
                 <div class="btn-group" role="group" aria-label="actions">
-                    <a href="{% url 'conformity:controlpoint_index' %}?control__id={{control.id}}"
+                    <a href="{% url 'conformity:controlpoint_index' %}?control={{control.id}}"
                         class="btn btn-primary btn-sm bi bi-eye" title="View"></a>
                     <a href="{% url 'conformity:control_form' control.id %}"
                        class="btn btn-sm btn-warning bi bi-pencil-square" title="Edit"></a>

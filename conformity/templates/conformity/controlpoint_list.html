@@ -9,8 +9,7 @@
 
 {% block content %}
 <div class="row">
-
-    {% if '?control__id=' in request.build_absolute_uri %}
+    {% if filter.form.data.control %}
         <div class="col col-4">
 
             <div class="card">
@@ -40,7 +39,12 @@
     {% endif %}
 
     <div class="col">
+        {% if filter.form.data.control %}
         <h2>Control Point List</h2>
+        {% else %}
+            {% include "includes/filter_row.html" %}
+        {% endif %}
+
         <table class="table table-striped align-middle w-100">
             <caption class="d-none">List of all control points</caption>
             <thead>

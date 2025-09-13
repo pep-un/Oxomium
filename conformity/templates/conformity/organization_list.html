@@ -2,10 +2,12 @@
 
 {% block header %}
     <h1 class="h1 bi bi-building"> Organizations</h1>
-    <span class="badge rounded-pill text-bg-primary fs-4"> {{ object_list | length }} Organizations</span>
 {% endblock %}
 
 {% block content %}
+
+{% include "includes/filter_row.html" %}
+
     <table class="table table-striped align-middle">
     <caption class="d-none">List of the organizations</caption>
     <thead>

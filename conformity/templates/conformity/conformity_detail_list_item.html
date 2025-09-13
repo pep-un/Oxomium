@@ -58,7 +58,7 @@
 
     <td class="text-center">
         {% if con.get_control %}
-            <a href="{% url 'conformity:control_index' %}?control__conformity__id={{con.id}}">
+            <a href="{% url 'conformity:control_index' %}?conformity={{con.id}}">
                 <button type="button" class="btn btn-outline-primary"
                     title="{% for c in con.get_control %}{{ c.title }}{% if not forloop.last %}&#10;{% endif %}{% endfor %}">
                     {{ con.get_control | length }} controls
@@ -69,7 +69,7 @@
 
     <td class="text-center">
         {% if con.get_action %}
-            <a href="{% url 'conformity:action_index' %}?associated_conformity__id={{con.id}}">
+            <a href="{% url 'conformity:action_index' %}?associated_conformity={{con.id}}">
                 <button type="button" class="btn btn-outline-primary"
                     title="{% for a in con.get_action %}{{ a.title }}{% if not forloop.last %}&#10;{% endif %}{% endfor %}">
                     {{ con.get_action | length }} actions

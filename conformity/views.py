@@ -9,7 +9,8 @@ from django_filters.views import FilterView
 from auditlog.models import LogEntry
 from mptt.templatetags.mptt_tags import cache_tree_children
 
-from .filterset import ActionFilter, ControlFilter, ControlPointFilter
+from .filterset import ActionFilter, ControlFilter, ControlPointFilter, FrameworkFilter, OrganizationFilter, \
+    ConformityFilter, AuditFilter, FindingFilter, IndicatorFilter
 from .forms import ConformityForm, AuditForm, FindingForm, ActionForm, OrganizationForm, ControlForm, ControlPointForm, \
     IndicatorForm, IndicatorPointForm
 from .models import Organization, Framework, Conformity, Audit, Action, Finding, Control, ControlPoint, Attachment, \
@@ -46,8 +47,10 @@ class HomeView(LoginRequiredMixin, TemplateView):
 #
 # Audit
 #
-class AuditIndexView(LoginRequiredMixin, ListView):
+class AuditIndexView(LoginRequiredMixin, FilterView):
     model = Audit
+    filterset_class = AuditFilter
+    template_name = "conformity/audit_list.html"
 
 
 class AuditDetailView(LoginRequiredMixin, DetailView):
@@ -84,8 +87,11 @@ class AuditCreateView(LoginRequiredMixin, CreateView):
 #
 # Findings
 #
-class FindingIndexView(LoginRequiredMixin, ListView):
+class FindingIndexView(LoginRequiredMixin, FilterView):
     model = Finding
+    filterset_class = FindingFilter
+    template_name = "conformity/finding_list.html"
+
 
     def get_queryset(self, **kwargs):
         return Finding.objects.filter(severity__in=["CRT","MAJ","MIN", "OBS"]).filter(archived=False)
@@ -109,8 +115,10 @@ class FindingUpdateView(LoginRequiredMixin, UpdateView):
 #
 
 
-class OrganizationIndexView(LoginRequiredMixin, ListView):
+class OrganizationIndexView(LoginRequiredMixin, FilterView):
     model = Organization
+    filterset_class = OrganizationFilter
+    template_name = "conformity/organization_list.html"
 
 
 class OrganizationDetailView(LoginRequiredMixin, DetailView):
@@ -147,8 +155,10 @@ class OrganizationCreateView(LoginRequiredMixin, CreateView):
 #
 
 
-class FrameworkIndexView(LoginRequiredMixin, ListView):
+class FrameworkIndexView(LoginRequiredMixin, FilterView):
     model = Framework
+    filterset_class = FrameworkFilter
+    template_name = 'conformity/framework_list.html'
 
 
 class FrameworkDetailView(LoginRequiredMixin, DetailView):
@@ -165,8 +175,10 @@ class FrameworkDetailView(LoginRequiredMixin, DetailView):
 #
 # Conformity
 #
-class ConformityIndexView(LoginRequiredMixin, ListView):
+class ConformityIndexView(LoginRequiredMixin, FilterView):
     model = Conformity
+    template_name = 'conformity/conformity_list.html'
+    filterset_class = ConformityFilter
 
     def get_queryset(self, **kwargs):
         return Conformity.objects.filter(requirement__level=0)
@@ -315,8 +327,10 @@ class IndicatorCreateView(LoginRequiredMixin, CreateView):
     form_class = IndicatorForm
 
 
-class IndicatorIndexView(LoginRequiredMixin, ListView):
+class IndicatorIndexView(LoginRequiredMixin, FilterView):
     model = Indicator
+    filterset_class = IndicatorFilter
+    template_name = 'conformity/indicator_list.html'
 
 
 class IndicatorUpdateView(LoginRequiredMixin, UpdateView):

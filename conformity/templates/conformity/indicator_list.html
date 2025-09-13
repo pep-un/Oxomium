@@ -3,10 +3,12 @@
 
 {% block header %}
     <h1 class="h1 bi bi-speedometer"> Indicators </h1>
-    <span class="badge rounded-pill text-bg-primary fs-4"> {{ object_list | length }} Indicators</span>
 {% endblock %}
 
 {% block content %}
+
+{% include "includes/filter_row.html" %}
+
 <div class="row">
     {% for indicator in indicator_list %}
     <div class="col-3 my-2">

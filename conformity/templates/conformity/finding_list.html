@@ -2,22 +2,11 @@
 
 {% block header %}
     <h1 class="h1 bi bi-exclamation-diamond"> Active findings </h1>
-    <span class="badge rounded-pill text-bg-primary fs-4"> {{ object_list | length }} Findings</span>
 {% endblock %}
 
 {% block content %}
-<p class="alert alert-info" role="alert">
-    <i class="bi bi-info-circle"> </i> &nbsp
-    Only active findings from level
-    <span class="badge rounded-pill bg-dark">Critical</span>,
-    <span class="badge rounded-pill bg-danger">Major</span>,
-    <span class="badge rounded-pill bg-warning">Minor</span> and
-    <span class="badge rounded-pill bg-info">Opportunity</span> for improvement are listed for follow-up.
-    Other findings like
-    <i class="bi bi-archive"></i> Archived findings,
-    <span class="badge rounded-pill bg-secondary">Remark</span> and
-    <span class="badge rounded-pill bg-success">Positive</span> findings are not displayed.
-</p>
+
+{% include "includes/filter_row.html" %}
 
 <table class="table table-striped align-middle">
   <caption class="d-none">List of Critical, Major, Minor finding and Opportunity for improvement.</caption>
@@ -71,7 +60,7 @@
             </td>
             <td class="col text-center">
                 {% if finding.get_action %}
-                    <a href="{% url 'conformity:action_index' %}?associated_findings__id={{finding.id}}">
+                    <a href="{% url 'conformity:action_index' %}?associated_findings={{finding.id}}">
                         <button type="button" class="btn btn-outline-primary btn-sm">
                             {{ finding.get_action | length}} associated actions
                         </button>
