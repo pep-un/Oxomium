@@ -1,15 +1,32 @@
 {% extends "conformity/main.html" %}
 
 {% block header %}
-    <h1 class="h1 bi bi-shield-shaded">
+<h1 class="h1 bi bi-shield-shaded" xmlns="">
         {{ conformity_list.0.organization }} conformity to {{ conformity_list.0.requirement.framework }}:
     </h1>
-    <span class="badge rounded-pill bg-primary me-4 fs-4"> {{ conformity_list.0.get_leaf | length }} Requirements</span>
-    <span class="badge rounded-pill bg-primary me-4 fs-4"> Completeness: {{ conformity_list.0.get_completeness }} % </span>
-    <span class="badge rounded-pill bg-primary me-4 fs-4"> Conformity: {{ conformity_list.0.status }} %</span>
 {% endblock %}
 
 {% block content %}
+<h3>
+    <div class="d-flex">
+        <span class="badge rounded-pill bg-secondary me-4"> {{ conformity_list.0.get_leaf | length }} Requirements</span>
+        <span class="badge rounded-pill bg-secondary me-4"> Completeness: {{ conformity_list.0.get_completeness }} % </span>
+        <span class="badge rounded-pill bg-secondary me-4"> Conformity: {{ conformity_list.0.status }} %</span>
+
+        <div class="btn-group ms-auto">
+            <a type="button" class="btn btn btn-secondary bi bi-file-earmark-arrow-down-fill"
+               href="{% url 'conformity:conformity_export' conformity_list.0.organization.id conformity_list.0.requirement.framework.id %}">
+                 Export</a>
+            <a type="button" class="btn btn btn-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                <span class="visually-hidden">Toggle Dropdown</span>
+            </a>
+            <ul class="dropdown-menu" style="z-index:1500">
+                <li><a class="dropdown-item" href="{% url 'conformity:conformity_export' conformity_list.0.organization.id conformity_list.0.requirement.framework.id %}?format=csv">CSV Format</a></li>
+                <li><a class="dropdown-item" href="{% url 'conformity:conformity_export' conformity_list.0.organization.id conformity_list.0.requirement.framework.id %}?format=xlsx">XLSX Format</a></li>
+            </ul>
+        </div>
+    </div>
+</h3>
 <table class="table align-middle">
   <caption class="d-none">List and status of framework requirements for the organisation.</caption>
     <thead class="sticky-top bg-white lh-lg">

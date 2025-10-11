@@ -16,9 +16,11 @@ urlpatterns = [
     path('audit/update/<int:pk>', views.AuditUpdateView.as_view(), name='audit_form'),
 
     path('conformity/', views.ConformityIndexView.as_view(), name='conformity_index'),
+    path('conformity/update/<int:pk>', views.ConformityUpdateView.as_view(), name='conformity_form'),
     path('conformity/organization/<int:org>/framework/<int:pol>/', views.ConformityDetailIndexView.as_view(),
          name='conformity_detail_index'),
-    path('conformity/update/<int:pk>', views.ConformityUpdateView.as_view(), name='conformity_form'),
+    path('conformity/organization/<int:org>/framework/<int:pol>/export/', views.ConformityExportView.as_view(),
+         name='conformity_export'),
 
     path('finding/', views.FindingIndexView.as_view(), name='finding_index'),
     path('finding/<int:pk>', views.FindingDetailView.as_view(), name='finding_detail'),

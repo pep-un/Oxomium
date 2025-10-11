@@ -7,6 +7,7 @@ from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import UpdateView, CreateView
 from django_filters.views import FilterView
 from auditlog.models import LogEntry
+from import_export.formats import base_formats
 from mptt.templatetags.mptt_tags import cache_tree_children
 
 from .filterset import ActionFilter, ControlFilter, ControlPointFilter, FrameworkFilter, OrganizationFilter, \
@@ -15,6 +16,7 @@ from .forms import ConformityForm, AuditForm, FindingForm, ActionForm, Organizat
     IndicatorForm, IndicatorPointForm
 from .models import Organization, Framework, Conformity, Audit, Action, Finding, Control, ControlPoint, Attachment, \
     Requirement, Indicator, IndicatorPoint
+from .resources import ConformityResource
 
 from django.views import View
 from django.http import HttpResponse, Http404
@@ -239,6 +241,31 @@ class ConformityUpdateView(LoginRequiredMixin, UpdateView):
             return redirect("conformity:conformity_form", self.object.pk)
 
         return super().form_valid(form)
+
+
+class ConformityExportView(View):
+    def get(self, request, org: int, pol: int, *args, **kwargs):
+        framework = get_object_or_404(Framework, pk=pol)
+        organization = get_object_or_404(Organization, pk=org)
+
+        qs = (
+            Conformity.objects.filter(requirement__framework=framework, organization=organization)
+            .select_related("requirement__framework", "organization")
+        )
+        dataset = ConformityResource().export(qs)
+
+        if request.GET.get("format") == "csv":
+            export_format = base_formats.CSV()
+        else:
+            export_format = base_formats.XLSX()
+
+        data = export_format.export_data(dataset)
+        content_type = export_format.get_content_type()
+        filename = f"conformity.{export_format.get_extension()}"
+
+        response = HttpResponse(data, content_type=content_type)
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
 
 
 #
