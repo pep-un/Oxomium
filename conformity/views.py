@@ -243,7 +243,7 @@ class ConformityUpdateView(LoginRequiredMixin, UpdateView):
         return super().form_valid(form)
 
 
-class ConformityExportView(View):
+class ConformityExportView(LoginRequiredMixin, View):
     def get(self, request, org: int, pol: int, *args, **kwargs):
         framework = get_object_or_404(Framework, pk=pol)
         organization = get_object_or_404(Organization, pk=org)
