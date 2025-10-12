@@ -15,8 +15,12 @@
         <div class="card">
             <div class="card-header h4">
                 {{indicator.name}}
-                <a class="btn btn-sm btn-primary bi bi-pencil-square float-end"
-                   role="button" href="{% url 'conformity:indicator_form' indicator.pk %}"> </a>
+                <div class="btn-group float-end" role="group" aria-label="actions">
+                    <a class="btn btn-sm btn-primary bi bi-eye"
+                       role="button" href="{% url 'conformity:indicator_detail' indicator.pk %}"> </a>
+                    <a class="btn btn-sm btn-warning bi bi-pencil-square"
+                       role="button" href="{% url 'conformity:indicator_form' indicator.pk %}"> </a>
+                </div>
             </div>
             <div class="card-body">
             {% if indicator.get_current_point.status == "CRIT" %}

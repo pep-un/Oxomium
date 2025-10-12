@@ -49,7 +49,8 @@ urlpatterns = [
 
     path('indicator/', views.IndicatorIndexView.as_view(), name='indicator_index'),
     path('indicator/create', views.IndicatorCreateView.as_view(), name='indicator_create'),
-    path('indicator/<int:pk>/', views.IndicatorUpdateView.as_view(), name='indicator_form'),
+    path('indicator/update/<int:pk>/', views.IndicatorUpdateView.as_view(), name='indicator_form'),
+    path('indicator/<int:pk>/', views.IndicatorDetailView.as_view(), name='indicator_detail'),
     path('indicatorpoint/<int:pk>/', views.IndicatorPointUpdateView.as_view(), name='indicatorpoint_form'),
 
     path('attachment/', views.AttachmentIndexView.as_view(), name='attachment_index'),

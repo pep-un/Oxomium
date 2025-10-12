@@ -365,6 +365,18 @@ class IndicatorCreateView(LoginRequiredMixin, CreateView):
     form_class = IndicatorForm
 
 
+class IndicatorDetailView(LoginRequiredMixin, DetailView):
+    model = Indicator
+    context_object_name = 'indicator'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        indicator = self.get_object()
+
+        context['indicator_point_list'] = IndicatorPoint.objects.filter(indicator=indicator).order_by('period_start_date')
+        return context
+
+
 class IndicatorIndexView(LoginRequiredMixin, FilterView):
     model = Indicator
     filterset_class = IndicatorFilter
