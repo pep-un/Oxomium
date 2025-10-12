@@ -91,3 +91,31 @@ class FindingResource(resources.ModelResource):
         if not actions.exists():
             return ""
         return ", ".join(f"{action.title}" for action in actions)
+
+
+class ActionResource(resources.ModelResource):
+    class Meta:
+        model = Action
+        fields = ("title", "description", "organization__name", "owner", "status", "status_comment", "active", "create_date", "update_date")
+
+    def dehydrate_active(self, obj):
+        val = getattr(obj, "active", None)
+        if val is None:
+            return ""
+        return "Yes" if bool(val) else "No"
+
+    def dehydrate_status(self, obj):
+        if hasattr(obj, "get_status_display"):
+            return obj.get_status_display()
+        return getattr(obj, "status", "")
+
+    def dehydrate_owner(self, obj):
+        if not getattr(obj, "owner_id", None):
+            return ""
+        u = obj.owner
+        full = getattr(u, "get_full_name", None)
+        if callable(full):
+            name = full()
+            if name:
+                return name
+        return getattr(u, "owner", str(u))

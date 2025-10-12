@@ -39,6 +39,7 @@ urlpatterns = [
     path('action/', views.ActionIndexView.as_view(), name='action_index'),
     path('action/create', views.ActionCreateView.as_view(), name='action_create'),
     path('action/update/<int:pk>', views.ActionUpdateView.as_view(), name='action_form'),
+    path('action/export', views.ActionExportView.as_view(), name='action_export'),
 
     path('control/', views.ControlIndexView.as_view(), name='control_index'),
     path('control/create', views.ControlCreateView.as_view(), name='control_create'),
