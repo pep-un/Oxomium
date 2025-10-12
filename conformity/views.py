@@ -16,7 +16,7 @@ from .forms import ConformityForm, AuditForm, FindingForm, ActionForm, Organizat
     IndicatorForm, IndicatorPointForm
 from .models import Organization, Framework, Conformity, Audit, Action, Finding, Control, ControlPoint, Attachment, \
     Requirement, Indicator, IndicatorPoint
-from .resources import ConformityResource
+from .resources import ConformityResource, ControlResource
 
 from django.views import View
 from django.http import HttpResponse, Http404
@@ -352,6 +352,28 @@ class ControlPointUpdateView(LoginRequiredMixin, UpdateView):
         for file in attachments:
             attachment = Attachment.objects.create(file=file)
             self.object.attachment.add(attachment)
+        return response
+
+
+class ControlExportView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        qs = (
+            Control.objects.all()
+#            .select_related("requirement__framework", "organization")
+        )
+        dataset = ControlResource().export(qs)
+
+        if request.GET.get("format") == "csv":
+            export_format = base_formats.CSV()
+        else:
+            export_format = base_formats.XLSX()
+
+        data = export_format.export_data(dataset)
+        content_type = export_format.get_content_type()
+        filename = f"controls.{export_format.get_extension()}"
+
+        response = HttpResponse(data, content_type=content_type)
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
         return response
 
 

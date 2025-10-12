@@ -43,6 +43,7 @@ urlpatterns = [
     path('control/create', views.ControlCreateView.as_view(), name='control_create'),
     path('control/update/<int:pk>', views.ControlUpdateView.as_view(), name='control_form'),
     path('control/<int:pk>', views.ControlDetailView.as_view(), name='control_detail'),
+    path('control/export', views.ControlExportView.as_view(), name='control_export'),
 
     path('controlpoint/', views.ControlPointIndexView.as_view(), name='controlpoint_index'),
     path('controlpoint/update/<int:pk>', views.ControlPointUpdateView.as_view(), name='controlpoint_form'),

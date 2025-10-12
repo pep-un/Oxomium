@@ -1,25 +1,17 @@
 from import_export import resources
-from .models import Conformity
+from .models import Conformity, Control
+
 
 class ConformityResource(resources.ModelResource):
     class Meta:
         model = Conformity
         fields = ("requirement__name", "requirement__title", "requirement__description", "applicable", "responsible", "status", "status_last_update", "status_justification", "comment")
 
-    def dehydrate_requirement__name(self, obj):
-        return getattr(obj.requirement, "name", "") if obj.requirement_id else ""
-
-    def dehydrate_requirement__title(self, obj):
-        return getattr(obj.requirement, "title", "") if obj.requirement_id else ""
-
-    def dehydrate_requirement__description(self, obj):
-        return getattr(obj.requirement, "description", "") if obj.requirement_id else ""
-
     def dehydrate_applicable(self, obj):
         val = getattr(obj, "applicable", None)
         if val is None:
             return ""
-        return "Oui" if bool(val) else "Non"
+        return "yes" if bool(val) else "No"
 
     def dehydrate_responsible(self, obj):
         if not getattr(obj, "responsible_id", None):
@@ -45,3 +37,24 @@ class ConformityResource(resources.ModelResource):
             return round(float(val) / 100, 2)
         except (ValueError, TypeError):
             return None
+
+
+class ControlResource(resources.ModelResource):
+    class Meta:
+        model = Control
+        fields = ("title", "level", "frequency", "organization__name", "description", "conformity")
+
+    def dehydrate_frequency(self, obj):
+        if hasattr(obj, "get_frequency_display"):
+            return obj.get_frequency_display()
+        return getattr(obj, "frequency", "")
+
+    def dehydrate_conformity(self, obj):
+        conformities = obj.conformity.all().select_related('organization', 'requirement')
+        if not conformities.exists():
+            return ""
+
+        return ", ".join(
+            f"{c.requirement.name}"
+            for c in conformities
+        )
