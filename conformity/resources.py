@@ -1,11 +1,13 @@
-from import_export import resources
-from .models import Conformity, Control
+from import_export import fields, resources
+from import_export.widgets import ManyToManyWidget
+from .models import Conformity, Control, Finding, Action
 
 
 class ConformityResource(resources.ModelResource):
     class Meta:
         model = Conformity
-        fields = ("requirement__name", "requirement__title", "requirement__description", "applicable", "responsible", "status", "status_last_update", "status_justification", "comment")
+        fields = ("requirement__name", "requirement__title", "requirement__description", "applicable", "responsible",
+                  "status", "status_last_update", "status_justification", "comment")
 
     def dehydrate_applicable(self, obj):
         val = getattr(obj, "applicable", None)
@@ -50,11 +52,27 @@ class ControlResource(resources.ModelResource):
         return getattr(obj, "frequency", "")
 
     def dehydrate_conformity(self, obj):
-        conformities = obj.conformity.all().select_related('organization', 'requirement')
+        conformities = obj.conformity.all()
         if not conformities.exists():
             return ""
+        return ", ".join(f"{conformity.requirement.name}" for conformity in conformities)
 
-        return ", ".join(
-            f"{c.requirement.name}"
-            for c in conformities
-        )
+
+class FindingResource(resources.ModelResource):
+    actions = fields.Field(widget=ManyToManyWidget(Action))
+
+    class Meta:
+        model = Finding
+        fields = ("name", "audit__name", "archived", "short_description", "cvss", "cvss_descriptor", "actions" )
+
+    def dehydrate_archived(self, obj):
+        val = getattr(obj, "archived", None)
+        if val is None:
+            return ""
+        return "Yes" if bool(val) else "No"
+
+    def dehydrate_actions(self, obj):
+        actions = obj.actions.all()
+        if not actions.exists():
+            return ""
+        return ", ".join(f"{action.title}" for action in actions)

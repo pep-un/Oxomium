@@ -3,6 +3,7 @@ View of the Conformity Module
 """
 
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Prefetch
 from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import UpdateView, CreateView
 from django_filters.views import FilterView
@@ -16,7 +17,7 @@ from .forms import ConformityForm, AuditForm, FindingForm, ActionForm, Organizat
     IndicatorForm, IndicatorPointForm
 from .models import Organization, Framework, Conformity, Audit, Action, Finding, Control, ControlPoint, Attachment, \
     Requirement, Indicator, IndicatorPoint
-from .resources import ConformityResource, ControlResource
+from .resources import ConformityResource, ControlResource, FindingResource
 
 from django.views import View
 from django.http import HttpResponse, Http404
@@ -111,6 +112,24 @@ class FindingDetailView(LoginRequiredMixin, DetailView):
 class FindingUpdateView(LoginRequiredMixin, UpdateView):
     model = Finding
     form_class = FindingForm
+
+class FindingExportView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        qs = (Finding.objects.all())
+        dataset = FindingResource().export(qs)
+
+        if request.GET.get("format") == "csv":
+            export_format = base_formats.CSV()
+        else:
+            export_format = base_formats.XLSX()
+
+        data = export_format.export_data(dataset)
+        content_type = export_format.get_content_type()
+        filename = f"findings.{export_format.get_extension()}"
+
+        response = HttpResponse(data, content_type=content_type)
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
 
 #
 # Organizations

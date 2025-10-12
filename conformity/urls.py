@@ -26,6 +26,7 @@ urlpatterns = [
     path('finding/<int:pk>', views.FindingDetailView.as_view(), name='finding_detail'),
     path('finding/create', views.FindingCreateView.as_view(), name='finding_create'),
     path('finding/update/<int:pk>', views.FindingUpdateView.as_view(), name='finding_form'),
+    path('finding/export', views.FindingExportView.as_view(), name='finding_export'),
 
     path('organization/', views.OrganizationIndexView.as_view(), name='organization_index'),
     path('organization/<int:pk>', views.OrganizationDetailView.as_view(), name='organization_detail'),
