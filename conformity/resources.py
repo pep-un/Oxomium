@@ -1,6 +1,6 @@
 from import_export import fields, resources
 from import_export.widgets import ManyToManyWidget
-from .models import Conformity, Control, Finding, Action
+from .models import Conformity, Control, Finding, Action, Indicator
 
 
 class ConformityResource(resources.ModelResource):
@@ -119,3 +119,33 @@ class ActionResource(resources.ModelResource):
             if name:
                 return name
         return getattr(u, "owner", str(u))
+
+
+class IndicatorResource(resources.ModelResource):
+    class Meta:
+        model = Indicator
+        fields = ("name", "coal", "source", "formula", "worst", "critical", "warning", "best",
+                  "responsible", "organization_name", "conformity", "frequency")
+
+
+    def dehydrate_responsible(self, obj):
+        if not getattr(obj, "responsible_id", None):
+            return ""
+        u = obj.responsible
+        full = getattr(u, "get_full_name", None)
+        if callable(full):
+            name = full()
+            if name:
+                return name
+        return getattr(u, "responsible", str(u))
+
+    def dehydrate_frequency(self, obj):
+        if hasattr(obj, "get_frequency_display"):
+            return obj.get_frequency_display()
+        return getattr(obj, "frequency", "")
+
+    def dehydrate_conformity(self, obj):
+        conformities = obj.conformity.all()
+        if not conformities.exists():
+            return ""
+        return ", ".join(f"{conformity.requirement.name}" for conformity in conformities)
