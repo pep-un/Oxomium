@@ -17,7 +17,7 @@
             <th class="text-center">Requirement</th>
             <th class="text-center">Completeness</th>
             <th class="text-center">Conformity</th>
-            <th class="text-center">Edit</th>
+            <th class="text-center">Actions</th>
         </tr>
     </thead>
     <tbody>
@@ -42,7 +42,7 @@
             </td>
             <td class="col-1 text-center">
                 <a href="{% url 'conformity:conformity_detail_index' con.organization.id con.requirement.framework.id %}"
-                   class="btn btn-sm btn-warning bi bi-pencil-square" title="Edit"></a>
+                   class="btn btn-sm btn-primary bi bi-eye" title="Detail"></a>
             </td>
         </tr>
     {% empty %}
