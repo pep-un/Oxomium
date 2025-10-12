@@ -1,6 +1,7 @@
+from django.utils.autoreload import logger
 from import_export import fields, resources
-from import_export.widgets import ManyToManyWidget
-from .models import Conformity, Control, Finding, Action, Indicator
+from import_export.widgets import ManyToManyWidget, ForeignKeyWidget
+from .models import Conformity, Control, Finding, Action, Indicator, Audit
 
 
 class ConformityResource(resources.ModelResource):
@@ -149,3 +150,22 @@ class IndicatorResource(resources.ModelResource):
         if not conformities.exists():
             return ""
         return ", ".join(f"{conformity.requirement.name}" for conformity in conformities)
+
+
+class AuditResource(resources.ModelResource):
+    finding = fields.Field(widget=ForeignKeyWidget(Finding))
+
+    class Meta:
+        model = Audit
+        fields = ("name", "auditor", "type", "start_date", "end_date", "report_date", "finding")
+
+    def dehydrate_type(self, obj):
+        if hasattr(obj, "get_type_display"):
+            return obj.get_type_display()
+        return getattr(obj, "type", "")
+
+    def dehydrate_finding(self, obj):
+        finding_list = Finding.objects.filter(audit=obj)
+        if not finding_list.exists():
+            return "None"
+        return ", ".join(f"[{finding.severity}] {finding.name}" for finding in finding_list)

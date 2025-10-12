@@ -14,6 +14,7 @@ urlpatterns = [
     path('audit/<int:pk>', views.AuditDetailView.as_view(), name='audit_detail'),
     path('audit/create', views.AuditCreateView.as_view(), name='audit_create'),
     path('audit/update/<int:pk>', views.AuditUpdateView.as_view(), name='audit_form'),
+    path('audit/export/', views.AuditExportView.as_view(), name='audit_export'),
 
     path('conformity/', views.ConformityIndexView.as_view(), name='conformity_index'),
     path('conformity/update/<int:pk>', views.ConformityUpdateView.as_view(), name='conformity_form'),

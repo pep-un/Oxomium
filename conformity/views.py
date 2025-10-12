@@ -17,7 +17,7 @@ from .forms import ConformityForm, AuditForm, FindingForm, ActionForm, Organizat
     IndicatorForm, IndicatorPointForm
 from .models import Organization, Framework, Conformity, Audit, Action, Finding, Control, ControlPoint, Attachment, \
     Requirement, Indicator, IndicatorPoint
-from .resources import ConformityResource, ControlResource, FindingResource, ActionResource, IndicatorResource
+from .resources import ConformityResource, ControlResource, FindingResource, ActionResource, IndicatorResource, AuditResource
 
 from django.views import View
 from django.http import HttpResponse, Http404
@@ -87,6 +87,25 @@ class AuditCreateView(LoginRequiredMixin, CreateView):
         return response
 
 
+class AuditExportView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        qs = (Audit.objects.all())
+        dataset = AuditResource().export(qs)
+
+        if request.GET.get("format") == "csv":
+            export_format = base_formats.CSV()
+        else:
+            export_format = base_formats.XLSX()
+
+        data = export_format.export_data(dataset)
+        content_type = export_format.get_content_type()
+        filename = f"audits.{export_format.get_extension()}"
+
+        response = HttpResponse(data, content_type=content_type)
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
+
+
 #
 # Findings
 #
@@ -112,6 +131,7 @@ class FindingDetailView(LoginRequiredMixin, DetailView):
 class FindingUpdateView(LoginRequiredMixin, UpdateView):
     model = Finding
     form_class = FindingForm
+
 
 class FindingExportView(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
