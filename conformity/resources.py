@@ -4,10 +4,13 @@ from .models import Conformity, Control, Finding, Action
 
 
 class ConformityResource(resources.ModelResource):
+    actions = fields.Field(widget=ManyToManyWidget(Action))
+    controls = fields.Field(widget=ManyToManyWidget(Control))
+
     class Meta:
         model = Conformity
         fields = ("requirement__name", "requirement__title", "requirement__description", "applicable", "responsible",
-                  "status", "status_last_update", "status_justification", "comment")
+                  "status", "status_last_update", "status_justification", "comment", "actions", "controls")
 
     def dehydrate_applicable(self, obj):
         val = getattr(obj, "applicable", None)
@@ -39,6 +42,18 @@ class ConformityResource(resources.ModelResource):
             return round(float(val) / 100, 2)
         except (ValueError, TypeError):
             return None
+
+    def dehydrate_actions(self, obj):
+        actions = obj.actions.all()
+        if not actions.exists():
+            return ""
+        return ", ".join(f"{action.title}" for action in actions)
+
+    def dehydrate_controls(self, obj):
+        controls = obj.controls.all()
+        if not controls.exists():
+            return ""
+        return ", ".join(f"{control.title}" for control in controls)
 
 
 class ControlResource(resources.ModelResource):
