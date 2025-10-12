@@ -7,8 +7,7 @@
 {% endblock %}
 
 {% block content %}
-
-<h2>Indicator parameters</h2>
+<h2>Indicator description</h2>
 <div class="row">
     <div class="col-9">
         <ul>
@@ -18,13 +17,14 @@
             <li><b>Goal:</b> {{ indicator.goal }}</li>
             <li><b>Source of data:</b> {{ indicator.source }}</li>
             <li><b>Formula or calculation:</b> {{ indicator.formula }}</li>
+            <li><b>Last updated:</b> {{ indicator.get_current_point.control_date }} by {{ indicator.get_current_point.control_user }}</li>
         </ul>
     </div>
 
     <div class="col-3">
         <div class="card">
             <div class="card-header h5">
-                Indicator levels
+                Thresholds
             </div>
                 <ul class="list-group list-group-flush">
                     <li class="list-group-item"><span class="text-danger">Critical: </span> from {{ indicator.worst }} to {{ indicator.critical }}</li>
