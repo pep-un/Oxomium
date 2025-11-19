@@ -8,6 +8,7 @@ django-tables2
 python-magic
 python-decouple
 python-dateutil
-pycountry
 django-mptt
 django-constance
+pycountry
+tablib[xlsx,ods]
