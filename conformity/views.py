@@ -3,20 +3,24 @@ View of the Conformity Module
 """
 
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Prefetch
 from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import UpdateView, CreateView
 from django_filters.views import FilterView
 from auditlog.models import LogEntry
+from import_export.formats import base_formats
 from mptt.templatetags.mptt_tags import cache_tree_children
 
-from .filterset import ActionFilter, ControlFilter, ControlPointFilter
+from .filterset import ActionFilter, ControlFilter, ControlPointFilter, FrameworkFilter, OrganizationFilter, \
+    ConformityFilter, AuditFilter, FindingFilter, IndicatorFilter
 from .forms import ConformityForm, AuditForm, FindingForm, ActionForm, OrganizationForm, ControlForm, ControlPointForm, \
     IndicatorForm, IndicatorPointForm
 from .models import Organization, Framework, Conformity, Audit, Action, Finding, Control, ControlPoint, Attachment, \
     Requirement, Indicator, IndicatorPoint
+from .resources import ConformityResource, ControlResource, FindingResource, ActionResource, IndicatorResource, AuditResource
 
 from django.views import View
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
 from django.shortcuts import get_object_or_404, redirect
 import os
 
@@ -46,8 +50,10 @@ class HomeView(LoginRequiredMixin, TemplateView):
 #
 # Audit
 #
-class AuditIndexView(LoginRequiredMixin, ListView):
+class AuditIndexView(LoginRequiredMixin, FilterView):
     model = Audit
+    filterset_class = AuditFilter
+    template_name = "conformity/audit_list.html"
 
 
 class AuditDetailView(LoginRequiredMixin, DetailView):
@@ -81,11 +87,33 @@ class AuditCreateView(LoginRequiredMixin, CreateView):
         return response
 
 
+class AuditExportView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        qs = (Audit.objects.all())
+        dataset = AuditResource().export(qs)
+
+        if request.GET.get("format") == "csv":
+            export_format = base_formats.CSV()
+        else:
+            export_format = base_formats.XLSX()
+
+        data = export_format.export_data(dataset)
+        content_type = export_format.get_content_type()
+        filename = f"audits.{export_format.get_extension()}"
+
+        response = HttpResponse(data, content_type=content_type)
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
+
+
 #
 # Findings
 #
-class FindingIndexView(LoginRequiredMixin, ListView):
+class FindingIndexView(LoginRequiredMixin, FilterView):
     model = Finding
+    filterset_class = FindingFilter
+    template_name = "conformity/finding_list.html"
+
 
     def get_queryset(self, **kwargs):
         return Finding.objects.filter(severity__in=["CRT","MAJ","MIN", "OBS"]).filter(archived=False)
@@ -104,13 +132,34 @@ class FindingUpdateView(LoginRequiredMixin, UpdateView):
     model = Finding
     form_class = FindingForm
 
+
+class FindingExportView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        qs = (Finding.objects.all())
+        dataset = FindingResource().export(qs)
+
+        if request.GET.get("format") == "csv":
+            export_format = base_formats.CSV()
+        else:
+            export_format = base_formats.XLSX()
+
+        data = export_format.export_data(dataset)
+        content_type = export_format.get_content_type()
+        filename = f"findings.{export_format.get_extension()}"
+
+        response = HttpResponse(data, content_type=content_type)
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
+
 #
 # Organizations
 #
 
 
-class OrganizationIndexView(LoginRequiredMixin, ListView):
+class OrganizationIndexView(LoginRequiredMixin, FilterView):
     model = Organization
+    filterset_class = OrganizationFilter
+    template_name = "conformity/organization_list.html"
 
 
 class OrganizationDetailView(LoginRequiredMixin, DetailView):
@@ -147,8 +196,10 @@ class OrganizationCreateView(LoginRequiredMixin, CreateView):
 #
 
 
-class FrameworkIndexView(LoginRequiredMixin, ListView):
+class FrameworkIndexView(LoginRequiredMixin, FilterView):
     model = Framework
+    filterset_class = FrameworkFilter
+    template_name = 'conformity/framework_list.html'
 
 
 class FrameworkDetailView(LoginRequiredMixin, DetailView):
@@ -165,8 +216,10 @@ class FrameworkDetailView(LoginRequiredMixin, DetailView):
 #
 # Conformity
 #
-class ConformityIndexView(LoginRequiredMixin, ListView):
+class ConformityIndexView(LoginRequiredMixin, FilterView):
     model = Conformity
+    template_name = 'conformity/conformity_list.html'
+    filterset_class = ConformityFilter
 
     def get_queryset(self, **kwargs):
         return Conformity.objects.filter(requirement__level=0)
@@ -177,10 +230,21 @@ class ConformityDetailIndexView(LoginRequiredMixin, ListView):
     template_name = 'conformity/conformity_detail_list.html'
 
     def get_queryset(self, **kwargs):
-        return Conformity.objects.filter(organization__id=self.kwargs['org']) \
-            .filter(requirement__framework__id=self.kwargs['pol']) \
-            .filter(requirement__level=0) \
-            .order_by('requirement__tree_id','requirement__lft')
+        root_id = self.request.GET.get('root_id')
+
+        if root_id:
+            try:
+                root = Conformity.objects.filter(id=root_id)
+            except Conformity.DoesNotExist:
+                raise Http404("Conformity with the given ID does not exist.")
+
+        else:
+            root = Conformity.objects.filter(organization__id=self.kwargs['org']) \
+                .filter(requirement__framework__id=self.kwargs['pol']) \
+                .filter(requirement__level=0)
+
+        print(f"root return = {root}")  #DEBUG
+        return root
 
 
 class ConformityUpdateView(LoginRequiredMixin, UpdateView):
@@ -218,6 +282,31 @@ class ConformityUpdateView(LoginRequiredMixin, UpdateView):
         return super().form_valid(form)
 
 
+class ConformityExportView(LoginRequiredMixin, View):
+    def get(self, request, org: int, pol: int, *args, **kwargs):
+        framework = get_object_or_404(Framework, pk=pol)
+        organization = get_object_or_404(Organization, pk=org)
+
+        qs = (
+            Conformity.objects.filter(requirement__framework=framework, organization=organization)
+            .select_related("requirement__framework", "organization")
+        )
+        dataset = ConformityResource().export(qs)
+
+        if request.GET.get("format") == "csv":
+            export_format = base_formats.CSV()
+        else:
+            export_format = base_formats.XLSX()
+
+        data = export_format.export_data(dataset)
+        content_type = export_format.get_content_type()
+        filename = f"conformity.{export_format.get_extension()}"
+
+        response = HttpResponse(data, content_type=content_type)
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
+
+
 #
 # Action
 #
@@ -238,6 +327,24 @@ class ActionUpdateView(LoginRequiredMixin, UpdateView):
     model = Action
     form_class = ActionForm
 
+
+class ActionExportView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        qs = (Action.objects.all())
+        dataset = ActionResource().export(qs)
+
+        if request.GET.get("format") == "csv":
+            export_format = base_formats.CSV()
+        else:
+            export_format = base_formats.XLSX()
+
+        data = export_format.export_data(dataset)
+        content_type = export_format.get_content_type()
+        filename = f"actions.{export_format.get_extension()}"
+
+        response = HttpResponse(data, content_type=content_type)
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
 
 #
 # Control
@@ -305,6 +412,28 @@ class ControlPointUpdateView(LoginRequiredMixin, UpdateView):
         return response
 
 
+class ControlExportView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        qs = (
+            Control.objects.all()
+#            .select_related("requirement__framework", "organization")
+        )
+        dataset = ControlResource().export(qs)
+
+        if request.GET.get("format") == "csv":
+            export_format = base_formats.CSV()
+        else:
+            export_format = base_formats.XLSX()
+
+        data = export_format.export_data(dataset)
+        content_type = export_format.get_content_type()
+        filename = f"controls.{export_format.get_extension()}"
+
+        response = HttpResponse(data, content_type=content_type)
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
+
+
 #
 # Indicator
 #
@@ -315,8 +444,22 @@ class IndicatorCreateView(LoginRequiredMixin, CreateView):
     form_class = IndicatorForm
 
 
-class IndicatorIndexView(LoginRequiredMixin, ListView):
+class IndicatorDetailView(LoginRequiredMixin, DetailView):
     model = Indicator
+    context_object_name = 'indicator'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        indicator = self.get_object()
+
+        context['indicator_point_list'] = IndicatorPoint.objects.filter(indicator=indicator).order_by('period_start_date')
+        return context
+
+
+class IndicatorIndexView(LoginRequiredMixin, FilterView):
+    model = Indicator
+    filterset_class = IndicatorFilter
+    template_name = 'conformity/indicator_list.html'
 
 
 class IndicatorUpdateView(LoginRequiredMixin, UpdateView):
@@ -327,6 +470,24 @@ class IndicatorUpdateView(LoginRequiredMixin, UpdateView):
 class IndicatorPointUpdateView(LoginRequiredMixin, UpdateView):
     model = IndicatorPoint
     form_class = IndicatorPointForm
+
+class IndicatorExportView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        qs = (Indicator.objects.all())
+        dataset = IndicatorResource().export(qs)
+
+        if request.GET.get("format") == "csv":
+            export_format = base_formats.CSV()
+        else:
+            export_format = base_formats.XLSX()
+
+        data = export_format.export_data(dataset)
+        content_type = export_format.get_content_type()
+        filename = f"indicators.{export_format.get_extension()}"
+
+        response = HttpResponse(data, content_type=content_type)
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
 
 
 #

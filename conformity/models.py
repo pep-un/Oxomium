@@ -615,7 +615,7 @@ class Control(models.Model):
     title = models.CharField(max_length=256)
     description = models.TextField(max_length=4096, blank=True)
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, blank=True, null=True)
-    conformity = models.ManyToManyField(Conformity, blank=True)
+    conformity = models.ManyToManyField(Conformity, blank=True, related_name="controls")
     control = models.ManyToManyField('self', blank=True)
     frequency = models.IntegerField(
         choices=Frequency.choices,

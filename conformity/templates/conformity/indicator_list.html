@@ -3,18 +3,60 @@
 
 {% block header %}
     <h1 class="h1 bi bi-speedometer"> Indicators </h1>
-    <span class="badge rounded-pill text-bg-primary fs-4"> {{ object_list | length }} Indicators</span>
 {% endblock %}
 
 {% block content %}
+
+<div class="row">
+
+    <div id="filter-btn" class="col-1 btn-group">
+        <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+            Filter
+        </button>
+        <div class="dropdown-menu">
+            <form class="m-3">
+                {{ filter.form.as_div }}
+                <div class="dropdown-divider my-2"></div>
+                <div class="row d-flex justify-content-evenly">
+                    <button type="submit" class="btn btn-primary col-4">Apply filters</button>
+                    <a href="?" class="btn btn-danger col-4">Clear filters</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-1 btn-group">
+        <a type="button" class="btn btn-secondary"
+           href="{% url 'conformity:indicator_export' %}">
+             Export</a>
+        <a type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+            <span class="visually-hidden">Toggle Dropdown</span>
+        </a>
+        <ul class="dropdown-menu" style="z-index:1500">
+            <li><a class="dropdown-item" href="{% url 'conformity:indicator_export' %}?format=csv">CSV Format</a></li>
+            <li><a class="dropdown-item" href="{% url 'conformity:indicator_export' %}?format=xlsx">XLSX Format</a></li>
+        </ul>
+    </div>
+
+    <div class="col"></div>
+
+    <span class="badge rounded-pill text-bg-secondary m-2 fs-6 col-1"> {{ object_list | length }} items </span>
+
+</div>
+
+
 <div class="row">
     {% for indicator in indicator_list %}
     <div class="col-3 my-2">
         <div class="card">
             <div class="card-header h4">
                 {{indicator.name}}
-                <a class="btn btn-sm btn-primary bi bi-pencil-square float-end"
-                   role="button" href="{% url 'conformity:indicator_form' indicator.pk %}"> </a>
+                <div class="btn-group float-end" role="group" aria-label="actions">
+                    <a class="btn btn-sm btn-primary bi bi-eye"
+                       role="button" href="{% url 'conformity:indicator_detail' indicator.pk %}"> </a>
+                    <a class="btn btn-sm btn-warning bi bi-pencil-square"
+                       role="button" href="{% url 'conformity:indicator_form' indicator.pk %}"> </a>
+                </div>
             </div>
             <div class="card-body">
             {% if indicator.get_current_point.status == "CRIT" %}
