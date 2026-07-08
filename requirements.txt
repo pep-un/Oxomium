@@ -1,4 +1,4 @@
-Django>=5.2,<5.3
+Django>=6.0.7,<6.1
 django-bootstrap5
 django-import-export
 django-auditlog
