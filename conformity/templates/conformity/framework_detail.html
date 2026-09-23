@@ -13,13 +13,13 @@
 {% block content %}
     {% for requirement in framework.get_requirements %}
             {% if requirement.level == 1 %}
-                <h2><button class="btn btn-sm rounded-pill border border-0 text-bg-primary" disabled>{{ requirement.name }}</button> {{ requirement.title }}</h2>
+                <h2><button class="btn btn-sm rounded-pill border border-0 text-bg-primary" disabled>{{ requirement.full_path }}</button> {{ requirement.title }}</h2>
                 <p class="ms-1">{{ requirement.description  | linebreaksbr }}</p>
             {% elif requirement.level == 2 %}
-                <h3 class="ms-1"><button class="btn btn-sm rounded-pill border border-0 text-bg-info" disabled>{{ requirement.name }}</button> {{ requirement.title }}</h3>
+                <h3 class="ms-1"><button class="btn btn-sm rounded-pill border border-0 text-bg-info" disabled>{{ requirement.full_path }}</button> {{ requirement.title }}</h3>
                 <p class="ms-2">{{ requirement.description  | linebreaksbr }}</p>
             {% else %}
-                <h4 class="ms-4"><button class="btn btn-sm rounded-pill border border-0 text-bg-secondary" disabled>{{ requirement.name }}</button> {{ requirement.title }}</h4>
+                <h4 class="ms-4"><button class="btn btn-sm rounded-pill border border-0 text-bg-secondary" disabled>{{ requirement.full_path }}</button> {{ requirement.title }}</h4>
                 <p class="ms-5">{{ requirement.description  | linebreaksbr }}</p>
             {% endif %}
 

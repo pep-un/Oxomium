@@ -30,7 +30,7 @@
                     <b>Associated conformity:</b>
                     <ul>
                         {% for conformity in controlpoint_list.0.control.conformity.all %}
-                            <li>{{ conformity.requirement.name }}: {{ conformity.requirement.title }}</li>
+                            <li>{{ conformity.requirement.full_path }}: {{ conformity.requirement.title }}</li>
                         {% endfor %}
                     </ul>
                 </div>

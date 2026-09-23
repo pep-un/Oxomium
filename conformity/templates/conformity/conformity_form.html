@@ -4,7 +4,7 @@
 
 {% block header %}
 <h1 class="h1 bi bi-shield-shaded" >
-    Conformity for {{ conformity.requirement.name }} in {{ conformity.organization.name }}
+    Conformity for {{ conformity.requirement.full_path }} in {{ conformity.organization.name }}
 </h1>
 {% endblock %}
 
@@ -26,7 +26,7 @@
             </div>
             <div class="card-header border-info text-bg-info h4">
                 <h4 class="card-title">
-                    <span class="badge rounded-pill text-bg-primary" >{{ conformity.requirement.name }}</span>
+                    <span class="badge rounded-pill text-bg-primary" >{{ conformity.requirement.full_path }}</span>
                     {{ conformity.requirement.title }}
                 </h4>
             </div>
