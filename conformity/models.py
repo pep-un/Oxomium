@@ -19,7 +19,6 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 # Third-party
-from auditlog.context import set_actor
 from magic import Magic
 from mptt.models import MPTTModel, TreeForeignKey
 from pycountry import languages
@@ -73,7 +72,11 @@ class Framework(models.Model):
 
     def get_type(self):
         """return the readable version of the Framework Type"""
-        return self.Type(self.type).label
+        return self.type_label
+
+    @property
+    def type_label(self):
+        return self.get_type_display()
 
     def get_requirements(self):
         """return all non-root requirements for this framework"""
@@ -127,16 +130,13 @@ class Organization(models.Model):
 
     def remove_conformity(self, pid):
         """Cascade deletion of conformity"""
-        with set_actor('system'):
-            requirement_set = Requirement.objects.filter(framework=pid).values_list('id', flat=True)
-            Conformity.objects.filter(requirement__in=requirement_set, organization=self.id).delete()
+        from .services.conformities import remove_for_framework
+        remove_for_framework(self, pid)
     
     def add_conformity(self, pid):
         """Automatic creation of conformity"""
-        with set_actor('system'):
-            requirement_set = Requirement.objects.filter(framework=pid)
-            conformities = [Conformity(organization=self, requirement=requirement) for requirement in requirement_set]
-            Conformity.objects.bulk_create(conformities)
+        from .services.conformities import ensure_for_framework
+        ensure_for_framework(self, pid)
 
 
 class RequirementManager(models.Manager):
@@ -154,7 +154,7 @@ class Requirement(MPTTModel):
     code = models.CharField(max_length=5, blank=True)
     name = models.CharField(max_length=50, blank=True, unique=True)
     order = models.IntegerField(default=1)
-    framework = models.ForeignKey(Framework, on_delete=models.CASCADE)
+    framework = models.ForeignKey(Framework, on_delete=models.CASCADE, related_name='requirements')
     parent = TreeForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='children')
     title = models.CharField(max_length=256, blank=True)
     description = models.TextField(blank=True)
@@ -173,6 +173,20 @@ class Requirement(MPTTModel):
     def get_parent(self):
         return self.get_ancestors().last()
 
+    @property
+    def full_path(self):
+        """Display the path without relying on the stored hierarchical name."""
+        return "-".join(node.code or node.name for node in (*self.get_ancestors(), self))
+
+    @property
+    def has_children(self):
+        return self.children.exists()
+
+
+class ConformityQuerySet(models.QuerySet):
+    def applicable(self):
+        return self.filter(applicable=True)
+
 
 class Conformity(models.Model):
     """
@@ -187,10 +201,11 @@ class Conformity(models.Model):
         FINDING = 'FIN', _('From an audit finding')
         CONFORMITY = 'CONF', _('From conformity aggregation')
 
-    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, null=True)
-    requirement = models.ForeignKey(Requirement, on_delete=models.CASCADE, null=True)
+    objects = ConformityQuerySet.as_manager()
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, null=True, related_name='conformities')
+    requirement = models.ForeignKey(Requirement, on_delete=models.CASCADE, null=True, related_name='conformities')
     applicable = models.BooleanField(default=True)
-    responsible = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
+    responsible = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     comment = models.TextField(max_length=4096, blank=True)
     status = models.IntegerField(default=None, validators=[MinValueValidator(0), MaxValueValidator(100)], null=True, blank=True)
     status_last_update = models.DateTimeField(null=True, blank=True)
@@ -205,7 +220,13 @@ class Conformity(models.Model):
         ordering = ['organization', 'requirement__framework', 'requirement__tree_id', 'requirement__lft']
         verbose_name = 'Conformity'
         verbose_name_plural = 'Conformities'
-        unique_together = (('organization', 'requirement'),)
+        constraints = [
+            models.UniqueConstraint(fields=['organization', 'requirement'], name='uq_conformity_org_req'),
+            models.CheckConstraint(
+                condition=Q(status__isnull=True) | (Q(status__gte=0) & Q(status__lte=100)),
+                name='chk_conformity_status_0_100',
+            ),
+        ]
 
     def __str__(self):
         return "[" + str(self.organization) + "] " + str(self.requirement)
@@ -361,40 +382,13 @@ class Conformity(models.Model):
 
     def update_status(self):
         """Update this node's conformity status and propagate update to its parent."""
-        with set_actor('system'):
-            agg = (Conformity.objects.filter(
-                    organization=self.organization,
-                    requirement__parent=self.requirement,
-                    applicable=True,
-                    status__range=(0, 100),
-                ).aggregate(mean_status=models.Avg("status"))
-            )
-
-            if agg["mean_status"] is not None:
-                self.status = agg["mean_status"]
-                self.status_justification = Conformity.StatusJustification.CONFORMITY
-                self.status_last_update = timezone.now()
-                self.save(update_fields=['status', 'status_justification', 'status_last_update'])
-
-            parent = self.get_parent()
-            if parent:
-                parent.update_status()
+        from .services.conformities import recompute_parent_chain
+        recompute_parent_chain(self)
 
     def update_applicable(self):
-        """Update conformity to recursively apply the non-applicable flax to all descendant"""
-        if not self.applicable and not self.requirement.is_leaf_node():
-            descendants = Conformity.objects.filter(
-                organization=self.organization,
-                requirement__in=self.requirement.get_descendants()
-            )
-            descendants.update(applicable=False)
-
-        elif self.applicable and self.requirement.is_child_node():
-            ancestors = Conformity.objects.filter(
-                organization=self.organization,
-                requirement__in=self.requirement.get_ancestors()
-            )
-            ancestors.update(applicable=True)
+        """Update descendants or ancestors when applicability changes."""
+        from .services.conformities import propagate_applicable_and_comment
+        propagate_applicable_and_comment(self, self.applicable)
 
     def set_status_from(self, value: int, justification: "Conformity.StatusJustification"):
         """Single point to update status + provenance + timestamp."""
@@ -480,9 +474,14 @@ class Audit(models.Model):
         """return all Framework within the Audit scope"""
         return self.audited_frameworks.all()
 
-    def get_type(self):
+    @property
+    def type_label(self):
         """return the readable version of the Audit Type"""
         return self.Type(self.type).label
+
+    def get_type(self):
+        """Keep the existing template and Python API available."""
+        return self.type_label
 
     def get_findings(self):
         """return all the findings associated to an Audit"""
@@ -560,7 +559,11 @@ class Finding(models.Model):
 
     def get_severity(self):
         """return the readable version of the Findings Severity"""
-        return self.Severity(self.severity).label
+        return self.severity_label
+
+    @property
+    def severity_label(self):
+        return self.get_severity_display()
 
     def get_absolute_url(self):
         """return somewhere else when an edit has work"""
@@ -601,16 +604,16 @@ class Control(models.Model):
 
     class Frequency(models.IntegerChoices):
         """ List of frequency possible for a control"""
-        YEARLY = '1', _('Yearly')
-        HALFYEARLY = '2', _('Half-Yearly')
-        QUARTERLY = '4', _('Quarterly')
-        BIMONTHLY = '6', _('Bimonthly')
-        MONTHLY = '12', _('Monthly')
+        YEARLY = 1, _('Yearly')
+        HALFYEARLY = 2, _('Half-Yearly')
+        QUARTERLY = 4, _('Quarterly')
+        BIMONTHLY = 6, _('Bimonthly')
+        MONTHLY = 12, _('Monthly')
 
     class Level(models.IntegerChoices):
         """ List of control level possible for a control """
-        FIRST = '1', _('1st level')
-        SECOND = '2', _('2nd level')
+        FIRST = 1, _('1st level')
+        SECOND = 2, _('2nd level')
 
     title = models.CharField(max_length=256)
     description = models.TextField(max_length=4096, blank=True)
@@ -639,24 +642,8 @@ class Control(models.Model):
 
     @staticmethod
     def controlpoint_bootstrap(instance):
-        ControlPoint.objects.filter(control=instance.id).filter(Q(status='SCHD') | Q(status='TOBE')).delete()
-
-        num_cp = instance.frequency
-        today = date.today()
-        start_date = date(today.year, 1, 1)
-        delta = timedelta(days=365 // num_cp - 2)
-        end_date = start_date + delta
-        for _ in range(num_cp):
-            period_start_date = date(start_date.year, start_date.month, 1)
-            period_end_date = date(end_date.year, end_date.month, monthrange(end_date.year, end_date.month)[1])
-            if not ControlPoint.objects.filter(control=instance.id).filter(period_start_date=period_start_date).filter(period_end_date=period_end_date) :
-                ControlPoint.objects.create(
-                    control=instance,
-                    period_start_date=period_start_date,
-                    period_end_date=period_end_date,
-                )
-            start_date = period_end_date + timedelta(days=1)
-            end_date = start_date + delta - timedelta(days=1)
+        from .services.controls import generate_controlpoints
+        generate_controlpoints(instance)
 
 
     def get_controlpoint(self):

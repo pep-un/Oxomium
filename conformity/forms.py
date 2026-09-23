@@ -2,12 +2,16 @@
 Forms for front-end editing of Models instance
 """
 
-from django.forms import ModelForm, FileField, ClearableFileInput
+from django.forms import ModelForm, FileField, ClearableFileInput, BooleanField
 from django.utils import timezone
 from .models import Conformity, Organization, Audit, Finding, Action, Control, ControlPoint, Indicator, IndicatorPoint
 
 
 class ConformityForm(ModelForm):
+    propagate_to_children = BooleanField(
+        required=False, label='Apply applicability and comment to child requirements'
+    )
+
     class Meta:
         model = Conformity
         fields = ['applicable', 'responsible', 'status', 'comment']
