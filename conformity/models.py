@@ -322,74 +322,70 @@ class Conformity(models.Model):
           - 'only_active' affects Actions only in the default mode.
           - Sorting tries to do something sensible across mixed kinds.
         """
-        items: List[Tuple[Literal["action", "control", "controlpoint"], object]] = []
-
-        if not negative_only:
-            # ---------- default mode ----------
-            if include_actions:
-                actions_qs = self.actions.filter(active=True) if only_active else self.actions.all()
-                for a in actions_qs:
-                    items.append(("action", a))
-
-            if include_controls:
-                for c in self.get_control():
-                    items.append(("control", c))
-
+        if negative_only:
+            items = self._get_negative_related(include_actions, include_controls)
         else:
-            # ---------- negative-only mode ----------
-            if include_actions:
-                actions_qs = self.actions.filter(
-                    status__in=[
-                        Action.Status.ANALYSING,
-                        Action.Status.PLANNING,
-                        Action.Status.IMPLEMENTING,
-                        Action.Status.CONTROLLING,
-                    ]
-                )
-                for a in actions_qs:
-                    items.append(("action", a))
+            items = self._get_related(include_actions, include_controls, only_active)
+        return self._sort_related(items, sort)
 
-            if include_controls:
-                today = date.today()
-                cps = ControlPoint.objects.filter(
-                    control__conformity=self,
-                    period_start_date__lte=today,
-                    period_end_date__gte=today,
-                    status__in=[ControlPoint.Status.NONCOMPLIANT,ControlPoint.Status.MISSED,
-                                ControlPoint.Status.SCHEDULED,ControlPoint.Status.TOBEEVALUATED],
-                )
+    def _get_related(self, include_actions, include_controls, only_active):
+        items = []
+        if include_actions:
+            actions = self.actions.filter(active=True) if only_active else self.actions.all()
+            items.extend(("action", action) for action in actions)
+        if include_controls:
+            items.extend(("control", control) for control in self.get_control())
+        return items
 
-                for cp in cps:
-                    items.append(("controlpoint", cp))
-
-        # ---------- sorting ----------
-        def _label(obj):
-            # Try common fields, fallback to __str__
-            return (
-                    getattr(obj, "title", None)
-                    or getattr(obj, "name", None)
-                    or getattr(obj, "short_description", None)
-                    or str(obj)
+    def _get_negative_related(self, include_actions, include_controls):
+        items = []
+        if include_actions:
+            statuses = [
+                Action.Status.ANALYSING, Action.Status.PLANNING,
+                Action.Status.IMPLEMENTING, Action.Status.CONTROLLING,
+            ]
+            items.extend(("action", action) for action in self.actions.filter(status__in=statuses))
+        if include_controls:
+            today = date.today()
+            statuses = [
+                ControlPoint.Status.NONCOMPLIANT, ControlPoint.Status.MISSED,
+                ControlPoint.Status.SCHEDULED, ControlPoint.Status.TOBEEVALUATED,
+            ]
+            points = ControlPoint.objects.filter(
+                control__conformity=self,
+                period_start_date__lte=today,
+                period_end_date__gte=today,
+                status__in=statuses,
             )
+            items.extend(("controlpoint", point) for point in points)
+        return items
 
+    @staticmethod
+    def _related_label(obj):
+        return (
+            getattr(obj, "title", None)
+            or getattr(obj, "name", None)
+            or getattr(obj, "short_description", None)
+            or str(obj)
+        )
+
+    @classmethod
+    def _sort_related(cls, items, sort):
         if sort == "type_then_title":
             order_kind = {"action": 0, "control": 1, "controlpoint": 2}
-            items.sort(key=lambda t: (order_kind.get(t[0], 99), _label(t[1])))
-
+            items.sort(key=lambda item: (order_kind.get(item[0], 99), cls._related_label(item[1])))
         elif sort == "recent_first":
-            # Use whatever "date-ish" we can find: update_date for Action, period_end_date for CP, fallback very old
-            def _updated(obj):
-                return (
-                        getattr(obj, "update_date", None)
-                        or getattr(obj, "period_end_date", None)
-                        or date.min
-                )
-
-            items.sort(key=lambda t: (_updated(t[1]), _label(t[1])), reverse=True)
-
+            items.sort(
+                key=lambda item: (
+                    getattr(item[1], "update_date", None)
+                    or getattr(item[1], "period_end_date", None)
+                    or date.min,
+                    cls._related_label(item[1]),
+                ),
+                reverse=True,
+            )
         elif sort == "alpha":
-            items.sort(key=lambda t: _label(t[1]))
-
+            items.sort(key=lambda item: cls._related_label(item[1]))
         return items
 
     def update_responsible(self):
@@ -764,7 +760,6 @@ class Action(models.Model):
     associated_conformity = models.ManyToManyField(Conformity, blank=True, related_name='actions')
     associated_findings = models.ManyToManyField(Finding, blank=True, related_name='actions')
     associated_controlPoints = models.ManyToManyField(ControlPoint, blank=True, related_name='actions')
-    #TODO associated_risks = models.ManyToManyField(Risk, blank=True)
 
     ' PLAN phase'
     plan_start_date = models.DateField(null=True, blank=True)
@@ -848,7 +843,6 @@ class Attachment(models.Model):
         mime = Magic(mime=True)
         instance.mime_type = mime.from_buffer(file_content)
 
-        # TODO filter on mime type
 
 
 class Indicator (models.Model):

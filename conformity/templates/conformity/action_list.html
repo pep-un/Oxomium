@@ -99,11 +99,15 @@
                 {% endif %}
             </td>
             <td class="text-center">
-                <div class="btn-group" role="group" aria-label="Action">
+                <div class="btn-group">
                     <a href="{% url 'conformity:action_form' action.id %}"
-                       class="btn btn-sm btn-warning bi bi-pencil-square" title="Edit"></a>
+                       class="btn btn-sm btn-warning bi bi-pencil-square" title="Edit">
+                        <span class="visually-hidden">Edit action</span>
+                    </a>
                     <a href="{{ action.reference }}"
-                       class="btn btn-sm btn-secondary bi bi-box-arrow-up-right" title="ITSM Reference link"></a>
+                       class="btn btn-sm btn-secondary bi bi-box-arrow-up-right" title="ITSM Reference link">
+                        <span class="visually-hidden">Open ITSM reference</span>
+                    </a>
                 </div>
             </td>
         </tr>

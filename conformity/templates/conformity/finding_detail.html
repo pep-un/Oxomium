@@ -49,7 +49,7 @@
         CVSS Vector:
         {% if finding.cvss_descriptor %}
             <br />
-            <a class="btn btn-outline-primary" href="https://www.first.org/cvss/calculator/#{{finding.cvss_descriptor}}" target="_blank" role="button">
+            <a class="btn btn-outline-primary" href="https://www.first.org/cvss/calculator/#{{finding.cvss_descriptor}}" target="_blank">
                 {{ finding.cvss_descriptor }}
                 <i class="bi bi-box-arrow-up-right ms-2"></i>
             </a>
@@ -81,8 +81,7 @@
     {% endif %}
 
     {% if not finding.archived %}
-        <a href="{% url 'conformity:finding_form' finding.id %}">
-            <button type="button" class="my-3 btn btn-primary bi bi-pencil-square"> Edit the finding</button>
-        </a>
+        <a href="{% url 'conformity:finding_form' finding.id %}"
+           class="my-3 btn btn-primary bi bi-pencil-square"> Edit the finding</a>
     {% endif %}
 {% endblock %}

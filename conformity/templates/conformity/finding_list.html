@@ -103,11 +103,15 @@
                 {% endif %}
             </td>
             <td class="col text-center">
-                <div class="btn-group" role="group" aria-label="actions">
+                <div class="btn-group">
                     <a href="{% url 'conformity:finding_detail' finding.id %}"
-                       class="btn btn-sm btn-primary bi bi-eye" title="View"></a>
+                       class="btn btn-sm btn-primary bi bi-eye" title="View">
+                        <span class="visually-hidden">View finding</span>
+                    </a>
                     <a href="{% url 'conformity:finding_form' finding.id %}"
-                       class="btn btn-sm btn-warning bi bi-pencil-square" title="Edit"></a>
+                       class="btn btn-sm btn-warning bi bi-pencil-square" title="Edit">
+                        <span class="visually-hidden">Edit finding</span>
+                    </a>
                 </div>
             </td>
         </tr>

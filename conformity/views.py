@@ -125,6 +125,13 @@ class FindingCreateView(LoginRequiredMixin, CreateView):
     model = Finding
     form_class = FindingForm
 
+    def get_initial(self):
+        initial = super().get_initial()
+        audit_id = self.request.GET.get('audit')
+        if audit_id:
+            initial['audit'] = get_object_or_404(Audit, pk=audit_id)
+        return initial
+
 
 class FindingDetailView(LoginRequiredMixin, DetailView):
     model = Finding
@@ -374,7 +381,6 @@ class ControlIndexView(LoginRequiredMixin, FilterView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        user = self.request.user
         context['controlpoint_list'] = ControlPoint.objects.all()
         context['c1st'] = Control.objects.filter(level="1").count()
         context['c2nd'] = Control.objects.filter(level="2").count()

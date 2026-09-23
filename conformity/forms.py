@@ -41,11 +41,11 @@ class FindingForm(ModelForm):
     class Meta:
         model = Finding
         fields = ['name', 'audit', 'severity', 'short_description', 'description', 'observation', 'recommendation', 'reference', 'cvss', 'cvss_descriptor', 'archived']
-        # TODO add a preselection and a disable selector for 'audit' field when the form is open from an audit.
-
     def __init__(self, *args, **kwargs):
         super(FindingForm, self).__init__(*args, **kwargs)
 
+        if self.initial.get('audit'):
+            self.fields['audit'].disabled = True
         if self.get_initial_for_field(self.fields['archived'], 'archived') :
             for key, value in self.fields.items():
                 self.fields[key].disabled = True
@@ -54,7 +54,14 @@ class FindingForm(ModelForm):
 class ActionForm(ModelForm):
     class Meta:
         model = Action
-        fields = '__all__'
+        fields = [
+            'title', 'create_date', 'update_date', 'owner', 'status', 'status_comment',
+            'reference', 'active', 'description', 'organization', 'associated_conformity',
+            'associated_findings', 'associated_controlPoints', 'plan_start_date',
+            'plan_end_date', 'plan_comment', 'implement_start_date', 'implement_end_date',
+            'implement_status', 'implement_comment', 'control_date', 'control_comment',
+            'control_user',
+        ]
 
     def __init__(self, *args, **kwargs):
         super(ActionForm, self).__init__(*args, **kwargs)
@@ -119,7 +126,10 @@ class ControlPointForm(ModelForm):
 class IndicatorForm(ModelForm):
     class Meta:
         model = Indicator
-        fields = '__all__'
+        fields = [
+            'name', 'goal', 'source', 'formula', 'worst', 'best', 'warning', 'critical',
+            'responsible', 'organization', 'conformity', 'frequency',
+        ]
 
 
 class IndicatorPointForm(ModelForm):
