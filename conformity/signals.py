@@ -19,10 +19,8 @@ def attachment_pre_autoset_mimetype(sender, instance: Attachment, **kwargs):
 @receiver(pre_save, sender=Requirement)
 def requirement_pre_save_naming(instance, **kwargs):
     """This function keep hierarchy of the Requirement working on each Requirement instantiation"""
-    if instance.parent:
-        instance.name = f"{instance.parent.name}-{instance.code}"
-    else:
-        instance.name = instance.code
+    from .services.requirements import compute_hierarchy_fields
+    compute_hierarchy_fields(instance)
 
 @receiver(m2m_changed, sender=Organization.applicable_frameworks.through)
 def change_framework(instance, action, pk_set, **kwargs):
