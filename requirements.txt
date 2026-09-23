@@ -11,4 +11,4 @@ python-dateutil
 django-mptt
 django-constance
 pycountry
-tablib[xlsx,ods]
+tablib[xlsx,ods]==3.8.0
