@@ -23,14 +23,34 @@ def requirement_pre_save_naming(instance, **kwargs):
     compute_hierarchy_fields(instance)
 
 @receiver(m2m_changed, sender=Organization.applicable_frameworks.through)
-def change_framework(instance, action, pk_set, **kwargs):
-    if action == "post_add":
-        for pk in pk_set:
-            instance.add_conformity(pk)
+def change_framework(instance, action, reverse, pk_set, **kwargs):
+    """Keep direct M2M writes compatible, including clear and reverse writes."""
+    from .services.conformities import ensure_for_framework, remove_for_framework
 
-    if action == "post_remove":
-        for pk in pk_set:
-            instance.remove_conformity(pk)
+    if action not in {'post_add', 'post_remove', 'pre_clear'}:
+        return
+
+    if reverse:
+        # The instance is a Framework; pk_set contains Organization IDs.
+        organization_ids = (
+            list(instance.organization_set.values_list('pk', flat=True))
+            if action == 'pre_clear' else pk_set
+        )
+        for organization in Organization.objects.filter(pk__in=organization_ids):
+            if action == 'post_add':
+                ensure_for_framework(organization, instance)
+            else:
+                remove_for_framework(organization, instance)
+    else:
+        framework_ids = (
+            list(instance.applicable_frameworks.values_list('pk', flat=True))
+            if action == 'pre_clear' else pk_set
+        )
+        for framework_id in framework_ids:
+            if action == 'post_add':
+                ensure_for_framework(instance, framework_id)
+            else:
+                remove_for_framework(instance, framework_id)
 
 @receiver(post_save, sender=Action)
 def action_post_save_sync_findings(instance: Action, **kwargs):
