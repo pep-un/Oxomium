@@ -59,29 +59,39 @@
                 </div>
             </div>
             <div class="card-body">
-            {% if indicator.get_current_point.status == "CRIT" %}
+            {% with point=indicator.get_current_point %}
+            {% if not point %}
+                <h5 class="card-title text-muted">
+                    No measurement point for the current period.
+                </h5>
+                <a href="{% url 'conformity:indicator_form' indicator.pk %}">
+                    Update the indicator to generate its periods
+                </a>
+            {% elif point.status == "CRIT" %}
                 <h5 class="card-title fs-1 text-danger">
-                    {{ indicator.get_current_point.value }}
-            {% elif indicator.get_current_point.status == "WARN" %}
+                    {{ point.value }}
+            {% elif point.status == "WARN" %}
                 <h5 class="card-title fs-1 text-warning">
-                    {{ indicator.get_current_point.value }}
-            {% elif indicator.get_current_point.status == "OK" %}
+                    {{ point.value }}
+            {% elif point.status == "OK" %}
                 <h5 class="card-title fs-1 text-success">
-                    {{ indicator.get_current_point.value }}
+                    {{ point.value }}
             {% else %}
                 <h5 class="card-title fs-1 text-primary">
                     <a class="btn btn-outline-primary bi bi-pencil-square"
-                       role="button" href="{% url 'conformity:indicatorpoint_form' indicator.get_current_point.pk %}">
+                       role="button" href="{% url 'conformity:indicatorpoint_form' point.pk %}">
                     Add a value
                     </a>
             {% endif %}
 
-            {% if indicator.get_current_point.value %}
+            {% if point and point.value %}
                 {% if indicator.best == 100 and indicator.worst == 0 %} %
                 {% elif indicator.best == 0 and indicator.worst == 100 %} %
                 {% else %} / {{indicator.best}} {% endif %}
             {% endif %}
+            {% if point %}
                 </h5>
+            {% endif %}
             </div>
             <div class="card-body">
                 <p class="card-subtitle text-body-secondary">
@@ -96,9 +106,14 @@
             <div class="card-footer">
                 <small class="text-body-secondary">
                     <i class="bi bi-journal-text"></i>
-                    Last updated {{ indicator.get_current_point.control_date }} by {{ indicator.get_current_point.control_user }}
+                    {% if point %}
+                        Last updated {{ point.control_date }} by {{ point.control_user }}
+                    {% else %}
+                        No measurement for the current period
+                    {% endif %}
                 </small>
             </div>
+            {% endwith %}
         </div>
     </div>
 
