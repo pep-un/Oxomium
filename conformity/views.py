@@ -3,6 +3,7 @@ View of the Conformity Module
 """
 
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import transaction
 from django.db.models import Prefetch
 from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import UpdateView, CreateView
@@ -20,7 +21,7 @@ from .models import Organization, Framework, Conformity, Audit, Action, Finding,
 from .resources import ConformityResource, ControlResource, FindingResource, ActionResource, IndicatorResource, AuditResource
 
 from django.views import View
-from django.http import HttpResponse, Http404
+from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 import os
 
@@ -168,30 +169,30 @@ class OrganizationDetailView(LoginRequiredMixin, DetailView):
     model = Organization
 
 
-class OrganizationUpdateView(LoginRequiredMixin, UpdateView):
+class OrganizationFrameworkFormMixin:
+    """Save organization fields and reconcile frameworks through the service."""
+
+    def form_valid(self, form):
+        from .services.conformities import set_frameworks
+
+        with transaction.atomic():
+            self.object = form.save(commit=False)
+            self.object.save()
+            set_frameworks(self.object, form.cleaned_data['applicable_frameworks'])
+            for file in self.request.FILES.getlist('attachments'):
+                attachment = Attachment.objects.create(file=file)
+                self.object.attachment.add(attachment)
+        return HttpResponseRedirect(self.get_success_url())
+
+
+class OrganizationUpdateView(LoginRequiredMixin, OrganizationFrameworkFormMixin, UpdateView):
     model = Organization
     form_class = OrganizationForm
 
-    def form_valid(self, form):
-        response = super().form_valid(form)
-        attachments = self.request.FILES.getlist('attachments')
-        for file in attachments:
-            attachment = Attachment.objects.create(file=file)
-            self.object.attachment.add(attachment)
-        return response
 
-
-class OrganizationCreateView(LoginRequiredMixin, CreateView):
+class OrganizationCreateView(LoginRequiredMixin, OrganizationFrameworkFormMixin, CreateView):
     model = Organization
     form_class = OrganizationForm
-
-    def form_valid(self, form):
-        response = super().form_valid(form)
-        attachments = self.request.FILES.getlist('attachments')
-        for file in attachments:
-            attachment = Attachment.objects.create(file=file)
-            self.object.attachment.add(attachment)
-        return response
 
 #
 # Framework
