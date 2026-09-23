@@ -50,15 +50,15 @@ def propagate_applicable_and_comment(root, applicable, comment=None):
     from conformity.models import Conformity
 
     with transaction.atomic():
-        if not applicable and not root.requirement.is_leaf_node():
-            changes = {'applicable': False}
+        if not root.requirement.is_leaf_node() and (not applicable or comment is not None):
+            changes = {'applicable': applicable}
             if comment is not None:
                 changes['comment'] = comment
             Conformity.objects.filter(
                 organization=root.organization,
                 requirement__in=root.requirement.get_descendants(),
             ).update(**changes)
-        elif applicable and root.requirement.is_child_node():
+        if applicable and root.requirement.is_child_node():
             Conformity.objects.filter(
                 organization=root.organization,
                 requirement__in=root.requirement.get_ancestors(),

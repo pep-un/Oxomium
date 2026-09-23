@@ -49,6 +49,10 @@ class ModelSafetyTests(TestCase):
         self.leaf_conf.refresh_from_db()
         self.assertFalse(self.leaf_conf.applicable)
         self.assertEqual(self.leaf_conf.comment, 'Not applicable')
+        propagate_applicable_and_comment(self.root_conf, True, 'Applicable again')
+        self.leaf_conf.refresh_from_db()
+        self.assertTrue(self.leaf_conf.applicable)
+        self.assertEqual(self.leaf_conf.comment, 'Applicable again')
 
     def test_navigation_and_queryset(self):
         self.assertEqual(self.leaf.full_path, 'A-B-C')
