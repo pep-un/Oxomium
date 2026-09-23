@@ -5,7 +5,6 @@ from django.urls import reverse
 from unittest.mock import patch
 
 from auditlog import get_logentry_model
-from conformity.admin import OrganizationAdminForm
 from conformity.models import Attachment, Conformity, Framework, Organization, Requirement
 
 

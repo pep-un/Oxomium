@@ -18,7 +18,7 @@ class OrganizationResources(resources.ModelResource):
         model = Organization
 
 
-def _log_framework_changes(organization, previous_ids, selected):
+def _log_framework_changes(organization, previous_ids, selected, actor):
     """Record explicit framework reconciliation in django-auditlog."""
     selected_ids = {framework.pk for framework in selected}
     LogEntry = get_logentry_model()
@@ -27,12 +27,14 @@ def _log_framework_changes(organization, previous_ids, selected):
         organization,
         'delete',
         'applicable_frameworks',
+        actor=actor,
     )
     LogEntry.objects.log_m2m_changes(
         Framework.objects.filter(pk__in=selected_ids - previous_ids),
         organization,
         'add',
         'applicable_frameworks',
+        actor=actor,
     )
 
 
@@ -59,7 +61,7 @@ class OrganizationAdmin(ImportExportModelAdmin):
                 super().save_related(request, form, formsets, change)
                 if selected is not None:
                     set_frameworks(form.instance, selected)
-                    _log_framework_changes(form.instance, previous_ids, selected)
+                    _log_framework_changes(form.instance, previous_ids, selected, request.user)
         finally:
             if selected is not None:
                 form.cleaned_data['applicable_frameworks'] = selected
