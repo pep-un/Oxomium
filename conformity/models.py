@@ -26,6 +26,11 @@ from pycountry import languages
 User = get_user_model()
 
 
+def language_choices():
+    """Resolve language labels when the form is built, not in migration state."""
+    return [(lang.alpha_2, lang.name) for lang in languages if hasattr(lang, 'alpha_2')]
+
+
 class FrameworkManager(models.Manager):
     def get_by_natural_key(self, name):
         return self.get(name=name)
@@ -49,7 +54,7 @@ class Framework(models.Model):
     class Language:
         @classmethod
         def choices(cls):
-            return[(lang.alpha_2, lang.name) for lang in languages if hasattr(lang, 'alpha_2')]
+            return language_choices()
 
     objects = FrameworkManager()
     name = models.CharField(max_length=256, unique=True)
@@ -57,7 +62,7 @@ class Framework(models.Model):
     publish_by = models.CharField(max_length=256)
     type = models.CharField(max_length=5, choices=Type.choices, default=Type.OTHER)
     attachment = models.ManyToManyField('Attachment', blank=True, related_name='frameworks')
-    language = models.CharField(max_length=2,choices=Language.choices(),default='en')
+    language = models.CharField(max_length=2, choices=language_choices, default='en')
 
     class Meta:
         ordering = ['name']

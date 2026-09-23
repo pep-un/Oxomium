@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.db import migrations, models
 import django.db.models.deletion
+import conformity.models
 
 
 class Migration(migrations.Migration):
@@ -10,6 +11,13 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.AlterField(
+            model_name='framework',
+            name='language',
+            field=models.CharField(
+                max_length=2, choices=conformity.models.language_choices, default='en'
+            ),
+        ),
         migrations.AlterField(
             model_name='requirement',
             name='framework',
