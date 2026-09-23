@@ -19,6 +19,20 @@ class FindingCreateViewTest(TestCase):
         self.assertEqual(initial["audit"], audit)
         self.assertTrue(form.fields["audit"].disabled)
 
+        different_audit = Audit.objects.create(
+            organization=organization, auditor="Unselected auditor"
+        )
+        submitted = FindingForm(
+            data={
+                "audit": different_audit.pk,
+                "short_description": "New finding",
+                "severity": Finding.Severity.OBSERVATION,
+            },
+            initial=initial,
+        )
+        self.assertTrue(submitted.is_valid(), submitted.errors)
+        self.assertEqual(submitted.cleaned_data["audit"], audit)
+
     def test_existing_finding_can_change_audit(self):
         organization = Organization.objects.create(name="Editable finding organization")
         original = Audit.objects.create(organization=organization, auditor="Original auditor")
