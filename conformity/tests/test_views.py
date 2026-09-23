@@ -163,6 +163,21 @@ class ConformityIndexViews(BaseDataMixin, TestCase):
         objs = list(resp.context_data["object_list"])
         self.assertEqual(objs, [self.c_root])
 
+    def test_progress_bar_shows_zero_when_not_yet_evaluated(self):
+        self.client.force_login(self.user)
+        url = reverse('conformity:conformity_index')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'style="width: 0%"')
+        self.assertContains(response, 'aria-valuenow="0"')
+        self.assertNotContains(response, 'None%')
+
+        self.c_root.status = 80
+        self.c_root.save(update_fields=['status'])
+        response = self.client.get(url)
+        self.assertContains(response, 'style="width: 80%"')
+        self.assertContains(response, 'aria-valuenow="80"')
+
     def test_conformity_detail_index_queryset_scoped(self):
         """ConformityDetailIndexView must filter by org and framework (pol)."""
         request = self.factory.get("/conformities/detail")
