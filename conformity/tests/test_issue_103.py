@@ -74,17 +74,16 @@ class ModelSafetyTests(TestCase):
         independent_root.refresh_from_db()
         self.assertEqual(independent_root.code, 'A')
 
-    def test_code_audit_reports_sibling_collisions_but_allows_other_parents(self):
+    def test_code_audit_allows_reuse_under_other_parent_and_flags_missing(self):
         other_parent = Requirement.objects.create(framework=self.fw, code='D')
         Requirement.objects.create(framework=self.fw, parent=other_parent, code='B')
         output = StringIO()
         call_command('audit_requirement_codes', stdout=output)
         self.assertIn('Duplicate sibling codes: 0', output.getvalue())
-        sibling = Requirement.objects.create(framework=self.fw, parent=self.root, code='E')
-        Requirement.objects.filter(pk=sibling.pk).update(code='B')
+        Requirement.objects.filter(pk=self.leaf.pk).update(code='')
         with self.assertRaises(CommandError):
             call_command('audit_requirement_codes', stdout=output)
-        self.assertIn('Duplicate sibling codes: 1', output.getvalue())
+        self.assertIn(f'IDs: [{self.leaf.pk}]', output.getvalue())
 
     def test_display_path_ignores_legacy_hierarchical_name(self):
         Requirement.objects.filter(pk=self.child.pk).update(name='legacy-child')
