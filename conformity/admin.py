@@ -3,8 +3,10 @@ Customize Django Admin Site to manage my Models instances
 """
 
 from django.contrib import admin
+from django import forms
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
+from .services.conformities import set_frameworks
 from .models import Organization, Framework, Requirement, Conformity, Audit, Finding, Action, Control, ControlPoint, \
     Attachment, Indicator, IndicatorPoint
 
@@ -14,7 +16,26 @@ class OrganizationResources(resources.ModelResource):
         model = Organization
 
 
+class OrganizationAdminForm(forms.ModelForm):
+    class Meta:
+        model = Organization
+        fields = '__all__'
+
+    def _save_m2m(self):
+        # Django's admin calls save_m2m() after the organization has a primary key.
+        # Save other relations normally; reconcile frameworks through the service.
+        selected = self.cleaned_data.pop('applicable_frameworks', None)
+        try:
+            super()._save_m2m()
+        finally:
+            if selected is not None:
+                self.cleaned_data['applicable_frameworks'] = selected
+        if selected is not None:
+            set_frameworks(self.instance, selected)
+
+
 class OrganizationAdmin(ImportExportModelAdmin):
+    form = OrganizationAdminForm
     ressource_class = Organization
     list_select_related = ['applicable_frameworks']
 
