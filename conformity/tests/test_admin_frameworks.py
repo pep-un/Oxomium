@@ -1,8 +1,10 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
+from unittest.mock import patch
 
-from conformity.models import Conformity, Framework, Organization, Requirement
+from conformity.admin import OrganizationAdminForm
+from conformity.models import Attachment, Conformity, Framework, Organization, Requirement
 
 
 class OrganizationAdminFrameworkTests(TestCase):
@@ -60,3 +62,25 @@ class OrganizationAdminFrameworkTests(TestCase):
         response = self.save_frameworks([])
         self.assertEqual(response.status_code, 302, response.content.decode()[:500])
         self.assertFalse(Conformity.objects.filter(organization=self.organization).exists())
+
+    def test_admin_m2m_save_is_atomic(self):
+        attachment = Attachment.objects.create(file='admin-attachment.txt')
+        form = OrganizationAdminForm(
+            data={
+                'name': self.organization.name,
+                'administrative_id': '',
+                'description': '',
+                'applicable_frameworks': [self.first.pk],
+                'attachment': [attachment.pk],
+            },
+            instance=self.organization,
+        )
+        self.assertTrue(form.is_valid())
+        form.save(commit=False)
+
+        with patch('conformity.admin.set_frameworks', side_effect=RuntimeError):
+            with self.assertRaises(RuntimeError):
+                form._save_m2m()
+
+        self.assertFalse(self.organization.attachment.exists())
+        self.assertFalse(self.organization.applicable_frameworks.exists())

@@ -4,6 +4,7 @@ Customize Django Admin Site to manage my Models instances
 
 from django.contrib import admin
 from django import forms
+from django.db import transaction
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
 from .services.conformities import set_frameworks
@@ -26,12 +27,13 @@ class OrganizationAdminForm(forms.ModelForm):
         # Save other relations normally; reconcile frameworks through the service.
         selected = self.cleaned_data.pop('applicable_frameworks', None)
         try:
-            super()._save_m2m()
+            with transaction.atomic():
+                super()._save_m2m()
+                if selected is not None:
+                    set_frameworks(self.instance, selected)
         finally:
             if selected is not None:
                 self.cleaned_data['applicable_frameworks'] = selected
-        if selected is not None:
-            set_frameworks(self.instance, selected)
 
 
 class OrganizationAdmin(ImportExportModelAdmin):
