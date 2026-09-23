@@ -1,6 +1,9 @@
 from datetime import date
+from io import StringIO
 
 from django.contrib.auth import get_user_model
+from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.db import IntegrityError, transaction
 from django.test import TestCase
 
@@ -53,6 +56,25 @@ class ModelSafetyTests(TestCase):
         self.leaf_conf.refresh_from_db()
         self.assertTrue(self.leaf_conf.applicable)
         self.assertEqual(self.leaf_conf.comment, 'Applicable again')
+
+    def test_code_audit_reports_sibling_collisions_but_allows_other_parents(self):
+        other_parent = Requirement.objects.create(framework=self.fw, code='D')
+        Requirement.objects.create(framework=self.fw, parent=other_parent, code='B')
+        output = StringIO()
+        call_command('audit_requirement_codes', stdout=output)
+        self.assertIn('Duplicate sibling codes: 0', output.getvalue())
+        sibling = Requirement.objects.create(framework=self.fw, parent=self.root, code='E')
+        Requirement.objects.filter(pk=sibling.pk).update(code='B')
+        with self.assertRaises(CommandError):
+            call_command('audit_requirement_codes', stdout=output)
+        self.assertIn('Duplicate sibling codes: 1', output.getvalue())
+
+    def test_display_path_ignores_legacy_hierarchical_name(self):
+        Requirement.objects.filter(pk=self.child.pk).update(name='legacy-child')
+        Requirement.objects.filter(pk=self.leaf.pk).update(name='legacy-leaf')
+        self.leaf.refresh_from_db()
+        self.assertEqual(self.leaf.full_path, 'A-B-C')
+        self.assertEqual(self.leaf.natural_key(), 'legacy-leaf')
 
     def test_navigation_and_queryset(self):
         self.assertEqual(self.leaf.full_path, 'A-B-C')

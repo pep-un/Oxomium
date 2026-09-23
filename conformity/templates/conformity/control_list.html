@@ -172,7 +172,7 @@
                 {% for conformity in control.conformity.all %}
                     <span class="badge rounded-pill text-bg-secondary"
                         title="{{ conformity.requirement.title }}">
-                        {{ conformity.requirement.name }}
+                        {{ conformity.requirement.full_path }}
                     </span>
                 {% endfor %}
             </td>

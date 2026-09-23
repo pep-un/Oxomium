@@ -7,21 +7,21 @@
     {% if con.requirement.is_leaf_node %}
     <td class="">
         {% if con.requirement.level == 1 %}
-            <a class="btn btn-sm btn-outline-secondary me-1 disabled" >{{ con.requirement.name }}</a>
+            <a class="btn btn-sm btn-outline-secondary me-1 disabled" >{{ con.requirement.full_path }}</a>
         {% elif con.requirement.level == 2 %}
-            <a class="btn btn-sm btn-outline-secondary me-1 ms-3 disabled" >{{ con.requirement.name }}</a>
+            <a class="btn btn-sm btn-outline-secondary me-1 ms-3 disabled" >{{ con.requirement.full_path }}</a>
         {% else %}
-            <a class="btn btn-sm btn-outline-secondary me-1 ms-5 disabled" >{{ con.requirement.name }}</a>
+            <a class="btn btn-sm btn-outline-secondary me-1 ms-5 disabled" >{{ con.requirement.full_path }}</a>
         {% endif %}
         {{ con.requirement.title }}
     {% else %}
     <td class="">
         {% if con.requirement.level == 1 %}
-            <a class="btn btn-sm btn-primary me-1" href="?root_id={{con.id}}">{{ con.requirement.name }}</a>
+            <a class="btn btn-sm btn-primary me-1" href="?root_id={{con.id}}">{{ con.requirement.full_path }}</a>
         {% elif con.requirement.level == 2 %}
-            <a class="btn btn-sm btn-info me-1 ms-3" href="?root_id={{con.id}}">{{ con.requirement.name }}</a>
+            <a class="btn btn-sm btn-info me-1 ms-3" href="?root_id={{con.id}}">{{ con.requirement.full_path }}</a>
         {% else %}
-            <a class="btn btn-sm btn-secondary me-1 ms-5" href="?root_id={{con.id}}">{{ con.requirement.name }}</a>
+            <a class="btn btn-sm btn-secondary me-1 ms-5" href="?root_id={{con.id}}">{{ con.requirement.full_path }}</a>
         {% endif %}
         <b>{{ con.requirement.title }}</b>
     {% endif %}
