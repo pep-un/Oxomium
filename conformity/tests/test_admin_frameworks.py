@@ -89,7 +89,7 @@ class OrganizationAdminFrameworkTests(TestCase):
             'delete',
         )
 
-    def test_admin_m2m_save_is_atomic(self):
+    def test_admin_related_save_is_atomic(self):
         attachment = Attachment.objects.create(
             file=SimpleUploadedFile(
                 'admin-attachment.txt',
@@ -97,22 +97,20 @@ class OrganizationAdminFrameworkTests(TestCase):
                 content_type='text/plain',
             )
         )
-        form = OrganizationAdminForm(
-            data={
-                'name': self.organization.name,
-                'administrative_id': '',
-                'description': '',
-                'applicable_frameworks': [self.first.pk],
-                'attachment': [attachment.pk],
-            },
-            instance=self.organization,
-        )
-        self.assertTrue(form.is_valid())
-        form.save(commit=False)
 
         with patch('conformity.admin.set_frameworks', side_effect=RuntimeError):
             with self.assertRaises(RuntimeError):
-                form._save_m2m()
+                self.client.post(
+                    self.url,
+                    {
+                        'name': self.organization.name,
+                        'administrative_id': '',
+                        'description': '',
+                        'applicable_frameworks': [self.first.pk],
+                        'attachment': [attachment.pk],
+                        '_save': 'Save',
+                    },
+                )
 
         self.assertFalse(self.organization.attachment.exists())
         self.assertFalse(self.organization.applicable_frameworks.exists())

@@ -41,29 +41,28 @@ class OrganizationAdminForm(forms.ModelForm):
         model = Organization
         fields = '__all__'
 
-    def _save_m2m(self):
-        # Django's admin calls save_m2m() after the organization has a primary key.
-        # Save other relations normally; reconcile frameworks through the service.
-        selected = self.cleaned_data.pop('applicable_frameworks', None)
-        previous_ids = (
-            set(self.instance.applicable_frameworks.values_list('pk', flat=True))
-            if selected is not None else set()
-        )
-        try:
-            with transaction.atomic():
-                super()._save_m2m()
-                if selected is not None:
-                    set_frameworks(self.instance, selected)
-                    _log_framework_changes(self.instance, previous_ids, selected)
-        finally:
-            if selected is not None:
-                self.cleaned_data['applicable_frameworks'] = selected
-
 
 class OrganizationAdmin(ImportExportModelAdmin):
     form = OrganizationAdminForm
     ressource_class = Organization
     list_select_related = ['applicable_frameworks']
+
+    def save_related(self, request, form, formsets, change):
+        """Save regular relations normally and reconcile frameworks explicitly."""
+        selected = form.cleaned_data.pop('applicable_frameworks', None)
+        previous_ids = (
+            set(form.instance.applicable_frameworks.values_list('pk', flat=True))
+            if selected is not None else set()
+        )
+        try:
+            with transaction.atomic():
+                super().save_related(request, form, formsets, change)
+                if selected is not None:
+                    set_frameworks(form.instance, selected)
+                    _log_framework_changes(form.instance, previous_ids, selected)
+        finally:
+            if selected is not None:
+                form.cleaned_data['applicable_frameworks'] = selected
 
 
 class FrameworkResources(resources.ModelResource):
