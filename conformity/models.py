@@ -643,7 +643,7 @@ class Control(models.Model):
     @staticmethod
     def controlpoint_bootstrap(instance):
         from .services.controls import generate_controlpoints
-        generate_controlpoints(instance)
+        generate_controlpoints(instance, year=date.today().year)
 
 
     def get_controlpoint(self):
