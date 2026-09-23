@@ -4,6 +4,7 @@ from django.test import TestCase
 from django.urls import reverse
 from unittest.mock import patch
 
+from auditlog import get_logentry_model
 from conformity.admin import OrganizationAdminForm
 from conformity.models import Attachment, Conformity, Framework, Organization, Requirement
 
@@ -63,6 +64,30 @@ class OrganizationAdminFrameworkTests(TestCase):
         response = self.save_frameworks([])
         self.assertEqual(response.status_code, 302, response.content.decode()[:500])
         self.assertFalse(Conformity.objects.filter(organization=self.organization).exists())
+
+
+    def test_admin_framework_changes_are_audited(self):
+        LogEntry = get_logentry_model()
+        LogEntry.objects.all().delete()
+
+        response = self.save_frameworks([self.first.pk])
+        self.assertEqual(response.status_code, 302, response.content.decode()[:500])
+        addition = LogEntry.objects.get_for_object(self.organization).get()
+        self.assertEqual(addition.actor, self.user)
+        self.assertEqual(
+            addition.changes['applicable_frameworks']['operation'],
+            'add',
+        )
+
+        LogEntry.objects.all().delete()
+        response = self.save_frameworks([])
+        self.assertEqual(response.status_code, 302, response.content.decode()[:500])
+        removal = LogEntry.objects.get_for_object(self.organization).get()
+        self.assertEqual(removal.actor, self.user)
+        self.assertEqual(
+            removal.changes['applicable_frameworks']['operation'],
+            'delete',
+        )
 
     def test_admin_m2m_save_is_atomic(self):
         attachment = Attachment.objects.create(

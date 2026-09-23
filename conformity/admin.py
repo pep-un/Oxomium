@@ -5,6 +5,7 @@ Customize Django Admin Site to manage my Models instances
 from django.contrib import admin
 from django import forms
 from django.db import transaction
+from auditlog import get_logentry_model
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
 from .services.conformities import set_frameworks
@@ -17,6 +18,24 @@ class OrganizationResources(resources.ModelResource):
         model = Organization
 
 
+def _log_framework_changes(organization, previous_ids, selected):
+    """Record explicit framework reconciliation in django-auditlog."""
+    selected_ids = {framework.pk for framework in selected}
+    LogEntry = get_logentry_model()
+    LogEntry.objects.log_m2m_changes(
+        Framework.objects.filter(pk__in=previous_ids - selected_ids),
+        organization,
+        'delete',
+        'applicable_frameworks',
+    )
+    LogEntry.objects.log_m2m_changes(
+        Framework.objects.filter(pk__in=selected_ids - previous_ids),
+        organization,
+        'add',
+        'applicable_frameworks',
+    )
+
+
 class OrganizationAdminForm(forms.ModelForm):
     class Meta:
         model = Organization
@@ -26,11 +45,16 @@ class OrganizationAdminForm(forms.ModelForm):
         # Django's admin calls save_m2m() after the organization has a primary key.
         # Save other relations normally; reconcile frameworks through the service.
         selected = self.cleaned_data.pop('applicable_frameworks', None)
+        previous_ids = (
+            set(self.instance.applicable_frameworks.values_list('pk', flat=True))
+            if selected is not None else set()
+        )
         try:
             with transaction.atomic():
                 super()._save_m2m()
                 if selected is not None:
                     set_frameworks(self.instance, selected)
+                    _log_framework_changes(self.instance, previous_ids, selected)
         finally:
             if selected is not None:
                 self.cleaned_data['applicable_frameworks'] = selected
