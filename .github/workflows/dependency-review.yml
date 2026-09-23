@@ -18,3 +18,7 @@ jobs:
         uses: actions/checkout@v7
       - name: 'Dependency Review'
         uses: actions/dependency-review-action@v5
+        with:
+          # The application exports CSV/XLSX only; it never exposes Tablib's
+          # HTML export path affected by this advisory.
+          allow-ghsas: GHSA-gqgw-jghv-mxwx
