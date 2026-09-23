@@ -24,6 +24,48 @@ def remove_for_framework(organization, framework):
         ).delete()
 
 
+def apply_framework(organization, framework):
+    """Apply one framework and create only missing assessments."""
+    from conformity.models import Organization
+
+    framework_id = getattr(framework, 'pk', framework)
+    through = Organization.applicable_frameworks.through
+    with transaction.atomic():
+        through.objects.get_or_create(
+            organization_id=organization.pk, framework_id=framework_id
+        )
+        ensure_for_framework(organization, framework_id)
+
+
+def unapply_framework(organization, framework):
+    """Remove a framework and its assessments as a single operation."""
+    from conformity.models import Organization
+
+    framework_id = getattr(framework, 'pk', framework)
+    through = Organization.applicable_frameworks.through
+    with transaction.atomic():
+        through.objects.filter(
+            organization_id=organization.pk, framework_id=framework_id
+        ).delete()
+        remove_for_framework(organization, framework_id)
+
+
+def set_frameworks(organization, frameworks):
+    """Reconcile an organization's selection without resetting existing answers."""
+    desired = {getattr(framework, 'pk', framework) for framework in frameworks}
+    with transaction.atomic():
+        current = set(
+            organization.applicable_frameworks.values_list('pk', flat=True)
+        )
+        for framework_id in current - desired:
+            unapply_framework(organization, framework_id)
+        for framework_id in desired - current:
+            apply_framework(organization, framework_id)
+        # Repair missing assessments on pre-existing links, without overwriting answers.
+        for framework_id in current & desired:
+            ensure_for_framework(organization, framework_id)
+
+
 def recompute_parent_chain(conformity):
     """Aggregate this node and its ancestors, one level at a time."""
     from conformity.models import Conformity
