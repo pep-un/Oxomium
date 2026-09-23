@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
 from unittest.mock import patch
@@ -64,7 +65,13 @@ class OrganizationAdminFrameworkTests(TestCase):
         self.assertFalse(Conformity.objects.filter(organization=self.organization).exists())
 
     def test_admin_m2m_save_is_atomic(self):
-        attachment = Attachment.objects.create(file='admin-attachment.txt')
+        attachment = Attachment.objects.create(
+            file=SimpleUploadedFile(
+                'admin-attachment.txt',
+                b'attachment content',
+                content_type='text/plain',
+            )
+        )
         form = OrganizationAdminForm(
             data={
                 'name': self.organization.name,
