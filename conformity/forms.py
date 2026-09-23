@@ -44,7 +44,9 @@ class FindingForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super(FindingForm, self).__init__(*args, **kwargs)
 
-        if self.initial.get('audit'):
+        # Only lock the audit when creating a finding from an audit page.
+        # Existing findings carry their audit in initial too and must stay editable.
+        if self.instance.pk is None and self.initial.get('audit'):
             self.fields['audit'].disabled = True
         if self.get_initial_for_field(self.fields['archived'], 'archived') :
             for key, value in self.fields.items():

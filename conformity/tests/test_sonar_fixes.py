@@ -1,7 +1,7 @@
 from django.test import RequestFactory, TestCase
 
 from conformity.forms import FindingForm
-from conformity.models import Audit, Organization
+from conformity.models import Audit, Finding, Organization
 from conformity.views import FindingCreateView
 
 
@@ -18,3 +18,23 @@ class FindingCreateViewTest(TestCase):
 
         self.assertEqual(initial["audit"], audit)
         self.assertTrue(form.fields["audit"].disabled)
+
+    def test_existing_finding_can_change_audit(self):
+        organization = Organization.objects.create(name="Editable finding organization")
+        original = Audit.objects.create(organization=organization, auditor="Original auditor")
+        replacement = Audit.objects.create(organization=organization, auditor="New auditor")
+        finding = Finding.objects.create(audit=original, short_description="Finding to move")
+
+        form = FindingForm(instance=finding)
+        self.assertFalse(form.fields["audit"].disabled)
+
+        form = FindingForm(
+            data={
+                "audit": replacement.pk,
+                "short_description": finding.short_description,
+                "severity": finding.severity,
+            },
+            instance=finding,
+        )
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.save().audit, replacement)
