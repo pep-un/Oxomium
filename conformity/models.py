@@ -164,6 +164,20 @@ class Requirement(MPTTModel):
     title = models.CharField(max_length=256, blank=True)
     description = models.TextField(blank=True)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['framework', 'code'],
+                condition=Q(parent__isnull=True),
+                name='uq_req_root_code',
+            ),
+            models.UniqueConstraint(
+                fields=['framework', 'parent', 'code'],
+                condition=Q(parent__isnull=False),
+                name='uq_req_sibling_code',
+            ),
+        ]
+
     class MPTTMeta:
         order_insertion_by = ['order']
 

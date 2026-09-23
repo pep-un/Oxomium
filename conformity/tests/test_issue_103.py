@@ -57,6 +57,23 @@ class ModelSafetyTests(TestCase):
         self.assertTrue(self.leaf_conf.applicable)
         self.assertEqual(self.leaf_conf.comment, 'Applicable again')
 
+    def test_requirement_codes_are_unique_within_each_sibling_group(self):
+        other_root = Requirement.objects.create(framework=self.fw, code='D')
+        Requirement.objects.create(framework=self.fw, parent=other_root, code='B')
+        sibling = Requirement.objects.create(framework=self.fw, parent=self.root, code='E')
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            Requirement.objects.filter(pk=sibling.pk).update(code='B')
+
+    def test_root_codes_are_unique_within_framework(self):
+        other_root = Requirement.objects.create(framework=self.fw, code='D')
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            Requirement.objects.filter(pk=other_root.pk).update(code='A')
+        another_framework = Framework.objects.create(name='Other Framework')
+        independent_root = Requirement.objects.create(framework=another_framework, code='Z')
+        Requirement.objects.filter(pk=independent_root.pk).update(code='A')
+        independent_root.refresh_from_db()
+        self.assertEqual(independent_root.code, 'A')
+
     def test_code_audit_reports_sibling_collisions_but_allows_other_parents(self):
         other_parent = Requirement.objects.create(framework=self.fw, code='D')
         Requirement.objects.create(framework=self.fw, parent=other_parent, code='B')
