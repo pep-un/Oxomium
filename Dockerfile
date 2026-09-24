@@ -15,9 +15,13 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip setuptools \
     && pip install --no-cache-dir -r requirements.txt \
     && python -m pip uninstall --yes msgpack setuptools \
+    && find /usr/local/lib/python3.12/site-packages -maxdepth 1 -type d \
+        \( -name 'msgpack*' -o -name 'setuptools*' -o -name 'wheel*' \) \
+        -exec rm -rf {} + \
     && python -m pip install --no-cache-dir \
         'setuptools==80.9.0' \
         'msgpack==1.2.1' \
+        'wheel==0.46.2' \
     && pip check
 
 COPY --chown=app:app . .
