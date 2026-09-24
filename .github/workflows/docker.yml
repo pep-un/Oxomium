@@ -1,0 +1,61 @@
+name: Docker
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - Dockerfile
+      - .dockerignore
+      - docker-compose.yml
+      - docker/**
+      - requirements.txt
+      - conformity/**
+      - oxomium/**
+      - manage.py
+  pull_request:
+    branches: [main]
+    paths:
+      - Dockerfile
+      - .dockerignore
+      - docker-compose.yml
+      - docker/**
+      - requirements.txt
+      - conformity/**
+      - oxomium/**
+      - manage.py
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate Docker configuration
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Lint Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+
+      - name: Validate Compose file
+        run: docker compose config --quiet
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: false
+          load: true
+          tags: oxomium:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run Django system checks
+        run: docker run --rm --entrypoint python oxomium:ci manage.py check
