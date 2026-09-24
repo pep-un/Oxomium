@@ -5,6 +5,7 @@ from django.urls import reverse
 from unittest.mock import patch
 
 from auditlog.models import LogEntry
+from conformity import admin as conformity_admin
 from conformity.models import Attachment, Conformity, Framework, Organization, Requirement
 
 
@@ -32,6 +33,9 @@ class OrganizationAdminFrameworkTests(TestCase):
                 '_save': 'Save',
             },
         )
+
+    def test_admin_imports_auditlog_model_from_supported_module(self):
+        self.assertIs(conformity_admin.LogEntry, LogEntry)
 
     def test_admin_reconciles_frameworks_without_erasing_existing_assessments(self):
         response = self.save_frameworks([self.first.pk])
