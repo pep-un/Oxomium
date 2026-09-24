@@ -14,7 +14,8 @@ RUN apt-get update \
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip setuptools \
     && pip install --no-cache-dir -r requirements.txt \
-    && pip install --no-cache-dir --upgrade 'msgpack>=1.2.1'
+    && pip install --no-cache-dir --upgrade 'msgpack>=1.2.1' \
+    && pip check
 
 COPY --chown=app:app . .
 COPY docker/scripts/entrypoint.sh /usr/local/bin/entrypoint
