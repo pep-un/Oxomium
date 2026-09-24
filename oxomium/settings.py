@@ -144,8 +144,8 @@ STATIC_ROOT = config('STATIC_ROOT', default=str(BASE_DIR / 'staticfiles'))
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Login / Logout configuration
-LOGIN_REDIRECT_URL = config('STATIC_ROOT', default='/')
-LOGOUT_REDIRECT_URL = config('STATIC_ROOT', default='/')
+LOGIN_REDIRECT_URL = config('LOGIN_REDIRECT_URL', default='/')
+LOGOUT_REDIRECT_URL = config('LOGOUT_REDIRECT_URL', default='/')
 
 # AuditLog configuration
 AUDITLOG_INCLUDE_ALL_MODELS = True
