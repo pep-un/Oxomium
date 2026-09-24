@@ -10,8 +10,8 @@ RUN apk add --no-cache libmagic \
     && adduser -S -G app app
 
 COPY requirements.txt .
-RUN python -m pip install --no-cache-dir -r requirements.txt
-RUN rm -rf /usr/local/lib/python3.14/site-packages/pip \
+RUN python -m pip install --only-binary=:all: --no-cache-dir -r requirements.txt \
+&& rm -rf /usr/local/lib/python3.14/site-packages/pip \
     /usr/local/lib/python3.14/site-packages/pip-*.dist-info \
     /usr/local/lib/python3.14/site-packages/setuptools \
     /usr/local/lib/python3.14/site-packages/setuptools-*.dist-info \

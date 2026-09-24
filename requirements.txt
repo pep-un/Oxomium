@@ -12,4 +12,4 @@ python-dateutil
 django-mptt
 django-constance
 pycountry
-tablib[xlsx,ods]
+tablib[xlsx]
