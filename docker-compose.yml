@@ -32,11 +32,8 @@ services:
         healthcheck:
             test:
                 [
-                    "CMD",
-                    "wget",
-                    "--spider",
-                    "--quiet",
-                    "http://localhost/nginx-health",
+                    "CMD-SHELL",
+                    "wget --quiet --output-document=/dev/null http://localhost/nginx-health",
                 ]
             interval: 10s
             timeout: 5s
