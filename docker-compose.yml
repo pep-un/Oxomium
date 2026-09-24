@@ -2,8 +2,8 @@ services:
     web:
         build:
             context: .
-        ports:
-            - "8000:8000"
+        expose:
+            - "8000"
         volumes:
             - .:/app
             - dbdata:/app/data
@@ -12,6 +12,11 @@ services:
             - ./env-exemple
         networks:
             - oxomium
+        healthcheck:
+            test: ["CMD", "python", "manage.py", "check"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
 
     nginx:
         image: nginx:1.27-alpine
@@ -21,9 +26,15 @@ services:
             - ./docker/nginx/oxomium.conf:/etc/nginx/conf.d/default.conf:ro
             - staticfiles:/staticfiles:ro
         depends_on:
-            - web
+            web:
+                condition: service_healthy
         networks:
             - oxomium
+        healthcheck:
+            test: ["CMD", "wget", "--spider", "--quiet", "http://localhost/"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
 
 networks:
     oxomium:
