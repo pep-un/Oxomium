@@ -1,28 +1,16 @@
-FROM python:3.12-slim-bookworm
+FROM python:3.14-alpine
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-RUN apt-get update \
-    && apt-get install --no-install-recommends -y libmagic1 \
-    && rm -rf /var/lib/apt/lists/* \
-    && addgroup --system app \
-    && adduser --system --ingroup app app
+RUN apk add --no-cache libmagic \
+    && addgroup -S app \
+    && adduser -S -G app app
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip setuptools \
-    && pip install --no-cache-dir -r requirements.txt \
-    && python -m pip uninstall --yes msgpack setuptools \
-    && find /usr/local/lib/python3.12/site-packages -maxdepth 1 \
-        \( -name 'msgpack*' -o -name 'setuptools*' -o -name 'wheel*' \) \
-        -exec rm -rf {} + \
-    && python -m pip install --no-cache-dir --force-reinstall \
-        'setuptools==84.0.0' \
-        'msgpack==1.2.1' \
-        'wheel==0.46.2' \
-    && pip check
+RUN python -m pip install --no-cache-dir -r requirements.txt
 
 COPY --chown=app:app . .
 COPY docker/scripts/entrypoint.sh /usr/local/bin/entrypoint
