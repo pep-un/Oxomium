@@ -1,0 +1,33 @@
+services:
+    web:
+        build:
+            context: .
+        ports:
+            - "8000:8000"
+        volumes:
+            - .:/app
+            - dbdata:/app/data
+            - staticfiles:/app/staticfiles
+        env_file:
+            - ./env-exemple
+        networks:
+            - oxomium
+
+    nginx:
+        image: nginx:1.27-alpine
+        ports:
+            - "3000:80"
+        volumes:
+            - ./docker/nginx/oxomium.conf:/etc/nginx/conf.d/default.conf:ro
+            - staticfiles:/staticfiles:ro
+        depends_on:
+            - web
+        networks:
+            - oxomium
+
+networks:
+    oxomium:
+
+volumes:
+    dbdata:
+    staticfiles:
