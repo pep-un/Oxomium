@@ -2,7 +2,7 @@
 Forms for front-end editing of Models instance
 """
 
-from django.forms import ModelForm, FileField, ClearableFileInput, BooleanField
+from django.forms import ModelForm, FileField, ClearableFileInput, BooleanField, ModelChoiceField
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from .models import Conformity, Organization, Audit, Finding, Action, Control, ControlPoint, Indicator, IndicatorPoint
@@ -48,7 +48,18 @@ class FindingForm(ModelForm):
         # Only lock the audit when creating a finding from an audit page.
         # Existing findings carry their audit in initial too and must stay editable.
         if self.instance.pk is None and self.initial.get('audit'):
+            audit = self.initial['audit']
             self.fields['audit'].disabled = True
+            if isinstance(audit, Audit):
+                self.initial['organization'] = audit.organization
+            self.fields['organization'] = ModelChoiceField(
+                queryset=Organization.objects.all(), required=False, disabled=True
+            )
+            self.order_fields([
+                'name', 'audit', 'organization', 'severity', 'short_description',
+                'description', 'observation', 'recommendation', 'reference', 'cvss',
+                'cvss_descriptor', 'archived',
+            ])
         if self.get_initial_for_field(self.fields['archived'], 'archived') :
             for key, value in self.fields.items():
                 self.fields[key].disabled = True
@@ -75,6 +86,8 @@ class ActionForm(ModelForm):
             self.fields['associated_findings'].disabled = True
         if self.instance.pk is None and self.initial.get('associated_conformity'):
             self.fields['associated_conformity'].disabled = True
+        if self.instance.pk is None and 'organization' in self.initial:
+            self.fields['organization'].disabled = True
 
         generic_fields = ['title', 'owner', 'status', 'status_comment', 'reference']
         analyse_fields = ['organization', 'associated_conformity', 'associated_findings', 'associated_controlPoints', 'description']

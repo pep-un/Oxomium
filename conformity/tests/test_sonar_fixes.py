@@ -31,14 +31,18 @@ class FindingCreateViewTest(TestCase):
         form = FindingForm(initial=initial)
 
         self.assertEqual(initial["audit"], audit)
+        self.assertEqual(initial["organization"], organization)
         self.assertTrue(form.fields["audit"].disabled)
+        self.assertTrue(form.fields["organization"].disabled)
 
+        different_organization = Organization.objects.create(name="Unselected organization")
         different_audit = Audit.objects.create(
-            organization=organization, auditor="Unselected auditor"
+            organization=different_organization, auditor="Unselected auditor"
         )
         submitted = FindingForm(
             data={
                 "audit": different_audit.pk,
+                "organization": different_organization.pk,
                 "short_description": "New finding",
                 "severity": Finding.Severity.OBSERVATION,
             },
@@ -46,6 +50,7 @@ class FindingCreateViewTest(TestCase):
         )
         self.assertTrue(submitted.is_valid(), submitted.errors)
         self.assertEqual(submitted.cleaned_data["audit"], audit)
+        self.assertEqual(submitted.cleaned_data["organization"], organization)
 
     def test_existing_finding_can_change_audit(self):
         organization = Organization.objects.create(name="Editable finding organization")
@@ -55,6 +60,7 @@ class FindingCreateViewTest(TestCase):
 
         form = FindingForm(instance=finding)
         self.assertFalse(form.fields["audit"].disabled)
+        self.assertNotIn("organization", form.fields)
 
         form = FindingForm(
             data={
@@ -83,6 +89,7 @@ class ActionCreateViewTest(TestCase):
 
     def test_finding_query_parameter_prefills_and_locks_associated_findings(self):
         organization = Organization.objects.create(name="Action test organization")
+        other_organization = Organization.objects.create(name="Other action organization")
         audit = Audit.objects.create(organization=organization, auditor="Action test auditor")
         finding = Finding.objects.create(audit=audit, short_description="Selected finding")
         other_finding = Finding.objects.create(audit=audit, short_description="Other finding")
@@ -94,18 +101,22 @@ class ActionCreateViewTest(TestCase):
         form = ActionForm(initial=initial)
 
         self.assertEqual(initial["associated_findings"], [finding])
+        self.assertEqual(initial["organization"], organization)
         self.assertTrue(form.fields["associated_findings"].disabled)
+        self.assertTrue(form.fields["organization"].disabled)
 
         submitted = ActionForm(
             data={
                 "title": "Corrective action",
                 "status": Action.Status.ANALYSING,
+                "organization": other_organization.pk,
                 "associated_findings": [other_finding.pk],
             },
             initial=initial,
         )
         self.assertTrue(submitted.is_valid(), submitted.errors)
         action = submitted.save()
+        self.assertEqual(action.organization, organization)
         self.assertEqual(list(action.associated_findings.all()), [finding])
 
     def test_existing_action_can_change_associated_findings(self):
@@ -150,6 +161,7 @@ class ConformityRelatedCreateViewTest(TestCase):
         self.user = get_user_model().objects.create_user(username="conformity_related")
         self.client.force_login(self.user)
         self.organization = Organization.objects.create(name="Conformity related organization")
+        self.other_organization = Organization.objects.create(name="Other conformity organization")
         self.framework = Framework.objects.create(
             name="Conformity related framework", publish_by="Test publisher"
         )
@@ -184,37 +196,46 @@ class ConformityRelatedCreateViewTest(TestCase):
         form = ActionForm(initial=initial)
 
         self.assertEqual(initial['associated_conformity'], [self.conformity])
+        self.assertEqual(initial['organization'], self.organization)
         self.assertTrue(form.fields['associated_conformity'].disabled)
+        self.assertTrue(form.fields['organization'].disabled)
 
         submitted = ActionForm(
             data={
                 'title': 'Corrective action for conformity',
                 'status': Action.Status.ANALYSING,
+                'organization': self.other_organization.pk,
                 'associated_conformity': [self.other_conformity.pk],
             },
             initial=initial,
         )
         self.assertTrue(submitted.is_valid(), submitted.errors)
         action = submitted.save()
+        self.assertEqual(action.organization, self.organization)
         self.assertEqual(list(action.associated_conformity.all()), [self.conformity])
 
     def test_existing_action_can_change_associated_conformity(self):
-        action = Action.objects.create(title="Editable conformity action")
+        action = Action.objects.create(
+            title="Editable conformity action", organization=self.organization
+        )
         action.associated_conformity.add(self.conformity)
 
         form = ActionForm(instance=action)
         self.assertFalse(form.fields['associated_conformity'].disabled)
+        self.assertFalse(form.fields['organization'].disabled)
 
         form = ActionForm(
             data={
                 'title': action.title,
                 'status': action.status,
+                'organization': self.other_organization.pk,
                 'associated_conformity': [self.other_conformity.pk],
             },
             instance=action,
         )
         self.assertTrue(form.is_valid(), form.errors)
         action = form.save()
+        self.assertEqual(action.organization, self.other_organization)
         self.assertEqual(list(action.associated_conformity.all()), [self.other_conformity])
 
     def test_conformity_prefills_and_locks_control(self):
