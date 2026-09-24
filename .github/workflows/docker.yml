@@ -1,0 +1,106 @@
+name: Docker
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/docker.yml
+      - Dockerfile
+      - .dockerignore
+      - docker-compose.yml
+      - docker/**
+      - requirements.txt
+      - conformity/**
+      - oxomium/**
+      - manage.py
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/docker.yml
+      - Dockerfile
+      - .dockerignore
+      - docker-compose.yml
+      - docker/**
+      - requirements.txt
+      - conformity/**
+      - oxomium/**
+      - manage.py
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate Docker configuration
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Lint Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+          failure-threshold: error
+
+      - name: Validate Compose file
+        run: docker compose config --quiet
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: false
+          load: true
+          tags: oxomium:ci
+
+      - name: Run Django system checks
+        run: docker run --rm --entrypoint python oxomium:ci manage.py check
+
+      - name: Scan image for vulnerabilities
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
+        with:
+          image-ref: oxomium:ci
+          format: json
+          output: trivy-report.json
+          severity: CRITICAL,HIGH
+          exit-code: 0
+
+      - name: Upload Trivy report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-report
+          path: trivy-report.json
+
+      - name: Fail on high or critical vulnerabilities
+        run: |
+          findings="$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH" or .Severity == "CRITICAL")] | length' trivy-report.json)"
+          if [ "$findings" -gt 0 ]; then
+            jq '.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH" or .Severity == "CRITICAL") | {
+              target: .Target,
+              package: .PkgName,
+              installed: .InstalledVersion,
+              fixed: .FixedVersion,
+              severity: .Severity,
+              vulnerability: .VulnerabilityID
+            }' trivy-report.json
+            exit 1
+          fi
+
+      - name: Start Compose services
+        run: |
+          set -e
+          trap 'docker compose down --volumes --remove-orphans' EXIT
+          if ! docker compose up --build --detach --wait --wait-timeout 60; then
+            docker compose logs
+            exit 1
+          fi
+          curl --fail --silent --show-error http://127.0.0.1:3000/
+          curl --fail --silent --show-error \
+            http://127.0.0.1:3000/static/admin/css/base.css \
+            > /dev/null
