@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 from pathlib import Path
 from decouple import config, Csv
+from django.conf.locale.az.formats import DATETIME_FORMAT, SHORT_DATETIME_FORMAT
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -54,6 +55,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'mptt',
+    'constance',
 ]
 
 MIDDLEWARE = [
@@ -77,6 +80,7 @@ TEMPLATES = [
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'constance.context_processors.config',
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
@@ -131,8 +135,8 @@ USE_TZ = config('USE_TZ', default='True', cast=bool)
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
-STATIC_URL = config('STATIC_URL', default='static/')
-STATIC_ROOT = config('STATIC_ROOT', default='static')
+STATIC_URL = config('STATIC_URL', default='/static/')
+STATIC_ROOT = config('STATIC_ROOT', default=str(BASE_DIR / 'staticfiles'))
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
@@ -145,11 +149,9 @@ LOGOUT_REDIRECT_URL = config('STATIC_ROOT', default='/')
 
 # AuditLog configuration
 AUDITLOG_INCLUDE_ALL_MODELS = True
-AUDITLOG_INCLUDE_TRACKING_MODELS = (
-    "conformity.Organization", {"model": "conformity.Organization", "m2m_fields": ["applicable_frameworks"], },
-    "conformity.Action", {"model": "conformity.Action", "m2m_fields": ["associated_conformity", "associated_findings"], },
-    "conformity.Audit", {"model": "conformity.Audit", "m2m_fields": ["audited_frameworks"], }
-)
+# Scalar changes use auditlog's model signals. Business M2M relations are
+# registered in ConformityConfig to log exact clear/remove and reverse changes.
+AUDITLOG_INCLUDE_TRACKING_MODELS = ('conformity',)
 AUDITLOG_EXCLUDE_TRACKING_FIELDS = (
     "created",
     "modified",
@@ -160,3 +162,11 @@ AUDITLOG_EXCLUDE_TRACKING_FIELDS = (
     "create_date",
     "update_date"
 )
+
+CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
+CONSTANCE_CONFIG = {
+    'WELCOME_HEADER': (
+        "Bonjour !",
+        "This text will be printed on the login page",
+        str),
+}

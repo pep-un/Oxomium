@@ -33,7 +33,7 @@
     {% endif %}
     <p class="alert alert-info">
         <i class="bi bi-ui-checks-grid"></i> Audit of {{ audit.organization }} realised by {{ audit.auditor }} ({{ audit.get_type }}).
-        <a class="text-info" href="{% url 'conformity:audit_detail' finding.audit_id %}"> See audit </a>
+        <a class="text-info" href="{% url 'conformity:audit_detail' finding.audit.id %}"> See audit </a>
     </p>
 
     <h2>Description</h2>
@@ -49,7 +49,7 @@
         CVSS Vector:
         {% if finding.cvss_descriptor %}
             <br />
-            <a class="btn btn-outline-primary" href="https://www.first.org/cvss/calculator/#{{finding.cvss_descriptor}}" target="_blank" role="button">
+            <a class="btn btn-outline-primary" href="https://www.first.org/cvss/calculator/#{{finding.cvss_descriptor}}" target="_blank">
                 {{ finding.cvss_descriptor }}
                 <i class="bi bi-box-arrow-up-right ms-2"></i>
             </a>
@@ -69,7 +69,7 @@
             <p class="list-group-item list-group-item-warning text-center my-0">No action associated</p>
         {% endfor %}
         {% if not finding.archived %}
-            <a class="list-group-item list-group-item-action list-group-item-success text-center text-success"  href="{% url 'conformity:action_create' %}">
+            <a class="list-group-item list-group-item-action list-group-item-success text-center text-success"  href="{% url 'conformity:action_create' %}?finding={{ finding.id }}">
                 <i class="bi bi-plus-circle"></i> Register a corrective action
             </a>
         {% endif %}
@@ -81,8 +81,7 @@
     {% endif %}
 
     {% if not finding.archived %}
-        <a href="{% url 'conformity:finding_form' finding.id %}">
-            <button type="button" class="my-3 btn btn-primary bi bi-pencil-square"> Edit the finding</button>
-        </a>
+        <a href="{% url 'conformity:finding_form' finding.id %}"
+           class="my-3 btn btn-primary bi bi-pencil-square"> Edit the finding</a>
     {% endif %}
 {% endblock %}

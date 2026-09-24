@@ -6,6 +6,28 @@
 
 {% block content %}
 
+<div class="row mb-3">
+    <div class="col-1 btn-group">
+        <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+            Filter
+        </button>
+        <div class="dropdown-menu">
+            <form class="m-3">
+                {{ filter.form.as_div }}
+                <div class="dropdown-divider my-2"></div>
+                <div class="row d-flex justify-content-evenly">
+                    <button type="submit" class="btn btn-primary col-4">Apply filters</button>
+                    <a href="?" class="btn btn-danger col-4">Clear filters</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="col"></div>
+    <span class="badge rounded-pill text-bg-secondary m-2 fs-6 col-1">
+        {{ page_obj.paginator.count }} items
+    </span>
+</div>
+
 {% include "includes/pagination.html" with page_obj=page_obj %}
 
 <table class="table table-striped align-middle">
@@ -21,7 +43,7 @@
     </thead>
     <tbody>
         {% for logentry in logentry_list %}
-            {% if logentry.object_id is not Null %}
+            {% if logentry.object_pk %}
             <tr>
                 <td class="col-2">
                     {{ logentry.timestamp  | date:'d-M-Y H:i T' }}
@@ -46,18 +68,23 @@
                 </td>
                 <td class="col-3">
                     {{ logentry.object_repr | truncatechars:30 }}
-                    <span class="badge rounded-pill text-bg-secondary">{{ logentry.content_type}}</span>
+                    <span class="badge rounded-pill text-bg-secondary">{{ logentry.content_type|lower }}</span>
                 </td>
                 <td class="col">
                     <ul>
-                    {% for key, value in logentry.changes_display_dict.items %}
+                    {% for change in logentry.m2m_changes %}
+                        <li class="text-wrap">{{ change.field }}:
+                            <span class="badge rounded-pill text-bg-secondary">
+                                {{ change.operation }}: {{ change.objects|join:", " }}
+                            </span>
+                        </li>
+                    {% endfor %}
+                    {% for key, value in logentry.standard_changes.items %}
                         {% if logentry.action is 0 %}
                             <li class="text-wrap">{{ key }}: <span class="badge rounded-pill text-bg-success" title="{{ value.1 }}">{{ value.1 |truncatechars:40 }}</span></li>
-                        {% endif %}
-                        {% if logentry.action is 1 %}
+                        {% elif logentry.action is 1 %}
                             <li class="text-wrap">{{ key }}: <span class="badge rounded-pill text-bg-secondary" title="{{ value.0 }}">{{ value.0 | truncatechars:20 }}</span> ⇒ <span class="badge rounded-pill text-bg-primary" title="{{ value.1 }}">{{ value.1 |truncatechars:20 }}</span></li>
-                        {% endif %}
-                        {% if logentry.action is 2 %}
+                        {% elif logentry.action is 2 %}
                             <li class="text-wrap">{{ key }}: <span class="badge rounded-pill text-bg-danger" title="{{ value.0 }}">{{ value.0 | truncatechars:40 }}</span></li>
                         {% endif %}
                     {% endfor %}

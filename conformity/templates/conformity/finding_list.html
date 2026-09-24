@@ -5,61 +5,86 @@
 {% endblock %}
 
 {% block content %}
-<p class="alert alert-info" role="alert">
-    <i class="bi bi-info-circle"> </i> &nbsp
-    Only active findings from level
-    <span class="badge rounded-pill bg-dark">Critical</span>,
-    <span class="badge rounded-pill bg-danger">Major</span>,
-    <span class="badge rounded-pill bg-warning">Minor</span> and
-    <span class="badge rounded-pill bg-info">Opportunity</span> for improvement are listed for follow-up.
-    Other findings like
-    <i class="bi bi-archive"></i> Archived findings,
-    <span class="badge rounded-pill bg-secondary">Remark</span> and
-    <span class="badge rounded-pill bg-success">Positive</span> findings are not displayed.
-</p>
+
+<div class="row">
+
+    <div id="filter-btn" class="col-1 btn-group">
+        <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+            Filter
+        </button>
+        <div class="dropdown-menu">
+            <form class="m-3">
+                {{ filter.form.as_div }}
+                <div class="dropdown-divider my-2"></div>
+                <div class="row d-flex justify-content-evenly">
+                    <button type="submit" class="btn btn-primary col-4">Apply filters</button>
+                    <a href="?" class="btn btn-danger col-4">Clear filters</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-1 btn-group">
+        <a type="button" class="btn btn-secondary"
+           href="{% url 'conformity:finding_export' %}">
+             Export</a>
+        <a type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+            <span class="visually-hidden">Toggle Dropdown</span>
+        </a>
+        <ul class="dropdown-menu" style="z-index:1500">
+            <li><a class="dropdown-item" href="{% url 'conformity:finding_export' %}?format=csv">CSV Format</a></li>
+            <li><a class="dropdown-item" href="{% url 'conformity:finding_export' %}?format=xlsx">XLSX Format</a></li>
+        </ul>
+    </div>
+
+    <div class="col"></div>
+
+    <span class="badge rounded-pill text-bg-secondary m-2 fs-6 col-1"> {{ object_list | length }} items </span>
+
+</div>
 
 <table class="table table-striped align-middle">
   <caption class="d-none">List of Critical, Major, Minor finding and Opportunity for improvement.</caption>
     <thead>
         <tr>
-            <th scope="col" class="text-center">Finding</th>
-            <th scope="col" class="">Description</th>
-            <th scope="col" class="text-center">CVSS</th>
-            <th scope="col" class="text-center">Audit campaign</th>
-            <th scope="col" class="text-center">Action</th>
-            <th scope="col" class="text-center">Edit</th>
+            <th class="text-center">Finding</th>
+            <th class="">Description</th>
+            <th class="text-center">CVSS</th>
+            <th class="text-center">Audit campaign</th>
+            <th class="text-center">Associated actions</th>
+            <th class="text-center">Action</th>
         </tr>
     </thead>
     <tbody>
     {% for finding in finding_list %}
         <tr>
             <td class="col-2 text-center">
-                <a href="{% url 'conformity:finding_detail' finding.id  %}" class="">
-                {% if finding.severity == "CRT" %}
-                    <span class="badge rounded-pill w-75 bg-dark">{{ finding.name | default:"Critical" }}</span>
-                {% endif %}
-                {% if finding.severity == "MAJ" %}
-                    <span class="badge rounded-pill w-75 bg-danger">{{ finding.name | default:"Major" }}</span>
-                {% endif %}
-                {% if finding.severity == "MIN" %}
-                    <span class="badge rounded-pill w-75 bg-warning">{{ finding.name | default:"Minor" }}</span>
-                {% endif %}
-                {% if finding.severity == "OBS" %}
-                    <span class="badge rounded-pill w-75 bg-info">{{ finding.name | default:"Opportunity" }}</span>
-                {% endif %}
-                {% if finding.severity == "OTHER" %}
-                    <span class="badge rounded-pill w-75 bg-secondary">{{ finding.name | default:"Remark" }}</span>
-                {% endif %}
-                {% if finding.severity == "POS" %}
-                    <span class="badge rounded-pill w-75 bg-success">{{ finding.name | default:"Positive" }}</span>
-                {% endif %}
-                </a>
+                {{ finding.name | default:"Unnamed finding" }}
             </td>
             <td class="col">
                 {{ finding.short_description }}
             </td>
             <td class="col-1 text-center">
+                {% if finding.severity == "CRT" %}
+                    <span class="badge rounded-pill w-75 text-bg-dark">
+                {% endif %}
+                {% if finding.severity == "MAJ" %}
+                    <span class="badge rounded-pill w-75 text-bg-danger">
+                {% endif %}
+                {% if finding.severity == "MIN" %}
+                    <span class="badge rounded-pill w-75 text-bg-warning">
+                {% endif %}
+                {% if finding.severity == "OBS" %}
+                    <span class="badge rounded-pill w-75 text-bg-info">
+                {% endif %}
+                {% if finding.severity == "OTHER" %}
+                    <span class="badge rounded-pill w-75 text-bg-secondary">
+                {% endif %}
+                {% if finding.severity == "POS" %}
+                    <span class="badge rounded-pill w-75 text-bg-success">
+                {% endif %}
                 {{ finding.cvss | default:'-'}}
+                </span>
             </td>
             <td class="col text-center">
                 <a href="{% url 'conformity:audit_detail' finding.audit.id %}">
@@ -70,7 +95,7 @@
             </td>
             <td class="col text-center">
                 {% if finding.get_action %}
-                    <a href="{% url 'conformity:action_index' %}?associated_findings__id={{finding.id}}">
+                    <a href="{% url 'conformity:action_index' %}?associated_findings={{finding.id}}">
                         <button type="button" class="btn btn-outline-primary btn-sm">
                             {{ finding.get_action | length}} associated actions
                         </button>
@@ -78,7 +103,16 @@
                 {% endif %}
             </td>
             <td class="col text-center">
-                <a href="{% url 'conformity:finding_form' finding.id %}" class="bi bi-pencil-square"></a>
+                <div class="btn-group">
+                    <a href="{% url 'conformity:finding_detail' finding.id %}"
+                       class="btn btn-sm btn-primary bi bi-eye" title="View">
+                        <span class="visually-hidden">View finding</span>
+                    </a>
+                    <a href="{% url 'conformity:finding_form' finding.id %}"
+                       class="btn btn-sm btn-warning bi bi-pencil-square" title="Edit">
+                        <span class="visually-hidden">Edit finding</span>
+                    </a>
+                </div>
             </td>
         </tr>
     {% empty %}

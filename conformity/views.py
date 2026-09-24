@@ -1,21 +1,28 @@
 """
 View of the Conformity Module
 """
-from urllib import request
 
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import transaction
+from django.db.models import Prefetch
 from django.views.generic import DetailView, ListView, TemplateView
-from django.views.generic.edit import UpdateView, CreateView, DeleteView
+from django.views.generic.edit import UpdateView, CreateView
 from django_filters.views import FilterView
 from auditlog.models import LogEntry
+from import_export.formats import base_formats
+from mptt.templatetags.mptt_tags import cache_tree_children
 
-from .filterset import ActionFilter, ControlFilter, ControlPointFilter
-from .forms import ConformityForm, AuditForm, FindingForm, ActionForm, OrganizationForm, ControlForm, ControlPointForm
-from .models import Organization, Framework, Conformity, Audit, Action, Finding, Control, ControlPoint, Attachment
+from .filterset import ActionFilter, ControlFilter, ControlPointFilter, FrameworkFilter, OrganizationFilter, \
+    ConformityFilter, AuditFilter, FindingFilter, IndicatorFilter, AuditLogFilter
+from .forms import ConformityForm, AuditForm, FindingForm, ActionForm, OrganizationForm, ControlForm, ControlPointForm, \
+    IndicatorForm, IndicatorPointForm
+from .models import Organization, Framework, Conformity, Audit, Action, Finding, Control, ControlPoint, Attachment, \
+    Requirement, Indicator, IndicatorPoint
+from .resources import ConformityResource, ControlResource, FindingResource, ActionResource, IndicatorResource, AuditResource
 
 from django.views import View
-from django.http import HttpResponse
-from django.shortcuts import get_object_or_404
+from django.http import HttpResponse, Http404, HttpResponseRedirect
+from django.shortcuts import get_object_or_404, redirect
 import os
 
 #
@@ -31,7 +38,9 @@ class HomeView(LoginRequiredMixin, TemplateView):
         user = self.request.user
         context['organization_list'] = Organization.objects.all()
         context['framework_list'] = Framework.objects.all()
-        context['conformity_list'] = Conformity.objects.filter(requirement__level=0)
+        context['conformity_list'] = Conformity.objects.select_related(
+            'organization', 'requirement__framework'
+        ).filter(requirement__level=0)
         context['audit_list'] = Audit.objects.all()
         context['action_list'] = Action.objects.all()
         context['my_action'] = Action.objects.filter(owner=user).filter(active=True).order_by('status')[:50]
@@ -44,8 +53,10 @@ class HomeView(LoginRequiredMixin, TemplateView):
 #
 # Audit
 #
-class AuditIndexView(LoginRequiredMixin, ListView):
+class AuditIndexView(LoginRequiredMixin, FilterView):
     model = Audit
+    filterset_class = AuditFilter
+    template_name = "conformity/audit_list.html"
 
 
 class AuditDetailView(LoginRequiredMixin, DetailView):
@@ -79,11 +90,33 @@ class AuditCreateView(LoginRequiredMixin, CreateView):
         return response
 
 
+class AuditExportView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        qs = (Audit.objects.all())
+        dataset = AuditResource().export(qs)
+
+        if request.GET.get("format") == "csv":
+            export_format = base_formats.CSV()
+        else:
+            export_format = base_formats.XLSX()
+
+        data = export_format.export_data(dataset)
+        content_type = export_format.get_content_type()
+        filename = f"audits.{export_format.get_extension()}"
+
+        response = HttpResponse(data, content_type=content_type)
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
+
+
 #
 # Findings
 #
-class FindingIndexView(LoginRequiredMixin, ListView):
+class FindingIndexView(LoginRequiredMixin, FilterView):
     model = Finding
+    filterset_class = FindingFilter
+    template_name = "conformity/finding_list.html"
+
 
     def get_queryset(self, **kwargs):
         return Finding.objects.filter(severity__in=["CRT","MAJ","MIN", "OBS"]).filter(archived=False)
@@ -92,6 +125,19 @@ class FindingIndexView(LoginRequiredMixin, ListView):
 class FindingCreateView(LoginRequiredMixin, CreateView):
     model = Finding
     form_class = FindingForm
+
+    def get_initial(self):
+        initial = super().get_initial()
+        audit_id = self.request.GET.get('audit')
+        if audit_id:
+            try:
+                audit_id = int(audit_id)
+            except ValueError as exc:
+                raise Http404('Invalid audit identifier.') from exc
+            audit = get_object_or_404(Audit, pk=audit_id)
+            initial['audit'] = audit
+            initial['organization'] = audit.organization
+        return initial
 
 
 class FindingDetailView(LoginRequiredMixin, DetailView):
@@ -102,65 +148,101 @@ class FindingUpdateView(LoginRequiredMixin, UpdateView):
     model = Finding
     form_class = FindingForm
 
+
+class FindingExportView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        qs = (Finding.objects.all())
+        dataset = FindingResource().export(qs)
+
+        if request.GET.get("format") == "csv":
+            export_format = base_formats.CSV()
+        else:
+            export_format = base_formats.XLSX()
+
+        data = export_format.export_data(dataset)
+        content_type = export_format.get_content_type()
+        filename = f"findings.{export_format.get_extension()}"
+
+        response = HttpResponse(data, content_type=content_type)
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
+
 #
 # Organizations
 #
 
 
-class OrganizationIndexView(LoginRequiredMixin, ListView):
+class OrganizationIndexView(LoginRequiredMixin, FilterView):
     model = Organization
+    filterset_class = OrganizationFilter
+    template_name = "conformity/organization_list.html"
 
 
 class OrganizationDetailView(LoginRequiredMixin, DetailView):
     model = Organization
 
 
-class OrganizationUpdateView(LoginRequiredMixin, UpdateView):
+class OrganizationFrameworkFormMixin:
+    """Save organization fields and reconcile frameworks through the service."""
+
+    def form_valid(self, form):
+        from .services.conformities import set_frameworks
+
+        with transaction.atomic():
+            self.object = form.save(commit=False)
+            self.object.save()
+            set_frameworks(self.object, form.cleaned_data['applicable_frameworks'])
+            for file in self.request.FILES.getlist('attachments'):
+                attachment = Attachment.objects.create(file=file)
+                self.object.attachment.add(attachment)
+        return HttpResponseRedirect(self.get_success_url())
+
+
+class OrganizationUpdateView(LoginRequiredMixin, OrganizationFrameworkFormMixin, UpdateView):
     model = Organization
     form_class = OrganizationForm
 
-    def form_valid(self, form):
-        response = super().form_valid(form)
-        attachments = self.request.FILES.getlist('attachments')
-        for file in attachments:
-            attachment = Attachment.objects.create(file=file)
-            self.object.attachment.add(attachment)
-        return response
 
-
-class OrganizationCreateView(LoginRequiredMixin, CreateView):
+class OrganizationCreateView(LoginRequiredMixin, OrganizationFrameworkFormMixin, CreateView):
     model = Organization
     form_class = OrganizationForm
-
-    def form_valid(self, form):
-        response = super().form_valid(form)
-        attachments = self.request.FILES.getlist('attachments')
-        for file in attachments:
-            attachment = Attachment.objects.create(file=file)
-            self.object.attachment.add(attachment)
-        return response
 
 #
 # Framework
 #
 
 
-class FrameworkIndexView(LoginRequiredMixin, ListView):
+class FrameworkIndexView(LoginRequiredMixin, FilterView):
     model = Framework
+    filterset_class = FrameworkFilter
+    template_name = 'conformity/framework_list.html'
 
 
 class FrameworkDetailView(LoginRequiredMixin, DetailView):
     model = Framework
 
+    # Not used yet, to be fixed (issue with recursetree)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        qs = Requirement.objects.filter(framework=self.object).select_related(
+            'framework'
+        ).prefetch_related('children').order_by('tree_id', 'lft')
+        context['requirement_list'] = cache_tree_children(qs)
+        return context
+
 
 #
 # Conformity
 #
-class ConformityIndexView(LoginRequiredMixin, ListView):
+class ConformityIndexView(LoginRequiredMixin, FilterView):
     model = Conformity
+    template_name = 'conformity/conformity_list.html'
+    filterset_class = ConformityFilter
 
     def get_queryset(self, **kwargs):
-        return Conformity.objects.filter(requirement__level=0)
+        return Conformity.objects.select_related(
+            'organization', 'requirement__framework'
+        ).filter(requirement__level=0)
 
 
 class ConformityDetailIndexView(LoginRequiredMixin, ListView):
@@ -168,10 +250,19 @@ class ConformityDetailIndexView(LoginRequiredMixin, ListView):
     template_name = 'conformity/conformity_detail_list.html'
 
     def get_queryset(self, **kwargs):
-        return Conformity.objects.filter(organization__id=self.kwargs['org']) \
-            .filter(requirement__framework__id=self.kwargs['pol']) \
-            .filter(requirement__level=0) \
-            .order_by('requirement__order')
+        root_id = self.request.GET.get('root_id')
+
+        if root_id:
+            root = Conformity.objects.filter(id=root_id)
+        else:
+            root = Conformity.objects.filter(organization__id=self.kwargs['org']) \
+                .filter(requirement__framework__id=self.kwargs['pol']) \
+                .filter(requirement__level=0)
+
+        if not root.exists():
+            raise Http404("No conformity review exists for this organization and framework.")
+
+        return root
 
 
 class ConformityUpdateView(LoginRequiredMixin, UpdateView):
@@ -179,8 +270,64 @@ class ConformityUpdateView(LoginRequiredMixin, UpdateView):
     form_class = ConformityForm
 
     def form_valid(self, form):
-        form.instance.set_status(form.cleaned_data['status'])
+        # starting point of the set_status and status tree update logic
+        self.object = form.save()
+
+        # Object is saved, we juste have to update the tree, when needed.
+        if "applicable" in form.changed_data:
+            self.object.update_applicable()
+        if form.cleaned_data['propagate_to_children']:
+            from .services.conformities import propagate_applicable_and_comment
+            propagate_applicable_and_comment(
+                self.object, self.object.applicable, self.object.comment
+            )
+        if "responsible" in form.changed_data:
+            self.object.update_responsible()
+        if "status" in form.changed_data:
+            self.object.update_status()
+
+        # Manage Save&Next and Save&Stay submitting to allow easy filling of the conformity
+        if self.request.POST.get("action") == "save_next":
+            nxt_req = self.object.requirement.get_next_sibling()
+            if nxt_req:
+                try:
+                    nxt = Conformity.objects.get(
+                        organization=self.object.organization,
+                        requirement=nxt_req,
+                    )
+                    return redirect("conformity:conformity_form", nxt.pk)
+                except Conformity.DoesNotExist:
+                    pass
+
+        elif self.request.POST.get("action") == "save_stay":
+            return redirect("conformity:conformity_form", self.object.pk)
+
         return super().form_valid(form)
+
+
+class ConformityExportView(LoginRequiredMixin, View):
+    def get(self, request, org: int, pol: int, *args, **kwargs):
+        framework = get_object_or_404(Framework, pk=pol)
+        organization = get_object_or_404(Organization, pk=org)
+
+        qs = (
+            Conformity.objects.filter(requirement__framework=framework, organization=organization)
+            .select_related("requirement__framework", "organization")
+        )
+        dataset = ConformityResource().export(qs)
+
+        if request.GET.get("format") == "csv":
+            export_format = base_formats.CSV()
+        else:
+            export_format = base_formats.XLSX()
+
+        data = export_format.export_data(dataset)
+        content_type = export_format.get_content_type()
+        filename = f"conformity.{export_format.get_extension()}"
+
+        response = HttpResponse(data, content_type=content_type)
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
 
 
 #
@@ -191,6 +338,29 @@ class ConformityUpdateView(LoginRequiredMixin, UpdateView):
 class ActionCreateView(LoginRequiredMixin, CreateView):
     model = Action
     form_class = ActionForm
+
+    def get_initial(self):
+        initial = super().get_initial()
+        finding_id = self.request.GET.get('finding')
+        if finding_id:
+            try:
+                finding_id = int(finding_id)
+            except ValueError as exc:
+                raise Http404('Invalid finding identifier.') from exc
+            finding = get_object_or_404(Finding, pk=finding_id)
+            initial['associated_findings'] = [finding]
+            initial['organization'] = finding.audit.organization_id
+
+        conformity_id = self.request.GET.get('conformity')
+        if conformity_id:
+            try:
+                conformity_id = int(conformity_id)
+            except ValueError as exc:
+                raise Http404('Invalid conformity identifier.') from exc
+            conformity = get_object_or_404(Conformity, pk=conformity_id)
+            initial['associated_conformity'] = [conformity]
+            initial['organization'] = conformity.organization_id
+        return initial
 
 
 class ActionIndexView(LoginRequiredMixin, FilterView):
@@ -204,6 +374,24 @@ class ActionUpdateView(LoginRequiredMixin, UpdateView):
     form_class = ActionForm
 
 
+class ActionExportView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        qs = (Action.objects.all())
+        dataset = ActionResource().export(qs)
+
+        if request.GET.get("format") == "csv":
+            export_format = base_formats.CSV()
+        else:
+            export_format = base_formats.XLSX()
+
+        data = export_format.export_data(dataset)
+        content_type = export_format.get_content_type()
+        filename = f"actions.{export_format.get_extension()}"
+
+        response = HttpResponse(data, content_type=content_type)
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
+
 #
 # Control
 #
@@ -213,6 +401,19 @@ class ControlCreateView(LoginRequiredMixin, CreateView):
     model = Control
     form_class = ControlForm
 
+    def get_initial(self):
+        initial = super().get_initial()
+        conformity_id = self.request.GET.get('conformity')
+        if conformity_id:
+            try:
+                conformity_id = int(conformity_id)
+            except ValueError as exc:
+                raise Http404('Invalid conformity identifier.') from exc
+            conformity = get_object_or_404(Conformity, pk=conformity_id)
+            initial['conformity'] = [conformity]
+            initial['organization'] = conformity.organization_id
+        return initial
+
 
 class ControlIndexView(LoginRequiredMixin, FilterView):
     model = Control
@@ -221,7 +422,6 @@ class ControlIndexView(LoginRequiredMixin, FilterView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        user = self.request.user
         context['controlpoint_list'] = ControlPoint.objects.all()
         context['c1st'] = Control.objects.filter(level="1").count()
         context['c2nd'] = Control.objects.filter(level="2").count()
@@ -270,6 +470,84 @@ class ControlPointUpdateView(LoginRequiredMixin, UpdateView):
         return response
 
 
+class ControlExportView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        qs = (
+            Control.objects.all()
+#            .select_related("requirement__framework", "organization")
+        )
+        dataset = ControlResource().export(qs)
+
+        if request.GET.get("format") == "csv":
+            export_format = base_formats.CSV()
+        else:
+            export_format = base_formats.XLSX()
+
+        data = export_format.export_data(dataset)
+        content_type = export_format.get_content_type()
+        filename = f"controls.{export_format.get_extension()}"
+
+        response = HttpResponse(data, content_type=content_type)
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
+
+
+#
+# Indicator
+#
+
+
+class IndicatorCreateView(LoginRequiredMixin, CreateView):
+    model = Indicator
+    form_class = IndicatorForm
+
+
+class IndicatorDetailView(LoginRequiredMixin, DetailView):
+    model = Indicator
+    context_object_name = 'indicator'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        indicator = self.get_object()
+
+        context['indicator_point_list'] = IndicatorPoint.objects.filter(indicator=indicator).order_by('period_start_date')
+        return context
+
+
+class IndicatorIndexView(LoginRequiredMixin, FilterView):
+    model = Indicator
+    filterset_class = IndicatorFilter
+    template_name = 'conformity/indicator_list.html'
+
+
+class IndicatorUpdateView(LoginRequiredMixin, UpdateView):
+    model = Indicator
+    form_class = IndicatorForm
+
+
+class IndicatorPointUpdateView(LoginRequiredMixin, UpdateView):
+    model = IndicatorPoint
+    form_class = IndicatorPointForm
+
+class IndicatorExportView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        qs = (Indicator.objects.all())
+        dataset = IndicatorResource().export(qs)
+
+        if request.GET.get("format") == "csv":
+            export_format = base_formats.CSV()
+        else:
+            export_format = base_formats.XLSX()
+
+        data = export_format.export_data(dataset)
+        content_type = export_format.get_content_type()
+        filename = f"indicators.{export_format.get_extension()}"
+
+        response = HttpResponse(data, content_type=content_type)
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
+
+
 #
 # Attachment
 #
@@ -279,8 +557,8 @@ class AttachmentIndexView(LoginRequiredMixin, ListView):
     model = Attachment
 
 
-class AttachmentDownloadView(View):
-    def get(self, request, pk):
+class AttachmentDownloadView(LoginRequiredMixin, View):
+    def get(self, pk):
         attachment = get_object_or_404(Attachment, id=pk)
 
         file_path = attachment.file.path
@@ -296,9 +574,39 @@ class AttachmentDownloadView(View):
 #
 
 
-class AuditLogDetailView(LoginRequiredMixin, ListView):
+class AuditLogDetailView(LoginRequiredMixin, FilterView):
     model = LogEntry
+    template_name = 'auditlog/logentry_list.html'
+    filterset_class = AuditLogFilter
     paginate_by = 20
 
     def get_queryset(self, **kwargs):
         return LogEntry.objects.all().order_by('-timestamp')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        for logentry in context['logentry_list']:
+            changes = logentry.changes_dict
+            m2m_fields = {
+                field_name: values
+                for field_name, values in changes.items()
+                if isinstance(values, dict) and values.get('type') == 'm2m'
+            }
+            logentry.m2m_changes = [
+                {
+                    'field': field_name,
+                    'operation': values['operation'],
+                    'objects': values['objects'],
+                }
+                for field_name, values in m2m_fields.items()
+            ]
+            standard_changes = {
+                field_name: values
+                for field_name, values in changes.items()
+                if field_name not in m2m_fields
+            }
+            if standard_changes == changes:
+                logentry.standard_changes = logentry.changes_display_dict
+            else:
+                logentry.standard_changes = standard_changes
+        return context

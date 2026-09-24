@@ -3,7 +3,7 @@
 *.pot
 *.pyc
 __pycache__
-db.sqlite3
+*.sqlite3
 media
 attachments/
 
@@ -113,3 +113,4 @@ GitHub.sublime-settings
 !.vscode/launch.json 
 !.vscode/extensions.json 
 .history
+.sonarlint/connectedMode.json

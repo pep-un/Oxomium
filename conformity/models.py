@@ -2,25 +2,33 @@
 Conformity module manage all the manual declarative aspect of conformity management.
 It's Organized around Organization, Framework, Requirement and Conformity classes.
 """
+# Standard library
 from calendar import monthrange
-from statistics import mean
 from datetime import date, timedelta
+from typing import List, Literal, Tuple
 
-from django.core.exceptions import ValidationError
-from django.db import models
-from django.db.models import Q
-from django.db.models.signals import m2m_changed, pre_save, post_save, post_init
-from django.core.validators import MaxValueValidator, MinValueValidator
-from django.dispatch import receiver
+# Django (third-party)
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db import models
+from django.db.models import Count, Q
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from django.urls import reverse
-from auditlog.context import set_actor
-import magic, pycountry
+
+# Third-party
+from magic import Magic
+from mptt.models import MPTTModel, TreeForeignKey
+from pycountry import languages
 
 User = get_user_model()
+
+
+def language_choices():
+    """Resolve language labels when the form is built, not in migration state."""
+    return [(lang.alpha_2, lang.name) for lang in languages if hasattr(lang, 'alpha_2')]
 
 
 class FrameworkManager(models.Manager):
@@ -43,10 +51,10 @@ class Framework(models.Model):
         POLICY = 'POL', _('Internal Policy')
         OTHER = 'OTHER', _('Other')
 
-    class Language():
+    class Language:
         @classmethod
         def choices(cls):
-            return[(lang.alpha_2, lang.name) for lang in pycountry.languages if hasattr(lang, 'alpha_2')]
+            return language_choices()
 
     objects = FrameworkManager()
     name = models.CharField(max_length=256, unique=True)
@@ -54,38 +62,46 @@ class Framework(models.Model):
     publish_by = models.CharField(max_length=256)
     type = models.CharField(max_length=5, choices=Type.choices, default=Type.OTHER)
     attachment = models.ManyToManyField('Attachment', blank=True, related_name='frameworks')
-    language = models.CharField(max_length=2,choices=Language.choices(),default='en')
+    language = models.CharField(max_length=2, choices=language_choices, default='en')
 
     class Meta:
         ordering = ['name']
-        verbose_name = 'Framework'
-        verbose_name_plural = 'Frameworks'
+        verbose_name = 'framework'
+        verbose_name_plural = 'frameworks'
 
     def __str__(self):
         return str(self.name)
 
     def natural_key(self):
-        return (self.name)
+        return self.name
 
     def get_type(self):
         """return the readable version of the Framework Type"""
-        return self.Type(self.type).label
+        return self.type_label
+
+    @property
+    def type_label(self):
+        return self.get_type_display()
 
     def get_requirements(self):
-        """return all Requirement related to the Framework"""
-        return Requirement.objects.filter(framework=self.id).filter(level__gt=0).order_by('name')
+        """return all non-root requirements for this framework"""
+        return (Requirement.objects
+                .filter(framework=self)
+                .exclude(parent__isnull=True)
+                .order_by('tree_id', 'lft'))
 
     def get_requirements_number(self):
         """return the number of leaf Requirement related to the Framework"""
-        return Requirement.objects.filter(framework=self.id).filter(requirement__is_parent=False).count()
+        from django.db.models import F
+        return Requirement.objects.filter(framework=self, rght=F('lft') + 1).count()
 
     def get_root_requirement(self):
         """return the root Requirement of the Framework"""
-        return Requirement.objects.filter(framework=self.id).filter(level=0).order_by('order')
+        return Requirement.objects.filter(framework=self, parent__isnull=True)
 
     def get_first_requirements(self):
         """return the Requirement of the first hierarchical level of the Framework"""
-        return Requirement.objects.filter(framework=self.id).filter(level=1).order_by('order')
+        return Requirement.objects.filter(framework=self, parent__parent__isnull=True).order_by('order')
 
 
 class Organization(models.Model):
@@ -106,7 +122,7 @@ class Organization(models.Model):
         return str(self.name)
 
     def natural_key(self):
-        return (self.name)
+        return self.name
 
     @staticmethod
     def get_absolute_url():
@@ -119,16 +135,13 @@ class Organization(models.Model):
 
     def remove_conformity(self, pid):
         """Cascade deletion of conformity"""
-        with set_actor('system'):
-            requirement_set = Requirement.objects.filter(framework=pid).values_list('id', flat=True)
-            Conformity.objects.filter(requirement__in=requirement_set, organization=self.id).delete()
+        from .services.conformities import remove_for_framework
+        remove_for_framework(self, pid)
     
     def add_conformity(self, pid):
         """Automatic creation of conformity"""
-        with set_actor('system'):
-            requirement_set = Requirement.objects.filter(framework=pid)
-            conformities = [Conformity(organization=self, requirement=requirement) for requirement in requirement_set]
-            Conformity.objects.bulk_create(conformities)
+        from .services.conformities import ensure_for_framework
+        ensure_for_framework(self, pid)
 
 
 class RequirementManager(models.Manager):
@@ -136,7 +149,7 @@ class RequirementManager(models.Manager):
         return self.get(name=name)
 
 
-class Requirement(models.Model):
+class Requirement(MPTTModel):
     """
     A Requirement is a precise requirement.
     Requirement can be hierarchical in order to form a collection of Requirement, aka Framework.
@@ -145,28 +158,53 @@ class Requirement(models.Model):
     objects = RequirementManager()
     code = models.CharField(max_length=5, blank=True)
     name = models.CharField(max_length=50, blank=True, unique=True)
-    level = models.IntegerField(default=0)
     order = models.IntegerField(default=1)
-    framework = models.ForeignKey(Framework, on_delete=models.CASCADE)
-    parent = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True)
+    framework = models.ForeignKey(Framework, on_delete=models.CASCADE, related_name='requirements')
+    parent = TreeForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='children')
     title = models.CharField(max_length=256, blank=True)
     description = models.TextField(blank=True)
-    is_parent = models.BooleanField(default=False)
 
     class Meta:
-        ordering = ['name']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['framework', 'code'],
+                condition=Q(parent__isnull=True),
+                name='uq_req_root_code',
+            ),
+            models.UniqueConstraint(
+                fields=['framework', 'parent', 'code'],
+                condition=Q(parent__isnull=False),
+                name='uq_req_sibling_code',
+            ),
+        ]
+
+    class MPTTMeta:
+        order_insertion_by = ['order']
 
     def __str__(self):
         return str(self.name) + ": " + str(self.title)
 
     def natural_key(self):
-        return (self.name)
+        return self.name
 
     natural_key.dependencies = ['conformity.framework']
 
-    def get_children(self):
-        """Return all children of the requirement"""
-        return Requirement.objects.filter(parent=self.id).order_by('order')
+    def get_parent(self):
+        return self.get_ancestors().last()
+
+    @property
+    def full_path(self):
+        """Display the path without relying on the stored hierarchical name."""
+        return "-".join(node.code or node.name for node in (*self.get_ancestors(), self))
+
+    @property
+    def has_children(self):
+        return self.children.exists()
+
+
+class ConformityQuerySet(models.QuerySet):
+    def applicable(self):
+        return self.filter(applicable=True)
 
 
 class Conformity(models.Model):
@@ -174,18 +212,40 @@ class Conformity(models.Model):
     Conformity represent the conformity of an Organization to a Requirement.
     Value are automatically update for parent requirement conformity
     """
-    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, null=True)
-    requirement = models.ForeignKey(Requirement, on_delete=models.CASCADE, null=True)
+
+    class StatusJustification(models.TextChoices):
+        EXPERT = 'EXPT', _('From expert statement')
+        CONTROL = 'CTRL', _('From successful control')
+        ACTION = 'ACT', _('From completed action')
+        FINDING = 'FIN', _('From an audit finding')
+        CONFORMITY = 'CONF', _('From conformity aggregation')
+
+    objects = ConformityQuerySet.as_manager()
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, null=True, related_name='conformities')
+    requirement = models.ForeignKey(Requirement, on_delete=models.CASCADE, null=True, related_name='conformities')
     applicable = models.BooleanField(default=True)
-    status = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)], null=True, blank=True)
-    responsible = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
+    responsible = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     comment = models.TextField(max_length=4096, blank=True)
+    status = models.IntegerField(default=None, validators=[MinValueValidator(0), MaxValueValidator(100)], null=True, blank=True)
+    status_last_update = models.DateTimeField(null=True, blank=True)
+    status_justification = models.CharField(
+        max_length=4,
+        choices=StatusJustification.choices,
+        default=StatusJustification.EXPERT,
+        blank=True,
+    )
 
     class Meta:
-        ordering = ['organization', 'requirement']
-        verbose_name = 'Conformity'
-        verbose_name_plural = 'Conformities'
-        unique_together = (('organization', 'requirement'),)
+        ordering = ['organization', 'requirement__framework', 'requirement__tree_id', 'requirement__lft']
+        verbose_name = 'conformity'
+        verbose_name_plural = 'conformities'
+        constraints = [
+            models.UniqueConstraint(fields=['organization', 'requirement'], name='uq_conformity_org_req'),
+            models.CheckConstraint(
+                condition=Q(status__isnull=True) | (Q(status__gte=0) & Q(status__lte=100)),
+                name='chk_conformity_status_0_100',
+            ),
+        ]
 
     def __str__(self):
         return "[" + str(self.organization) + "] " + str(self.requirement)
@@ -195,23 +255,44 @@ class Conformity(models.Model):
 
     natural_key.dependencies = ['conformity.framework', 'conformity.requirement', 'conformity.organization']
 
+    def get_leaf(self):
+        """Get all leaf from a node"""
+        return [n for n in self.get_descendants() if n.requirement.is_leaf_node()]
+
+    def get_completeness(self):
+        leaves = self.get_leaf() or []
+        total = len(self.get_leaf())
+        if total ==0:
+            return 0
+
+        complete = sum(1 for n in leaves if n.status is not None)
+
+        return round( (complete / total) * 100)
+
     def get_absolute_url(self):
         """Return the absolute URL of the class for Form, probably not the best way to do it"""
         return reverse('conformity:conformity_detail_index',
                        kwargs={'org': self.organization.id, 'pol': self.requirement.framework.id})
 
+    def get_descendants(self):
+        """Return all children Conformity based on Requirement hierarchy"""
+        return (Conformity.objects
+                .filter(organization=self.organization,
+                        requirement__in=self.requirement.get_descendants()))
+
     def get_children(self):
         """Return all children Conformity based on Requirement hierarchy"""
-        return Conformity.objects.filter(organization=self.organization) \
-            .filter(requirement__parent=self.requirement.id).order_by('requirement__order')
-
+        return (Conformity.objects
+                .filter(organization=self.organization,
+                        requirement__in=self.requirement.get_children()))
     def get_parent(self):
         """Return the parent Conformity based on Requirement hierarchy"""
-        p = Conformity.objects.filter(organization=self.organization).filter(requirement=self.requirement.parent)
-        if len(p) == 1:
-            return p[0]
-        else:
+        req_parent = self.requirement.get_parent()
+        if not req_parent:
             return None
+        return (Conformity.objects
+                .filter(organization=self.organization, requirement=req_parent)
+                .first())
 
     def get_action(self):
         """Return the list of Action associated with this Conformity"""
@@ -221,55 +302,132 @@ class Conformity(models.Model):
         """Return the list of Control associated with this Conformity"""
         return Control.objects.filter(conformity=self.id)
 
-    def set_status(self, i):
-        """Update the status and call recursive update function"""
-        self.status = i
+    def get_related(self,*,include_actions: bool = True,include_controls: bool = True,
+            only_active: bool = False,negative_only: bool = False,
+            sort: Literal["type_then_title", "recent_first", "alpha"] = "type_then_title",
+            ) -> List[Tuple[Literal["action", "control", "controlpoint"], object]]:
+        """
+        Return a flat list of (kind, instance).
+
+        Modes:
+          - Default (negative_only=False):
+              * 'action'  -> all actions (optionally filtered by only_active -> active=True)
+              * 'control' -> Control objects (no 'active' notion)
+          - Negative evidence (negative_only=True):
+              * 'action'       -> actions IN PROGRESS (non-terminated)
+              * 'controlpoint' -> current-period ControlPoints with NEGATIVE result (NONCOMPLIANT)
+                (If you consider MISSED as negative too, add it in the status filter below.)
+
+        Notes:
+          - 'only_active' affects Actions only in the default mode.
+          - Sorting tries to do something sensible across mixed kinds.
+        """
+        if negative_only:
+            items = self._get_negative_related(include_actions, include_controls)
+        else:
+            items = self._get_related(include_actions, include_controls, only_active)
+        return self._sort_related(items, sort)
+
+    def _get_related(self, include_actions, include_controls, only_active):
+        items = []
+        if include_actions:
+            actions = self.actions.filter(active=True) if only_active else self.actions.all()
+            items.extend(("action", action) for action in actions)
+        if include_controls:
+            items.extend(("control", control) for control in self.get_control())
+        return items
+
+    def _get_negative_related(self, include_actions, include_controls):
+        items = []
+        if include_actions:
+            statuses = [
+                Action.Status.ANALYSING, Action.Status.PLANNING,
+                Action.Status.IMPLEMENTING, Action.Status.CONTROLLING,
+            ]
+            items.extend(("action", action) for action in self.actions.filter(status__in=statuses))
+        if include_controls:
+            today = date.today()
+            statuses = [
+                ControlPoint.Status.NONCOMPLIANT, ControlPoint.Status.MISSED,
+                ControlPoint.Status.SCHEDULED, ControlPoint.Status.TOBEEVALUATED,
+            ]
+            points = ControlPoint.objects.filter(
+                control__conformity=self,
+                period_start_date__lte=today,
+                period_end_date__gte=today,
+                status__in=statuses,
+            )
+            items.extend(("controlpoint", point) for point in points)
+        return items
+
+    @staticmethod
+    def _related_label(obj):
+        return (
+            getattr(obj, "title", None)
+            or getattr(obj, "name", None)
+            or getattr(obj, "short_description", None)
+            or str(obj)
+        )
+
+    @classmethod
+    def _sort_related(cls, items, sort):
+        if sort == "type_then_title":
+            order_kind = {"action": 0, "control": 1, "controlpoint": 2}
+            items.sort(key=lambda item: (order_kind.get(item[0], 99), cls._related_label(item[1])))
+        elif sort == "recent_first":
+            items.sort(
+                key=lambda item: (
+                    getattr(item[1], "update_date", None)
+                    or getattr(item[1], "period_end_date", None)
+                    or date.min,
+                    cls._related_label(item[1]),
+                ),
+                reverse=True,
+            )
+        elif sort == "alpha":
+            items.sort(key=lambda item: cls._related_label(item[1]))
+        return items
+
+    def update_responsible(self):
+        """Update the responsible in the descendants when added"""
+        from .services.audit import update_with_audit
+        update_with_audit(Conformity.objects.filter(
+            organization=self.organization,
+            requirement__in=self.requirement.get_descendants()
+        ), responsible=self.responsible)
+
+    def update_status(self):
+        """Update this node's conformity status and propagate update to its parent."""
+        from .services.conformities import recompute_parent_chain
+        recompute_parent_chain(self)
+
+    def update_applicable(self):
+        """Update descendants or ancestors when applicability changes."""
+        from .services.conformities import propagate_applicable_and_comment
+        propagate_applicable_and_comment(self, self.applicable)
+
+    def set_status_from(self, value: int, justification: "Conformity.StatusJustification"):
+        """Single point to update status + provenance + timestamp."""
+        changed = (self.status != value) or (self.status_justification != justification)
+        if not changed:
+            return False
+
+        if justification == Conformity.StatusJustification.EXPERT and not self.requirement.is_leaf_node():
+            return False
+
+        if justification in [Conformity.StatusJustification.ACTION, Conformity.StatusJustification.CONTROL]:
+            negatives_exist = bool(self.get_related(negative_only=True))
+            if value == 0 and not negatives_exist:
+                return False
+            if value == 100 and negatives_exist:
+                return False
+
+        self.applicable = True
+        self.status = value
+        self.status_justification = justification
+        self.status_last_update = timezone.now()
         self.save()
-        self.update()
-
-    def set_responsible(self, resp):
-        """Update the responsible and apply to child"""
-        self.responsible = resp
-        self.save()
-        for child in self.get_children():
-            child.set_responsible(resp)
-
-    def update(self):
-        """Update conformity to recursivly update conformity when change"""
-        with set_actor('system'):
-            children = self.get_children().filter(applicable=True)
-            if children.exists():
-                self.status = children.aggregate(mean_status=models.Avg('status'))['mean_status']
-                self.applicable = True
-            self.save()
-            parent = self.get_parent()
-            if parent:
-                parent.update()
-
-
-# Callback functions
-
-
-@receiver(pre_save, sender=Requirement)
-def post_init_callback(instance, **kwargs):
-    """This function keep hierarchy of the Requirement working on each Requirement instantiation"""
-    if instance.parent:
-        instance.name = instance.parent.name + "-" + instance.code
-        instance.level = instance.parent.level + 1
-        instance.parent.is_parent = 1
-    else:
-        instance.name = instance.code
-
-
-@receiver(m2m_changed, sender=Organization.applicable_frameworks.through)
-def change_framework(instance, action, pk_set, *args, **kwargs):
-    if action == "post_add":
-        for pk in pk_set:
-            instance.add_conformity(pk)
-
-    if action == "post_remove":
-        for pk in pk_set:
-            instance.remove_conformity(pk)
+        return True
 
 
 class Audit(models.Model):
@@ -307,12 +465,14 @@ class Audit(models.Model):
 
     def __str__(self):
 
+        date_format='%b %Y'
+
         if self.report_date:
-            display_date = self.report_date.strftime('%b %Y')
+            display_date = self.report_date.strftime(date_format)
         elif self.start_date:
-            display_date = self.start_date.strftime('%b %Y')
+            display_date = self.start_date.strftime(date_format)
         elif self.end_date:
-            display_date = self.end_date.strftime('%b %Y')
+            display_date = self.end_date.strftime(date_format)
         else:
             display_date = ""
 
@@ -330,9 +490,14 @@ class Audit(models.Model):
         """return all Framework within the Audit scope"""
         return self.audited_frameworks.all()
 
-    def get_type(self):
+    @property
+    def type_label(self):
         """return the readable version of the Audit Type"""
         return self.Type(self.type).label
+
+    def get_type(self):
+        """Keep the existing template and Python API available."""
+        return self.type_label
 
     def get_findings(self):
         """return all the findings associated to an Audit"""
@@ -410,15 +575,42 @@ class Finding(models.Model):
 
     def get_severity(self):
         """return the readable version of the Findings Severity"""
-        return self.Severity(self.severity).label
+        return self.severity_label
+
+    @property
+    def severity_label(self):
+        return self.get_severity_display()
 
     def get_absolute_url(self):
-        """"return somewhere else when an edit has work"""
+        """return somewhere else when an edit has work"""
         return reverse('conformity:finding_detail', kwargs={'pk': self.id})
 
     def get_action(self):
         """Return the list of Action associated with this Findings"""
-        return Action.objects.filter(associated_findings=self.id).filter(active=True)
+        return Action.objects.filter(associated_findings=self.id)
+
+    def is_active(self) -> bool:
+        return (not self.archived) and (self.severity != Finding.Severity.POSITIVE)
+
+    def update_archived(self):
+        """
+        Keep `archived` consistent with linked Actions, using a single DB query:
+        - If there are actions AND none is active -> archived = True
+        - Otherwise (no actions OR at least one active) -> archived = False
+        Idempotent: only writes when the value actually changes.
+        """
+        agg = self.actions.aggregate(
+            total=Count("pk"),
+            active=Count("pk", filter=Q(active=True)),
+        )
+        total = agg["total"] or 0
+        active = agg["active"] or 0
+
+        new_archived = (total > 0 and active == 0)
+
+        if self.archived != new_archived:
+            self.archived = new_archived
+            self.save(update_fields=["archived"])
 
 
 class Control(models.Model):
@@ -428,21 +620,21 @@ class Control(models.Model):
 
     class Frequency(models.IntegerChoices):
         """ List of frequency possible for a control"""
-        YEARLY = '1', _('Yearly')
-        HALFYEARLY = '2', _('Half-Yearly')
-        QUARTERLY = '4', _('Quarterly')
-        BIMONTHLY = '6', _('Bimonthly')
-        MONTHLY = '12', _('Monthly')
+        YEARLY = 1, _('Yearly')
+        HALFYEARLY = 2, _('Half-Yearly')
+        QUARTERLY = 4, _('Quarterly')
+        BIMONTHLY = 6, _('Bimonthly')
+        MONTHLY = 12, _('Monthly')
 
     class Level(models.IntegerChoices):
         """ List of control level possible for a control """
-        FIRST = '1', _('1st level')
-        SECOND = '2', _('2nd level')
+        FIRST = 1, _('1st level')
+        SECOND = 2, _('2nd level')
 
     title = models.CharField(max_length=256)
     description = models.TextField(max_length=4096, blank=True)
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, blank=True, null=True)
-    conformity = models.ManyToManyField(Conformity, blank=True)
+    conformity = models.ManyToManyField(Conformity, blank=True, related_name="controls")
     control = models.ManyToManyField('self', blank=True)
     frequency = models.IntegerField(
         choices=Frequency.choices,
@@ -465,30 +657,14 @@ class Control(models.Model):
         return reverse('conformity:control_index')
 
     @staticmethod
-    def post_init_callback(instance, **kwargs):
-        ControlPoint.objects.filter(control=instance.id).filter(Q(status='SCHD') | Q(status='TOBE')).delete()
-
-        num_cp = instance.frequency
-        today = date.today()
-        start_date = date(today.year, 1, 1)
-        delta = timedelta(days=365 // num_cp - 2)
-        end_date = start_date + delta
-        for _ in range(num_cp):
-            period_start_date = date(start_date.year, start_date.month, 1)
-            period_end_date = date(end_date.year, end_date.month, monthrange(end_date.year, end_date.month)[1])
-            if not ControlPoint.objects.filter(control=instance.id).filter(period_start_date=period_start_date).filter(period_end_date=period_end_date) :
-                ControlPoint.objects.create(
-                    control=instance,
-                    period_start_date=period_start_date,
-                    period_end_date=period_end_date,
-                )
-            start_date = period_end_date + timedelta(days=1)
-            end_date = start_date + delta - timedelta(days=1)
+    def controlpoint_bootstrap(instance):
+        from .services.controls import generate_controlpoints
+        generate_controlpoints(instance, year=date.today().year)
 
 
     def get_controlpoint(self):
         """Return all control point based on this control"""
-        return ControlPoint.objects.filter(control=self.id).order_by('period_start_date')
+        return ControlPoint.objects.filter(control=self).order_by('period_start_date')
 
 
 class ControlPoint(models.Model):
@@ -522,7 +698,7 @@ class ControlPoint(models.Model):
         return reverse('conformity:control_index')
 
     @staticmethod
-    def pre_save(sender, instance, *args, **kwargs):
+    def update_status(instance):
         if instance.status != ControlPoint.Status.COMPLIANT and instance.status != ControlPoint.Status.NONCOMPLIANT:
             today = date.today()
             if instance.period_end_date < today:
@@ -532,16 +708,22 @@ class ControlPoint(models.Model):
             else:
                 instance.status = ControlPoint.Status.SCHEDULED
 
-
     def __str__(self):
         return "[" + str(self.control.organization) + "] " + self.control.title + " (" \
             + self.period_start_date.strftime('%b-%Y') + "⇒" \
             + self.period_end_date.strftime('%b-%Y') + ")"
 
-
     def get_action(self):
         """Return the list of Action associated with this Findings"""
-        return Action.objects.filter(associated_controlPoints=self.id)
+        return Action.objects.filter(associated_controlPoints=self)
+
+    def is_current_period(self, when: date | None = None) -> bool:
+        when = when or date.today()
+        return self.period_start_date <= when <= self.period_end_date
+
+    def is_final_status(self) -> bool:
+        return self.status in (ControlPoint.Status.COMPLIANT, ControlPoint.Status.NONCOMPLIANT)
+
 
 class Action(models.Model):
     """
@@ -576,10 +758,9 @@ class Action(models.Model):
     ' Analyse Phase'
     description = models.TextField(max_length=4096, blank=True)
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, blank=True, null=True)
-    associated_conformity = models.ManyToManyField(Conformity, blank=True)
-    associated_findings = models.ManyToManyField(Finding, blank=True)
-    associated_controlPoints = models.ManyToManyField(ControlPoint, blank=True)
-    #TODO associated_risks = models.ManyToManyField(Risk, blank=True)
+    associated_conformity = models.ManyToManyField(Conformity, blank=True, related_name='actions')
+    associated_findings = models.ManyToManyField(Finding, blank=True, related_name='actions')
+    associated_controlPoints = models.ManyToManyField(ControlPoint, blank=True, related_name='actions')
 
     ' PLAN phase'
     plan_start_date = models.DateField(null=True, blank=True)
@@ -609,14 +790,36 @@ class Action(models.Model):
         """return the absolute URL for Forms, could probably do better"""
         return reverse('conformity:action_index')
 
+    def get_associated(self):
+        conformities = list(self.associated_conformity.all())
+        findings = list(self.associated_findings.all())
+        control_points = list(self.associated_controlPoints.all())
+
+        return conformities + findings + control_points
+
+
+    def is_in_progress(self) -> bool:
+        return self.status in (
+            Action.Status.ANALYSING,
+            Action.Status.PLANNING,
+            Action.Status.IMPLEMENTING,
+            Action.Status.CONTROLLING,
+        )
+
+    def is_completed(self) -> bool:
+        return self.status == Action.Status.ENDED
+
     def save(self, *args, **kwargs):
         """ On save, update timestamps """
         if not self.id:
             self.create_date = timezone.now()
         self.update_date = timezone.now()
 
+        """Update active flag depending on status."""
         if self.status in [Action.Status.FROZEN, Action.Status.ENDED, Action.Status.CANCELED]:
             self.active = False
+        else :
+            self.active = True
 
         return super(Action, self).save(*args, **kwargs)
 
@@ -634,20 +837,166 @@ class Attachment(models.Model):
         return self.file.name.split("/")[1]
 
     @staticmethod
-    def pre_save(sender, instance, *args, **kwargs):
+    def autoset_mimetype(instance):
         # Read file and set mime_type
         file_content = instance.file.read()
         instance.file.seek(0)
-        mime = magic.Magic(mime=True)
+        mime = Magic(mime=True)
         instance.mime_type = mime.from_buffer(file_content)
 
-        # TODO filter on mime type
-
-#
-# Signal
-#
 
 
-post_save.connect(Control.post_init_callback, sender=Control)
-pre_save.connect(ControlPoint.pre_save, sender=ControlPoint)
-pre_save.connect(Attachment.pre_save, sender=Attachment)
+class Indicator (models.Model):
+    """ Indicator used to measure risk level or performance """
+
+    class Frequency(models.IntegerChoices):
+        """ List of frequency possible for a control or an indicator"""
+        YEARLY = 1, _('Yearly')
+        HALFYEARLY = 2, _('Half-Yearly')
+        QUARTERLY = 4, _('Quarterly')
+        BIMONTHLY = 6, _('Bimonthly')
+        MONTHLY = 12, _('Monthly')
+
+    name = models.CharField(max_length=256)
+    goal = models.TextField(max_length=4096, blank=True)
+    source = models.TextField(max_length=4096, blank=True)
+    formula = models.TextField(max_length=4096, blank=True)
+    worst = models.IntegerField(default=0)
+    best = models.IntegerField(default=100)
+    warning = models.IntegerField(default=80)
+    critical = models.IntegerField(default=90)
+    responsible = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, blank=True, null=True)
+    conformity = models.ManyToManyField(Conformity, blank=True)
+    frequency = models.IntegerField(
+        choices=Frequency.choices,
+        default=Frequency.QUARTERLY,
+    )
+
+    @staticmethod
+    def get_absolute_url():
+        """return the absolute URL for Forms, could probably do better"""
+        return reverse('conformity:indicator_index')
+
+    @property
+    def value_bounds(self):
+        """Inclusive numeric bounds, also for indicators where lower is better."""
+        return min(self.worst, self.best), max(self.worst, self.best)
+
+    def indicator_point_init(self):
+        IndicatorPoint.objects.filter(indicator=self).filter(Q(status='SCHD') | Q(status='TOBE')).delete()
+
+        num_cp = self.frequency
+        today = date.today()
+        start_date = date(today.year, 1, 1)
+        delta = timedelta(days=365 // num_cp - 2)
+        end_date = start_date + delta
+        for _ in range(num_cp):
+            period_start_date = date(start_date.year, start_date.month, 1)
+            period_end_date = date(end_date.year, end_date.month, monthrange(end_date.year, end_date.month)[1])
+            if not IndicatorPoint.objects.filter(indicator=self, period_start_date=period_start_date, period_end_date=period_end_date).exists() :
+                IndicatorPoint.objects.create(
+                    indicator=self,
+                    period_start_date=period_start_date,
+                    period_end_date=period_end_date,
+                )
+            start_date = period_end_date + timedelta(days=1)
+            end_date = start_date + delta - timedelta(days=1)
+
+    def get_current_point(self):
+        today = timezone.now().date()
+        return (
+            IndicatorPoint.objects
+            .filter(indicator=self, period_start_date__lte=today, period_end_date__gte=today)
+            .first()
+        )
+
+
+class IndicatorPoint(models.Model):
+    """ Measurement point of an Indicator """
+
+    class Status(models.TextChoices):
+        """ List of status possible for a IndicatorPoint"""
+        SCHEDULED = 'SCHD', _('Scheduled')
+        TOBEEVALUATED = 'TOBE', _('To evaluate')
+        COMPLIANT = 'OK', _('Compliant')
+        WARNING = 'WARN', _('Warning')
+        CRITICAL = 'CRIT', _('Critical')
+        MISSED = 'MISS', _('Missed')
+
+    indicator = models.ForeignKey(Indicator, on_delete=models.CASCADE, null=True, blank=True)
+    control_date = models.DateTimeField(blank=True, null=True)
+    control_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
+    period_start_date = models.DateField()
+    period_end_date = models.DateField()
+    status = models.CharField(choices=Status.choices, max_length=4, default=Status.SCHEDULED)
+    comment = models.TextField(max_length=4096, blank=True)
+    value = models.IntegerField(null=True)
+    attachment = models.ManyToManyField('Attachment', blank=True, related_name='IndicatorPoint')
+
+    @staticmethod
+    def get_absolute_url():
+        """return the absolute URL for Forms, could probably do better"""
+        return reverse('conformity:indicator_index')
+
+    def validate_value_bounds(self):
+        if self.value is None:
+            # Automatically generated periods have no measurement yet.
+            return
+        try:
+            self.value = self._meta.get_field('value').clean(self.value, self)
+        except ValidationError as exc:
+            raise ValidationError({'value': exc}) from exc
+        if self.indicator_id is None:
+            raise ValidationError({'value': _('A measurement requires an indicator.')})
+        lower, upper = self.indicator.value_bounds
+        if not lower <= self.value <= upper:
+            raise ValidationError({'value': ValidationError(
+                _('Enter a value between %(lower)s and %(upper)s (inclusive).'),
+                code='out_of_bounds', params={'lower': lower, 'upper': upper},
+            )})
+
+    def clean(self):
+        super().clean()
+        self.validate_value_bounds()
+
+    def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
+        # Validate and derive status before auditlog's pre_save receiver.
+        self.validate_value_bounds()
+        self.status_update()
+        if update_fields is not None:
+            update_fields = set(update_fields)
+            if update_fields & {'value', 'indicator', 'indicator_id'}:
+                update_fields.add('status')
+        return super().save(
+            force_insert=force_insert, force_update=force_update,
+            using=using, update_fields=update_fields,
+        )
+
+    def status_update(self):
+        """Update the status according to the indicator thresholds."""
+        if self.value is None or self.indicator_id is None:
+            return
+
+        if self.indicator.best > self.indicator.worst :
+            if self.indicator.best >= self.value > self.indicator.warning :
+                self.status = IndicatorPoint.Status.COMPLIANT
+            elif self.indicator.warning >= self.value > self.indicator.critical :
+                self.status = IndicatorPoint.Status.WARNING
+            elif self.indicator.critical >= self.value >= self.indicator.worst :
+                self.status = IndicatorPoint.Status.CRITICAL
+            else:
+                self.status = IndicatorPoint.Status.MISSED
+
+        elif self.indicator.best < self.indicator.worst :
+            if self.indicator.best <= self.value < self.indicator.warning :
+                self.status = IndicatorPoint.Status.COMPLIANT
+            elif self.indicator.warning <= self.value < self.indicator.critical :
+                self.status = IndicatorPoint.Status.WARNING
+            elif self.indicator.critical <= self.value <= self.indicator.worst :
+                self.status = IndicatorPoint.Status.CRITICAL
+            else:
+                self.status = IndicatorPoint.Status.MISSED
+
+        else:
+            self.status = IndicatorPoint.Status.MISSED

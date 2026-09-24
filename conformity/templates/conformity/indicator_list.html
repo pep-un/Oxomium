@@ -1,0 +1,137 @@
+{% extends "conformity/main.html" %}
+{% load render_table from django_tables2 %}
+
+{% block header %}
+    <h1 class="h1 bi bi-speedometer"> Indicators </h1>
+{% endblock %}
+
+{% block content %}
+
+<div class="row">
+
+    <div id="filter-btn" class="col-1 btn-group">
+        <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+            Filter
+        </button>
+        <div class="dropdown-menu">
+            <form class="m-3">
+                {{ filter.form.as_div }}
+                <div class="dropdown-divider my-2"></div>
+                <div class="row d-flex justify-content-evenly">
+                    <button type="submit" class="btn btn-primary col-4">Apply filters</button>
+                    <a href="?" class="btn btn-danger col-4">Clear filters</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-1 btn-group">
+        <a type="button" class="btn btn-secondary"
+           href="{% url 'conformity:indicator_export' %}">
+             Export</a>
+        <a type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+            <span class="visually-hidden">Toggle Dropdown</span>
+        </a>
+        <ul class="dropdown-menu" style="z-index:1500">
+            <li><a class="dropdown-item" href="{% url 'conformity:indicator_export' %}?format=csv">CSV Format</a></li>
+            <li><a class="dropdown-item" href="{% url 'conformity:indicator_export' %}?format=xlsx">XLSX Format</a></li>
+        </ul>
+    </div>
+
+    <div class="col"></div>
+
+    <span class="badge rounded-pill text-bg-secondary m-2 fs-6 col-1"> {{ object_list | length }} items </span>
+
+</div>
+
+
+<div class="row">
+    {% for indicator in indicator_list %}
+    <div class="col-3 my-2">
+        <div class="card">
+            <div class="card-header h4">
+                {{indicator.name}}
+                <div class="btn-group float-end">
+                    <a class="btn btn-sm btn-primary bi bi-eye"
+                       href="{% url 'conformity:indicator_detail' indicator.pk %}">
+                        <span class="visually-hidden">View indicator</span>
+                    </a>
+                    <a class="btn btn-sm btn-warning bi bi-pencil-square"
+                       href="{% url 'conformity:indicator_form' indicator.pk %}">
+                        <span class="visually-hidden">Edit indicator</span>
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+            {% with point=indicator.get_current_point %}
+            {% if not point %}
+                <h5 class="card-title text-muted">
+                    No measurement point for the current period.
+                </h5>
+                <a href="{% url 'conformity:indicator_form' indicator.pk %}">
+                    Update the indicator to generate its periods
+                </a>
+            {% elif point.status == "CRIT" %}
+                <h5 class="card-title fs-1 text-danger">
+                    {{ point.value }}
+            {% elif point.status == "WARN" %}
+                <h5 class="card-title fs-1 text-warning">
+                    {{ point.value }}
+            {% elif point.status == "OK" %}
+                <h5 class="card-title fs-1 text-success">
+                    {{ point.value }}
+            {% else %}
+                <h5 class="card-title fs-1 text-primary">
+                    <a class="btn btn-outline-primary bi bi-pencil-square"
+                       href="{% url 'conformity:indicatorpoint_form' point.pk %}">
+                    Add a value
+                    </a>
+            {% endif %}
+
+            {% if point and point.value != None %}
+                {% if indicator.best == 100 and indicator.worst == 0 %} %
+                {% elif indicator.best == 0 and indicator.worst == 100 %} %
+                {% else %} / {{indicator.best}} {% endif %}
+            {% endif %}
+            {% if point %}
+                </h5>
+            {% endif %}
+            </div>
+            <div class="card-body">
+                <p class="card-subtitle text-body-secondary">
+                    {{indicator.goal }}
+                </p>
+            </div>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item"><span class="text-danger">Critical: </span> from {{ indicator.worst }} to {{ indicator.critical }}</li>
+                <li class="list-group-item"><span class="text-warning">Warning: </span> from {{ indicator.critical }} to {{ indicator.warning }}</li>
+                <li class="list-group-item"><span class="text-success">Compliant: </span> from {{ indicator.warning }} to {{ indicator.best }}</li>
+            </ul>
+            <div class="card-footer">
+                <small class="text-body-secondary">
+                    <i class="bi bi-journal-text"></i>
+                    {% if point %}
+                        Last updated {{ point.control_date }} by {{ point.control_user }}
+                    {% else %}
+                        No measurement for the current period
+                    {% endif %}
+                </small>
+            </div>
+            {% endwith %}
+        </div>
+    </div>
+
+    {% empty %}
+    <div class="alert alert-info" role="alert">
+        No indicator recorded.
+    </div>
+
+    {% endfor %}
+</div>
+
+<div class="text-center mt-3">
+    <a href="{% url 'conformity:indicator_create' %}"
+       class="btn btn-success bi bi-plus-circle"> Register a new indicator</a>
+</div>
+
+{% endblock %}

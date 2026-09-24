@@ -3,9 +3,13 @@ Customize Django Admin Site to manage my Models instances
 """
 
 from django.contrib import admin
+from django import forms
+from django.db import transaction
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
-from .models import Organization, Framework, Requirement, Conformity, Audit, Finding, Action, Control, ControlPoint, Attachment
+from .services.conformities import set_frameworks
+from .models import Organization, Framework, Requirement, Conformity, Audit, Finding, Action, Control, ControlPoint, \
+    Attachment, Indicator, IndicatorPoint
 
 
 class OrganizationResources(resources.ModelResource):
@@ -13,9 +17,28 @@ class OrganizationResources(resources.ModelResource):
         model = Organization
 
 
+class OrganizationAdminForm(forms.ModelForm):
+    class Meta:
+        model = Organization
+        fields = '__all__'
+
+
 class OrganizationAdmin(ImportExportModelAdmin):
+    form = OrganizationAdminForm
     ressource_class = Organization
     list_select_related = ['applicable_frameworks']
+
+    def save_related(self, request, form, formsets, change):
+        """Save regular relations normally and reconcile frameworks explicitly."""
+        selected = form.cleaned_data.pop('applicable_frameworks', None)
+        try:
+            with transaction.atomic():
+                super().save_related(request, form, formsets, change)
+                if selected is not None:
+                    set_frameworks(form.instance, selected)
+        finally:
+            if selected is not None:
+                form.cleaned_data['applicable_frameworks'] = selected
 
 
 class FrameworkResources(resources.ModelResource):
@@ -102,9 +125,22 @@ class AttachmentResources(resources.ModelResource):
     class Meta:
         model = Attachment
 
-
 class AttachmentAdmin(ImportExportModelAdmin):
     ressource_class = Attachment
+
+class IndicatorResources(resources.ModelResource):
+    class Meta:
+        model = Indicator
+
+class IndicatorAdmin(ImportExportModelAdmin):
+    ressource_class = Indicator
+
+class IndicatorPointResources(resources.ModelResource):
+    class Meta:
+        model = IndicatorPoint
+
+class IndicatorPointAdmin(ImportExportModelAdmin):
+    ressource_class = IndicatorPoint
 
 
 # Registration
@@ -118,3 +154,5 @@ admin.site.register(Finding, FindingAdmin)
 admin.site.register(Framework, FrameworkAdmin)
 admin.site.register(Organization, OrganizationAdmin)
 admin.site.register(Requirement, RequirementAdmin)
+admin.site.register(Indicator, IndicatorAdmin)
+admin.site.register(IndicatorPoint, IndicatorPointAdmin)

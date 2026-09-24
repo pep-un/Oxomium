@@ -5,30 +5,63 @@
 {% endblock %}
 
 {% block content %}
+
+
+<div class="row">
+
+    <div id="filter-btn" class="col-1 btn-group">
+        <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+            Filter
+        </button>
+        <div class="dropdown-menu">
+            <form class="m-3">
+                {{ filter.form.as_div }}
+                <div class="dropdown-divider my-2"></div>
+                <div class="row d-flex justify-content-evenly">
+                    <button type="submit" class="btn btn-primary col-4">Apply filters</button>
+                    <a href="?" class="btn btn-danger col-4">Clear filters</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-1 btn-group">
+        <a type="button" class="btn btn-secondary"
+           href="{% url 'conformity:audit_export' %}">
+             Export</a>
+        <a type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+            <span class="visually-hidden">Toggle Dropdown</span>
+        </a>
+        <ul class="dropdown-menu" style="z-index:1500">
+            <li><a class="dropdown-item" href="{% url 'conformity:audit_export' %}?format=csv">CSV Format</a></li>
+            <li><a class="dropdown-item" href="{% url 'conformity:audit_export' %}?format=xlsx">XLSX Format</a></li>
+        </ul>
+    </div>
+
+    <div class="col"></div>
+
+    <span class="badge rounded-pill text-bg-secondary m-2 fs-6 col-1"> {{ object_list | length }} items </span>
+
+</div>
+
 <table class="table table-striped align-middle">
   <caption class="d-none">List of all Audits</caption>
     <thead>
         <tr>
-            <th scope="col" class="">Name/Code</th>
-            <th scope="col" class="">Organization</th>
-            <th scope="col" class="">Auditor</th>
-            <th scope="col" class="">Type</th>
-            <th scope="col" class="">Start</th>
-            <th scope="col" class="">End</th>
-            <th scope="col" class="text-center">Finding</th>
-            <th scope="col" class="text-center">Edit</th>
+            <th class="">Name</th>
+            <th class="">Auditor</th>
+            <th class="">Type</th>
+            <th class="">Start</th>
+            <th class="">End</th>
+            <th class="text-center">Finding</th>
+            <th class="text-center">Actions</th>
         </tr>
     </thead>
     <tbody>
     {% for audit in audit_list %}
         <tr>
             <td class="col-2">
-                <a href="{% url 'conformity:audit_detail' audit.id %}">
-                    <span class="badge rounded-pill w-75 bg-primary"> {{ audit.name | default:"<i>Anonymous audit</i>"}} </span>
-                </a>
-            </td>
-            <td class="col-2">
-                {{ audit.organization }}
+                {{ audit.name }}
             </td>
             <td class="col-2">
                 {{ audit.auditor }}
@@ -43,10 +76,19 @@
                 {{ audit.end_date }}
             </td>
             <td class="col-1 text-center">
-                    <span class="badge rounded-pill w-50 bg-primary">{{ audit.get_findings_number }}</span>
+                {{ audit.get_findings_number }}
             </td>
             <td class="col-1 text-center">
-                <a href="{% url 'conformity:audit_form' audit.id %}" class="bi bi-pencil-square"></a>
+                <div class="btn-group">
+                    <a href="{% url 'conformity:audit_detail' audit.id %}"
+                       class="btn btn-sm btn-primary bi bi-eye" title="View">
+                        <span class="visually-hidden">View audit</span>
+                    </a>
+                    <a href="{% url 'conformity:audit_form' audit.id %}"
+                       class="btn btn-sm btn-warning bi bi-pencil-square" title="Edit">
+                        <span class="visually-hidden">Edit audit</span>
+                    </a>
+                </div>
             </td>
         </tr>
     {% empty %}

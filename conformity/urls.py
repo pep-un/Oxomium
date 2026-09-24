@@ -14,16 +14,20 @@ urlpatterns = [
     path('audit/<int:pk>', views.AuditDetailView.as_view(), name='audit_detail'),
     path('audit/create', views.AuditCreateView.as_view(), name='audit_create'),
     path('audit/update/<int:pk>', views.AuditUpdateView.as_view(), name='audit_form'),
+    path('audit/export/', views.AuditExportView.as_view(), name='audit_export'),
 
     path('conformity/', views.ConformityIndexView.as_view(), name='conformity_index'),
+    path('conformity/update/<int:pk>', views.ConformityUpdateView.as_view(), name='conformity_form'),
     path('conformity/organization/<int:org>/framework/<int:pol>/', views.ConformityDetailIndexView.as_view(),
          name='conformity_detail_index'),
-    path('conformity/update/<int:pk>', views.ConformityUpdateView.as_view(), name='conformity_form'),
+    path('conformity/organization/<int:org>/framework/<int:pol>/export/', views.ConformityExportView.as_view(),
+         name='conformity_export'),
 
     path('finding/', views.FindingIndexView.as_view(), name='finding_index'),
     path('finding/<int:pk>', views.FindingDetailView.as_view(), name='finding_detail'),
     path('finding/create', views.FindingCreateView.as_view(), name='finding_create'),
     path('finding/update/<int:pk>', views.FindingUpdateView.as_view(), name='finding_form'),
+    path('finding/export', views.FindingExportView.as_view(), name='finding_export'),
 
     path('organization/', views.OrganizationIndexView.as_view(), name='organization_index'),
     path('organization/<int:pk>', views.OrganizationDetailView.as_view(), name='organization_detail'),
@@ -36,14 +40,23 @@ urlpatterns = [
     path('action/', views.ActionIndexView.as_view(), name='action_index'),
     path('action/create', views.ActionCreateView.as_view(), name='action_create'),
     path('action/update/<int:pk>', views.ActionUpdateView.as_view(), name='action_form'),
+    path('action/export', views.ActionExportView.as_view(), name='action_export'),
 
     path('control/', views.ControlIndexView.as_view(), name='control_index'),
     path('control/create', views.ControlCreateView.as_view(), name='control_create'),
     path('control/update/<int:pk>', views.ControlUpdateView.as_view(), name='control_form'),
     path('control/<int:pk>', views.ControlDetailView.as_view(), name='control_detail'),
+    path('control/export', views.ControlExportView.as_view(), name='control_export'),
 
     path('controlpoint/', views.ControlPointIndexView.as_view(), name='controlpoint_index'),
     path('controlpoint/update/<int:pk>', views.ControlPointUpdateView.as_view(), name='controlpoint_form'),
+
+    path('indicator/', views.IndicatorIndexView.as_view(), name='indicator_index'),
+    path('indicator/create', views.IndicatorCreateView.as_view(), name='indicator_create'),
+    path('indicator/update/<int:pk>/', views.IndicatorUpdateView.as_view(), name='indicator_form'),
+    path('indicator/<int:pk>/', views.IndicatorDetailView.as_view(), name='indicator_detail'),
+    path('indicator/export', views.IndicatorExportView.as_view(), name='indicator_export'),
+    path('indicatorpoint/<int:pk>/', views.IndicatorPointUpdateView.as_view(), name='indicatorpoint_form'),
 
     path('attachment/', views.AttachmentIndexView.as_view(), name='attachment_index'),
     path('attachment/<int:pk>/', views.AttachmentDownloadView.as_view(), name='attachment_download'),

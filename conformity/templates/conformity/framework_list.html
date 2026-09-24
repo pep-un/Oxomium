@@ -5,17 +5,20 @@
 {% endblock %}
 
 {% block content %}
+
+{% include "includes/filter_row.html" %}
+
     {% if framework_list %}
         <table class="table table-striped align-middle">
             <caption class="d-none">List of frameworks</caption>
             <thead class="">
                 <tr>
                     <th scope="col">Framework</th>
-                    <th scope="col" class="col-1 text-center">Version</th>
-                    <th scope="col" class="col-1 text-center">Language</th>
-                    <th scope="col" class="col-2">Published by</th>
-                    <th scope="col" class="col-2">Type</th>
-                    <th scope="col" class="col text-center">Requirements</th>
+                    <th class="col-1 text-center">Version</th>
+                    <th class="col-1 text-center">Language</th>
+                    <th class="col-2">Published by</th>
+                    <th class="col-2">Type</th>
+                    <th class="col text-center">Requirements</th>
                 </tr>
             </thead>
             <tbody>
@@ -28,7 +31,7 @@
                 <td>{{ framework.get_type }}</td>
                 <td class="text-center">
                     <a href="{% url 'conformity:framework_detail' framework.id %}">
-                        <button type="button" class="btn btn-primary btn-sm w-75">{{ framework.get_requirements_number }} Requirements</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm w-75">{{ framework.get_requirements_number }} Requirements</button>
                     </a>
                 </td>
             </tr>

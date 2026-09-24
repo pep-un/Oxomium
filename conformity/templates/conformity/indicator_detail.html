@@ -1,0 +1,76 @@
+{% extends "conformity/main.html" %}
+
+{% block header %}
+    <h1 class="h1 bi bi-speedometer">
+        Indicator "{{ indicator.name }}"
+    </h1>
+{% endblock %}
+
+{% block content %}
+<h2>Indicator description</h2>
+<div class="row">
+    <div class="col-9">
+        <ul>
+            <li><b>Organization:</b> {{ indicator.organization }}</li>
+            <li><b>Responsible:</b> {{ indicator.responsible }}</li>
+            <li><b>Frequency:</b> {{ indicator.get_frequency_display }}</li>
+            <li><b>Goal:</b> {{ indicator.goal }}</li>
+            <li><b>Source of data:</b> {{ indicator.source }}</li>
+            <li><b>Formula or calculation:</b> {{ indicator.formula }}</li>
+            <li><b>Last updated:</b> {{ indicator.get_current_point.control_date }} by {{ indicator.get_current_point.control_user }}</li>
+        </ul>
+    </div>
+
+    <div class="col-3">
+        <div class="card">
+            <div class="card-header h5">
+                Thresholds
+            </div>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item"><span class="text-danger">Critical: </span> from {{ indicator.worst }} to {{ indicator.critical }}</li>
+                    <li class="list-group-item"><span class="text-warning">Warning: </span> from {{ indicator.critical }} to {{ indicator.warning }}</li>
+                    <li class="list-group-item"><span class="text-success">Compliant: </span> from {{ indicator.warning }} to {{ indicator.best }}</li>
+                </ul>
+        </div>
+    </div>
+</div>
+
+<h2 class="mt-3">Indicator values</h2>
+<table class="table table-striped">
+    <caption class="d-none">List of the indicator point</caption>
+    <thead>
+        <tr>
+            <th class="col-2 text-center">Period start</th>
+            <th class="col-2 text-center">Period end</th>
+            <th class="col-1 text-center">Value</th>
+            <th class="col-1 text-center">Status</th>
+            <th>Comment</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for point in indicator_point_list %}
+        <tr>
+            <td class="text-center">{{ point.period_start_date }}</td>
+            <td class="text-center">{{ point.period_end_date }}</td>
+            <td class="text-center">{{ point.value|default_if_none:"–" }}</td>
+            <td class="text-center">
+                {% if point.status == "TOBE" %}
+                    <a class="btn btn-sm btn-primary bi bi-pencil-square"
+                       href="{% url 'conformity:indicatorpoint_form' indicator.get_current_point.pk %}">
+                        {{ point.get_status_display }}
+                    </a>
+                {% else %}
+                    {{ point.get_status_display }}
+                {% endif %}
+            </td>
+            <td>{{ point.comment}}</td>
+        </tr>
+        {% empty %}
+            <div class="alert alert-info" role="alert">
+                No indicator point associated to this indicator.
+            </div>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

@@ -7,5 +7,9 @@ django-filter
 django-tables2
 python-magic
 python-decouple
+gunicorn
 python-dateutil
+django-mptt
+django-constance
 pycountry
+tablib[xlsx,ods]

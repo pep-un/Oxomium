@@ -1,0 +1,10 @@
+.git
+.github
+.env
+*.log
+*.py[cod]
+__pycache__/
+db.sqlite3
+data/
+media/
+staticfiles/
