@@ -84,7 +84,7 @@
                     </a>
             {% endif %}
 
-            {% if point and point.value %}
+            {% if point and point.value != None %}
                 {% if indicator.best == 100 and indicator.worst == 0 %} %
                 {% elif indicator.best == 0 and indicator.worst == 100 %} %
                 {% else %} / {{indicator.best}} {% endif %}

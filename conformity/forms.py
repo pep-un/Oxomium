@@ -4,6 +4,7 @@ Forms for front-end editing of Models instance
 
 from django.forms import ModelForm, FileField, ClearableFileInput, BooleanField
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 from .models import Conformity, Organization, Audit, Finding, Action, Control, ControlPoint, Indicator, IndicatorPoint
 
 
@@ -126,3 +127,12 @@ class IndicatorPointForm(ModelForm):
     class Meta:
         model = IndicatorPoint
         fields = ['value', 'comment', 'attachment']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.indicator_id is not None:
+            lower, upper = self.instance.indicator.value_bounds
+            self.fields['value'].widget.attrs.update(min=lower, max=upper, step=1)
+            self.fields['value'].help_text = _(
+                'Enter an integer between %(lower)s and %(upper)s (inclusive).'
+            ) % {'lower': lower, 'upper': upper}
