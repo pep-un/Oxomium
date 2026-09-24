@@ -30,7 +30,14 @@ services:
         networks:
             - oxomium
         healthcheck:
-            test: ["CMD", "wget", "--spider", "--quiet", "http://localhost/"]
+            test:
+                [
+                    "CMD",
+                    "wget",
+                    "--spider",
+                    "--quiet",
+                    "http://localhost/static/admin/css/base.css",
+                ]
             interval: 10s
             timeout: 5s
             retries: 5
