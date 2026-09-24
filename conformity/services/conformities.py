@@ -1,6 +1,8 @@
 from django.db import models, transaction
 from django.utils import timezone
-from auditlog.context import set_actor
+from auditlog.models import LogEntry
+
+from .audit import update_with_audit
 
 
 def ensure_for_framework(organization, framework):
@@ -8,17 +10,18 @@ def ensure_for_framework(organization, framework):
     from conformity.models import Conformity, Requirement
 
     requirement_ids = Requirement.objects.filter(framework=framework).values_list('pk', flat=True)
-    with transaction.atomic(), set_actor('system'):
-        Conformity.objects.bulk_create(
-            [Conformity(organization=organization, requirement_id=pk) for pk in requirement_ids],
-            ignore_conflicts=True,
-        )
+    with transaction.atomic():
+        for requirement_id in requirement_ids:
+            # Emit post_save only for genuinely new assessments.
+            Conformity.objects.get_or_create(
+                organization=organization, requirement_id=requirement_id,
+            )
 
 
 def remove_for_framework(organization, framework):
     from conformity.models import Conformity
 
-    with transaction.atomic(), set_actor('system'):
+    with transaction.atomic():
         Conformity.objects.filter(
             organization=organization, requirement__framework=framework
         ).delete()
@@ -26,28 +29,38 @@ def remove_for_framework(organization, framework):
 
 def apply_framework(organization, framework):
     """Apply one framework and create only missing assessments."""
-    from conformity.models import Organization
+    from conformity.models import Framework, Organization
 
     framework_id = getattr(framework, 'pk', framework)
     through = Organization.applicable_frameworks.through
     with transaction.atomic():
-        through.objects.get_or_create(
+        _, created = through.objects.get_or_create(
             organization_id=organization.pk, framework_id=framework_id
         )
         ensure_for_framework(organization, framework_id)
+        if created:
+            LogEntry.objects.log_m2m_changes(
+                Framework.objects.filter(pk=framework_id), organization,
+                'add', 'applicable_frameworks',
+            )
 
 
 def unapply_framework(organization, framework):
     """Remove a framework and its assessments as a single operation."""
-    from conformity.models import Organization
+    from conformity.models import Framework, Organization
 
     framework_id = getattr(framework, 'pk', framework)
     through = Organization.applicable_frameworks.through
     with transaction.atomic():
-        through.objects.filter(
+        removed, _ = through.objects.filter(
             organization_id=organization.pk, framework_id=framework_id
         ).delete()
         remove_for_framework(organization, framework_id)
+        if removed:
+            LogEntry.objects.log_m2m_changes(
+                Framework.objects.filter(pk=framework_id), organization,
+                'delete', 'applicable_frameworks',
+            )
 
 
 def set_frameworks(organization, frameworks):
@@ -70,7 +83,7 @@ def recompute_parent_chain(conformity):
     """Aggregate this node and its ancestors, one level at a time."""
     from conformity.models import Conformity
 
-    with transaction.atomic(), set_actor('system'):
+    with transaction.atomic():
         current = conformity
         while current is not None:
             mean = Conformity.objects.filter(
@@ -96,12 +109,12 @@ def propagate_applicable_and_comment(root, applicable, comment=None):
             changes = {'applicable': applicable}
             if comment is not None:
                 changes['comment'] = comment
-            Conformity.objects.filter(
+            update_with_audit(Conformity.objects.filter(
                 organization=root.organization,
                 requirement__in=root.requirement.get_descendants(),
-            ).update(**changes)
+            ), **changes)
         if applicable and root.requirement.is_child_node():
-            Conformity.objects.filter(
+            update_with_audit(Conformity.objects.filter(
                 organization=root.organization,
                 requirement__in=root.requirement.get_ancestors(),
-            ).update(applicable=True)
+            ), applicable=True)

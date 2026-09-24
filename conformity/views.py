@@ -13,7 +13,7 @@ from import_export.formats import base_formats
 from mptt.templatetags.mptt_tags import cache_tree_children
 
 from .filterset import ActionFilter, ControlFilter, ControlPointFilter, FrameworkFilter, OrganizationFilter, \
-    ConformityFilter, AuditFilter, FindingFilter, IndicatorFilter
+    ConformityFilter, AuditFilter, FindingFilter, IndicatorFilter, AuditLogFilter
 from .forms import ConformityForm, AuditForm, FindingForm, ActionForm, OrganizationForm, ControlForm, ControlPointForm, \
     IndicatorForm, IndicatorPointForm
 from .models import Organization, Framework, Conformity, Audit, Action, Finding, Control, ControlPoint, Attachment, \
@@ -240,17 +240,15 @@ class ConformityDetailIndexView(LoginRequiredMixin, ListView):
         root_id = self.request.GET.get('root_id')
 
         if root_id:
-            try:
-                root = Conformity.objects.filter(id=root_id)
-            except Conformity.DoesNotExist:
-                raise Http404("Conformity with the given ID does not exist.")
-
+            root = Conformity.objects.filter(id=root_id)
         else:
             root = Conformity.objects.filter(organization__id=self.kwargs['org']) \
                 .filter(requirement__framework__id=self.kwargs['pol']) \
                 .filter(requirement__level=0)
 
-        print(f"root return = {root}")  #DEBUG
+        if not root.exists():
+            raise Http404("No conformity review exists for this organization and framework.")
+
         return root
 
 
@@ -528,9 +526,39 @@ class AttachmentDownloadView(LoginRequiredMixin, View):
 #
 
 
-class AuditLogDetailView(LoginRequiredMixin, ListView):
+class AuditLogDetailView(LoginRequiredMixin, FilterView):
     model = LogEntry
+    template_name = 'auditlog/logentry_list.html'
+    filterset_class = AuditLogFilter
     paginate_by = 20
 
     def get_queryset(self, **kwargs):
         return LogEntry.objects.all().order_by('-timestamp')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        for logentry in context['logentry_list']:
+            changes = logentry.changes_dict
+            m2m_fields = {
+                field_name: values
+                for field_name, values in changes.items()
+                if isinstance(values, dict) and values.get('type') == 'm2m'
+            }
+            logentry.m2m_changes = [
+                {
+                    'field': field_name,
+                    'operation': values['operation'],
+                    'objects': values['objects'],
+                }
+                for field_name, values in m2m_fields.items()
+            ]
+            standard_changes = {
+                field_name: values
+                for field_name, values in changes.items()
+                if field_name not in m2m_fields
+            }
+            if standard_changes == changes:
+                logentry.standard_changes = logentry.changes_display_dict
+            else:
+                logentry.standard_changes = standard_changes
+        return context

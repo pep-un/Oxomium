@@ -149,11 +149,9 @@ LOGOUT_REDIRECT_URL = config('STATIC_ROOT', default='/')
 
 # AuditLog configuration
 AUDITLOG_INCLUDE_ALL_MODELS = True
-AUDITLOG_INCLUDE_TRACKING_MODELS = (
-    "conformity.Organization", {"model": "conformity.Organization", "m2m_fields": ["applicable_frameworks"], },
-    "conformity.Action", {"model": "conformity.Action", "m2m_fields": ["associated_conformity", "associated_findings"], },
-    "conformity.Audit", {"model": "conformity.Audit", "m2m_fields": ["audited_frameworks"], }
-)
+# Scalar changes use auditlog's model signals. Business M2M relations are
+# registered in ConformityConfig to log exact clear/remove and reverse changes.
+AUDITLOG_INCLUDE_TRACKING_MODELS = ('conformity',)
 AUDITLOG_EXCLUDE_TRACKING_FIELDS = (
     "created",
     "modified",

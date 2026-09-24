@@ -66,8 +66,8 @@ class Framework(models.Model):
 
     class Meta:
         ordering = ['name']
-        verbose_name = 'Framework'
-        verbose_name_plural = 'Frameworks'
+        verbose_name = 'framework'
+        verbose_name_plural = 'frameworks'
 
     def __str__(self):
         return str(self.name)
@@ -237,8 +237,8 @@ class Conformity(models.Model):
 
     class Meta:
         ordering = ['organization', 'requirement__framework', 'requirement__tree_id', 'requirement__lft']
-        verbose_name = 'Conformity'
-        verbose_name_plural = 'Conformities'
+        verbose_name = 'conformity'
+        verbose_name_plural = 'conformities'
         constraints = [
             models.UniqueConstraint(fields=['organization', 'requirement'], name='uq_conformity_org_req'),
             models.CheckConstraint(
@@ -394,10 +394,11 @@ class Conformity(models.Model):
 
     def update_responsible(self):
         """Update the responsible in the descendants when added"""
-        Conformity.objects.filter(
+        from .services.audit import update_with_audit
+        update_with_audit(Conformity.objects.filter(
             organization=self.organization,
             requirement__in=self.requirement.get_descendants()
-        ).update(responsible=self.responsible)
+        ), responsible=self.responsible)
 
     def update_status(self):
         """Update this node's conformity status and propagate update to its parent."""
