@@ -129,6 +129,10 @@ class FindingCreateView(LoginRequiredMixin, CreateView):
         initial = super().get_initial()
         audit_id = self.request.GET.get('audit')
         if audit_id:
+            try:
+                audit_id = int(audit_id)
+            except ValueError as exc:
+                raise Http404('Invalid audit identifier.') from exc
             initial['audit'] = get_object_or_404(Audit, pk=audit_id)
         return initial
 

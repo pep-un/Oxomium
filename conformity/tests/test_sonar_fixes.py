@@ -1,4 +1,6 @@
+from django.contrib.auth import get_user_model
 from django.test import RequestFactory, TestCase
+from django.urls import reverse
 
 from conformity.forms import FindingForm
 from conformity.models import Audit, Finding, Organization
@@ -6,6 +8,18 @@ from conformity.views import FindingCreateView
 
 
 class FindingCreateViewTest(TestCase):
+    def test_invalid_audit_query_parameter_returns_404(self):
+        user = get_user_model().objects.create_user(username="invalid_audit")
+        self.client.force_login(user)
+        url = reverse('conformity:finding_create')
+
+        for audit_id in ('abc', '1.5', ' ', '999999999999999999999999999999'):
+            for method in ('get', 'post'):
+                with self.subTest(audit_id=audit_id, method=method):
+                    response = getattr(self.client, method)(f"{url}?audit={audit_id}")
+                    self.assertEqual(response.status_code, 404)
+        self.assertFalse(Finding.objects.exists())
+
     def test_audit_query_parameter_prefills_and_locks_audit(self):
         organization = Organization.objects.create(name="Test organization")
         audit = Audit.objects.create(organization=organization, auditor="Test auditor")
