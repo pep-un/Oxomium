@@ -11,7 +11,7 @@ RUN apk add --no-cache libmagic \
 
 COPY requirements.txt .
 RUN python -m pip install --no-cache-dir -r requirements.txt
-RUN rm -rf /usr/local/lib/python3.14/site-packages/pip \
+&& rm -rf /usr/local/lib/python3.14/site-packages/pip \
     /usr/local/lib/python3.14/site-packages/pip-*.dist-info \
     /usr/local/lib/python3.14/site-packages/setuptools \
     /usr/local/lib/python3.14/site-packages/setuptools-*.dist-info \
