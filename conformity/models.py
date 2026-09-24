@@ -877,6 +877,11 @@ class Indicator (models.Model):
         """return the absolute URL for Forms, could probably do better"""
         return reverse('conformity:indicator_index')
 
+    @property
+    def value_bounds(self):
+        """Inclusive numeric bounds, also for indicators where lower is better."""
+        return min(self.worst, self.best), max(self.worst, self.best)
+
     def indicator_point_init(self):
         IndicatorPoint.objects.filter(indicator=self).filter(Q(status='SCHD') | Q(status='TOBE')).delete()
 
@@ -933,9 +938,43 @@ class IndicatorPoint(models.Model):
         """return the absolute URL for Forms, could probably do better"""
         return reverse('conformity:indicator_index')
 
+    def validate_value_bounds(self):
+        if self.value is None:
+            # Automatically generated periods have no measurement yet.
+            return
+        try:
+            self.value = self._meta.get_field('value').clean(self.value, self)
+        except ValidationError as exc:
+            raise ValidationError({'value': exc}) from exc
+        if self.indicator_id is None:
+            raise ValidationError({'value': _('A measurement requires an indicator.')})
+        lower, upper = self.indicator.value_bounds
+        if not lower <= self.value <= upper:
+            raise ValidationError({'value': ValidationError(
+                _('Enter a value between %(lower)s and %(upper)s (inclusive).'),
+                code='out_of_bounds', params={'lower': lower, 'upper': upper},
+            )})
+
+    def clean(self):
+        super().clean()
+        self.validate_value_bounds()
+
+    def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
+        # Validate and derive status before auditlog's pre_save receiver.
+        self.validate_value_bounds()
+        self.status_update()
+        if update_fields is not None:
+            update_fields = set(update_fields)
+            if update_fields & {'value', 'indicator', 'indicator_id'}:
+                update_fields.add('status')
+        return super().save(
+            force_insert=force_insert, force_update=force_update,
+            using=using, update_fields=update_fields,
+        )
+
     def status_update(self):
-        """ This function update the status depending on the value and the Indicator configuration """
-        if not self.value:
+        """Update the status according to the indicator thresholds."""
+        if self.value is None or self.indicator_id is None:
             return
 
         if self.indicator.best > self.indicator.worst :

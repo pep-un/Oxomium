@@ -52,7 +52,7 @@
         <tr>
             <td class="text-center">{{ point.period_start_date }}</td>
             <td class="text-center">{{ point.period_end_date }}</td>
-            <td class="text-center">{{ point.value|default:"–" }}</td>
+            <td class="text-center">{{ point.value|default_if_none:"–" }}</td>
             <td class="text-center">
                 {% if point.status == "TOBE" %}
                     <a class="btn btn-sm btn-primary bi bi-pencil-square"
