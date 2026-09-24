@@ -91,3 +91,13 @@ jobs:
             }' trivy-report.json
             exit 1
           fi
+
+      - name: Start Compose services
+        run: |
+          set -e
+          trap 'docker compose down --volumes --remove-orphans' EXIT
+          docker compose up --build --detach --wait --wait-timeout 60
+          curl --fail --silent --show-error http://127.0.0.1:3000/
+          curl --fail --silent --show-error \
+            http://127.0.0.1:3000/static/admin/css/base.css \
+            > /dev/null
