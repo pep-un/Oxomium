@@ -11,6 +11,15 @@ RUN apk add --no-cache libmagic \
 
 COPY requirements.txt .
 RUN python -m pip install --no-cache-dir -r requirements.txt
+RUN rm -rf /usr/local/lib/python3.14/site-packages/pip \
+    /usr/local/lib/python3.14/site-packages/pip-*.dist-info \
+    /usr/local/lib/python3.14/site-packages/setuptools \
+    /usr/local/lib/python3.14/site-packages/setuptools-*.dist-info \
+    /usr/local/lib/python3.14/site-packages/wheel \
+    /usr/local/lib/python3.14/site-packages/wheel-*.dist-info \
+    /usr/local/bin/pip \
+    /usr/local/bin/pip3 \
+    /usr/local/bin/pip3.14
 
 COPY --chown=app:app . .
 COPY docker/scripts/entrypoint.sh /usr/local/bin/entrypoint
