@@ -57,8 +57,6 @@ jobs:
           push: false
           load: true
           tags: oxomium:ci
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
       - name: Run Django system checks
         run: docker run --rm --entrypoint python oxomium:ci manage.py check
@@ -67,7 +65,30 @@ jobs:
         uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
         with:
           image-ref: oxomium:ci
-          format: table
+          format: json
+          output: trivy-report.json
           severity: CRITICAL,HIGH
           ignore-unfixed: true
-          exit-code: 1
+          exit-code: 0
+
+      - name: Upload Trivy report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-report
+          path: trivy-report.json
+
+      - name: Fail on high or critical vulnerabilities
+        run: |
+          findings="$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH" or .Severity == "CRITICAL")] | length' trivy-report.json)"
+          if [ "$findings" -gt 0 ]; then
+            jq '.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH" or .Severity == "CRITICAL") | {
+              target: .Target,
+              package: .PkgName,
+              installed: .InstalledVersion,
+              fixed: .FixedVersion,
+              severity: .Severity,
+              vulnerability: .VulnerabilityID
+            }' trivy-report.json
+            exit 1
+          fi
