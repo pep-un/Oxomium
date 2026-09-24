@@ -93,6 +93,25 @@ class OrganizationAdminFrameworkTests(TestCase):
             'delete',
         )
 
+    def test_admin_framework_changes_are_audited_when_organization_already_has_framework(self):
+        self.organization.applicable_frameworks.add(self.first)
+        LogEntry.objects.all().delete()
+
+        response = self.save_frameworks([self.first.pk, self.second.pk])
+        self.assertEqual(response.status_code, 302, response.content.decode()[:500])
+        addition = LogEntry.objects.get_for_object(self.organization).get()
+        self.assertEqual(addition.actor, self.user)
+        self.assertEqual(addition.changes['applicable_frameworks']['operation'], 'add')
+        self.assertEqual(addition.changes['applicable_frameworks']['objects'], [self.second.name])
+
+        LogEntry.objects.all().delete()
+        response = self.save_frameworks([self.first.pk])
+        self.assertEqual(response.status_code, 302, response.content.decode()[:500])
+        removal = LogEntry.objects.get_for_object(self.organization).get()
+        self.assertEqual(removal.actor, self.user)
+        self.assertEqual(removal.changes['applicable_frameworks']['operation'], 'delete')
+        self.assertEqual(removal.changes['applicable_frameworks']['objects'], [self.second.name])
+
     def test_admin_framework_audit_events_are_visible_in_audit_log(self):
         LogEntry.objects.all().delete()
         self.save_frameworks([self.first.pk])
