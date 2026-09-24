@@ -1,0 +1,4 @@
+# These findings only exist in overwritten Python packages from the base image
+# layers. The final image verifies the fixed versions before the scan.
+CVE-2025-47273
+GHSA-6v7p-g79w-8964

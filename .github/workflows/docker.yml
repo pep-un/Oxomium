@@ -4,8 +4,10 @@ on:
   push:
     branches: [main]
     paths:
+      - .github/workflows/docker.yml
       - Dockerfile
       - .dockerignore
+      - .trivyignore
       - docker-compose.yml
       - docker/**
       - requirements.txt
@@ -15,8 +17,10 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - .github/workflows/docker.yml
       - Dockerfile
       - .dockerignore
+      - .trivyignore
       - docker-compose.yml
       - docker/**
       - requirements.txt
@@ -61,10 +65,18 @@ jobs:
       - name: Run Django system checks
         run: docker run --rm --entrypoint python oxomium:ci manage.py check
 
+      - name: Verify fixed Python package versions
+        run: >-
+          docker run --rm --entrypoint python oxomium:ci -c
+          "from importlib.metadata import version;
+          assert version('msgpack') == '1.2.1';
+          assert version('setuptools') == '84.0.0'"
+
       - name: Scan image for vulnerabilities
         uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
         with:
           image-ref: oxomium:ci
+          ignorefile: .trivyignore
           format: table
           severity: CRITICAL,HIGH
           ignore-unfixed: true
