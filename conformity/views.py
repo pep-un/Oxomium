@@ -126,6 +126,19 @@ class FindingCreateView(LoginRequiredMixin, CreateView):
     model = Finding
     form_class = FindingForm
 
+    def get_initial(self):
+        initial = super().get_initial()
+        audit_id = self.request.GET.get('audit')
+        if audit_id:
+            try:
+                audit_id = int(audit_id)
+            except ValueError as exc:
+                raise Http404('Invalid audit identifier.') from exc
+            audit = get_object_or_404(Audit, pk=audit_id)
+            initial['audit'] = audit
+            initial['organization'] = audit.organization
+        return initial
+
 
 class FindingDetailView(LoginRequiredMixin, DetailView):
     model = Finding
@@ -326,6 +339,29 @@ class ActionCreateView(LoginRequiredMixin, CreateView):
     model = Action
     form_class = ActionForm
 
+    def get_initial(self):
+        initial = super().get_initial()
+        finding_id = self.request.GET.get('finding')
+        if finding_id:
+            try:
+                finding_id = int(finding_id)
+            except ValueError as exc:
+                raise Http404('Invalid finding identifier.') from exc
+            finding = get_object_or_404(Finding, pk=finding_id)
+            initial['associated_findings'] = [finding]
+            initial['organization'] = finding.audit.organization_id
+
+        conformity_id = self.request.GET.get('conformity')
+        if conformity_id:
+            try:
+                conformity_id = int(conformity_id)
+            except ValueError as exc:
+                raise Http404('Invalid conformity identifier.') from exc
+            conformity = get_object_or_404(Conformity, pk=conformity_id)
+            initial['associated_conformity'] = [conformity]
+            initial['organization'] = conformity.organization_id
+        return initial
+
 
 class ActionIndexView(LoginRequiredMixin, FilterView):
     model = Action
@@ -365,6 +401,19 @@ class ControlCreateView(LoginRequiredMixin, CreateView):
     model = Control
     form_class = ControlForm
 
+    def get_initial(self):
+        initial = super().get_initial()
+        conformity_id = self.request.GET.get('conformity')
+        if conformity_id:
+            try:
+                conformity_id = int(conformity_id)
+            except ValueError as exc:
+                raise Http404('Invalid conformity identifier.') from exc
+            conformity = get_object_or_404(Conformity, pk=conformity_id)
+            initial['conformity'] = [conformity]
+            initial['organization'] = conformity.organization_id
+        return initial
+
 
 class ControlIndexView(LoginRequiredMixin, FilterView):
     model = Control
@@ -373,7 +422,6 @@ class ControlIndexView(LoginRequiredMixin, FilterView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        user = self.request.user
         context['controlpoint_list'] = ControlPoint.objects.all()
         context['c1st'] = Control.objects.filter(level="1").count()
         context['c2nd'] = Control.objects.filter(level="2").count()

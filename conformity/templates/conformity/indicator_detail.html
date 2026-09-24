@@ -52,11 +52,11 @@
         <tr>
             <td class="text-center">{{ point.period_start_date }}</td>
             <td class="text-center">{{ point.period_end_date }}</td>
-            <td class="text-center">{{ point.value|default:"–" }}</td>
+            <td class="text-center">{{ point.value|default_if_none:"–" }}</td>
             <td class="text-center">
                 {% if point.status == "TOBE" %}
                     <a class="btn btn-sm btn-primary bi bi-pencil-square"
-                       role="button" href="{% url 'conformity:indicatorpoint_form' indicator.get_current_point.pk %}">
+                       href="{% url 'conformity:indicatorpoint_form' indicator.get_current_point.pk %}">
                         {{ point.get_status_display }}
                     </a>
                 {% else %}

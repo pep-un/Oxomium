@@ -85,9 +85,11 @@
     </td>
 
     <td class="text-center">
-        <div class="btn-group" role="group" aria-label="Action">
+        <div class="btn-group">
             <a href="{% url 'conformity:conformity_form' con.id %}"
-               class="btn btn-sm btn-warning bi bi-pencil-square"> </a>
+               class="btn btn-sm btn-warning bi bi-pencil-square">
+                <span class="visually-hidden">Edit conformity</span>
+            </a>
         </div>
     </td>
 </tr>

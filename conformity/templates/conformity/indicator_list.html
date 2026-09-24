@@ -51,11 +51,15 @@
         <div class="card">
             <div class="card-header h4">
                 {{indicator.name}}
-                <div class="btn-group float-end" role="group" aria-label="actions">
+                <div class="btn-group float-end">
                     <a class="btn btn-sm btn-primary bi bi-eye"
-                       role="button" href="{% url 'conformity:indicator_detail' indicator.pk %}"> </a>
+                       href="{% url 'conformity:indicator_detail' indicator.pk %}">
+                        <span class="visually-hidden">View indicator</span>
+                    </a>
                     <a class="btn btn-sm btn-warning bi bi-pencil-square"
-                       role="button" href="{% url 'conformity:indicator_form' indicator.pk %}"> </a>
+                       href="{% url 'conformity:indicator_form' indicator.pk %}">
+                        <span class="visually-hidden">Edit indicator</span>
+                    </a>
                 </div>
             </div>
             <div class="card-body">
@@ -79,12 +83,12 @@
             {% else %}
                 <h5 class="card-title fs-1 text-primary">
                     <a class="btn btn-outline-primary bi bi-pencil-square"
-                       role="button" href="{% url 'conformity:indicatorpoint_form' point.pk %}">
+                       href="{% url 'conformity:indicatorpoint_form' point.pk %}">
                     Add a value
                     </a>
             {% endif %}
 
-            {% if point and point.value %}
+            {% if point and point.value != None %}
                 {% if indicator.best == 100 and indicator.worst == 0 %} %
                 {% elif indicator.best == 0 and indicator.worst == 100 %} %
                 {% else %} / {{indicator.best}} {% endif %}
@@ -126,9 +130,8 @@
 </div>
 
 <div class="text-center mt-3">
-    <a href="{% url 'conformity:indicator_create' %}">
-        <button type="button" class="btn btn-success bi bi-plus-circle"> Register a new indicator</button>
-    </a>
+    <a href="{% url 'conformity:indicator_create' %}"
+       class="btn btn-success bi bi-plus-circle"> Register a new indicator</a>
 </div>
 
 {% endblock %}
