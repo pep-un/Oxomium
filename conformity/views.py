@@ -350,7 +350,7 @@ class ActionCreateView(LoginRequiredMixin, CreateView):
                 raise Http404('Invalid finding identifier.') from exc
             finding = get_object_or_404(Finding, pk=finding_id)
             initial['associated_findings'] = [finding]
-            initial['organization'] = finding.audit.organization
+            initial['organization'] = finding.audit.organization_id
 
         conformity_id = self.request.GET.get('conformity')
         if conformity_id:
@@ -360,7 +360,7 @@ class ActionCreateView(LoginRequiredMixin, CreateView):
                 raise Http404('Invalid conformity identifier.') from exc
             conformity = get_object_or_404(Conformity, pk=conformity_id)
             initial['associated_conformity'] = [conformity]
-            initial['organization'] = conformity.organization
+            initial['organization'] = conformity.organization_id
         return initial
 
 
@@ -410,7 +410,9 @@ class ControlCreateView(LoginRequiredMixin, CreateView):
                 conformity_id = int(conformity_id)
             except ValueError as exc:
                 raise Http404('Invalid conformity identifier.') from exc
-            initial['conformity'] = [get_object_or_404(Conformity, pk=conformity_id)]
+            conformity = get_object_or_404(Conformity, pk=conformity_id)
+            initial['conformity'] = [conformity]
+            initial['organization'] = conformity.organization_id
         return initial
 
 

@@ -82,6 +82,22 @@ class ActionForm(ModelForm):
         self.fields['create_date'].disabled = True
         self.fields['update_date'].disabled = True
 
+        organization = self.initial.get('organization')
+        if organization is None:
+            organization_id = self.instance.organization_id
+        else:
+            organization_id = getattr(organization, 'pk', organization)
+        if organization_id:
+            self.fields['associated_conformity'].queryset = Conformity.objects.filter(
+                organization_id=organization_id
+            )
+            self.fields['associated_findings'].queryset = Finding.objects.filter(
+                audit__organization_id=organization_id
+            )
+            self.fields['associated_controlPoints'].queryset = ControlPoint.objects.filter(
+                control__organization_id=organization_id
+            )
+
         if self.instance.pk is None and self.initial.get('associated_findings'):
             self.fields['associated_findings'].disabled = True
         if self.instance.pk is None and self.initial.get('associated_conformity'):
@@ -116,6 +132,20 @@ class ControlForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        organization = self.initial.get('organization')
+        if organization is None:
+            organization_id = self.instance.organization_id
+        else:
+            organization_id = getattr(organization, 'pk', organization)
+        if organization_id:
+            self.fields['conformity'].queryset = Conformity.objects.filter(
+                organization_id=organization_id
+            )
+            self.fields['control'].queryset = Control.objects.filter(
+                organization_id=organization_id
+            )
+        if self.instance.pk is None and 'organization' in self.initial:
+            self.fields['organization'].disabled = True
         if self.instance.pk is None and self.initial.get('conformity'):
             self.fields['conformity'].disabled = True
 
