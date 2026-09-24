@@ -4,7 +4,7 @@ from django.test import TestCase
 from django.urls import reverse
 from unittest.mock import patch
 
-from auditlog import get_logentry_model
+from auditlog.models import LogEntry
 from conformity.models import Attachment, Conformity, Framework, Organization, Requirement
 
 
@@ -66,7 +66,6 @@ class OrganizationAdminFrameworkTests(TestCase):
 
 
     def test_admin_framework_changes_are_audited(self):
-        LogEntry = get_logentry_model()
         LogEntry.objects.all().delete()
 
         response = self.save_frameworks([self.first.pk])

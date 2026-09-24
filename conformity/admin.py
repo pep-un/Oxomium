@@ -5,7 +5,7 @@ Customize Django Admin Site to manage my Models instances
 from django.contrib import admin
 from django import forms
 from django.db import transaction
-from auditlog import get_logentry_model
+from auditlog.models import LogEntry
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
 from .services.conformities import set_frameworks
@@ -21,7 +21,6 @@ class OrganizationResources(resources.ModelResource):
 def _log_framework_changes(organization, previous_ids, selected, actor):
     """Record explicit framework reconciliation in django-auditlog."""
     selected_ids = {framework.pk for framework in selected}
-    LogEntry = get_logentry_model()
     LogEntry.objects.log_m2m_changes(
         Framework.objects.filter(pk__in=previous_ids - selected_ids),
         organization,
