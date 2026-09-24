@@ -69,7 +69,7 @@
             <p class="list-group-item list-group-item-warning text-center my-0">No action associated</p>
         {% endfor %}
         {% if not finding.archived %}
-            <a class="list-group-item list-group-item-action list-group-item-success text-center text-success"  href="{% url 'conformity:action_create' %}">
+            <a class="list-group-item list-group-item-action list-group-item-success text-center text-success"  href="{% url 'conformity:action_create' %}?finding={{ finding.id }}">
                 <i class="bi bi-plus-circle"></i> Register a corrective action
             </a>
         {% endif %}

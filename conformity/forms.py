@@ -71,6 +71,9 @@ class ActionForm(ModelForm):
         self.fields['create_date'].disabled = True
         self.fields['update_date'].disabled = True
 
+        if self.instance.pk is None and self.initial.get('associated_findings'):
+            self.fields['associated_findings'].disabled = True
+
         generic_fields = ['title', 'owner', 'status', 'status_comment', 'reference']
         analyse_fields = ['organization', 'associated_conformity', 'associated_findings', 'associated_controlPoints', 'description']
         plan_fields = ['plan_start_date', 'plan_end_date', 'plan_comment']

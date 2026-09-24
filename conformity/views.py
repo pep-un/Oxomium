@@ -338,6 +338,17 @@ class ActionCreateView(LoginRequiredMixin, CreateView):
     model = Action
     form_class = ActionForm
 
+    def get_initial(self):
+        initial = super().get_initial()
+        finding_id = self.request.GET.get('finding')
+        if finding_id:
+            try:
+                finding_id = int(finding_id)
+            except ValueError as exc:
+                raise Http404('Invalid finding identifier.') from exc
+            initial['associated_findings'] = [get_object_or_404(Finding, pk=finding_id)]
+        return initial
+
 
 class ActionIndexView(LoginRequiredMixin, FilterView):
     model = Action
