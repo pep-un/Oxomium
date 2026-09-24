@@ -23,7 +23,9 @@ RUN rm -rf /usr/local/lib/python3.14/site-packages/pip \
 
 COPY --chown=app:app . .
 COPY docker/scripts/entrypoint.sh /usr/local/bin/entrypoint
-RUN chmod +x /usr/local/bin/entrypoint
+RUN mkdir -p /app/data /app/staticfiles \
+    && chown -R app:app /app/data /app/staticfiles \
+    && chmod +x /usr/local/bin/entrypoint
 
 USER app
 

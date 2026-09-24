@@ -96,7 +96,10 @@ jobs:
         run: |
           set -e
           trap 'docker compose down --volumes --remove-orphans' EXIT
-          docker compose up --build --detach --wait --wait-timeout 60
+          if ! docker compose up --build --detach --wait --wait-timeout 60; then
+            docker compose logs
+            exit 1
+          fi
           curl --fail --silent --show-error http://127.0.0.1:3000/
           curl --fail --silent --show-error \
             http://127.0.0.1:3000/static/admin/css/base.css \
