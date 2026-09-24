@@ -8,6 +8,8 @@ django-tables2
 python-magic
 python-decouple
 gunicorn
+msgpack>=1.2.1
+setuptools>=78.1.1
 python-dateutil
 django-mptt
 django-constance
