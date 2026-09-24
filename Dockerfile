@@ -13,6 +13,9 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip \
     setuptools \
     && pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --upgrade --force-reinstall \
+    'setuptools>=78.1.1' \
+    'msgpack>=1.2.1'
 
 COPY . .
 COPY docker/scripts/entrypoint.sh /usr/local/bin/entrypoint
