@@ -59,3 +59,12 @@ jobs:
 
       - name: Run Django system checks
         run: docker run --rm --entrypoint python oxomium:ci manage.py check
+
+      - name: Scan image for vulnerabilities
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: oxomium:ci
+          format: table
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: 1
