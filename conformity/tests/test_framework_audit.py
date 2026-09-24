@@ -88,11 +88,13 @@ class FrameworkAuditTests(TestCase):
         self.assert_framework_event('delete')
         self.assert_assessment_events(LogEntry.Action.DELETE, 2)
 
-    def test_direct_m2m_preserves_actor(self):
+    def test_direct_m2m_requires_an_explicit_framework_operation(self):
         with set_actor(self.user):
             self.org.applicable_frameworks.add(self.first)
-        self.assert_framework_event('add')
-        self.assert_assessment_events(LogEntry.Action.CREATE, 2)
+        self.assertFalse(Conformity.objects.filter(organization=self.org).exists())
+        with set_actor(self.user):
+            apply_framework(self.org, self.first)
+        self.assertEqual(Conformity.objects.filter(organization=self.org).count(), 2)
 
     def test_audit_failure_rolls_back_data_and_logs(self):
         with patch.object(LogEntry.objects, 'log_m2m_changes', side_effect=RuntimeError('audit failure')):

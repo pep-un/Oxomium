@@ -133,18 +133,34 @@ class Organization(models.Model):
         """return all Framework applicable to the Organization"""
         return self.applicable_frameworks.all()
 
-    def remove_conformity(self, pid):
-        """Cascade deletion of conformity"""
-        from .services.conformities import remove_for_framework
-        remove_for_framework(self, pid)
-    
-    def add_conformity(self, pid):
-        """Automatic creation of conformity"""
-        from .services.conformities import ensure_for_framework
-        ensure_for_framework(self, pid)
+    def remove_conformity(self, framework):
+        """Explicitly remove a framework and its assessments."""
+        from .services.conformities import unapply_framework
+        unapply_framework(self, framework)
+
+    def add_conformity(self, framework):
+        """Explicitly apply a framework and create missing assessments."""
+        from .services.conformities import apply_framework
+        apply_framework(self, framework)
 
 
-class RequirementManager(models.Manager):
+class RequirementQuerySet(models.QuerySet):
+    """Common requirement queries used by framework views and services."""
+
+    def for_framework(self, framework):
+        return self.filter(framework=framework)
+
+    def roots(self):
+        return self.filter(parent__isnull=True)
+
+    def in_tree_order(self):
+        return self.order_by('tree_id', 'lft')
+
+    def with_tree_relations(self):
+        return self.select_related('framework').prefetch_related('children')
+
+
+class RequirementManager(models.Manager.from_queryset(RequirementQuerySet)):
     def get_by_natural_key(self, name):
         return self.get(name=name)
 
@@ -203,8 +219,22 @@ class Requirement(MPTTModel):
 
 
 class ConformityQuerySet(models.QuerySet):
+    """Common conformity queries for the dashboard and framework views."""
+
     def applicable(self):
         return self.filter(applicable=True)
+
+    def for_organization(self, organization):
+        return self.filter(organization=organization)
+
+    def for_framework(self, framework):
+        return self.filter(requirement__framework=framework)
+
+    def roots(self):
+        return self.filter(requirement__level=0)
+
+    def with_related(self):
+        return self.select_related('organization', 'requirement__framework')
 
 
 class Conformity(models.Model):
@@ -402,7 +432,7 @@ class Conformity(models.Model):
         recompute_parent_chain(self)
 
     def update_applicable(self):
-        """Update descendants or ancestors when applicability changes."""
+        """Explicit API for callers that intentionally propagate applicability."""
         from .services.conformities import propagate_applicable_and_comment
         propagate_applicable_and_comment(self, self.applicable)
 

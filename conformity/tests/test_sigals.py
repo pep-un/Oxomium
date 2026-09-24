@@ -5,6 +5,7 @@ from django.utils import timezone
 from conformity.models import (
     Framework, Organization, Requirement, Conformity, Control, ControlPoint, Action, Attachment, Audit, Finding)
 
+from conformity.services.conformities import apply_framework, unapply_framework
 
 class SignalTests(TestCase):
     """Signal-driven lifecycle tests (m2m, update_status/post_save hooks)."""
@@ -24,11 +25,7 @@ class SignalTests(TestCase):
         self.assertEqual(child.name, "AX-01")
         self.assertEqual(grandchild.name, "AX-01-b")
 
-    def test_org_applicable_frameworks_m2m_creates_and_removes_conformities(self):
-        """
-        M2M add/remove on Organization.applicable_frameworks should
-        create/remove Conformity rows via signals.
-        """
+    def test_explicit_framework_service_creates_and_removes_conformities(self):
         org = Organization.objects.create(name="Org-M2M")
         fw = Framework.objects.create(name="FW-M2M")
         r0 = Requirement.objects.create(framework=fw, code="R0-M2M")
@@ -37,10 +34,10 @@ class SignalTests(TestCase):
 
         self.assertEqual(Conformity.objects.filter(organization=org).count(), 0)
 
-        org.applicable_frameworks.add(fw)
+        apply_framework(org, fw)
         self.assertEqual(Conformity.objects.filter(organization=org).count(), 3)
 
-        org.applicable_frameworks.remove(fw)
+        unapply_framework(org, fw)
         self.assertEqual(Conformity.objects.filter(organization=org).count(), 0)
 
     def test_control_post_save_bootstrap_and_rebootstrap(self):

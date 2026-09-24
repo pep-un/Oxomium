@@ -38,13 +38,13 @@ class HomeView(LoginRequiredMixin, TemplateView):
         user = self.request.user
         context['organization_list'] = Organization.objects.all()
         context['framework_list'] = Framework.objects.all()
-        context['conformity_list'] = Conformity.objects.select_related(
-            'organization', 'requirement__framework'
-        ).filter(requirement__level=0)
+        context['conformity_list'] = Conformity.objects.with_related().roots()
         context['audit_list'] = Audit.objects.all()
         context['action_list'] = Action.objects.all()
         context['my_action'] = Action.objects.filter(owner=user).filter(active=True).order_by('status')[:50]
-        context['my_conformity'] = Conformity.objects.filter(responsible=user).order_by('status')[:50]
+        context['my_conformity'] = Conformity.objects.with_related().filter(
+            responsible=user
+        ).order_by('status')[:50]
         context['cp_list'] = ControlPoint.objects.filter(status='TOBE').order_by('period_end_date')[:50]
 
         return context
@@ -224,9 +224,7 @@ class FrameworkDetailView(LoginRequiredMixin, DetailView):
     # Not used yet, to be fixed (issue with recursetree)
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        qs = Requirement.objects.filter(framework=self.object).select_related(
-            'framework'
-        ).prefetch_related('children').order_by('tree_id', 'lft')
+        qs = Requirement.objects.for_framework(self.object).with_tree_relations().in_tree_order()
         context['requirement_list'] = cache_tree_children(qs)
         return context
 
@@ -240,9 +238,7 @@ class ConformityIndexView(LoginRequiredMixin, FilterView):
     filterset_class = ConformityFilter
 
     def get_queryset(self, **kwargs):
-        return Conformity.objects.select_related(
-            'organization', 'requirement__framework'
-        ).filter(requirement__level=0)
+        return Conformity.objects.with_related().roots()
 
 
 class ConformityDetailIndexView(LoginRequiredMixin, ListView):
@@ -273,9 +269,7 @@ class ConformityUpdateView(LoginRequiredMixin, UpdateView):
         # starting point of the set_status and status tree update logic
         self.object = form.save()
 
-        # Object is saved, we juste have to update the tree, when needed.
-        if "applicable" in form.changed_data:
-            self.object.update_applicable()
+        # Child propagation is an explicit form action.
         if form.cleaned_data['propagate_to_children']:
             from .services.conformities import propagate_applicable_and_comment
             propagate_applicable_and_comment(
