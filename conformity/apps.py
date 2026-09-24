@@ -6,3 +6,5 @@ class ConformityConfig(AppConfig):
 
     def ready(self):
         from . import signals  # noqa: F401
+        from .audit import register_m2m_audit
+        register_m2m_audit(self.get_models())

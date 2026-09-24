@@ -187,6 +187,19 @@ class ConformityIndexViews(BaseDataMixin, TestCase):
         objs = list(resp.context_data["object_list"])
         self.assertEqual(objs, [self.c_root])
 
+    def test_conformity_detail_returns_404_without_review(self):
+        """An organization/framework without conformities must return a 404."""
+        other_framework = Framework.objects.create(name="FW-No-Conformity")
+        self.client.force_login(self.user)
+        url = reverse(
+            "conformity:conformity_detail_index",
+            kwargs={"org": self.org.id, "pol": other_framework.id},
+        )
+
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 404)
+
 class ConformitySaveNextTests(TestCase):
     def setUp(self):
         self.factory = RequestFactory()

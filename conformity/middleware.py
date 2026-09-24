@@ -2,6 +2,7 @@ from django.contrib.auth.signals import user_logged_in
 from django.dispatch import receiver
 from datetime import datetime
 from .models import ControlPoint, IndicatorPoint
+from .services.audit import update_with_audit
 
 
 class SanityCheckMiddleware:
@@ -32,13 +33,13 @@ class SanityCheckMiddleware:
         scheduled_controls = ControlPoint.objects.filter(period_start_date__lte=today,
                                                          period_end_date__gte=today,
                                                          status="SCHD")
-        scheduled_controls.update(status='TOBE')
+        update_with_audit(scheduled_controls, status='TOBE')
 
         """Update expired TOBE to MISS """
         missed_controls = ControlPoint.objects.filter(period_start_date__lt=today,
                                                       period_end_date__lt=today,
                                                       status__in=["TOBE","SCHD"])
-        missed_controls.update(status='MISS')
+        update_with_audit(missed_controls, status='MISS')
 
     @staticmethod
     def check_indicator_points(today):
@@ -48,13 +49,13 @@ class SanityCheckMiddleware:
         scheduled_indicators = IndicatorPoint.objects.filter(period_start_date__lte=today,
                                                          period_end_date__gte=today,
                                                          status="SCHD")
-        scheduled_indicators.update(status='TOBE')
+        update_with_audit(scheduled_indicators, status='TOBE')
 
         """Update expired TOBE to MISS """
         missed_indicators = IndicatorPoint.objects.filter(period_start_date__lt=today,
                                                       period_end_date__lt=today,
                                                       status__in=["TOBE","SCHD"])
-        missed_indicators.update(status='MISS')
+        update_with_audit(missed_indicators, status='MISS')
 
 # Connect the user login signal
 @receiver(user_logged_in)
