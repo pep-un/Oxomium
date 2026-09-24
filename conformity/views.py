@@ -13,7 +13,7 @@ from import_export.formats import base_formats
 from mptt.templatetags.mptt_tags import cache_tree_children
 
 from .filterset import ActionFilter, ControlFilter, ControlPointFilter, FrameworkFilter, OrganizationFilter, \
-    ConformityFilter, AuditFilter, FindingFilter, IndicatorFilter
+    ConformityFilter, AuditFilter, FindingFilter, IndicatorFilter, AuditLogFilter
 from .forms import ConformityForm, AuditForm, FindingForm, ActionForm, OrganizationForm, ControlForm, ControlPointForm, \
     IndicatorForm, IndicatorPointForm
 from .models import Organization, Framework, Conformity, Audit, Action, Finding, Control, ControlPoint, Attachment, \
@@ -526,8 +526,10 @@ class AttachmentDownloadView(LoginRequiredMixin, View):
 #
 
 
-class AuditLogDetailView(LoginRequiredMixin, ListView):
+class AuditLogDetailView(LoginRequiredMixin, FilterView):
     model = LogEntry
+    template_name = 'auditlog/logentry_list.html'
+    filterset_class = AuditLogFilter
     paginate_by = 20
 
     def get_queryset(self, **kwargs):
@@ -549,9 +551,13 @@ class AuditLogDetailView(LoginRequiredMixin, ListView):
                 }
                 for field_name, values in m2m_fields.items()
             ]
+            m2m_display_names = {
+                str(logentry.content_type.model_class()._meta.get_field(field_name).verbose_name)
+                for field_name in m2m_fields
+            }
             logentry.standard_changes = {
                 field_name: values
                 for field_name, values in logentry.changes_display_dict.items()
-                if field_name not in m2m_fields
+                if field_name not in m2m_display_names
             }
         return context

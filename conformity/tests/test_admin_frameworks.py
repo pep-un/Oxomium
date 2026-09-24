@@ -5,6 +5,7 @@ from django.urls import reverse
 from unittest.mock import patch
 
 from auditlog.models import LogEntry
+from django.contrib.contenttypes.models import ContentType
 from conformity import admin as conformity_admin
 from conformity.models import Attachment, Conformity, Framework, Organization, Requirement
 
@@ -102,6 +103,26 @@ class OrganizationAdminFrameworkTests(TestCase):
         self.assertContains(response, self.first.name)
         self.assertContains(response, 'add')
         self.assertContains(response, 'delete')
+
+    def test_audit_log_can_filter_by_object_type_action_and_user(self):
+        LogEntry.objects.all().delete()
+        self.save_frameworks([self.first.pk])
+        self.save_frameworks([])
+
+        response = self.client.get(
+            reverse('conformity:auditlog_index'),
+            {
+                'object_repr': self.organization.name,
+                'content_type': ContentType.objects.get_for_model(Organization).pk,
+                'action': LogEntry.Action.UPDATE,
+                'actor': self.user.pk,
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['filter'].qs.count(), 2)
+        self.assertContains(response, self.organization.name)
+        self.assertContains(response, self.first.name)
 
     def test_admin_related_save_is_atomic(self):
         attachment = Attachment.objects.create(
