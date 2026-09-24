@@ -5,7 +5,6 @@ Customize Django Admin Site to manage my Models instances
 from django.contrib import admin
 from django import forms
 from django.db import transaction
-from auditlog.models import LogEntry
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
 from .services.conformities import set_frameworks
@@ -16,25 +15,6 @@ from .models import Organization, Framework, Requirement, Conformity, Audit, Fin
 class OrganizationResources(resources.ModelResource):
     class Meta:
         model = Organization
-
-
-def _log_framework_changes(organization, previous_ids, selected, actor):
-    """Record explicit framework reconciliation in django-auditlog."""
-    selected_ids = {framework.pk for framework in selected}
-    LogEntry.objects.log_m2m_changes(
-        Framework.objects.filter(pk__in=previous_ids - selected_ids),
-        organization,
-        'delete',
-        'applicable_frameworks',
-        actor=actor,
-    )
-    LogEntry.objects.log_m2m_changes(
-        Framework.objects.filter(pk__in=selected_ids - previous_ids),
-        organization,
-        'add',
-        'applicable_frameworks',
-        actor=actor,
-    )
 
 
 class OrganizationAdminForm(forms.ModelForm):
@@ -51,16 +31,11 @@ class OrganizationAdmin(ImportExportModelAdmin):
     def save_related(self, request, form, formsets, change):
         """Save regular relations normally and reconcile frameworks explicitly."""
         selected = form.cleaned_data.pop('applicable_frameworks', None)
-        previous_ids = (
-            set(form.instance.applicable_frameworks.values_list('pk', flat=True))
-            if selected is not None else set()
-        )
         try:
             with transaction.atomic():
                 super().save_related(request, form, formsets, change)
                 if selected is not None:
                     set_frameworks(form.instance, selected)
-                    _log_framework_changes(form.instance, previous_ids, selected, request.user)
         finally:
             if selected is not None:
                 form.cleaned_data['applicable_frameworks'] = selected

@@ -7,7 +7,6 @@ from unittest.mock import patch
 from auditlog.models import LogEntry
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.sessions.models import Session
-from conformity import admin as conformity_admin
 from conformity.models import Attachment, Conformity, Framework, Organization, Requirement
 
 
@@ -35,9 +34,6 @@ class OrganizationAdminFrameworkTests(TestCase):
                 '_save': 'Save',
             },
         )
-
-    def test_admin_imports_auditlog_model_from_supported_module(self):
-        self.assertIs(conformity_admin.LogEntry, LogEntry)
 
     def test_admin_reconciles_frameworks_without_erasing_existing_assessments(self):
         response = self.save_frameworks([self.first.pk])
@@ -147,8 +143,9 @@ class OrganizationAdminFrameworkTests(TestCase):
 
     def test_audit_log_can_filter_automatic_events_as_oxomium(self):
         LogEntry.objects.all().delete()
-        self.save_frameworks([self.first.pk])
-        self.save_frameworks([])
+        # Background operations have no request actor, unlike user-triggered cascades.
+        from conformity.services.conformities import apply_framework
+        apply_framework(self.organization, self.first)
 
         response = self.client.get(
             reverse('conformity:auditlog_index'),
