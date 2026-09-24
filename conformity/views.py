@@ -538,9 +538,10 @@ class AuditLogDetailView(LoginRequiredMixin, FilterView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         for logentry in context['logentry_list']:
+            changes = logentry.changes_dict
             m2m_fields = {
                 field_name: values
-                for field_name, values in logentry.changes_dict.items()
+                for field_name, values in changes.items()
                 if isinstance(values, dict) and values.get('type') == 'm2m'
             }
             logentry.m2m_changes = [
@@ -551,13 +552,13 @@ class AuditLogDetailView(LoginRequiredMixin, FilterView):
                 }
                 for field_name, values in m2m_fields.items()
             ]
-            m2m_display_names = {
-                str(logentry.content_type.model_class()._meta.get_field(field_name).verbose_name)
-                for field_name in m2m_fields
-            }
-            logentry.standard_changes = {
+            standard_changes = {
                 field_name: values
-                for field_name, values in logentry.changes_display_dict.items()
-                if field_name not in m2m_display_names
+                for field_name, values in changes.items()
+                if field_name not in m2m_fields
             }
+            if standard_changes == changes:
+                logentry.standard_changes = logentry.changes_display_dict
+            else:
+                logentry.standard_changes = standard_changes
         return context

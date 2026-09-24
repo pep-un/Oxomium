@@ -43,7 +43,7 @@
     </thead>
     <tbody>
         {% for logentry in logentry_list %}
-            {% if logentry.object_id is not Null %}
+            {% if logentry.object_pk %}
             <tr>
                 <td class="col-2">
                     {{ logentry.timestamp  | date:'d-M-Y H:i T' }}
@@ -68,7 +68,7 @@
                 </td>
                 <td class="col-3">
                     {{ logentry.object_repr | truncatechars:30 }}
-                    <span class="badge rounded-pill text-bg-secondary">{{ logentry.content_type}}</span>
+                    <span class="badge rounded-pill text-bg-secondary">{{ logentry.content_type|lower }}</span>
                 </td>
                 <td class="col">
                     <ul>

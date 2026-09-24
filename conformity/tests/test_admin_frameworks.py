@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 from auditlog.models import LogEntry
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.sessions.models import Session
 from conformity import admin as conformity_admin
 from conformity.models import Attachment, Conformity, Framework, Organization, Requirement
 
@@ -96,6 +97,7 @@ class OrganizationAdminFrameworkTests(TestCase):
         LogEntry.objects.all().delete()
         self.save_frameworks([self.first.pk])
         self.save_frameworks([])
+        self.save_frameworks([])
 
         response = self.client.get(reverse('conformity:auditlog_index'))
 
@@ -123,6 +125,36 @@ class OrganizationAdminFrameworkTests(TestCase):
         self.assertEqual(response.context['filter'].qs.count(), 2)
         self.assertContains(response, self.organization.name)
         self.assertContains(response, self.first.name)
+
+    def test_audit_log_can_filter_automatic_events_as_oxomium(self):
+        LogEntry.objects.all().delete()
+        self.save_frameworks([self.first.pk])
+        self.save_frameworks([])
+
+        response = self.client.get(
+            reverse('conformity:auditlog_index'),
+            {'actor': 'system'},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['filter'].form.cleaned_data['actor'], 'system')
+        self.assertGreater(response.context['filter'].qs.count(), 0)
+        self.assertContains(response, 'Oxomium')
+
+    def test_audit_log_displays_events_without_numeric_object_id(self):
+        LogEntry.objects.all().delete()
+        LogEntry.objects.create(
+            content_type=ContentType.objects.get_for_model(Session),
+            object_pk='session-key',
+            object_repr='session event',
+            action=LogEntry.Action.ACCESS,
+        )
+
+        response = self.client.get(reverse('conformity:auditlog_index'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'session event')
+        self.assertContains(response, 'sessions | session')
 
     def test_admin_related_save_is_atomic(self):
         attachment = Attachment.objects.create(

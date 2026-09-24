@@ -4,10 +4,21 @@ from random import choices
 from auditlog.models import LogEntry
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
+from django.db.models import Q
 from django import forms
 from django_filters import FilterSet, CharFilter, DateFilter, ModelChoiceFilter, ChoiceFilter
 from .models import Action, Control, ControlPoint, Conformity, Finding, Requirement, Framework, Organization, Audit, \
     Indicator
+
+
+def audit_actor_choices():
+    return [
+        ('system', 'Oxomium'),
+        *(
+            (str(user.pk), user.get_username())
+            for user in get_user_model().objects.order_by('username')
+        ),
+    ]
 
 
 class ActionFilter(FilterSet):
@@ -104,8 +115,9 @@ class AuditLogFilter(FilterSet):
         label='Object type',
     )
     action = ChoiceFilter(choices=LogEntry.Action.choices, label='Action')
-    actor = ModelChoiceFilter(
-        queryset=get_user_model().objects.order_by('username'),
+    actor = ChoiceFilter(
+        choices=audit_actor_choices,
+        method='filter_actor',
         label='User',
     )
     remote_addr = CharFilter(lookup_expr='icontains', label='IP address')
@@ -130,3 +142,8 @@ class AuditLogFilter(FilterSet):
             'object_repr', 'object_pk', 'content_type', 'action', 'actor',
             'remote_addr', 'timestamp_after', 'timestamp_before',
         ]
+
+    def filter_actor(self, queryset, name, value):
+        if value == 'system':
+            return queryset.filter(Q(actor__isnull=True) | Q(actor_email='system'))
+        return queryset.filter(actor_id=value)
