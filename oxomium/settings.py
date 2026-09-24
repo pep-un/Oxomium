@@ -135,8 +135,8 @@ USE_TZ = config('USE_TZ', default='True', cast=bool)
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
-STATIC_URL = config('STATIC_URL', default='static/')
-STATIC_ROOT = config('STATIC_ROOT', default='static')
+STATIC_URL = config('STATIC_URL', default='/static/')
+STATIC_ROOT = config('STATIC_ROOT', default=str(BASE_DIR / 'staticfiles'))
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
