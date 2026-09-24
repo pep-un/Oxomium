@@ -91,6 +91,18 @@ class OrganizationAdminFrameworkTests(TestCase):
             'delete',
         )
 
+    def test_admin_framework_audit_events_are_visible_in_audit_log(self):
+        LogEntry.objects.all().delete()
+        self.save_frameworks([self.first.pk])
+        self.save_frameworks([])
+
+        response = self.client.get(reverse('conformity:auditlog_index'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.first.name)
+        self.assertContains(response, 'add')
+        self.assertContains(response, 'delete')
+
     def test_admin_related_save_is_atomic(self):
         attachment = Attachment.objects.create(
             file=SimpleUploadedFile(

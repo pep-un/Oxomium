@@ -532,3 +532,26 @@ class AuditLogDetailView(LoginRequiredMixin, ListView):
 
     def get_queryset(self, **kwargs):
         return LogEntry.objects.all().order_by('-timestamp')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        for logentry in context['logentry_list']:
+            m2m_fields = {
+                field_name: values
+                for field_name, values in logentry.changes_dict.items()
+                if isinstance(values, dict) and values.get('type') == 'm2m'
+            }
+            logentry.m2m_changes = [
+                {
+                    'field': field_name,
+                    'operation': values['operation'],
+                    'objects': values['objects'],
+                }
+                for field_name, values in m2m_fields.items()
+            ]
+            logentry.standard_changes = {
+                field_name: values
+                for field_name, values in logentry.changes_display_dict.items()
+                if field_name not in m2m_fields
+            }
+        return context
