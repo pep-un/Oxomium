@@ -1,6 +1,6 @@
 from django.db.models.signals import m2m_changed, pre_save, post_save
 from django.dispatch import receiver
-from .models import Organization, Requirement, Control, ControlPoint, Attachment, Action, Finding, Conformity, \
+from .models import Requirement, Control, ControlPoint, Attachment, Action, Finding, Conformity, \
     Indicator, IndicatorPoint
 
 
@@ -21,36 +21,6 @@ def requirement_pre_save_naming(instance, **kwargs):
     """This function keep hierarchy of the Requirement working on each Requirement instantiation"""
     from .services.requirements import compute_hierarchy_fields
     compute_hierarchy_fields(instance)
-
-@receiver(m2m_changed, sender=Organization.applicable_frameworks.through)
-def change_framework(instance, action, reverse, pk_set, **kwargs):
-    """Keep direct M2M writes compatible, including clear and reverse writes."""
-    from .services.conformities import ensure_for_framework, remove_for_framework
-
-    if action not in {'post_add', 'post_remove', 'pre_clear'}:
-        return
-
-    if reverse:
-        # The instance is a Framework; pk_set contains Organization IDs.
-        organization_ids = (
-            list(instance.organization_set.values_list('pk', flat=True))
-            if action == 'pre_clear' else pk_set
-        )
-        for organization in Organization.objects.filter(pk__in=organization_ids):
-            if action == 'post_add':
-                ensure_for_framework(organization, instance)
-            else:
-                remove_for_framework(organization, instance)
-    else:
-        framework_ids = (
-            list(instance.applicable_frameworks.values_list('pk', flat=True))
-            if action == 'pre_clear' else pk_set
-        )
-        for framework_id in framework_ids:
-            if action == 'post_add':
-                ensure_for_framework(instance, framework_id)
-            else:
-                remove_for_framework(instance, framework_id)
 
 @receiver(post_save, sender=Action)
 def action_post_save_sync_findings(instance: Action, **kwargs):

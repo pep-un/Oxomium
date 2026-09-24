@@ -100,6 +100,19 @@ class ModelSafetyTests(TestCase):
         self.assertEqual(Conformity.objects.applicable().count(), 3)
 
 
+    def test_issue_103_querysets_compose_for_framework_trees(self):
+        other = Framework.objects.create(name='Other queryset framework')
+        other_root = Requirement.objects.create(framework=other, code='OTHER')
+        Conformity.objects.create(organization=self.org, requirement=other_root)
+
+        requirements = Requirement.objects.for_framework(self.fw).with_tree_relations().in_tree_order()
+        conformities = Conformity.objects.for_organization(self.org).for_framework(self.fw)
+
+        self.assertEqual(list(requirements), [self.root, self.child, self.leaf])
+        self.assertEqual(list(requirements.roots()), [self.root])
+        self.assertEqual(list(conformities.roots()), [self.root_conf])
+
+
 class CalendarControlTests(TestCase):
     def test_leap_year_months_are_exact(self):
         periods = list(calendar_periods(2024, Control.Frequency.BIMONTHLY))
