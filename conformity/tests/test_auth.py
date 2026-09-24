@@ -1,7 +1,41 @@
 import inspect
 import importlib
-from django.test import TestCase
+from django.test import TestCase, override_settings
+from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin, UserPassesTestMixin
+from django.urls import reverse
+
+User = get_user_model()
+
+
+@override_settings(ALLOWED_HOSTS=['testserver', 'localhost', '127.0.0.1'])
+class LogoutBehaviorTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='logout-user', password='StrongPass123!')
+
+    def test_logout_view_rejects_get_requests(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse('logout'))
+
+        self.assertEqual(response.status_code, 405)
+
+    def test_logout_view_logs_user_out_on_post(self):
+        self.client.force_login(self.user)
+
+        response = self.client.post(reverse('logout'))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response['Location'], '/')
+        self.assertNotIn('_auth_user_id', self.client.session)
+
+    def test_main_template_uses_post_form_for_logout(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse('conformity:home'))
+
+        self.assertContains(response, 'form method="post" action="/accounts/logout/"')
+        self.assertNotContains(response, 'href="/accounts/logout/"')
 
 
 class SecurityCoverageTests(TestCase):
