@@ -23,3 +23,17 @@ More information on [Oxomium Website](https://www.oxomium.org).
 An online demonstration in available with user `demo` and password `6NLYm6F4PBBQBjc`:  [Oxomium Demo](https://demo.oxomium.org)
 
 A wiki page detail the process of [installation](https://github.com/pep-un/Oxomium/wiki/Instalation).
+
+## Docker image
+
+Release tags matching `v*` publish `docker.io/pepun/oxomium` with semantic-version
+tags and `latest`.
+
+Pull and run the latest image with:
+
+```shell
+docker pull docker.io/pepun/oxomium:latest
+docker run --rm --env-file env-exemple -p 8000:8000 docker.io/pepun/oxomium:latest
+```
+
+For the included Compose setup, run `docker compose up --build`.
