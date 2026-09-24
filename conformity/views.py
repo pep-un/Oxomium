@@ -240,17 +240,15 @@ class ConformityDetailIndexView(LoginRequiredMixin, ListView):
         root_id = self.request.GET.get('root_id')
 
         if root_id:
-            try:
-                root = Conformity.objects.filter(id=root_id)
-            except Conformity.DoesNotExist:
-                raise Http404("Conformity with the given ID does not exist.")
-
+            root = Conformity.objects.filter(id=root_id)
         else:
             root = Conformity.objects.filter(organization__id=self.kwargs['org']) \
                 .filter(requirement__framework__id=self.kwargs['pol']) \
                 .filter(requirement__level=0)
 
-        print(f"root return = {root}")  #DEBUG
+        if not root.exists():
+            raise Http404("No conformity review exists for this organization and framework.")
+
         return root
 
 
