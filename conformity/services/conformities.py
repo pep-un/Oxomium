@@ -2,6 +2,8 @@ from django.db import models, transaction
 from django.utils import timezone
 from auditlog.models import LogEntry
 
+from .audit import update_with_audit
+
 
 def ensure_for_framework(organization, framework):
     """Create missing assessments without resetting assessments already entered."""
@@ -107,12 +109,12 @@ def propagate_applicable_and_comment(root, applicable, comment=None):
             changes = {'applicable': applicable}
             if comment is not None:
                 changes['comment'] = comment
-            Conformity.objects.filter(
+            update_with_audit(Conformity.objects.filter(
                 organization=root.organization,
                 requirement__in=root.requirement.get_descendants(),
-            ).update(**changes)
+            ), **changes)
         if applicable and root.requirement.is_child_node():
-            Conformity.objects.filter(
+            update_with_audit(Conformity.objects.filter(
                 organization=root.organization,
                 requirement__in=root.requirement.get_ancestors(),
-            ).update(applicable=True)
+            ), applicable=True)

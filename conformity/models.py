@@ -394,10 +394,11 @@ class Conformity(models.Model):
 
     def update_responsible(self):
         """Update the responsible in the descendants when added"""
-        Conformity.objects.filter(
+        from .services.audit import update_with_audit
+        update_with_audit(Conformity.objects.filter(
             organization=self.organization,
             requirement__in=self.requirement.get_descendants()
-        ).update(responsible=self.responsible)
+        ), responsible=self.responsible)
 
     def update_status(self):
         """Update this node's conformity status and propagate update to its parent."""
