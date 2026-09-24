@@ -32,22 +32,18 @@ class FrameworkLifecycleTests(TestCase):
         )
         self.assertEqual(Conformity.objects.filter(organization=self.organization).count(), 1)
 
-    def test_direct_clear_removes_all_assessments(self):
+    def test_direct_m2m_writes_do_not_manage_assessments(self):
         self.organization.applicable_frameworks.add(self.first, self.second)
-        self.assertEqual(Conformity.objects.filter(organization=self.organization).count(), 2)
+        self.assertFalse(Conformity.objects.filter(organization=self.organization).exists())
         self.organization.applicable_frameworks.clear()
         self.assertFalse(Conformity.objects.filter(organization=self.organization).exists())
 
-    def test_reverse_add_remove_and_clear(self):
+    def test_reverse_direct_m2m_writes_do_not_manage_assessments(self):
         another = Organization.objects.create(name='Another lifecycle organization')
         self.first.organization_set.add(self.organization, another)
-        self.assertEqual(
-            Conformity.objects.filter(requirement=self.first_requirement).count(), 2
-        )
+        self.assertFalse(Conformity.objects.filter(requirement=self.first_requirement).exists())
         self.first.organization_set.remove(self.organization)
-        self.assertFalse(
-            Conformity.objects.filter(organization=self.organization).exists()
-        )
+        self.assertFalse(Conformity.objects.filter(organization=self.organization).exists())
         self.first.organization_set.clear()
         self.assertFalse(Conformity.objects.filter(requirement=self.first_requirement).exists())
 

@@ -133,15 +133,15 @@ class Organization(models.Model):
         """return all Framework applicable to the Organization"""
         return self.applicable_frameworks.all()
 
-    def remove_conformity(self, pid):
-        """Cascade deletion of conformity"""
-        from .services.conformities import remove_for_framework
-        remove_for_framework(self, pid)
-    
-    def add_conformity(self, pid):
-        """Automatic creation of conformity"""
-        from .services.conformities import ensure_for_framework
-        ensure_for_framework(self, pid)
+    def remove_conformity(self, framework):
+        """Explicitly remove a framework and its assessments."""
+        from .services.conformities import unapply_framework
+        unapply_framework(self, framework)
+
+    def add_conformity(self, framework):
+        """Explicitly apply a framework and create missing assessments."""
+        from .services.conformities import apply_framework
+        apply_framework(self, framework)
 
 
 class RequirementQuerySet(models.QuerySet):
@@ -432,7 +432,7 @@ class Conformity(models.Model):
         recompute_parent_chain(self)
 
     def update_applicable(self):
-        """Update descendants or ancestors when applicability changes."""
+        """Explicit API for callers that intentionally propagate applicability."""
         from .services.conformities import propagate_applicable_and_comment
         propagate_applicable_and_comment(self, self.applicable)
 

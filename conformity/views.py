@@ -269,9 +269,7 @@ class ConformityUpdateView(LoginRequiredMixin, UpdateView):
         # starting point of the set_status and status tree update logic
         self.object = form.save()
 
-        # Object is saved, we juste have to update the tree, when needed.
-        if "applicable" in form.changed_data:
-            self.object.update_applicable()
+        # Child propagation is an explicit form action.
         if form.cleaned_data['propagate_to_children']:
             from .services.conformities import propagate_applicable_and_comment
             propagate_applicable_and_comment(
