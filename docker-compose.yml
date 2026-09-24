@@ -30,11 +30,7 @@ services:
         networks:
             - oxomium
         healthcheck:
-            test:
-                [
-                    "CMD-SHELL",
-                    "wget --quiet --output-document=/dev/null http://localhost/nginx-health",
-                ]
+            test: ["CMD", "nginx", "-t"]
             interval: 10s
             timeout: 5s
             retries: 5
