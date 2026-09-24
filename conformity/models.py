@@ -322,74 +322,70 @@ class Conformity(models.Model):
           - 'only_active' affects Actions only in the default mode.
           - Sorting tries to do something sensible across mixed kinds.
         """
-        items: List[Tuple[Literal["action", "control", "controlpoint"], object]] = []
-
-        if not negative_only:
-            # ---------- default mode ----------
-            if include_actions:
-                actions_qs = self.actions.filter(active=True) if only_active else self.actions.all()
-                for a in actions_qs:
-                    items.append(("action", a))
-
-            if include_controls:
-                for c in self.get_control():
-                    items.append(("control", c))
-
+        if negative_only:
+            items = self._get_negative_related(include_actions, include_controls)
         else:
-            # ---------- negative-only mode ----------
-            if include_actions:
-                actions_qs = self.actions.filter(
-                    status__in=[
-                        Action.Status.ANALYSING,
-                        Action.Status.PLANNING,
-                        Action.Status.IMPLEMENTING,
-                        Action.Status.CONTROLLING,
-                    ]
-                )
-                for a in actions_qs:
-                    items.append(("action", a))
+            items = self._get_related(include_actions, include_controls, only_active)
+        return self._sort_related(items, sort)
 
-            if include_controls:
-                today = date.today()
-                cps = ControlPoint.objects.filter(
-                    control__conformity=self,
-                    period_start_date__lte=today,
-                    period_end_date__gte=today,
-                    status__in=[ControlPoint.Status.NONCOMPLIANT,ControlPoint.Status.MISSED,
-                                ControlPoint.Status.SCHEDULED,ControlPoint.Status.TOBEEVALUATED],
-                )
+    def _get_related(self, include_actions, include_controls, only_active):
+        items = []
+        if include_actions:
+            actions = self.actions.filter(active=True) if only_active else self.actions.all()
+            items.extend(("action", action) for action in actions)
+        if include_controls:
+            items.extend(("control", control) for control in self.get_control())
+        return items
 
-                for cp in cps:
-                    items.append(("controlpoint", cp))
-
-        # ---------- sorting ----------
-        def _label(obj):
-            # Try common fields, fallback to __str__
-            return (
-                    getattr(obj, "title", None)
-                    or getattr(obj, "name", None)
-                    or getattr(obj, "short_description", None)
-                    or str(obj)
+    def _get_negative_related(self, include_actions, include_controls):
+        items = []
+        if include_actions:
+            statuses = [
+                Action.Status.ANALYSING, Action.Status.PLANNING,
+                Action.Status.IMPLEMENTING, Action.Status.CONTROLLING,
+            ]
+            items.extend(("action", action) for action in self.actions.filter(status__in=statuses))
+        if include_controls:
+            today = date.today()
+            statuses = [
+                ControlPoint.Status.NONCOMPLIANT, ControlPoint.Status.MISSED,
+                ControlPoint.Status.SCHEDULED, ControlPoint.Status.TOBEEVALUATED,
+            ]
+            points = ControlPoint.objects.filter(
+                control__conformity=self,
+                period_start_date__lte=today,
+                period_end_date__gte=today,
+                status__in=statuses,
             )
+            items.extend(("controlpoint", point) for point in points)
+        return items
 
+    @staticmethod
+    def _related_label(obj):
+        return (
+            getattr(obj, "title", None)
+            or getattr(obj, "name", None)
+            or getattr(obj, "short_description", None)
+            or str(obj)
+        )
+
+    @classmethod
+    def _sort_related(cls, items, sort):
         if sort == "type_then_title":
             order_kind = {"action": 0, "control": 1, "controlpoint": 2}
-            items.sort(key=lambda t: (order_kind.get(t[0], 99), _label(t[1])))
-
+            items.sort(key=lambda item: (order_kind.get(item[0], 99), cls._related_label(item[1])))
         elif sort == "recent_first":
-            # Use whatever "date-ish" we can find: update_date for Action, period_end_date for CP, fallback very old
-            def _updated(obj):
-                return (
-                        getattr(obj, "update_date", None)
-                        or getattr(obj, "period_end_date", None)
-                        or date.min
-                )
-
-            items.sort(key=lambda t: (_updated(t[1]), _label(t[1])), reverse=True)
-
+            items.sort(
+                key=lambda item: (
+                    getattr(item[1], "update_date", None)
+                    or getattr(item[1], "period_end_date", None)
+                    or date.min,
+                    cls._related_label(item[1]),
+                ),
+                reverse=True,
+            )
         elif sort == "alpha":
-            items.sort(key=lambda t: _label(t[1]))
-
+            items.sort(key=lambda item: cls._related_label(item[1]))
         return items
 
     def update_responsible(self):
@@ -765,7 +761,6 @@ class Action(models.Model):
     associated_conformity = models.ManyToManyField(Conformity, blank=True, related_name='actions')
     associated_findings = models.ManyToManyField(Finding, blank=True, related_name='actions')
     associated_controlPoints = models.ManyToManyField(ControlPoint, blank=True, related_name='actions')
-    #TODO associated_risks = models.ManyToManyField(Risk, blank=True)
 
     ' PLAN phase'
     plan_start_date = models.DateField(null=True, blank=True)
@@ -849,7 +844,6 @@ class Attachment(models.Model):
         mime = Magic(mime=True)
         instance.mime_type = mime.from_buffer(file_content)
 
-        # TODO filter on mime type
 
 
 class Indicator (models.Model):
@@ -883,6 +877,11 @@ class Indicator (models.Model):
     def get_absolute_url():
         """return the absolute URL for Forms, could probably do better"""
         return reverse('conformity:indicator_index')
+
+    @property
+    def value_bounds(self):
+        """Inclusive numeric bounds, also for indicators where lower is better."""
+        return min(self.worst, self.best), max(self.worst, self.best)
 
     def indicator_point_init(self):
         IndicatorPoint.objects.filter(indicator=self).filter(Q(status='SCHD') | Q(status='TOBE')).delete()
@@ -940,9 +939,43 @@ class IndicatorPoint(models.Model):
         """return the absolute URL for Forms, could probably do better"""
         return reverse('conformity:indicator_index')
 
+    def validate_value_bounds(self):
+        if self.value is None:
+            # Automatically generated periods have no measurement yet.
+            return
+        try:
+            self.value = self._meta.get_field('value').clean(self.value, self)
+        except ValidationError as exc:
+            raise ValidationError({'value': exc}) from exc
+        if self.indicator_id is None:
+            raise ValidationError({'value': _('A measurement requires an indicator.')})
+        lower, upper = self.indicator.value_bounds
+        if not lower <= self.value <= upper:
+            raise ValidationError({'value': ValidationError(
+                _('Enter a value between %(lower)s and %(upper)s (inclusive).'),
+                code='out_of_bounds', params={'lower': lower, 'upper': upper},
+            )})
+
+    def clean(self):
+        super().clean()
+        self.validate_value_bounds()
+
+    def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
+        # Validate and derive status before auditlog's pre_save receiver.
+        self.validate_value_bounds()
+        self.status_update()
+        if update_fields is not None:
+            update_fields = set(update_fields)
+            if update_fields & {'value', 'indicator', 'indicator_id'}:
+                update_fields.add('status')
+        return super().save(
+            force_insert=force_insert, force_update=force_update,
+            using=using, update_fields=update_fields,
+        )
+
     def status_update(self):
-        """ This function update the status depending on the value and the Indicator configuration """
-        if not self.value:
+        """Update the status according to the indicator thresholds."""
+        if self.value is None or self.indicator_id is None:
             return
 
         if self.indicator.best > self.indicator.worst :

@@ -6,7 +6,7 @@ from .services.audit import update_with_audit
 
 
 class SanityCheckMiddleware:
-    last_checked = datetime.today()             # Class variable to store the last check date
+    last_checked = None
 
     def __init__(self, get_response):
         self.get_response = get_response

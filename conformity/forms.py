@@ -2,8 +2,9 @@
 Forms for front-end editing of Models instance
 """
 
-from django.forms import ModelForm, FileField, ClearableFileInput, BooleanField
+from django.forms import ModelForm, FileField, ClearableFileInput, BooleanField, ModelChoiceField
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 from .models import Conformity, Organization, Audit, Finding, Action, Control, ControlPoint, Indicator, IndicatorPoint
 
 
@@ -41,11 +42,24 @@ class FindingForm(ModelForm):
     class Meta:
         model = Finding
         fields = ['name', 'audit', 'severity', 'short_description', 'description', 'observation', 'recommendation', 'reference', 'cvss', 'cvss_descriptor', 'archived']
-        # TODO add a preselection and a disable selector for 'audit' field when the form is open from an audit.
-
     def __init__(self, *args, **kwargs):
         super(FindingForm, self).__init__(*args, **kwargs)
 
+        # Only lock the audit when creating a finding from an audit page.
+        # Existing findings carry their audit in initial too and must stay editable.
+        if self.instance.pk is None and self.initial.get('audit'):
+            audit = self.initial['audit']
+            self.fields['audit'].disabled = True
+            if isinstance(audit, Audit):
+                self.initial['organization'] = audit.organization
+            self.fields['organization'] = ModelChoiceField(
+                queryset=Organization.objects.all(), required=False, disabled=True
+            )
+            self.order_fields([
+                'name', 'audit', 'organization', 'severity', 'short_description',
+                'description', 'observation', 'recommendation', 'reference', 'cvss',
+                'cvss_descriptor', 'archived',
+            ])
         if self.get_initial_for_field(self.fields['archived'], 'archived') :
             for key, value in self.fields.items():
                 self.fields[key].disabled = True
@@ -54,12 +68,42 @@ class FindingForm(ModelForm):
 class ActionForm(ModelForm):
     class Meta:
         model = Action
-        fields = '__all__'
+        fields = [
+            'title', 'create_date', 'update_date', 'owner', 'status', 'status_comment',
+            'reference', 'active', 'description', 'organization', 'associated_conformity',
+            'associated_findings', 'associated_controlPoints', 'plan_start_date',
+            'plan_end_date', 'plan_comment', 'implement_start_date', 'implement_end_date',
+            'implement_status', 'implement_comment', 'control_date', 'control_comment',
+            'control_user',
+        ]
 
     def __init__(self, *args, **kwargs):
         super(ActionForm, self).__init__(*args, **kwargs)
         self.fields['create_date'].disabled = True
         self.fields['update_date'].disabled = True
+
+        organization = self.initial.get('organization')
+        if organization is None:
+            organization_id = self.instance.organization_id
+        else:
+            organization_id = getattr(organization, 'pk', organization)
+        if organization_id:
+            self.fields['associated_conformity'].queryset = Conformity.objects.filter(
+                organization_id=organization_id
+            )
+            self.fields['associated_findings'].queryset = Finding.objects.filter(
+                audit__organization_id=organization_id
+            )
+            self.fields['associated_controlPoints'].queryset = ControlPoint.objects.filter(
+                control__organization_id=organization_id
+            )
+
+        if self.instance.pk is None and self.initial.get('associated_findings'):
+            self.fields['associated_findings'].disabled = True
+        if self.instance.pk is None and self.initial.get('associated_conformity'):
+            self.fields['associated_conformity'].disabled = True
+        if self.instance.pk is None and 'organization' in self.initial:
+            self.fields['organization'].disabled = True
 
         generic_fields = ['title', 'owner', 'status', 'status_comment', 'reference']
         analyse_fields = ['organization', 'associated_conformity', 'associated_findings', 'associated_controlPoints', 'description']
@@ -85,6 +129,25 @@ class ControlForm(ModelForm):
     class Meta:
         model = Control
         fields = ['title', 'description', 'organization', 'conformity', 'control', 'frequency', 'level']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        organization = self.initial.get('organization')
+        if organization is None:
+            organization_id = self.instance.organization_id
+        else:
+            organization_id = getattr(organization, 'pk', organization)
+        if organization_id:
+            self.fields['conformity'].queryset = Conformity.objects.filter(
+                organization_id=organization_id
+            )
+            self.fields['control'].queryset = Control.objects.filter(
+                organization_id=organization_id
+            )
+        if self.instance.pk is None and 'organization' in self.initial:
+            self.fields['organization'].disabled = True
+        if self.instance.pk is None and self.initial.get('conformity'):
+            self.fields['conformity'].disabled = True
 
 
 class ControlPointForm(ModelForm):
@@ -119,10 +182,22 @@ class ControlPointForm(ModelForm):
 class IndicatorForm(ModelForm):
     class Meta:
         model = Indicator
-        fields = '__all__'
+        fields = [
+            'name', 'goal', 'source', 'formula', 'worst', 'best', 'warning', 'critical',
+            'responsible', 'organization', 'conformity', 'frequency',
+        ]
 
 
 class IndicatorPointForm(ModelForm):
     class Meta:
         model = IndicatorPoint
         fields = ['value', 'comment', 'attachment']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.indicator_id is not None:
+            lower, upper = self.instance.indicator.value_bounds
+            self.fields['value'].widget.attrs.update(min=lower, max=upper, step=1)
+            self.fields['value'].help_text = _(
+                'Enter an integer between %(lower)s and %(upper)s (inclusive).'
+            ) % {'lower': lower, 'upper': upper}
