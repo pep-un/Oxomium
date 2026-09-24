@@ -27,8 +27,7 @@ A wiki page detail the process of [installation](https://github.com/pep-un/Oxomi
 ## Docker image
 
 Release tags matching `v*` publish `docker.io/pepun/oxomium` with semantic-version
-tags and `latest`. Configure the repository secrets `DOCKERHUB_USERNAME` and
-`DOCKERHUB_TOKEN` with Docker Hub credentials that can publish the image.
+tags and `latest`.
 
 Pull and run the latest image with:
 
