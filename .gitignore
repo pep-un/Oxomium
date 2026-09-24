@@ -10,6 +10,9 @@ attachments/
 # Backup files # 
 *.bak 
 
+# VIM File
+*.swp
+
 # If you are using PyCharm # 
 .idea
 
