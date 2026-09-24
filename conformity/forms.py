@@ -73,6 +73,8 @@ class ActionForm(ModelForm):
 
         if self.instance.pk is None and self.initial.get('associated_findings'):
             self.fields['associated_findings'].disabled = True
+        if self.instance.pk is None and self.initial.get('associated_conformity'):
+            self.fields['associated_conformity'].disabled = True
 
         generic_fields = ['title', 'owner', 'status', 'status_comment', 'reference']
         analyse_fields = ['organization', 'associated_conformity', 'associated_findings', 'associated_controlPoints', 'description']
@@ -98,6 +100,11 @@ class ControlForm(ModelForm):
     class Meta:
         model = Control
         fields = ['title', 'description', 'organization', 'conformity', 'control', 'frequency', 'level']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.pk is None and self.initial.get('conformity'):
+            self.fields['conformity'].disabled = True
 
 
 class ControlPointForm(ModelForm):

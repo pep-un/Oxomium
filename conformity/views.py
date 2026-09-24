@@ -347,6 +347,14 @@ class ActionCreateView(LoginRequiredMixin, CreateView):
             except ValueError as exc:
                 raise Http404('Invalid finding identifier.') from exc
             initial['associated_findings'] = [get_object_or_404(Finding, pk=finding_id)]
+
+        conformity_id = self.request.GET.get('conformity')
+        if conformity_id:
+            try:
+                conformity_id = int(conformity_id)
+            except ValueError as exc:
+                raise Http404('Invalid conformity identifier.') from exc
+            initial['associated_conformity'] = [get_object_or_404(Conformity, pk=conformity_id)]
         return initial
 
 
@@ -387,6 +395,17 @@ class ActionExportView(LoginRequiredMixin, View):
 class ControlCreateView(LoginRequiredMixin, CreateView):
     model = Control
     form_class = ControlForm
+
+    def get_initial(self):
+        initial = super().get_initial()
+        conformity_id = self.request.GET.get('conformity')
+        if conformity_id:
+            try:
+                conformity_id = int(conformity_id)
+            except ValueError as exc:
+                raise Http404('Invalid conformity identifier.') from exc
+            initial['conformity'] = [get_object_or_404(Conformity, pk=conformity_id)]
+        return initial
 
 
 class ControlIndexView(LoginRequiredMixin, FilterView):
