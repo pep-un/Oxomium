@@ -15,7 +15,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip setuptools \
     && pip install --no-cache-dir -r requirements.txt \
     && python -m pip uninstall --yes msgpack setuptools \
-    && find /usr/local/lib/python3.12/site-packages -maxdepth 1 -type d \
+    && find /usr/local/lib/python3.12/site-packages -maxdepth 1 \
         \( -name 'msgpack*' -o -name 'setuptools*' -o -name 'wheel*' \) \
         -exec rm -rf {} + \
     && python -m pip install --no-cache-dir --force-reinstall \
