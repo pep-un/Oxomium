@@ -169,9 +169,12 @@ CONSTANCE_CONFIG = {
         "Bonjour !",
         "This text will be printed on the login page",
         str),
+    'TABLE_PAGE_SIZE': (
+        20,
+        "Number of rows displayed per page in rich tables",
+        int),
 }
 
 
 # Rich table configuration
 DJANGO_TABLES2_TEMPLATE = 'django_tables2/bootstrap5-responsive.html'
-OXOMIUM_TABLE_PAGE_SIZE = config('OXOMIUM_TABLE_PAGE_SIZE', default=20, cast=int)
