@@ -8,7 +8,7 @@ from django.db.models import Prefetch
 from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import UpdateView, CreateView
 from django_filters.views import FilterView
-from django.conf import settings
+from constance import config as constance_config
 from django_tables2.views import SingleTableMixin
 from auditlog.models import LogEntry
 from import_export.formats import base_formats
@@ -32,7 +32,7 @@ class RichTableMixin(SingleTableMixin):
     """Common pagination policy for filtered rich tables."""
 
     def get_paginate_by(self, table_data):
-        return settings.OXOMIUM_TABLE_PAGE_SIZE
+        return constance_config.TABLE_PAGE_SIZE
 
 
 #
