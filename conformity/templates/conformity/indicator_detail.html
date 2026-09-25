@@ -27,14 +27,17 @@
                 Thresholds
             </div>
                 <ul class="list-group list-group-flush">
-                    {% if indicator.worst < indicator.critical and indicator.critical < indicator.warning and indicator.warning < indicator.best %}
-                        <li class="list-group-item"><span class="text-danger">Critical: </span> {{ indicator.worst }} &le; value &le; {{ indicator.critical }}</li>
-                        <li class="list-group-item"><span class="text-warning">Warning: </span> {{ indicator.critical }} &lt; value &le; {{ indicator.warning }}</li>
-                        <li class="list-group-item"><span class="text-success">Compliant: </span> {{ indicator.warning }} &lt; value &le; {{ indicator.best }}</li>
-                    {% elif indicator.worst > indicator.critical and indicator.critical > indicator.warning and indicator.warning > indicator.best %}
-                        <li class="list-group-item"><span class="text-danger">Critical: </span> {{ indicator.worst }} &ge; value &ge; {{ indicator.critical }}</li>
-                        <li class="list-group-item"><span class="text-warning">Warning: </span> {{ indicator.critical }} &gt; value &ge; {{ indicator.warning }}</li>
-                        <li class="list-group-item"><span class="text-success">Compliant: </span> {{ indicator.warning }} &gt; value &ge; {{ indicator.best }}</li>
+                    {% if indicator.threshold_ranges %}
+                        <li class="list-group-item text-body-secondary">
+                            {% if indicator.best > indicator.worst %}↑{% else %}↓{% endif %}
+                            {{ indicator.direction_label }}
+                        </li>
+                        {% for range in indicator.threshold_ranges %}
+                            <li class="list-group-item">
+                                <span class="{{ range.css_class }}">{{ range.label }}: </span>
+                                {{ range.start }} – {{ range.end }}
+                            </li>
+                        {% endfor %}
                     {% else %}
                         <li class="list-group-item text-danger">Invalid threshold configuration</li>
                     {% endif %}
