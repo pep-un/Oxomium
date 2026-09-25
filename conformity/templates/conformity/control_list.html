@@ -145,61 +145,9 @@
 
 </div>
 
-<table class="table table-striped align-middle">
-  <caption class="d-none">List of all controls</caption>
-    <thead>
-        <tr>
-            <th class="col-4">Titre</th>
-            <th class="text-center col-1">Level</th>
-            <th class="text-center col-1">Frequency</th>
-            <th class="text-center col">Associated Requirements</th>
-            <th class="text-center col-1">Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-    {% for control in control_list %}
-        <tr>
-            <td class="col">
-                {{ control.title }}
-            </td>
-            <td class="col text-center">
-                {{ control.get_level_display }}
-            </td>
-            <td class="col text-center">
-                {{ control.get_frequency_display }}
-            </td>
-            <td class="col ">
-                {% for conformity in control.conformity.all %}
-                    <span class="badge rounded-pill text-bg-secondary"
-                        title="{{ conformity.requirement.title }}">
-                        {{ conformity.requirement.full_path }}
-                    </span>
-                {% endfor %}
-            </td>
-            <td class="col text-center">
-                <div class="btn-group">
-                    <a href="{% url 'conformity:controlpoint_index' %}?control={{control.id}}"
-                        class="btn btn-primary btn-sm bi bi-eye" title="View">
-                        <span class="visually-hidden">View control points</span>
-                    </a>
-                    <a href="{% url 'conformity:control_form' control.id %}"
-                       class="btn btn-sm btn-warning bi bi-pencil-square" title="Edit">
-                        <span class="visually-hidden">Edit control</span>
-                    </a>
-                </div>
-            </td>
-        </tr>
-    {% empty %}
-        <div class="alert alert-info" role="alert">
-            No control recorded.
-        </div>
-        <tr><td colspan="6">No data to display</td></tr>
-    {% endfor %}
-        <tr><td colspan="6" class="text-center">
-            <br />
-            <a href="{% url 'conformity:control_create' %}">
-                <button type="button" class="btn btn-success bi bi-plus-circle"> Register a new control</button>
-            </a>
-        </td></tr>
-</table>
+{% render_table table %}
+
+<div class="text-center mt-3">
+    <a href="{% url 'conformity:control_create' %}" class="btn btn-success bi bi-plus-circle">Register a new control</a>
+</div>
 {% endblock %}
