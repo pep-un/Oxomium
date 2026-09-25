@@ -304,9 +304,14 @@ class IndicatorThresholdValidationTests(TestCase):
         indicator.refresh_from_db()
         self.assertEqual((indicator.critical, indicator.warning), (20, 80))
 
-    def test_indicator_form_orders_thresholds_from_worst_to_best(self):
-        form = IndicatorForm(instance=self.make_indicator())
-        fields = list(form.fields)
+    def test_indicator_update_form_orders_thresholds_from_worst_to_best(self):
+        indicator = self.make_indicator()
+        indicator.save()
+        response = self.client.get(
+            reverse('conformity:indicator_form', args=[indicator.pk])
+        )
+        self.assertEqual(response.status_code, 200)
+        fields = list(response.context['form'].fields)
         self.assertEqual(
             fields[4:8],
             ['worst', 'critical', 'warning', 'best'],
@@ -371,16 +376,16 @@ class IndicatorThresholdValidationTests(TestCase):
         configurations = (
             (
                 {'worst': 0, 'critical': 20, 'warning': 80, 'best': 100},
-                '↑ Higher is better',
+                ('↑', 'Higher is better'),
                 ('0 – 20', '21 – 80', '81 – 100'),
             ),
             (
                 {'worst': 100, 'critical': 80, 'warning': 20, 'best': 0},
-                '↓ Lower is better',
+                ('↓', 'Lower is better'),
                 ('100 – 80', '79 – 20', '19 – 0'),
             ),
         )
-        for index, (thresholds, direction, ranges) in enumerate(configurations):
+        for index, (thresholds, direction_parts, ranges) in enumerate(configurations):
             with self.subTest(**thresholds):
                 indicator = self.make_indicator(**thresholds)
                 indicator.name = f'Range display indicator {index}'
@@ -402,6 +407,7 @@ class IndicatorThresholdValidationTests(TestCase):
                     )
                     response = self.client.get(url)
                     self.assertEqual(response.status_code, 200)
-                    self.assertContains(response, direction)
+                    for direction_part in direction_parts:
+                        self.assertContains(response, direction_part)
                     for expected_range in ranges:
                         self.assertContains(response, expected_range)
