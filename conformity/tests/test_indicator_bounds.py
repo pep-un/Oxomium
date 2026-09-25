@@ -231,19 +231,12 @@ class IndicatorThresholdValidationTests(TestCase):
             **values,
         )
 
-    def test_valid_ascending_descending_and_equal_adjacent_thresholds(self):
+    def test_valid_ascending_and_descending_thresholds(self):
         configurations = (
-            # Strictly ordered ascending / descending scales.
             {'worst': 0, 'critical': 20, 'warning': 80, 'best': 100},
             {'worst': 100, 'critical': 80, 'warning': 20, 'best': 0},
-            # Every allowed adjacent equality, ascending.
-            {'worst': 0, 'critical': 0, 'warning': 80, 'best': 100},
-            {'worst': 0, 'critical': 20, 'warning': 20, 'best': 100},
-            {'worst': 0, 'critical': 20, 'warning': 100, 'best': 100},
-            # Every allowed adjacent equality, descending.
-            {'worst': 100, 'critical': 100, 'warning': 20, 'best': 0},
-            {'worst': 100, 'critical': 80, 'warning': 80, 'best': 0},
-            {'worst': 100, 'critical': 80, 'warning': 0, 'best': 0},
+            {'worst': -10, 'critical': -8, 'warning': -4, 'best': -2},
+            {'worst': -2, 'critical': -4, 'warning': -8, 'best': -10},
         )
         for index, thresholds in enumerate(configurations):
             with self.subTest(**thresholds):
@@ -252,6 +245,25 @@ class IndicatorThresholdValidationTests(TestCase):
                 indicator.full_clean()
                 indicator.save()
                 self.assertIsNotNone(indicator.pk)
+
+    def test_equal_adjacent_thresholds_are_rejected(self):
+        configurations = (
+            # Ascending: equality at each adjacent boundary.
+            {'worst': 0, 'critical': 0, 'warning': 80, 'best': 100},
+            {'worst': 0, 'critical': 20, 'warning': 20, 'best': 100},
+            {'worst': 0, 'critical': 20, 'warning': 100, 'best': 100},
+            # Descending: equality at each adjacent boundary.
+            {'worst': 100, 'critical': 100, 'warning': 20, 'best': 0},
+            {'worst': 100, 'critical': 80, 'warning': 80, 'best': 0},
+            {'worst': 100, 'critical': 80, 'warning': 0, 'best': 0},
+        )
+        for thresholds in configurations:
+            with self.subTest(**thresholds):
+                indicator = self.make_indicator(**thresholds)
+                with self.assertRaises(ValidationError) as caught:
+                    indicator.full_clean()
+                self.assertIn('critical', caught.exception.message_dict)
+                self.assertIn('warning', caught.exception.message_dict)
 
     def test_equal_outer_bounds_are_rejected(self):
         indicator = self.make_indicator(
@@ -347,15 +359,29 @@ class IndicatorThresholdValidationTests(TestCase):
         indicator.full_clean()
         indicator.save()
 
-    def test_equal_intermediate_threshold_has_deterministic_status(self):
-        indicator = self.make_indicator(critical=20, warning=20)
-        indicator.save()
-        IndicatorPoint.objects.filter(indicator=indicator).delete()
-        today = timezone.localdate()
-        point = IndicatorPoint.objects.create(
-            indicator=indicator,
-            period_start_date=today,
-            period_end_date=today + timedelta(days=1),
-            value=20,
+    def test_threshold_ranges_are_displayed_without_overlap(self):
+        configurations = (
+            (
+                {'worst': 0, 'critical': 20, 'warning': 80, 'best': 100},
+                ('0 &le; value &le; 20', '20 &lt; value &le; 80', '80 &lt; value &le; 100'),
+            ),
+            (
+                {'worst': 100, 'critical': 80, 'warning': 20, 'best': 0},
+                ('100 &ge; value &ge; 80', '80 &gt; value &ge; 20', '20 &gt; value &ge; 0'),
+            ),
         )
-        self.assertEqual(point.status, IndicatorPoint.Status.CRITICAL)
+        for index, (thresholds, ranges) in enumerate(configurations):
+            with self.subTest(**thresholds):
+                indicator = self.make_indicator(**thresholds)
+                indicator.name = f'Range display indicator {index}'
+                indicator.save()
+                for name in ('conformity:indicator_index', 'conformity:indicator_detail'):
+                    url = (
+                        reverse(name, args=[indicator.pk])
+                        if name.endswith('detail')
+                        else reverse(name)
+                    )
+                    response = self.client.get(url)
+                    self.assertEqual(response.status_code, 200)
+                    for expected_range in ranges:
+                        self.assertContains(response, expected_range)
