@@ -8,7 +8,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from conformity.forms import IndicatorPointForm
+from conformity.forms import IndicatorForm, IndicatorPointForm
 from conformity.models import Indicator, IndicatorPoint
 
 
@@ -213,3 +213,142 @@ class IndicatorBoundsTests(TestCase):
         self.assertIn('value', response.context['adminform'].form.errors)
         self.point.refresh_from_db()
         self.assertIsNone(self.point.value)
+
+
+class IndicatorThresholdValidationTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(username='threshold_user')
+        self.client.force_login(self.user)
+
+    def make_indicator(self, **thresholds):
+        values = {
+            'worst': 0, 'critical': 20, 'warning': 80, 'best': 100,
+        }
+        values.update(thresholds)
+        return Indicator(
+            name='Threshold indicator',
+            responsible=self.user,
+            **values,
+        )
+
+    def test_valid_ascending_descending_and_equal_adjacent_thresholds(self):
+        configurations = (
+            {'worst': 0, 'critical': 20, 'warning': 80, 'best': 100},
+            {'worst': 100, 'critical': 80, 'warning': 20, 'best': 0},
+            {'worst': 0, 'critical': 20, 'warning': 20, 'best': 100},
+            {'worst': 100, 'critical': 80, 'warning': 80, 'best': 0},
+        )
+        for index, thresholds in enumerate(configurations):
+            with self.subTest(**thresholds):
+                indicator = self.make_indicator(**thresholds)
+                indicator.name = f'Valid threshold indicator {index}'
+                indicator.full_clean()
+                indicator.save()
+                self.assertIsNotNone(indicator.pk)
+
+    def test_equal_outer_bounds_are_rejected(self):
+        indicator = self.make_indicator(
+            worst=5, critical=5, warning=5, best=5,
+        )
+        with self.assertRaises(ValidationError) as caught:
+            indicator.full_clean()
+        self.assertIn('best', caught.exception.message_dict)
+
+        with self.assertRaises(ValidationError):
+            indicator.save()
+        self.assertIsNone(indicator.pk)
+
+    def test_mixed_or_out_of_range_threshold_order_is_rejected(self):
+        invalid_configurations = (
+            {'worst': 0, 'critical': 90, 'warning': 20, 'best': 100},
+            {'worst': 100, 'critical': 20, 'warning': 80, 'best': 0},
+            {'worst': 0, 'critical': -1, 'warning': 80, 'best': 100},
+            {'worst': 100, 'critical': 80, 'warning': -1, 'best': 0},
+        )
+        for thresholds in invalid_configurations:
+            with self.subTest(**thresholds):
+                indicator = self.make_indicator(**thresholds)
+                with self.assertRaises(ValidationError) as caught:
+                    indicator.full_clean()
+                self.assertIn('critical', caught.exception.message_dict)
+                self.assertIn('warning', caught.exception.message_dict)
+
+    def test_direct_save_rejects_invalid_changes_without_persisting_them(self):
+        indicator = self.make_indicator()
+        indicator.save()
+        indicator.critical = 90
+        indicator.warning = 20
+
+        with self.assertRaises(ValidationError):
+            indicator.save()
+
+        indicator.refresh_from_db()
+        self.assertEqual((indicator.critical, indicator.warning), (20, 80))
+
+    def test_indicator_form_surfaces_threshold_errors(self):
+        form = IndicatorForm(data={
+            'name': 'Invalid form indicator',
+            'responsible': self.user.pk,
+            'worst': 0,
+            'critical': 90,
+            'warning': 20,
+            'best': 100,
+            'frequency': Indicator.Frequency.YEARLY,
+        })
+        self.assertFalse(form.is_valid())
+        self.assertIn('critical', form.errors)
+        self.assertIn('warning', form.errors)
+
+    def test_admin_surfaces_threshold_errors(self):
+        self.user.is_staff = self.user.is_superuser = True
+        self.user.save()
+        indicator = self.make_indicator()
+        indicator.save()
+
+        response = self.client.post(
+            reverse('admin:conformity_indicator_change', args=[indicator.pk]),
+            {
+                'name': indicator.name,
+                'goal': '',
+                'source': '',
+                'formula': '',
+                'worst': 0,
+                'best': 100,
+                'warning': 20,
+                'critical': 90,
+                'responsible': self.user.pk,
+                'organization': '',
+                'conformity': [],
+                'frequency': Indicator.Frequency.YEARLY,
+                '_save': 'Save',
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        errors = response.context['adminform'].form.errors
+        self.assertIn('critical', errors)
+        self.assertIn('warning', errors)
+        indicator.refresh_from_db()
+        self.assertEqual((indicator.critical, indicator.warning), (20, 80))
+
+    def test_default_thresholds_are_valid(self):
+        indicator = Indicator(name='Default threshold indicator', responsible=self.user)
+        self.assertEqual(
+            (indicator.worst, indicator.critical, indicator.warning, indicator.best),
+            (0, 20, 80, 100),
+        )
+        indicator.full_clean()
+        indicator.save()
+
+    def test_equal_intermediate_threshold_has_deterministic_status(self):
+        indicator = self.make_indicator(critical=20, warning=20)
+        indicator.save()
+        IndicatorPoint.objects.filter(indicator=indicator).delete()
+        today = timezone.localdate()
+        point = IndicatorPoint.objects.create(
+            indicator=indicator,
+            period_start_date=today,
+            period_end_date=today + timedelta(days=1),
+            value=20,
+        )
+        self.assertEqual(point.status, IndicatorPoint.Status.CRITICAL)
