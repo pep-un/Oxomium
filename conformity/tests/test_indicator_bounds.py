@@ -304,6 +304,14 @@ class IndicatorThresholdValidationTests(TestCase):
         indicator.refresh_from_db()
         self.assertEqual((indicator.critical, indicator.warning), (20, 80))
 
+    def test_indicator_form_orders_thresholds_from_worst_to_best(self):
+        form = IndicatorForm(instance=self.make_indicator())
+        fields = list(form.fields)
+        self.assertEqual(
+            fields[4:8],
+            ['worst', 'critical', 'warning', 'best'],
+        )
+
     def test_indicator_form_surfaces_threshold_errors(self):
         form = IndicatorForm(data={
             'name': 'Invalid form indicator',
@@ -363,18 +371,29 @@ class IndicatorThresholdValidationTests(TestCase):
         configurations = (
             (
                 {'worst': 0, 'critical': 20, 'warning': 80, 'best': 100},
-                ('0 &le; value &le; 20', '20 &lt; value &le; 80', '80 &lt; value &le; 100'),
+                '↑ Higher is better',
+                ('0 – 20', '21 – 80', '81 – 100'),
             ),
             (
                 {'worst': 100, 'critical': 80, 'warning': 20, 'best': 0},
-                ('100 &ge; value &ge; 80', '80 &gt; value &ge; 20', '20 &gt; value &ge; 0'),
+                '↓ Lower is better',
+                ('100 – 80', '79 – 20', '19 – 0'),
             ),
         )
-        for index, (thresholds, ranges) in enumerate(configurations):
+        for index, (thresholds, direction, ranges) in enumerate(configurations):
             with self.subTest(**thresholds):
                 indicator = self.make_indicator(**thresholds)
                 indicator.name = f'Range display indicator {index}'
                 indicator.save()
+
+                self.assertEqual(
+                    tuple((item['start'], item['end']) for item in indicator.threshold_ranges),
+                    tuple(
+                        tuple(int(value) for value in range_text.split(' – '))
+                        for range_text in ranges
+                    ),
+                )
+
                 for name in ('conformity:indicator_index', 'conformity:indicator_detail'):
                     url = (
                         reverse(name, args=[indicator.pk])
@@ -383,5 +402,6 @@ class IndicatorThresholdValidationTests(TestCase):
                     )
                     response = self.client.get(url)
                     self.assertEqual(response.status_code, 200)
+                    self.assertContains(response, direction)
                     for expected_range in ranges:
                         self.assertContains(response, expected_range)
