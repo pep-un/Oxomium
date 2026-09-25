@@ -913,6 +913,40 @@ class Indicator (models.Model):
         """Inclusive numeric bounds, also for indicators where lower is better."""
         return min(self.worst, self.best), max(self.worst, self.best)
 
+    @property
+    def direction_label(self):
+        """Human-readable direction of improvement for the indicator."""
+        if self.best > self.worst:
+            return _('Higher is better')
+        if self.best < self.worst:
+            return _('Lower is better')
+        return _('Invalid scale')
+
+    @property
+    def threshold_ranges(self):
+        """Inclusive integer ranges matching IndicatorPoint.status_update()."""
+        ascending = self.worst < self.critical < self.warning < self.best
+        descending = self.worst > self.critical > self.warning > self.best
+        if ascending:
+            ranges = (
+                (_('Critical'), 'text-danger', self.worst, self.critical),
+                (_('Warning'), 'text-warning', self.critical + 1, self.warning),
+                (_('Compliant'), 'text-success', self.warning + 1, self.best),
+            )
+        elif descending:
+            ranges = (
+                (_('Critical'), 'text-danger', self.worst, self.critical),
+                (_('Warning'), 'text-warning', self.critical - 1, self.warning),
+                (_('Compliant'), 'text-success', self.warning - 1, self.best),
+            )
+        else:
+            return ()
+
+        return tuple(
+            {'label': label, 'css_class': css_class, 'start': start, 'end': end}
+            for label, css_class, start, end in ranges
+        )
+
     def validate_thresholds(self):
         """Validate one monotonic threshold scale from worst to best.
 
