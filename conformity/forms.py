@@ -183,7 +183,7 @@ class IndicatorForm(ModelForm):
     class Meta:
         model = Indicator
         fields = [
-            'name', 'goal', 'source', 'formula', 'worst', 'best', 'warning', 'critical',
+            'name', 'goal', 'source', 'formula', 'worst', 'critical', 'warning', 'best',
             'responsible', 'organization', 'conformity', 'frequency',
         ]
 

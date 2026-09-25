@@ -894,7 +894,7 @@ class Indicator (models.Model):
     worst = models.IntegerField(default=0)
     best = models.IntegerField(default=100)
     warning = models.IntegerField(default=80)
-    critical = models.IntegerField(default=90)
+    critical = models.IntegerField(default=20)
     responsible = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, blank=True, null=True)
     conformity = models.ManyToManyField(Conformity, blank=True)
@@ -912,6 +912,96 @@ class Indicator (models.Model):
     def value_bounds(self):
         """Inclusive numeric bounds, also for indicators where lower is better."""
         return min(self.worst, self.best), max(self.worst, self.best)
+
+    @property
+    def direction_label(self):
+        """Human-readable direction of improvement for the indicator."""
+        if self.best > self.worst:
+            return _('Higher is better')
+        if self.best < self.worst:
+            return _('Lower is better')
+        return _('Invalid scale')
+
+    @property
+    def threshold_ranges(self):
+        """Inclusive integer ranges matching IndicatorPoint.status_update()."""
+        ascending = self.worst < self.critical < self.warning < self.best
+        descending = self.worst > self.critical > self.warning > self.best
+        if ascending:
+            ranges = (
+                (_('Critical'), 'text-danger', self.worst, self.critical),
+                (_('Warning'), 'text-warning', self.critical + 1, self.warning),
+                (_('Compliant'), 'text-success', self.warning + 1, self.best),
+            )
+        elif descending:
+            ranges = (
+                (_('Critical'), 'text-danger', self.worst, self.critical),
+                (_('Warning'), 'text-warning', self.critical - 1, self.warning),
+                (_('Compliant'), 'text-success', self.warning - 1, self.best),
+            )
+        else:
+            return ()
+
+        return tuple(
+            {'label': label, 'css_class': css_class, 'start': start, 'end': end}
+            for label, css_class, start, end in ranges
+        )
+
+    def validate_thresholds(self):
+        """Validate one monotonic threshold scale from worst to best.
+
+        The outer bounds must differ so the scale has a direction. Thresholds
+        are strictly ordered so every status band is reachable and the UI
+        cannot display overlapping ranges.
+        """
+        field_names = ('worst', 'critical', 'warning', 'best')
+        cleaned = {}
+        field_errors = {}
+        for field_name in field_names:
+            try:
+                cleaned[field_name] = self._meta.get_field(field_name).clean(
+                    getattr(self, field_name), self
+                )
+            except ValidationError as exc:
+                field_errors[field_name] = exc
+
+        if field_errors:
+            raise ValidationError(field_errors)
+
+        for field_name, value in cleaned.items():
+            setattr(self, field_name, value)
+
+        if self.worst == self.best:
+            raise ValidationError({
+                'best': ValidationError(
+                    _('Best must differ from worst to define the scale direction.'),
+                    code='equal_bounds',
+                ),
+            })
+
+        if self.best > self.worst:
+            valid = self.worst < self.critical < self.warning < self.best
+            expected = 'worst < critical < warning < best'
+        else:
+            valid = self.worst > self.critical > self.warning > self.best
+            expected = 'worst > critical > warning > best'
+
+        if not valid:
+            error = ValidationError(
+                _('Thresholds must follow %(expected)s.'),
+                code='invalid_threshold_order',
+                params={'expected': expected},
+            )
+            raise ValidationError({'critical': error, 'warning': error})
+
+    def clean(self):
+        super().clean()
+        self.validate_thresholds()
+
+    def save(self, *args, **kwargs):
+        # ModelForm/admin call clean(); direct model writes need the same guard.
+        self.validate_thresholds()
+        return super().save(*args, **kwargs)
 
     def indicator_point_init(self):
         IndicatorPoint.objects.filter(indicator=self).filter(Q(status='SCHD') | Q(status='TOBE')).delete()
