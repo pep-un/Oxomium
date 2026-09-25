@@ -233,10 +233,17 @@ class IndicatorThresholdValidationTests(TestCase):
 
     def test_valid_ascending_descending_and_equal_adjacent_thresholds(self):
         configurations = (
+            # Strictly ordered ascending / descending scales.
             {'worst': 0, 'critical': 20, 'warning': 80, 'best': 100},
             {'worst': 100, 'critical': 80, 'warning': 20, 'best': 0},
+            # Every allowed adjacent equality, ascending.
+            {'worst': 0, 'critical': 0, 'warning': 80, 'best': 100},
             {'worst': 0, 'critical': 20, 'warning': 20, 'best': 100},
+            {'worst': 0, 'critical': 20, 'warning': 100, 'best': 100},
+            # Every allowed adjacent equality, descending.
+            {'worst': 100, 'critical': 100, 'warning': 20, 'best': 0},
             {'worst': 100, 'critical': 80, 'warning': 80, 'best': 0},
+            {'worst': 100, 'critical': 80, 'warning': 0, 'best': 0},
         )
         for index, thresholds in enumerate(configurations):
             with self.subTest(**thresholds):
