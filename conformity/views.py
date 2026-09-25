@@ -51,11 +51,11 @@ class HomeView(LoginRequiredMixin, TemplateView):
         context['conformity_list'] = Conformity.objects.with_related().roots()
         context['audit_list'] = Audit.objects.all()
         context['action_list'] = Action.objects.all()
-        context['my_action'] = Action.objects.filter(owner=user).filter(active=True).order_by('status')[:50]
+        context['my_action'] = Action.objects.filter(owner=user).filter(active=True).order_by('status')[:constance_config.HOME_ITEMS_LIMIT]
         context['my_conformity'] = Conformity.objects.with_related().filter(
             responsible=user
         ).order_by('status')[:50]
-        context['cp_list'] = ControlPoint.objects.filter(status='TOBE').order_by('period_end_date')[:50]
+        context['cp_list'] = ControlPoint.objects.filter(status='TOBE').order_by('period_end_date')[:constance_config.HOME_ITEMS_LIMIT]
 
         return context
 
@@ -589,7 +589,9 @@ class AuditLogDetailView(LoginRequiredMixin, FilterView):
     model = LogEntry
     template_name = 'auditlog/logentry_list.html'
     filterset_class = AuditLogFilter
-    paginate_by = 20
+
+    def get_paginate_by(self, queryset):
+        return constance_config.TABLE_PAGE_SIZE
 
     def get_queryset(self, **kwargs):
         return LogEntry.objects.all().order_by('-timestamp')
