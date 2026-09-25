@@ -45,68 +45,7 @@
             {% include "includes/filter_row.html" %}
         {% endif %}
 
-        <table class="table table-striped align-middle w-100">
-            <caption class="d-none">List of all control points</caption>
-            <thead>
-                <tr>
-                    <th class="">Start Date</th>
-                    <th class="">End Date</th>
-                    <th class="">Owner</th>
-                    <th class="">Status</th>
-                    <th class="text-center">Edit</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for cp in controlpoint_list %}
-                    <tr>
-                        <td class="col">
-                            {{ cp.period_start_date | date:'d-M-Y'}}
-                        </td>
-                        <td class="col">
-                            {{ cp.period_end_date | date:'d-M-Y'}}
-                        </td>
-                        <td class="col">
-                            {{ cp.control_user| default_if_none:"" }}
-                        </td>
-                        <td class="col">
-                            {% if cp.status == "SCHD" %}
-                                <i class="bi bi-hexagon text-secondary"></i>
-                            {% endif %}
-                            {% if cp.status == "TOBE" %}
-                                <i class="bi bi-hexagon-fill text-secondary"></i>
-                            {% endif %}
-                            {% if cp.status == "NOK" %}
-                                <i class="bi bi-hexagon-fill text-danger"></i>
-                            {% endif %}
-                            {% if cp.status == "OK" %}
-                                <i class="bi bi-hexagon-fill text-success"></i>
-                            {% endif %}
-                            {% if cp.status == "MISS" %}
-                                <i class="bi bi-hexagon text-danger"></i>
-                            {% endif %}
-                            {{ cp.get_status_display }}
-                        </td>
-                        <td class="col text-center">
-                            <a href="{% url 'conformity:controlpoint_form' cp.id %}" >
-                                {% if cp.status == "TOBE" %}
-                                <i class="bi bi-pencil-square"></i>
-                                {% else %}
-                                <i class="bi bi-eye"></i>
-                                {% endif %}
-                            </a>
-                        </td>
-                    </tr>
-                {% empty %}
-                    <div class="alert alert-info" role="alert">
-                        No control recorded.
-                    </div>
-                    <tr><td colspan="9">No data to display</td></tr>
-                {% endfor %}
-                <tr><td colspan="9" class="text-center">
-                <br />
-                </td></tr>
-            </tbody>
-        </table>
+        {% render_table table %}
     </div>
   </div>
 </div>
