@@ -916,9 +916,9 @@ class Indicator (models.Model):
     def validate_thresholds(self):
         """Validate one monotonic threshold scale from worst to best.
 
-        The outer bounds must differ so the scale has a direction. Adjacent
-        intermediate thresholds may be equal; status_update() already gives
-        boundary values deterministic precedence.
+        The outer bounds must differ so the scale has a direction. Thresholds
+        are strictly ordered so every status band is reachable and the UI
+        cannot display overlapping ranges.
         """
         field_names = ('worst', 'critical', 'warning', 'best')
         cleaned = {}
@@ -946,11 +946,11 @@ class Indicator (models.Model):
             })
 
         if self.best > self.worst:
-            valid = self.worst <= self.critical <= self.warning <= self.best
-            expected = 'worst <= critical <= warning <= best'
+            valid = self.worst < self.critical < self.warning < self.best
+            expected = 'worst < critical < warning < best'
         else:
-            valid = self.worst >= self.critical >= self.warning >= self.best
-            expected = 'worst >= critical >= warning >= best'
+            valid = self.worst > self.critical > self.warning > self.best
+            expected = 'worst > critical > warning > best'
 
         if not valid:
             error = ValidationError(
