@@ -1,4 +1,5 @@
 {% extends "conformity/main.html" %}
+{% load render_table from django_tables2 %}
 
 {% block header %}
     <h1 class="h1 bi bi-card-checklist"> Frameworks</h1>
@@ -9,35 +10,7 @@
 {% include "includes/filter_row.html" %}
 
     {% if framework_list %}
-        <table class="table table-striped align-middle">
-            <caption class="d-none">List of frameworks</caption>
-            <thead class="">
-                <tr>
-                    <th scope="col">Framework</th>
-                    <th class="col-1 text-center">Version</th>
-                    <th class="col-1 text-center">Language</th>
-                    <th class="col-2">Published by</th>
-                    <th class="col-2">Type</th>
-                    <th class="col text-center">Requirements</th>
-                </tr>
-            </thead>
-            <tbody>
-        {% for framework in framework_list %}
-            <tr>
-                <td>{{ framework.name }}</td>
-                <td class="text-center">{{ framework.version | default:'-'}}</td>
-                <td class="text-center">{{ framework.get_language_display }}</td>
-                <td>{{ framework.publish_by }}</td>
-                <td>{{ framework.get_type }}</td>
-                <td class="text-center">
-                    <a href="{% url 'conformity:framework_detail' framework.id %}">
-                        <button type="button" class="btn btn-outline-primary btn-sm w-75">{{ framework.get_requirements_number }} Requirements</button>
-                    </a>
-                </td>
-            </tr>
-        {% endfor %}
-            </tbody>
-        </table>
+        {% render_table table %}
     {% else %}
         <div class="alert alert-info" role="alert">
           No framework registered.
