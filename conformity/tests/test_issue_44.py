@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
-from django.test import TestCase, override_settings
+from django.test import TestCase
+from constance.test import override_config
 from django.urls import reverse
 
 from conformity.models import Organization
@@ -59,7 +60,7 @@ class RichTableInteractionTests(TestCase):
         self.assertContains(response, "sort=-name")
         self.assertContains(response, "name=Alpha")
 
-    @override_settings(OXOMIUM_TABLE_PAGE_SIZE=7)
+    @override_config(TABLE_PAGE_SIZE=7)
     def test_page_size_is_configurable(self):
         response = self.client.get(reverse("conformity:organization_index"))
 
