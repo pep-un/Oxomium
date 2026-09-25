@@ -8,6 +8,8 @@ from django.db.models import Prefetch
 from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import UpdateView, CreateView
 from django_filters.views import FilterView
+from django.conf import settings
+from django_tables2.views import SingleTableMixin
 from auditlog.models import LogEntry
 from import_export.formats import base_formats
 from mptt.templatetags.mptt_tags import cache_tree_children
@@ -19,11 +21,19 @@ from .forms import ConformityForm, AuditForm, FindingForm, ActionForm, Organizat
 from .models import Organization, Framework, Conformity, Audit, Action, Finding, Control, ControlPoint, Attachment, \
     Requirement, Indicator, IndicatorPoint
 from .resources import ConformityResource, ControlResource, FindingResource, ActionResource, IndicatorResource, AuditResource
+from .tables import ActionTable, AuditTable, ConformityTable, ControlTable, ControlPointTable, FindingTable, FrameworkTable, OrganizationTable
 
 from django.views import View
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 import os
+
+class RichTableMixin(SingleTableMixin):
+    """Common pagination policy for filtered rich tables."""
+
+    def get_paginate_by(self, table_data):
+        return settings.OXOMIUM_TABLE_PAGE_SIZE
+
 
 #
 # Home
@@ -53,8 +63,9 @@ class HomeView(LoginRequiredMixin, TemplateView):
 #
 # Audit
 #
-class AuditIndexView(LoginRequiredMixin, FilterView):
+class AuditIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     model = Audit
+    table_class = AuditTable
     filterset_class = AuditFilter
     template_name = "conformity/audit_list.html"
 
@@ -112,8 +123,9 @@ class AuditExportView(LoginRequiredMixin, View):
 #
 # Findings
 #
-class FindingIndexView(LoginRequiredMixin, FilterView):
+class FindingIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     model = Finding
+    table_class = FindingTable
     filterset_class = FindingFilter
     template_name = "conformity/finding_list.html"
 
@@ -172,8 +184,9 @@ class FindingExportView(LoginRequiredMixin, View):
 #
 
 
-class OrganizationIndexView(LoginRequiredMixin, FilterView):
+class OrganizationIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     model = Organization
+    table_class = OrganizationTable
     filterset_class = OrganizationFilter
     template_name = "conformity/organization_list.html"
 
@@ -212,8 +225,9 @@ class OrganizationCreateView(LoginRequiredMixin, OrganizationFrameworkFormMixin,
 #
 
 
-class FrameworkIndexView(LoginRequiredMixin, FilterView):
+class FrameworkIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     model = Framework
+    table_class = FrameworkTable
     filterset_class = FrameworkFilter
     template_name = 'conformity/framework_list.html'
 
@@ -232,8 +246,9 @@ class FrameworkDetailView(LoginRequiredMixin, DetailView):
 #
 # Conformity
 #
-class ConformityIndexView(LoginRequiredMixin, FilterView):
+class ConformityIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     model = Conformity
+    table_class = ConformityTable
     template_name = 'conformity/conformity_list.html'
     filterset_class = ConformityFilter
 
@@ -357,8 +372,9 @@ class ActionCreateView(LoginRequiredMixin, CreateView):
         return initial
 
 
-class ActionIndexView(LoginRequiredMixin, FilterView):
+class ActionIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     model = Action
+    table_class = ActionTable
     filterset_class = ActionFilter
     template_name = "conformity/action_list.html"
 
@@ -409,8 +425,9 @@ class ControlCreateView(LoginRequiredMixin, CreateView):
         return initial
 
 
-class ControlIndexView(LoginRequiredMixin, FilterView):
+class ControlIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     model = Control
+    table_class = ControlTable
     filterset_class = ControlFilter
     template_name = 'conformity/control_list.html'
 
@@ -439,8 +456,9 @@ class ControlDetailView(LoginRequiredMixin, DetailView):
     template_name = 'conformity/control_detail_list.html'
 
 
-class ControlPointIndexView(LoginRequiredMixin, FilterView):
+class ControlPointIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     model = ControlPoint
+    table_class = ControlPointTable
     filterset_class = ControlPointFilter
     template_name = 'conformity/controlpoint_list.html'
 
