@@ -26,8 +26,10 @@ A wiki page detail the process of [installation](https://github.com/pep-un/Oxomi
 
 ## Docker image and releases
 
-Publishing a GitHub Release for a `v<semver>` tag builds the exact released tag and publishes
-`docker.io/pepun/oxomium` with semantic-version tags and `latest`.
+Publishing a GitHub Release for an Oxomium version tag (`v<major>.<minor>` or
+`v<major>.<minor>.<patch>`) builds the exact released tag and publishes
+`docker.io/pepun/oxomium` with the version, major line, and `latest` tags. A
+three-component version also publishes its `major.minor` tag.
 
 The release workflow also attaches these files to the GitHub Release:
 
@@ -43,7 +45,9 @@ publication, or release-upload failure fails the release workflow.
 
 Docker Hub publication requires the `DOCKERHUB_USERNAME` and
 `DOCKERHUB_TOKEN` repository secrets. The workflow uses the GitHub token only
-to attach artifacts to the release.
+to attach artifacts to the release. A failed or interrupted publication can be
+retried from the `Publish release artifacts` workflow with `Run workflow` and
+the existing release tag; the release does not need to be recreated.
 
 Pull and run the latest image with:
 
