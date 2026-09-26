@@ -279,7 +279,7 @@ class SharedUxComponentsTests(BaseDataMixin, TestCase):
         response = self.client.get(reverse("conformity:finding_index"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "No active findings are available.")
-        self.assertNotContains(response, "> Create</a>", html=True)
+        self.assertNotContains(response, "> Create</a>")
 
     def test_indicator_cards_use_shared_empty_state(self):
         response = self.client.get(reverse("conformity:indicator_index"))
