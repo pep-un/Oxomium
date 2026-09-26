@@ -7,6 +7,8 @@
 {% endblock %}
 
 {% block content %}
+{% breadcrumb "Organizations" %}
+
 {% route_url 'conformity:organization_create' as create_url %}
 {% include "includes/list_toolbar.html" with create_url=create_url filter=filter item_count=object_list|length %}
 {% render_table table %}
