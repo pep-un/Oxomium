@@ -43,7 +43,7 @@ class UserFeedbackMixin:
         response = super().form_valid(form)
         action = "updated" if is_update else "created"
         label = self.model._meta.verbose_name.capitalize()
-        messages.success(self.request, f"{label} {action} successfully.")
+        messages.success(self.request, f"{label} {action} successfully.", fail_silently=True)
         return response
 
 
@@ -345,7 +345,7 @@ class ConformityUpdateView(LoginRequiredMixin, UserFeedbackMixin, UpdateView):
                         organization=self.object.organization,
                         requirement=nxt_req,
                     )
-                    messages.success(self.request, "Conformity updated successfully.")
+                    messages.success(self.request, "Conformity updated successfully.", fail_silently=True)
                     return redirect("conformity:conformity_form", nxt.pk)
                 except Conformity.DoesNotExist:
                     pass
