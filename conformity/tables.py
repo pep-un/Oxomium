@@ -123,18 +123,12 @@ class ActionTable(BaseRichTable):
     owner = tables.Column(default="", attrs={"td": {"class": "text-nowrap"}})
     status = StatusColumn(ACTION_STATUS_STYLES)
     update_date = tables.DateColumn(verbose_name="Last update", format="d-M-Y")
-    association = tables.TemplateColumn(
+    association = tables.Column(
+        accessor="association_count",
         verbose_name="Association",
-        template_code="""
-            {% with associated=record.get_associated %}
-                {% if associated %}
-                    <span class="badge text-bg-secondary">{{ associated|length }} associated</span>
-                {% endif %}
-            {% endwith %}
-        """,
-        orderable=False,
         attrs=CENTER,
     )
+
     actions = tables.TemplateColumn(
         verbose_name="Reference",
         template_code="""
@@ -161,9 +155,8 @@ class AuditTable(BaseRichTable):
     start_date = tables.DateColumn(verbose_name="Start", format="d-M-Y")
     end_date = tables.DateColumn(verbose_name="End", format="d-M-Y")
     findings = tables.Column(
-        accessor="get_findings_number",
+        accessor="findings_count",
         verbose_name="Findings",
-        orderable=False,
         attrs=CENTER,
     )
     actions = EditColumn("conformity:audit_form", "audit")
@@ -195,21 +188,17 @@ class FindingTable(BaseRichTable):
         order_by=("audit__name",),
         attrs=CENTER,
     )
-    associated_actions = tables.TemplateColumn(
+    associated_actions = tables.Column(
+        accessor="actions_count",
         verbose_name="Associated actions",
-        template_code="""
-            {% with actions=record.get_action %}
-                {% if actions %}
-                    <a href="{% url 'conformity:action_index' %}?associated_findings={{ record.id }}"
-                       class="badge text-bg-secondary text-decoration-none">
-                        {{ actions|length }} associated actions
-                    </a>
-                {% endif %}
-            {% endwith %}
-        """,
-        orderable=False,
+        linkify=lambda record: (
+            f'{reverse("conformity:action_index")}?associated_findings={record.pk}'
+            if record.actions_count
+            else None
+        ),
         attrs=CENTER,
     )
+
     actions = EditColumn("conformity:finding_form", "finding")
 
     class Meta(BaseRichTable.Meta):

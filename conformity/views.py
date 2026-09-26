@@ -4,7 +4,7 @@ View of the Conformity Module
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
-from django.db.models import Prefetch
+from django.db.models import Count, Prefetch
 from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import UpdateView, CreateView
 from django_filters.views import FilterView
@@ -69,6 +69,11 @@ class AuditIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     filterset_class = AuditFilter
     template_name = "conformity/audit_list.html"
 
+    def get_queryset(self):
+        return Audit.objects.annotate(
+            findings_count=Count("finding", distinct=True),
+        )
+
 
 class AuditDetailView(LoginRequiredMixin, DetailView):
     model = Audit
@@ -131,7 +136,12 @@ class FindingIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
 
 
     def get_queryset(self, **kwargs):
-        return Finding.objects.filter(severity__in=["CRT","MAJ","MIN", "OBS"]).filter(archived=False)
+        return (
+            Finding.objects
+            .filter(severity__in=["CRT", "MAJ", "MIN", "OBS"], archived=False)
+            .select_related("audit")
+            .annotate(actions_count=Count("actions", distinct=True))
+        )
 
 
 class FindingCreateView(LoginRequiredMixin, CreateView):
@@ -189,6 +199,9 @@ class OrganizationIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     table_class = OrganizationTable
     filterset_class = OrganizationFilter
     template_name = "conformity/organization_list.html"
+
+    def get_queryset(self):
+        return Organization.objects.prefetch_related("applicable_frameworks")
 
 
 class OrganizationDetailView(LoginRequiredMixin, DetailView):
@@ -378,6 +391,19 @@ class ActionIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     filterset_class = ActionFilter
     template_name = "conformity/action_list.html"
 
+    def get_queryset(self):
+        return (
+            Action.objects
+            .select_related("owner")
+            .annotate(
+                association_count=(
+                    Count("associated_conformity", distinct=True)
+                    + Count("associated_findings", distinct=True)
+                    + Count("associated_controlPoints", distinct=True)
+                )
+            )
+        )
+
 
 class ActionUpdateView(LoginRequiredMixin, UpdateView):
     model = Action
@@ -431,6 +457,9 @@ class ControlIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     filterset_class = ControlFilter
     template_name = 'conformity/control_list.html'
 
+    def get_queryset(self):
+        return Control.objects.prefetch_related("conformity__requirement")
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['controlpoint_list'] = ControlPoint.objects.all()
@@ -461,6 +490,9 @@ class ControlPointIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     table_class = ControlPointTable
     filterset_class = ControlPointFilter
     template_name = 'conformity/controlpoint_list.html'
+
+    def get_queryset(self):
+        return ControlPoint.objects.select_related("control_user")
 
 
 class ControlPointUpdateView(LoginRequiredMixin, UpdateView):
