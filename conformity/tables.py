@@ -7,7 +7,7 @@ from .models import Action, Audit, Conformity, Control, ControlPoint, Finding, F
 
 
 CENTER = {"cell": {"class": "text-center"}}
-PRIMARY_LINK = {"a": {"class": "btn btn-sm btn-outline-primary"}}
+PRIMARY_LINK = {"a": {"class": "link-dark fw-semibold text-decoration-none"}}
 
 
 class StatusColumn(tables.Column):
@@ -217,7 +217,7 @@ class FindingTable(BaseRichTable):
         attrs={
             "th": {"class": "text-center"},
             "td": {"class": "text-center"},
-            "a": {"class": "btn btn-sm btn-outline-primary"},
+            "a": {"class": "link-dark fw-semibold text-decoration-none"},
         },
     )
     short_description = tables.Column(verbose_name="Description")
@@ -320,7 +320,7 @@ class ConformityTable(BaseRichTable):
         verbose_name="Conformity",
         template_code="""
             <a href="{% url 'conformity:conformity_detail_index' record.organization.id record.requirement.framework.id %}"
-               class="btn btn-sm btn-outline-primary">
+               class="link-dark fw-semibold text-decoration-none">
                 {{ record.organization }} / {{ record.requirement.framework }}
             </a>
         """,
