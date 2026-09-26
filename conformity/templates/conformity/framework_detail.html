@@ -1,4 +1,5 @@
 {% extends "conformity/main.html" %}
+{% load ui_tags %}
 
 {% block header %}
 <h1 class="h2 bi bi-card-checklist"> Framework: {{ framework.name }}</h1>
@@ -11,6 +12,9 @@
 {% endblock %}
 
 {% block content %}
+{% route_url 'conformity:framework_index' as list_url %}
+{% breadcrumb "Frameworks" list_url framework.name %}
+
     {% for requirement in framework.get_requirements %}
             {% if requirement.level == 1 %}
                 <h2><button class="btn btn-sm rounded-pill border border-0 text-bg-primary" disabled>{{ requirement.full_path }}</button> {{ requirement.title }}</h2>
