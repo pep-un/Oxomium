@@ -24,7 +24,7 @@
         <h2 class="h4 bi bi-paperclip"> Attachments </h2>
         <ul>
             {% for attachment in organization.attachment.all %}
-            <li><a href="{% url 'conformity:attachment_download' attachment.id %}"> {{ attachment }} </a></li>
+            <li>{% include "includes/attachment_link.html" with attachment=attachment %}</li>
             {% empty %}
             <i>No attachment</i>
             {% endfor %}
