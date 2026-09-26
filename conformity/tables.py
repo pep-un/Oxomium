@@ -105,12 +105,14 @@ class ActionTable(BaseRichTable):
     actions = tables.TemplateColumn(
         verbose_name="Reference",
         template_code="""
-            {% if record.reference %}
-                <a href="{{ record.reference }}" target="_blank" rel="noopener"
-                   class="btn btn-sm btn-secondary bi bi-box-arrow-up-right" title="ITSM Reference link">
-                    <span class="visually-hidden">Open ITSM reference</span>
-                </a>
-            {% endif %}
+            <div class="d-grid gap-1">
+                {% if record.reference %}
+                    <a href="{{ record.reference }}" target="_blank" rel="noopener"
+                       class="btn btn-sm btn-light w-75 mx-auto" title="ITSM Reference link">
+                        ITSM Ticket <i class="bi bi-box-arrow-up-right ms-1" aria-hidden="true"></i>
+                    </a>
+                {% endif %}
+            </div>
         """,
         orderable=False,
         attrs=CENTER,

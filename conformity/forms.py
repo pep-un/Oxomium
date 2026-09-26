@@ -121,9 +121,17 @@ class ActionForm(ModelForm):
             Action.Status.ENDED.value: generic_fields,
         }
 
+        current_status = self.get_initial_for_field(self.fields['status'], 'status')
         for key, value in self.fields.items():
-            if key not in fields_by_status[self.get_initial_for_field(self.fields['status'], 'status')]:
+            if key not in fields_by_status[current_status]:
                 self.fields[key].disabled = True
+
+        if (
+            self.instance.pk is not None
+            and current_status != Action.Status.ANALYSING.value
+            and self.instance.priority is not None
+        ):
+            self.fields['priority'].disabled = True
 
 
 class ControlForm(ModelForm):

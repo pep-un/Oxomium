@@ -214,6 +214,50 @@ class ActionPriorityFormTests(TestCase):
         action.refresh_from_db()
         self.assertEqual(action.status, Action.Status.ANALYSING)
 
+    def test_configured_priority_is_locked_after_analysis(self):
+        action = Action.objects.create(
+            title="Locked priority",
+            organization=self.organization,
+            status=Action.Status.PLANNING,
+            priority=Action.Priority.PRIORITY_2,
+        )
+
+        response = self.client.get(
+            reverse("conformity:action_form", args=[action.pk]),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["form"].fields["priority"].disabled)
+
+    def test_priority_remains_editable_during_analysis(self):
+        action = Action.objects.create(
+            title="Analysis priority",
+            organization=self.organization,
+            status=Action.Status.ANALYSING,
+            priority=Action.Priority.PRIORITY_2,
+        )
+
+        response = self.client.get(
+            reverse("conformity:action_form", args=[action.pk]),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context["form"].fields["priority"].disabled)
+
+    def test_legacy_null_priority_remains_editable_after_analysis(self):
+        action = Action.objects.create(
+            title="Legacy null priority",
+            organization=self.organization,
+            status=Action.Status.PLANNING,
+        )
+
+        response = self.client.get(
+            reverse("conformity:action_form", args=[action.pk]),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context["form"].fields["priority"].disabled)
+
 
 class ActionPriorityRenderingTests(TestCase):
     def test_priority_column_is_part_of_rich_action_table(self):
@@ -361,3 +405,20 @@ class ActionPriorityListTests(TestCase):
         self.assertContains(response, "text-bg-info")
         self.assertContains(response, "Not defined")
         self.assertContains(response, "text-bg-light")
+
+    def test_external_reference_uses_light_association_style(self):
+        action = Action.objects.create(
+            title="ITSM linked",
+            organization=self.organization,
+            status=Action.Status.ANALYSING,
+            reference="https://itsm.example.test/tickets/42",
+        )
+
+        response = self.client.get(reverse("conformity:action_index"))
+
+        self.assertContains(response, action.reference)
+        self.assertContains(response, 'target="_blank"')
+        self.assertContains(response, 'rel="noopener"')
+        self.assertContains(response, 'class="btn btn-sm btn-light w-75 mx-auto"')
+        self.assertContains(response, "ITSM Ticket")
+        self.assertContains(response, 'class="bi bi-box-arrow-up-right ms-1"')
