@@ -244,6 +244,9 @@ class FrameworkIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     filterset_class = FrameworkFilter
     template_name = 'conformity/framework_list.html'
 
+    def get_queryset(self):
+        return Framework.objects.prefetch_related("requirements")
+
 
 class FrameworkDetailView(LoginRequiredMixin, DetailView):
     model = Framework

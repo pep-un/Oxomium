@@ -91,9 +91,8 @@ class Framework(models.Model):
                 .order_by('tree_id', 'lft'))
 
     def get_requirements_number(self):
-        """return the number of leaf Requirement related to the Framework"""
-        from django.db.models import F
-        return Requirement.objects.filter(framework=self, rght=F('lft') + 1).count()
+        """Return the number of leaf requirements in this framework."""
+        return sum(1 for requirement in self.requirements.all() if requirement.is_leaf_node())
 
     def get_root_requirement(self):
         """return the root Requirement of the Framework"""
