@@ -25,6 +25,27 @@ class StatusColumn(tables.Column):
         )
 
 
+class BadgeColumn(tables.Column):
+    """Render a value as a Bootstrap badge using a record attribute for styling."""
+
+    def __init__(self, styles, style_accessor, **kwargs):
+        self.styles = styles
+        self.style_accessor = style_accessor
+        super().__init__(empty_values=(), **kwargs)
+
+    def render(self, value, record):
+        style = self.styles.get(
+            getattr(record, self.style_accessor),
+            "text-bg-secondary",
+        )
+        display = value if value not in (None, "") else self.default
+        return format_html(
+            '<span class="badge rounded-pill {}">{}</span>',
+            style,
+            display,
+        )
+
+
 ACTION_STATUS_STYLES = {
     Action.Status.ANALYSING: ("bi-hexagon-fill", "text-info"),
     Action.Status.PLANNING: ("bi-hexagon-fill", "text-primary"),
@@ -41,6 +62,15 @@ CONTROL_POINT_STATUS_STYLES = {
     ControlPoint.Status.NONCOMPLIANT: ("bi-hexagon-fill", "text-danger"),
     ControlPoint.Status.COMPLIANT: ("bi-hexagon-fill", "text-success"),
     ControlPoint.Status.MISSED: ("bi-hexagon", "text-danger"),
+}
+
+FINDING_SEVERITY_STYLES = {
+    "CRT": "text-bg-dark",
+    "MAJ": "text-bg-danger",
+    "MIN": "text-bg-warning",
+    "OBS": "text-bg-info",
+    "OTHER": "text-bg-secondary",
+    "POS": "text-bg-success",
 }
 
 
@@ -133,19 +163,11 @@ class AuditTable(BaseRichTable):
 class FindingTable(BaseRichTable):
     name = tables.Column(verbose_name="Finding", default="Unnamed finding", attrs=CENTER)
     short_description = tables.Column(verbose_name="Description")
-    cvss = tables.TemplateColumn(
+    cvss = BadgeColumn(
+        FINDING_SEVERITY_STYLES,
+        style_accessor="severity",
         verbose_name="CVSS",
-        template_code="""
-            {% if record.severity == "CRT" %}<span class="badge rounded-pill text-bg-dark">
-            {% elif record.severity == "MAJ" %}<span class="badge rounded-pill text-bg-danger">
-            {% elif record.severity == "MIN" %}<span class="badge rounded-pill text-bg-warning">
-            {% elif record.severity == "OBS" %}<span class="badge rounded-pill text-bg-info">
-            {% elif record.severity == "OTHER" %}<span class="badge rounded-pill text-bg-secondary">
-            {% elif record.severity == "POS" %}<span class="badge rounded-pill text-bg-success">
-            {% else %}<span class="badge rounded-pill text-bg-secondary">{% endif %}
-                {{ record.cvss|default:"-" }}
-            </span>
-        """,
+        default="-",
         order_by=("cvss",),
         attrs=CENTER,
     )
