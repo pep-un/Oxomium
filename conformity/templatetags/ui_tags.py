@@ -24,6 +24,14 @@ def breadcrumb(*items):
     return {"breadcrumb_items": breadcrumb_items}
 
 
+@register.filter
+def has_active_filters(querydict):
+    if not querydict:
+        return False
+    ignored = {"page", "sort"}
+    return any(key not in ignored and value for key, value in querydict.items())
+
+
 @register.simple_tag
 def route_url(route_name, *args):
     return reverse(route_name, args=args)
