@@ -1,5 +1,7 @@
 import django_tables2 as tables
+from django.urls import reverse
 from django.utils.html import format_html
+from django_tables2.utils import A
 
 from .models import Action, Audit, Conformity, Control, ControlPoint, Finding, Framework, Organization
 
@@ -46,6 +48,34 @@ class BadgeColumn(tables.Column):
         )
 
 
+class EditColumn(tables.Column):
+    """Compact, consistent edit action used by rich tables."""
+
+    def __init__(self, viewname, label, **kwargs):
+        self.label = label
+        attrs = {
+            "cell": {"class": "text-center"},
+            "a": {
+                "class": "btn btn-sm btn-warning bi bi-pencil-square",
+                "title": f"Edit {label}",
+            },
+        }
+        super().__init__(
+            accessor="pk",
+            empty_values=(),
+            orderable=False,
+            linkify=(viewname, [A("pk")]),
+            attrs=attrs,
+            **kwargs,
+        )
+
+    def render(self, value):
+        return format_html(
+            '<span class="visually-hidden">Edit {}</span>',
+            self.label,
+        )
+
+
 ACTION_STATUS_STYLES = {
     Action.Status.ANALYSING: ("bi-hexagon-fill", "text-info"),
     Action.Status.PLANNING: ("bi-hexagon-fill", "text-primary"),
@@ -86,7 +116,10 @@ class BaseRichTable(tables.Table):
 
 
 class ActionTable(BaseRichTable):
-    title = tables.Column(verbose_name="Title")
+    title = tables.Column(
+        verbose_name="Title",
+        linkify=("conformity:action_form", [A("pk")]),
+    )
     owner = tables.Column(default="", attrs={"td": {"class": "text-nowrap"}})
     status = StatusColumn(ACTION_STATUS_STYLES)
     update_date = tables.DateColumn(verbose_name="Last update", format="d-M-Y")
@@ -103,19 +136,14 @@ class ActionTable(BaseRichTable):
         attrs=CENTER,
     )
     actions = tables.TemplateColumn(
+        verbose_name="Reference",
         template_code="""
-            <div class="btn-group">
-                <a href="{% url 'conformity:action_form' record.id %}"
-                   class="btn btn-sm btn-warning bi bi-pencil-square" title="Edit">
-                    <span class="visually-hidden">Edit action</span>
+            {% if record.reference %}
+                <a href="{{ record.reference }}" target="_blank" rel="noopener"
+                   class="btn btn-sm btn-secondary bi bi-box-arrow-up-right" title="ITSM Reference link">
+                    <span class="visually-hidden">Open ITSM reference</span>
                 </a>
-                {% if record.reference %}
-                    <a href="{{ record.reference }}"
-                       class="btn btn-sm btn-secondary bi bi-box-arrow-up-right" title="ITSM Reference link">
-                        <span class="visually-hidden">Open ITSM reference</span>
-                    </a>
-                {% endif %}
-            </div>
+            {% endif %}
         """,
         orderable=False,
         attrs=CENTER,
@@ -127,7 +155,7 @@ class ActionTable(BaseRichTable):
 
 
 class AuditTable(BaseRichTable):
-    name = tables.Column()
+    name = tables.Column(linkify=("conformity:audit_detail", [A("pk")]))
     auditor = tables.Column()
     type = tables.Column(accessor="get_type_display", verbose_name="Type", order_by=("type",))
     start_date = tables.DateColumn(verbose_name="Start", format="d-M-Y")
@@ -138,22 +166,7 @@ class AuditTable(BaseRichTable):
         orderable=False,
         attrs=CENTER,
     )
-    actions = tables.TemplateColumn(
-        template_code="""
-            <div class="btn-group">
-                <a href="{% url 'conformity:audit_detail' record.id %}"
-                   class="btn btn-sm btn-primary bi bi-eye" title="View">
-                    <span class="visually-hidden">View audit</span>
-                </a>
-                <a href="{% url 'conformity:audit_form' record.id %}"
-                   class="btn btn-sm btn-warning bi bi-pencil-square" title="Edit">
-                    <span class="visually-hidden">Edit audit</span>
-                </a>
-            </div>
-        """,
-        orderable=False,
-        attrs=CENTER,
-    )
+    actions = EditColumn("conformity:audit_form", "audit")
 
     class Meta(BaseRichTable.Meta):
         model = Audit
@@ -161,7 +174,12 @@ class AuditTable(BaseRichTable):
 
 
 class FindingTable(BaseRichTable):
-    name = tables.Column(verbose_name="Finding", default="Unnamed finding", attrs=CENTER)
+    name = tables.Column(
+        verbose_name="Finding",
+        default="Unnamed finding",
+        linkify=("conformity:finding_detail", [A("pk")]),
+        attrs=CENTER,
+    )
     short_description = tables.Column(verbose_name="Description")
     cvss = BadgeColumn(
         FINDING_SEVERITY_STYLES,
@@ -171,12 +189,9 @@ class FindingTable(BaseRichTable):
         order_by=("cvss",),
         attrs=CENTER,
     )
-    audit = tables.TemplateColumn(
+    audit = tables.Column(
         verbose_name="Audit campaign",
-        template_code="""
-            <a href="{% url 'conformity:audit_detail' record.audit.id %}"
-               class="btn btn-outline-primary btn-sm">{{ record.audit }}</a>
-        """,
+        linkify=("conformity:audit_detail", [A("audit__pk")]),
         order_by=("audit__name",),
         attrs=CENTER,
     )
@@ -193,23 +208,7 @@ class FindingTable(BaseRichTable):
         orderable=False,
         attrs=CENTER,
     )
-    actions = tables.TemplateColumn(
-        verbose_name="Action",
-        template_code="""
-            <div class="btn-group">
-                <a href="{% url 'conformity:finding_detail' record.id %}"
-                   class="btn btn-sm btn-primary bi bi-eye" title="View">
-                    <span class="visually-hidden">View finding</span>
-                </a>
-                <a href="{% url 'conformity:finding_form' record.id %}"
-                   class="btn btn-sm btn-warning bi bi-pencil-square" title="Edit">
-                    <span class="visually-hidden">Edit finding</span>
-                </a>
-            </div>
-        """,
-        orderable=False,
-        attrs=CENTER,
-    )
+    actions = EditColumn("conformity:finding_form", "finding")
 
     class Meta(BaseRichTable.Meta):
         model = Finding
@@ -217,7 +216,10 @@ class FindingTable(BaseRichTable):
 
 
 class OrganizationTable(BaseRichTable):
-    name = tables.Column(verbose_name="Organization")
+    name = tables.Column(
+        verbose_name="Organization",
+        linkify=("conformity:organization_detail", [A("pk")]),
+    )
     description = tables.TemplateColumn(
         template_code="""
             <p>{{ record.description|linebreaksbr }}</p>
@@ -242,22 +244,7 @@ class OrganizationTable(BaseRichTable):
         orderable=False,
         attrs=CENTER,
     )
-    actions = tables.TemplateColumn(
-        template_code="""
-            <div class="btn-group">
-                <a href="{% url 'conformity:organization_detail' record.id %}"
-                   class="btn btn-sm btn-primary bi bi-eye" title="View">
-                    <span class="visually-hidden">View organization</span>
-                </a>
-                <a href="{% url 'conformity:organization_form' record.id %}"
-                   class="btn btn-sm btn-warning bi bi-pencil-square" title="Edit">
-                    <span class="visually-hidden">Edit organization</span>
-                </a>
-            </div>
-        """,
-        orderable=False,
-        attrs=CENTER,
-    )
+    actions = EditColumn("conformity:organization_form", "organization")
 
     class Meta(BaseRichTable.Meta):
         model = Organization
@@ -265,18 +252,17 @@ class OrganizationTable(BaseRichTable):
 
 
 class FrameworkTable(BaseRichTable):
-    name = tables.Column(verbose_name="Framework")
+    name = tables.Column(
+        verbose_name="Framework",
+        linkify=("conformity:framework_detail", [A("pk")]),
+    )
     version = tables.Column(default="-", attrs=CENTER)
     language = tables.Column(accessor="get_language_display", order_by=("language",), attrs=CENTER)
     publish_by = tables.Column(verbose_name="Published by")
     type = tables.Column(accessor="get_type_display", verbose_name="Type", order_by=("type",))
-    requirements = tables.TemplateColumn(
-        template_code="""
-            <a href="{% url 'conformity:framework_detail' record.id %}"
-               class="btn btn-outline-primary btn-sm">
-                {{ record.get_requirements_number }} requirements
-            </a>
-        """,
+    requirements = tables.Column(
+        accessor="get_requirements_number",
+        verbose_name="Requirements",
         orderable=False,
         attrs=CENTER,
     )
@@ -287,7 +273,12 @@ class FrameworkTable(BaseRichTable):
 
 
 class ConformityTable(BaseRichTable):
-    organization = tables.Column()
+    organization = tables.Column(
+        linkify=(
+            "conformity:conformity_detail_index",
+            [A("organization__pk"), A("requirement__framework__pk")],
+        )
+    )
     framework = tables.Column(accessor="requirement__framework", order_by=("requirement__framework__name",))
     requirements = tables.TemplateColumn(
         verbose_name="Requirements",
@@ -313,24 +304,18 @@ class ConformityTable(BaseRichTable):
         order_by=("status",),
         attrs=CENTER,
     )
-    actions = tables.TemplateColumn(
-        template_code="""
-            <a href="{% url 'conformity:conformity_detail_index' record.organization.id record.requirement.framework.id %}"
-               class="btn btn-sm btn-primary bi bi-eye" title="Detail">
-                <span class="visually-hidden">View conformity</span>
-            </a>
-        """,
-        orderable=False,
-        attrs=CENTER,
-    )
-
     class Meta(BaseRichTable.Meta):
         model = Conformity
         fields = ("organization", "status")
 
 
 class ControlTable(BaseRichTable):
-    title = tables.Column(verbose_name="Title")
+    title = tables.Column(
+        verbose_name="Title",
+        linkify=lambda record: (
+            f'{reverse("conformity:controlpoint_index")}?control={record.pk}'
+        ),
+    )
     level = tables.Column(accessor="get_level_display", order_by=("level",), attrs=CENTER)
     frequency = tables.Column(accessor="get_frequency_display", order_by=("frequency",), attrs=CENTER)
     requirements = tables.TemplateColumn(
@@ -345,22 +330,7 @@ class ControlTable(BaseRichTable):
         """,
         orderable=False,
     )
-    actions = tables.TemplateColumn(
-        template_code="""
-            <div class="btn-group">
-                <a href="{% url 'conformity:controlpoint_index' %}?control={{ record.id }}"
-                   class="btn btn-primary btn-sm bi bi-eye" title="View">
-                    <span class="visually-hidden">View control points</span>
-                </a>
-                <a href="{% url 'conformity:control_form' record.id %}"
-                   class="btn btn-sm btn-warning bi bi-pencil-square" title="Edit">
-                    <span class="visually-hidden">Edit control</span>
-                </a>
-            </div>
-        """,
-        orderable=False,
-        attrs=CENTER,
-    )
+    actions = EditColumn("conformity:control_form", "control")
 
     class Meta(BaseRichTable.Meta):
         model = Control
@@ -368,23 +338,14 @@ class ControlTable(BaseRichTable):
 
 
 class ControlPointTable(BaseRichTable):
-    period_start_date = tables.DateColumn(verbose_name="Start date", format="d-M-Y")
+    period_start_date = tables.DateColumn(
+        verbose_name="Start date",
+        format="d-M-Y",
+        linkify=("conformity:controlpoint_form", [A("pk")]),
+    )
     period_end_date = tables.DateColumn(verbose_name="End date", format="d-M-Y")
     control_user = tables.Column(verbose_name="Owner", default="")
     status = StatusColumn(CONTROL_POINT_STATUS_STYLES)
-    actions = tables.TemplateColumn(
-        verbose_name="Action",
-        template_code="""
-            <a href="{% url 'conformity:controlpoint_form' record.id %}"
-               class="btn btn-sm {% if record.status == 'TOBE' %}btn-warning bi bi-pencil-square{% else %}btn-primary bi bi-eye{% endif %}"
-               title="{% if record.status == 'TOBE' %}Edit{% else %}View{% endif %}">
-                <span class="visually-hidden">{% if record.status == "TOBE" %}Edit{% else %}View{% endif %} control point</span>
-            </a>
-        """,
-        orderable=False,
-        attrs=CENTER,
-    )
-
     class Meta(BaseRichTable.Meta):
         model = ControlPoint
         fields = ("period_start_date", "period_end_date", "control_user", "status")
