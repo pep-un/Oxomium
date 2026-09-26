@@ -2,6 +2,7 @@
 View of the Conformity Module
 """
 
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
 from django.db.models import Count, F, Prefetch
@@ -28,6 +29,26 @@ from django.views import View
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 import os
+
+class UserFeedbackMixin:
+    """Add consistent success feedback for create and update form views.
+
+    Wording convention: "<Object type> created successfully." for creates and
+    "<Object type> updated successfully." for updates. Field validation errors
+    remain inline on the form and are not duplicated as global messages.
+    """
+
+    def get_feedback_action(self):
+        return "updated" if getattr(self.object, "pk", None) else "created"
+
+    def form_valid(self, form):
+        is_update = getattr(form.instance, "pk", None) is not None
+        response = super().form_valid(form)
+        action = "updated" if is_update else "created"
+        label = self.model._meta.verbose_name.capitalize()
+        messages.success(self.request, f"{label} {action} successfully.")
+        return response
+
 
 class RichTableMixin(SingleTableMixin):
     """Common pagination policy for filtered rich tables."""
@@ -80,7 +101,7 @@ class AuditDetailView(LoginRequiredMixin, DetailView):
     model = Audit
 
 
-class AuditUpdateView(LoginRequiredMixin, UpdateView):
+class AuditUpdateView(LoginRequiredMixin, UserFeedbackMixin, UpdateView):
     model = Audit
     form_class = AuditForm
 
@@ -94,7 +115,7 @@ class AuditUpdateView(LoginRequiredMixin, UpdateView):
 
 
 
-class AuditCreateView(LoginRequiredMixin, CreateView):
+class AuditCreateView(LoginRequiredMixin, UserFeedbackMixin, CreateView):
     model = Audit
     form_class = AuditForm
 
@@ -150,7 +171,7 @@ class FindingIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
         )
 
 
-class FindingCreateView(LoginRequiredMixin, CreateView):
+class FindingCreateView(LoginRequiredMixin, UserFeedbackMixin, CreateView):
     model = Finding
     form_class = FindingForm
 
@@ -172,7 +193,7 @@ class FindingDetailView(LoginRequiredMixin, DetailView):
     model = Finding
 
 
-class FindingUpdateView(LoginRequiredMixin, UpdateView):
+class FindingUpdateView(LoginRequiredMixin, UserFeedbackMixin, UpdateView):
     model = Finding
     form_class = FindingForm
 
@@ -230,12 +251,12 @@ class OrganizationFrameworkFormMixin:
         return HttpResponseRedirect(self.get_success_url())
 
 
-class OrganizationUpdateView(LoginRequiredMixin, OrganizationFrameworkFormMixin, UpdateView):
+class OrganizationUpdateView(LoginRequiredMixin, UserFeedbackMixin, OrganizationFrameworkFormMixin, UpdateView):
     model = Organization
     form_class = OrganizationForm
 
 
-class OrganizationCreateView(LoginRequiredMixin, OrganizationFrameworkFormMixin, CreateView):
+class OrganizationCreateView(LoginRequiredMixin, UserFeedbackMixin, OrganizationFrameworkFormMixin, CreateView):
     model = Organization
     form_class = OrganizationForm
 
@@ -298,7 +319,7 @@ class ConformityDetailIndexView(LoginRequiredMixin, ListView):
         return root
 
 
-class ConformityUpdateView(LoginRequiredMixin, UpdateView):
+class ConformityUpdateView(LoginRequiredMixin, UserFeedbackMixin, UpdateView):
     model = Conformity
     form_class = ConformityForm
 
@@ -366,7 +387,7 @@ class ConformityExportView(LoginRequiredMixin, View):
 #
 
 
-class ActionCreateView(LoginRequiredMixin, CreateView):
+class ActionCreateView(LoginRequiredMixin, UserFeedbackMixin, CreateView):
     model = Action
     form_class = ActionForm
 
@@ -421,7 +442,7 @@ class ActionIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
         )
 
 
-class ActionUpdateView(LoginRequiredMixin, UpdateView):
+class ActionUpdateView(LoginRequiredMixin, UserFeedbackMixin, UpdateView):
     model = Action
     form_class = ActionForm
 
@@ -449,7 +470,7 @@ class ActionExportView(LoginRequiredMixin, View):
 #
 
 
-class ControlCreateView(LoginRequiredMixin, CreateView):
+class ControlCreateView(LoginRequiredMixin, UserFeedbackMixin, CreateView):
     model = Control
     form_class = ControlForm
 
@@ -507,7 +528,7 @@ class ControlIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
         return context
 
 
-class ControlUpdateView(LoginRequiredMixin, UpdateView):
+class ControlUpdateView(LoginRequiredMixin, UserFeedbackMixin, UpdateView):
     model = Control
     form_class = ControlForm
 
@@ -527,7 +548,7 @@ class ControlPointIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
         return ControlPoint.objects.select_related("control", "control_user")
 
 
-class ControlPointUpdateView(LoginRequiredMixin, UpdateView):
+class ControlPointUpdateView(LoginRequiredMixin, UserFeedbackMixin, UpdateView):
     model = ControlPoint
     form_class = ControlPointForm
 
@@ -572,7 +593,7 @@ class ControlExportView(LoginRequiredMixin, View):
 #
 
 
-class IndicatorCreateView(LoginRequiredMixin, CreateView):
+class IndicatorCreateView(LoginRequiredMixin, UserFeedbackMixin, CreateView):
     model = Indicator
     form_class = IndicatorForm
 
@@ -595,12 +616,12 @@ class IndicatorIndexView(LoginRequiredMixin, FilterView):
     template_name = 'conformity/indicator_list.html'
 
 
-class IndicatorUpdateView(LoginRequiredMixin, UpdateView):
+class IndicatorUpdateView(LoginRequiredMixin, UserFeedbackMixin, UpdateView):
     model = Indicator
     form_class = IndicatorForm
 
 
-class IndicatorPointUpdateView(LoginRequiredMixin, UpdateView):
+class IndicatorPointUpdateView(LoginRequiredMixin, UserFeedbackMixin, UpdateView):
     model = IndicatorPoint
     form_class = IndicatorPointForm
 
