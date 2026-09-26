@@ -136,11 +136,16 @@ class FindingIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
 
 
     def get_queryset(self, **kwargs):
-        return (
+        queryset = (
             Finding.objects
-            .filter(severity__in=["CRT", "MAJ", "MIN", "OBS"], archived=False)
             .select_related("audit")
             .annotate(actions_count=Count("actions", distinct=True))
+        )
+        if self.request.GET.get("audit") or self.request.GET.get("action"):
+            return queryset
+        return queryset.filter(
+            severity__in=["CRT", "MAJ", "MIN", "OBS"],
+            archived=False,
         )
 
 
