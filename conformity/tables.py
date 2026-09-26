@@ -85,11 +85,11 @@ class EditColumn(tables.Column):
 
 ACTION_STATUS_STYLES = {
     Action.Status.ANALYSING: ("bi-hexagon-fill", "text-info"),
-    Action.Status.PLANNING: ("bi-hexagon-fill", "text-info"),
+    Action.Status.PLANNING: ("bi-hexagon-fill", "text-primary"),
     Action.Status.IMPLEMENTING: ("bi-hexagon-fill", "text-warning"),
     Action.Status.CONTROLLING: ("bi-hexagon-fill", "text-success"),
     Action.Status.ENDED: ("bi-hexagon-fill", ""),
-    Action.Status.FROZEN: ("bi-hexagon", "text-danger"),
+    Action.Status.FROZEN: ("bi-hexagon", "text-info"),
     Action.Status.CANCELED: ("bi-hexagon-fill", "text-danger"),
 }
 

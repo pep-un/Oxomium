@@ -74,8 +74,17 @@ class StatusColumnRenderingTests(TestCase):
 
         html = str(column.render(action.get_status_display(), action))
 
-        self.assertIn("bi-hexagon-fill text-info", html)
+        self.assertIn("bi-hexagon-fill text-primary", html)
         self.assertIn("Planning", html)
+
+    def test_frozen_action_status_uses_info_outline(self):
+        action = Action(status=Action.Status.FROZEN)
+        column = StatusColumn(ACTION_STATUS_STYLES)
+
+        html = str(column.render(action.get_status_display(), action))
+
+        self.assertIn("bi-hexagon text-info", html)
+        self.assertIn("Frozen", html)
 
     def test_control_point_status_uses_raw_choice_value_for_style_lookup(self):
         control_point = ControlPoint(status=ControlPoint.Status.NONCOMPLIANT)
