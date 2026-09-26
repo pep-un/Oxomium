@@ -1,5 +1,6 @@
 {% extends "conformity/main.html" %}
 {% load render_table from django_tables2 %}
+{% load ui_tags %}
 
 {% block header %}
     <h1 class="h1 bi bi-clipboard2-check"> Controls </h1>
@@ -11,143 +12,41 @@
         <div class="row">
             <div class="col">
                 <div class="card">
-                    <div class="card-header">
-                        Inventory
-                    </div>
+                    <div class="card-header">Inventory</div>
                     <ul class="list-group list-group-flush">
-                        <li class="list-group-item">
-                            <span>Control </span> <span class="badge text-bg-secondary float-end w-25">{{ control_list.count | default:"-" }} </span>
-                        </li>
-                        <li class="list-group-item">
-                            <span><i class="bi bi-caret-right-fill"></i> 1st level </span> <span class="badge text-bg-primary float-end w-25">{{ c1st | default:"-" }} </span>
-                        </li>
-                        <li class="list-group-item">
-                            <span><i class="bi bi-caret-right-fill"></i> 2nd level </span> <span class="badge text-bg-success float-end w-25">{{ c2nd | default:"-" }} </span>
-                        </li>
-                        <li class="list-group-item">
-                            <span>Control Point </span> <span class="badge text-bg-secondary float-end w-25">{{ controlpoint_list.count | default:"-" }} </span>
-                        </li>
+                        <li class="list-group-item"><span>Control </span> <span class="badge text-bg-secondary float-end w-25">{{ control_list.count | default:"-" }} </span></li>
+                        <li class="list-group-item"><span><i class="bi bi-caret-right-fill"></i> 1st level </span> <span class="badge text-bg-primary float-end w-25">{{ c1st | default:"-" }} </span></li>
+                        <li class="list-group-item"><span><i class="bi bi-caret-right-fill"></i> 2nd level </span> <span class="badge text-bg-success float-end w-25">{{ c2nd | default:"-" }} </span></li>
+                        <li class="list-group-item"><span>Control Point </span> <span class="badge text-bg-secondary float-end w-25">{{ controlpoint_list.count | default:"-" }} </span></li>
                     </ul>
                 </div>
             </div>
         </div>
     </div>
-
     <div class="col">
         <h3 class="mx-4">Controls to evaluate</h3>
         <div class="row mx-3">
+            {% for frequency, label, count in control_due_cards %}
             <div class="col">
                 <div class="card">
                     <div class="card-body">
-                        <h4 class="text-primary display-5">{{ cp0x }}</h4>
-                        <p class="m-0">All controls</p>
+                        <h4 class="text-primary display-5">{{ count }}</h4>
+                        <p class="m-0">{{ label }}</p>
                     </div>
                     <div class="card-footer text-end">
-                        <a href="{% url 'conformity:controlpoint_index' %}?status=TOBE" class="small">See more ></a>
+                        <a href="{% url 'conformity:controlpoint_index' %}?status=TOBE{% if frequency %}&control__frequency={{ frequency }}{% endif %}" class="small">See more &gt;</a>
                     </div>
                 </div>
             </div>
-            <div class="col">
-                <div class="card">
-                    <div class="card-body">
-                        <h4 class="text-primary display-5">{{ cp1x }}</h4>
-                        <p class="m-0">Yearly</p>
-                    </div>
-                    <div class="card-footer text-end">
-                        <a href="{% url 'conformity:controlpoint_index' %}?status=TOBE&control__frequency=1"  class="small">See more ></a>
-                    </div>
-                </div>
-            </div>
-            <div class="col">
-                <div class="card">
-                    <div class="card-body">
-                        <h4 class="text-primary display-5">{{ cp2x }}</h4>
-                        <p class="m-0">Half-Yearly</p>
-                    </div>
-                    <div class="card-footer text-end">
-                        <a href="{% url 'conformity:controlpoint_index' %}?status=TOBE&control__frequency=2" class="small">See more ></a>
-                    </div>
-                </div>
-            </div>
-            <div class="col">
-                <div class="card">
-                    <div class="card-body">
-                        <h4 class="text-primary display-5">{{ cp4x }}</h4>
-                        <p class="m-0">Quarterly</p>
-                    </div>
-                    <div class="card-footer text-end">
-                        <a href="{% url 'conformity:controlpoint_index' %}?status=TOBE&control__frequency=4" class="small">See more ></a>
-                    </div>
-                </div>
-            </div>
-            <div class="col">
-                <div class="card">
-                    <div class="card-body">
-                        <h4 class="text-primary display-5">{{ cp6x }}</h4>
-                        <p class="m-0">Bimonthly</p>
-                    </div>
-                    <div class="card-footer text-end">
-                        <a href="{% url 'conformity:controlpoint_index' %}?status=TOBE&control__frequency=6" class="small">See more ></a>
-                    </div>
-                </div>
-            </div>
-            <div class="col">
-                <div class="card">
-                    <div class="card-body">
-                        <h4 class="text-primary display-5">{{ cp12x }}</h4>
-                        <p class="m-0">Monthly</p>
-                    </div>
-                    <div class="card-footer text-end">
-                        <a href="{% url 'conformity:controlpoint_index' %}?status=TOBE&control__frequency=12" class="small">See more ></a>
-                    </div>
-                </div>
-            </div>
+            {% endfor %}
         </div>
     </div>
 </div>
 
 <hr class="mb-3" />
 
-<div class="row">
-
-    <div id="filter-btn" class="col-1 btn-group">
-        <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-            Filter
-        </button>
-        <div class="dropdown-menu">
-            <form class="m-3">
-                {{ filter.form.as_div }}
-                <div class="dropdown-divider my-2"></div>
-                <div class="row d-flex justify-content-evenly">
-                    <button type="submit" class="btn btn-primary col-4">Apply filters</button>
-                    <a href="?" class="btn btn-danger col-4">Clear filters</a>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <div class="col-1 btn-group">
-        <a type="button" class="btn btn-secondary"
-           href="{% url 'conformity:control_export' %}">
-             Export</a>
-        <a type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
-            <span class="visually-hidden">Toggle Dropdown</span>
-        </a>
-        <ul class="dropdown-menu" style="z-index:1500">
-            <li><a class="dropdown-item" href="{% url 'conformity:control_export' %}?format=csv">CSV Format</a></li>
-            <li><a class="dropdown-item" href="{% url 'conformity:control_export' %}?format=xlsx">XLSX Format</a></li>
-        </ul>
-    </div>
-
-    <div class="col"></div>
-
-    <span class="badge rounded-pill text-bg-secondary m-2 fs-6 col-1"> {{ object_list | length }} items </span>
-
-</div>
-
+{% route_url 'conformity:control_create' as create_url %}
+{% route_url 'conformity:control_export' as export_url %}
+{% include "includes/list_toolbar.html" with create_url=create_url export_url=export_url filter=filter item_count=object_list|length %}
 {% render_table table %}
-
-<div class="text-center mt-3">
-    <a href="{% url 'conformity:control_create' %}" class="btn btn-success bi bi-plus-circle">Register a new control</a>
-</div>
 {% endblock %}
