@@ -9,11 +9,14 @@ MIME_ICON_EXACT = {
     "application/x-7z-compressed": "bi-file-earmark-zip",
     "application/x-rar-compressed": "bi-file-earmark-zip",
     "application/vnd.rar": "bi-file-earmark-zip",
-    "application/msword": "bi-file-earmark-word",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "bi-file-earmark-word",
+    "application/gzip": "bi-file-earmark-zip",
+    "application/x-gzip": "bi-file-earmark-zip",
+    "application/x-tar": "bi-file-earmark-zip",
+    "application/msword": "bi-file-earmark-text",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "bi-file-earmark-text",
     "application/vnd.oasis.opendocument.text": "bi-file-earmark-text",
-    "application/vnd.ms-excel": "bi-file-earmark-excel",
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "bi-file-earmark-excel",
+    "application/vnd.ms-excel": "bi-file-earmark-spreadsheet",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "bi-file-earmark-spreadsheet",
     "application/vnd.oasis.opendocument.spreadsheet": "bi-file-earmark-spreadsheet",
 }
 
