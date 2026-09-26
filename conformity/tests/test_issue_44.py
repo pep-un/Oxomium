@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
+from django.template.loader import render_to_string
 from constance.test import override_config
 from django.urls import reverse
 
@@ -94,6 +95,41 @@ class StatusColumnRenderingTests(TestCase):
 
         self.assertIn("bi-hexagon-fill text-danger", html)
         self.assertIn("Non-Compliant", html)
+
+
+class FindingCvssBadgeTests(TestCase):
+    def test_critical_badge_includes_severity_and_score(self):
+        finding = Finding(severity=Finding.Severity.CRITICAL, cvss=9.9)
+
+        html = render_to_string(
+            "conformity/includes/finding_cvss_badge.html",
+            {"finding": finding},
+        )
+
+        self.assertIn("text-bg-dark", html)
+        self.assertIn("cvss-badge", html)
+        self.assertIn("Critical (9.9)", html)
+
+    def test_other_badge_uses_light_style(self):
+        finding = Finding(severity=Finding.Severity.OTHER, cvss=4.2)
+
+        html = render_to_string(
+            "conformity/includes/finding_cvss_badge.html",
+            {"finding": finding},
+        )
+
+        self.assertIn("text-bg-light text-dark border", html)
+        self.assertIn("Other (4.2)", html)
+
+    def test_missing_cvss_score_uses_dash(self):
+        finding = Finding(severity=Finding.Severity.MINOR, cvss=None)
+
+        html = render_to_string(
+            "conformity/includes/finding_cvss_badge.html",
+            {"finding": finding},
+        )
+
+        self.assertIn("Minor (-)", html)
 
 
 class RichTableInteractionTests(TestCase):

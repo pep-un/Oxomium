@@ -34,27 +34,6 @@ class StatusColumn(tables.Column):
         )
 
 
-class BadgeColumn(tables.Column):
-    """Render a value as a Bootstrap badge using a record attribute for styling."""
-
-    def __init__(self, styles, style_accessor, **kwargs):
-        self.styles = styles
-        self.style_accessor = style_accessor
-        super().__init__(empty_values=(), **kwargs)
-
-    def render(self, value, record):
-        style = self.styles.get(
-            getattr(record, self.style_accessor),
-            "text-bg-dark",
-        )
-        display = value if value not in (None, "") else self.default
-        return format_html(
-            '<span class="badge rounded-pill {}">{}</span>',
-            style,
-            display,
-        )
-
-
 class EditColumn(tables.Column):
     """Compact, consistent edit action used by rich tables."""
 
@@ -99,15 +78,6 @@ CONTROL_POINT_STATUS_STYLES = {
     ControlPoint.Status.NONCOMPLIANT: ("bi-hexagon-fill", "text-danger"),
     ControlPoint.Status.COMPLIANT: ("bi-hexagon-fill", "text-success"),
     ControlPoint.Status.MISSED: ("bi-hexagon", "text-danger"),
-}
-
-FINDING_SEVERITY_STYLES = {
-    "CRT": "text-bg-dark",
-    "MAJ": "text-bg-danger",
-    "MIN": "text-bg-warning",
-    "OBS": "text-bg-info",
-    "OTHER": "text-bg-light text-dark border",
-    "POS": "text-bg-success",
 }
 
 
@@ -216,11 +186,11 @@ class FindingTable(BaseRichTable):
         attrs=PRIMARY_COLUMN,
     )
     short_description = tables.Column(verbose_name="Description")
-    cvss = BadgeColumn(
-        FINDING_SEVERITY_STYLES,
-        style_accessor="severity",
+    cvss = tables.TemplateColumn(
         verbose_name="CVSS",
-        default="-",
+        template_code="""
+            {% include 'conformity/includes/finding_cvss_badge.html' with finding=record %}
+        """,
         order_by=("cvss",),
         attrs=CENTER,
     )

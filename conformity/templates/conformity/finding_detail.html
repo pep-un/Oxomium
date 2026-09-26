@@ -3,24 +3,7 @@
 {% block header %}
     <h1 class="h2 bi bi-exclamation-diamond">
         Finding "{{ finding.short_description }}"
-        {% if finding.severity == "CRT" %}
-            <span class="badge rounded-pill bg-dark">Critical ({{ finding.cvss }})</span>
-        {% endif %}
-        {% if finding.severity == "MAJ" %}
-            <span class="badge rounded-pill bg-danger">Major ({{ finding.cvss }})</span>
-        {% endif %}
-        {% if finding.severity == "MIN" %}
-            <span class="badge rounded-pill bg-warning">Minor ({{ finding.cvss }})</span>
-        {% endif %}
-        {% if finding.severity == "OBS" %}
-            <span class="badge rounded-pill bg-info">Opportunity ({{ finding.cvss }})</span>
-        {% endif %}
-        {% if finding.severity == "OTHER" %}
-            <span class="badge rounded-pill bg-light text-dark border">Other ({{ finding.cvss }})</span>
-        {% endif %}
-        {% if finding.severity == "POS" %}
-            <span class="badge rounded-pill bg-success">Positive ({{ finding.cvss }})</span>
-        {% endif %}
+        {% include 'conformity/includes/finding_cvss_badge.html' with finding=finding %}
 
     </h1>
 {% endblock %}
