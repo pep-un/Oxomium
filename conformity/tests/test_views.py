@@ -234,3 +234,31 @@ class ConformitySaveNextTests(TestCase):
 
         resp = ConformityUpdateView.as_view()(request, pk=self.ca.pk)
         self.assertIn(resp.status_code, (301, 302), "Should still redirect (normal success flow)")
+
+class SharedUxComponentsTests(BaseDataMixin, TestCase):
+    FRAMEWORK_NAME = "FW-SharedUx"
+
+    def setUp(self):
+        super().setUp()
+        self.client.force_login(self.user)
+
+    def test_action_list_uses_shared_toolbar_and_active_filter_state(self):
+        response = self.client.get(reverse("conformity:action_index"), {"title": "Act"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'class="d-flex flex-wrap gap-2 align-items-center justify-content-between mb-3 list-toolbar"')
+        self.assertContains(response, "Reset filters")
+        self.assertContains(response, ">Active<")
+        self.assertNotContains(response, "btn-danger")
+
+    def test_audit_detail_uses_accessible_breadcrumb(self):
+        response = self.client.get(reverse("conformity:audit_detail", args=[self.audit.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'aria-label="Breadcrumb"')
+        self.assertContains(response, 'aria-current="page"')
+        self.assertContains(response, reverse("conformity:audit_index"))
+
+    def test_control_detail_does_not_duplicate_return_navigation(self):
+        response = self.client.get(reverse("conformity:control_detail", args=[self.ctrl_q.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'aria-label="Breadcrumb"')
+        self.assertNotContains(response, "Return to control")
