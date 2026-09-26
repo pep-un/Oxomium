@@ -50,7 +50,16 @@ When modifying Python code, run Pylint with the project settings:
 pylint -E --load-plugins pylint_django --django-settings-module=oxomium --ignore-paths='.*/migrations/' --ignore=__init__.py,manage.py $(git ls-files '*.py')
 ```
 
-For Docker-impacting changes, also validate the Compose configuration and container build:\n\n~~~bash\ndocker compose config --quiet\ndocker compose build web\n~~~\n\nSee [docs/ci.md](docs/ci.md) for the complete CI/CD trigger model, required checks, Docker-validation policy and maintainer guidance.\n\n## Pull requests
+For Docker-impacting changes, also validate the Compose configuration and container build:
+
+~~~bash
+docker compose config --quiet
+docker compose build web
+~~~
+
+See [docs/ci.md](docs/ci.md) for the complete CI/CD trigger model, required checks, Docker-validation policy and maintainer guidance.
+
+## Pull requests
 
 - Target `main`.
 - Use a clear title and explain the purpose and scope of the change.
