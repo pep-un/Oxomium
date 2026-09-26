@@ -131,10 +131,10 @@ class ActionTable(BaseRichTable):
     associations = tables.TemplateColumn(
         verbose_name="Associations",
         template_code="""
-            <div class="d-flex flex-wrap gap-1 justify-content-center">
+            <div class="d-grid gap-1">
                 {% if record.conformities_count %}
                     <a href="{% url 'conformity:conformity_index' %}?action={{ record.pk }}"
-                       class="btn btn-sm btn-outline-secondary">
+                       class="btn btn-sm btn-outline-secondary w-100">
                         {{ record.conformities_count }} conformit{{ record.conformities_count|pluralize:"y,ies" }}
                     </a>
                 {% endif %}
@@ -149,9 +149,6 @@ class ActionTable(BaseRichTable):
                        class="btn btn-sm btn-outline-secondary">
                         {{ record.controlpoints_count }} control point{{ record.controlpoints_count|pluralize }}
                     </a>
-                {% endif %}
-                {% if not record.conformities_count and not record.findings_count and not record.controlpoints_count %}
-                    <span class="text-body-secondary">None</span>
                 {% endif %}
             </div>
         """,
@@ -192,11 +189,9 @@ class AuditTable(BaseRichTable):
         template_code="""
             {% if record.findings_count %}
                 <a href="{% url 'conformity:finding_index' %}?audit={{ record.pk }}"
-                   class="btn btn-sm btn-outline-secondary">
+                   class="btn btn-sm btn-outline-secondary w-100">
                     {{ record.findings_count }} finding{{ record.findings_count|pluralize }}
                 </a>
-            {% else %}
-                <span class="text-body-secondary">0</span>
             {% endif %}
         """,
         order_by=("findings_count",),
@@ -236,22 +231,21 @@ class FindingTable(BaseRichTable):
         attrs={
             "th": {"class": "text-center"},
             "td": {"class": "text-center"},
-            "a": {"class": "btn btn-sm btn-outline-secondary"},
+            "a": {"class": "btn btn-sm btn-outline-secondary w-100"},
         },
     )
-    associated_actions = tables.Column(
-        accessor="actions_count",
+    associated_actions = tables.TemplateColumn(
         verbose_name="Associated actions",
-        linkify=lambda record: (
-            f'{reverse("conformity:action_index")}?associated_findings={record.pk}'
-            if record.actions_count
-            else None
-        ),
-        attrs={
-            "th": {"class": "text-center"},
-            "td": {"class": "text-center"},
-            "a": {"class": "btn btn-sm btn-outline-secondary"},
-        },
+        template_code="""
+            {% if record.actions_count %}
+                <a href="{% url 'conformity:action_index' %}?associated_findings={{ record.pk }}"
+                   class="btn btn-sm btn-outline-secondary w-100">
+                    {{ record.actions_count }} action{{ record.actions_count|pluralize }}
+                </a>
+            {% endif %}
+        """,
+        order_by=("actions_count",),
+        attrs=CENTER,
     )
 
     actions = EditColumn("conformity:finding_form", "finding")
@@ -276,16 +270,17 @@ class OrganizationTable(BaseRichTable):
     frameworks = tables.TemplateColumn(
         verbose_name="Applicable frameworks",
         template_code="""
-            {% for item in record.get_frameworks %}
-                <a href="{% url 'conformity:conformity_detail_index' record.id item.id %}"
-                   class="btn btn-sm btn-outline-secondary my-1">{{ item }}</a>
-            {% empty %}
-                <span class="text-body-secondary">None</span>
-            {% endfor %}
+            <div class="d-grid gap-1">
+                {% for item in record.get_frameworks %}
+                    <a href="{% url 'conformity:conformity_detail_index' record.id item.id %}"
+                       class="btn btn-sm btn-outline-secondary w-100">{{ item }}</a>
+                {% endfor %}
+            </div>
         """,
         orderable=False,
         attrs=CENTER,
     )
+
     actions = EditColumn("conformity:organization_form", "organization")
 
     class Meta(BaseRichTable.Meta):
@@ -367,16 +362,17 @@ class ControlTable(BaseRichTable):
     requirements = tables.TemplateColumn(
         verbose_name="Associated requirements",
         template_code="""
-            {% for conformity in record.conformity.all %}
-                <a href="{% url 'conformity:conformity_detail_index' conformity.organization.id conformity.requirement.framework.id %}#requirement-{{ conformity.requirement.id }}"
-                   class="btn btn-sm btn-outline-secondary my-1"
-                   title="{{ conformity.requirement.title }}">{{ conformity.requirement.full_path }}</a>
-            {% empty %}
-                <span class="text-body-secondary">None</span>
-            {% endfor %}
+            <div class="d-grid gap-1">
+                {% for conformity in record.conformity.all %}
+                    <a href="{% url 'conformity:conformity_detail_index' conformity.organization.id conformity.requirement.framework.id %}#requirement-{{ conformity.requirement.id }}"
+                       class="btn btn-sm btn-outline-secondary w-100"
+                       title="{{ conformity.requirement.title }}">{{ conformity.requirement.full_path }}</a>
+                {% endfor %}
+            </div>
         """,
         orderable=False,
     )
+
     actions = EditColumn("conformity:control_form", "control")
 
     class Meta(BaseRichTable.Meta):
