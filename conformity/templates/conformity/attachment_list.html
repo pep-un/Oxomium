@@ -1,4 +1,5 @@
 {% extends "conformity/main.html" %}
+{% load ui_tags %}
 
 {% block header %}
     <h1 class="h1 bi bi-paperclip"> Attachment library</h1>
@@ -6,6 +7,8 @@
 {% endblock %}
 
 {% block content %}
+{% breadcrumb "Attachments" %}
+
     <table class="table table-striped align-middle">
     <caption class="d-none">Attachment library</caption>
     <thead>
