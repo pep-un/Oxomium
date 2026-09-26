@@ -9,6 +9,23 @@ from .models import Conformity, Organization, Audit, Finding, Action, Control, C
 from .validators import attachment_accept, attachment_max_size_help, validate_attachment
 
 
+class AttachmentUploadFormMixin:
+    """Apply the shared attachment policy to every multi-upload form."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        field = self.fields.get('attachments')
+        if field:
+            field.widget.attrs['accept'] = attachment_accept()
+            field.help_text = attachment_max_size_help()
+
+    def clean_attachments(self):
+        uploaded_file = self.cleaned_data.get('attachments')
+        if uploaded_file:
+            validate_attachment(uploaded_file)
+        return uploaded_file
+
+
 class ConformityForm(ModelForm):
     propagate_to_children = BooleanField(
         required=False, label='Apply applicability and comment to child requirements'
