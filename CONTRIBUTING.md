@@ -1,39 +1,60 @@
-# Continuous integration and merge checks
+# Contributing to Oxomium
 
-Pull requests targeting `main` are validated by GitHub Actions and SonarQube Cloud before they are merged.
+Contributions are welcome. Please keep changes focused, tested, and easy to review.
 
-## Required checks
+## Before starting
 
-Repository branch protection should require the following checks on `main`:
+- Check existing issues and pull requests to avoid duplicate work.
+- Open or reference an issue for significant changes so the scope is clear.
+- Base your work on the latest `main` branch.
+- Keep unrelated refactoring or formatting out of a functional change.
 
-- **Django CI** — the complete Python matrix defined in `.github/workflows/django.yml`. It runs the Django test suite on every supported Python version and runs `python manage.py makemigrations --check --dry-run` so model changes without committed migrations fail CI.
-- **Pylint** — the complete Python matrix defined in `.github/workflows/pylint.yml`. It runs Pylint with the Django plugin on pull requests and reports Python errors before merge.
-- **Dependency Review** — reviews dependency changes introduced by pull requests and reports vulnerable dependencies.
-- **SonarQube Cloud Quality Gate** — the SonarQube Cloud quality gate for the pull request. The GitHub Actions `SonarCloud` job performs the analysis; the quality-gate check reported by SonarQube Cloud is the result that must be required for merge.
+## Development setup
 
-The Docker workflow remains a useful CI signal, but it is not part of the minimum required checks defined by issue #140.
+Create a virtual environment and install the project dependencies:
 
-## SonarCloud credentials
+```bash
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+```
 
-For pushes and pull requests whose head branch belongs to this repository, a missing `SONAR_TOKEN` is a CI configuration error and the `SonarCloud` workflow fails explicitly.
+On Windows, activate the virtual environment with the appropriate command for your shell.
 
-GitHub does not expose repository secrets to workflows triggered by pull requests from forks. Such pull requests therefore cannot run the token-based SonarCloud scan with the current workflow. They still run checks that do not require repository secrets. Maintainers must account for this GitHub security restriction when defining the required SonarQube Cloud check.
+## Making changes
 
-## Branch protection
+- Add or update tests for changed behaviour.
+- Include Django migrations when model changes require them.
+- Keep commits and pull requests scoped to one coherent change.
+- Follow the existing project structure and coding conventions.
+- Do not commit local configuration, credentials, virtual environments, caches, or generated files unless they are intentionally part of the project.
 
-Workflow files alone do not make checks mandatory. The `main` branch protection/ruleset must be configured in GitHub so the required checks above must pass before merging.
+## Checks before opening a pull request
 
-After changing a workflow name or job name, verify the branch-protection configuration: required checks are identified by their reported check names and a rename can leave protection pointing at an obsolete check.
+Run the test suite:
 
-## Validation procedure
+```bash
+python manage.py test
+```
 
-Use a pull request as the reference validation and confirm that:
+Verify that model changes do not leave uncommitted migrations:
 
-1. Django CI runs for every supported Python version and a deliberately missing migration makes the corresponding CI run fail.
-2. A deliberately failing Django test makes Django CI fail.
-3. Pylint runs for every supported Python version and a deliberately introduced Pylint error makes the corresponding check fail.
-4. A dependency change rejected by Dependency Review makes that check fail.
-5. SonarCloud analysis runs for repository pull requests, and a failed SonarQube Cloud Quality Gate is visible as a failing check.
-6. GitHub prevents merging while any configured required check is failing or pending.
+```bash
+python manage.py makemigrations --check --dry-run
+```
 
-Do not merge the deliberately broken validation commits. Revert or replace them after confirming the expected blocking behaviour.
+When modifying Python code, run Pylint with the project settings:
+
+```bash
+pylint -E --load-plugins pylint_django --django-settings-module=oxomium --ignore-paths='.*/migrations/' --ignore=__init__.py,manage.py $(git ls-files '*.py')
+```
+
+## Pull requests
+
+- Target `main`.
+- Use a clear title and explain the purpose and scope of the change.
+- Link the relevant issue when one exists.
+- Describe how the change was tested.
+- Call out migrations, dependency changes, or compatibility considerations when relevant.
+- Address review feedback with focused follow-up commits or an updated branch.
