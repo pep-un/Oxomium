@@ -38,9 +38,6 @@ class UserFeedbackMixin:
     remain inline on the form and are not duplicated as global messages.
     """
 
-    def get_feedback_action(self):
-        return "updated" if getattr(self.object, "pk", None) else "created"
-
     def form_valid(self, form):
         is_update = getattr(form.instance, "pk", None) is not None
         response = super().form_valid(form)
@@ -338,7 +335,12 @@ class ConformityUpdateView(LoginRequiredMixin, UserFeedbackMixin, UpdateView):
         if "status" in form.changed_data:
             self.object.update_status()
 
-        # Manage Save&Next and Save&Stay submitting to allow easy filling of the conformity
+        # Manage Save&Next and Save&Stay submitting to allow easy filling of the conformity.
+        # These early redirects bypass UserFeedbackMixin.form_valid(), so add the
+        # same success feedback here after the conformity has been saved.
+        if self.request.POST.get("action") in {"save_next", "save_stay"}:
+            messages.success(self.request, "Conformity updated successfully.")
+
         if self.request.POST.get("action") == "save_next":
             nxt_req = self.object.requirement.get_next_sibling()
             if nxt_req:
