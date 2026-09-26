@@ -10,10 +10,10 @@ class AttachmentIconTests(SimpleTestCase):
             "application/pdf": "bi-file-earmark-pdf",
             "image/png": "bi-file-earmark-image",
             "text/plain": "bi-file-earmark-text",
-            "application/msword": "bi-file-earmark-word",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "bi-file-earmark-word",
-            "application/vnd.ms-excel": "bi-file-earmark-excel",
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "bi-file-earmark-excel",
+            "application/msword": "bi-file-earmark-text",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "bi-file-earmark-text",
+            "application/vnd.ms-excel": "bi-file-earmark-spreadsheet",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "bi-file-earmark-spreadsheet",
             "application/zip": "bi-file-earmark-zip",
         }
         for mime_type, expected in cases.items():
