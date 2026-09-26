@@ -1,0 +1,18 @@
+{% load ui_tags %}
+{% active_filter_count as active_filters %}
+<div class="text-center border rounded p-4 my-3 bg-body-tertiary empty-state" role="status">
+    <i class="bi bi-inbox fs-2 text-body-secondary" aria-hidden="true"></i>
+    {% if active_filters %}
+        <p class="mb-3 mt-2">No results match the active filters.</p>
+        <a href="?" class="btn btn-primary">
+            <i class="bi bi-x-circle me-1" aria-hidden="true"></i> Reset filters
+        </a>
+    {% else %}
+        <p class="mb-3 mt-2">{{ empty_message|default:"No items have been created yet." }}</p>
+        {% if create_url %}
+            <a href="{{ create_url }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1" aria-hidden="true"></i> Create
+            </a>
+        {% endif %}
+    {% endif %}
+</div>
