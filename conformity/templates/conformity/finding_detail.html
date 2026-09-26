@@ -1,4 +1,5 @@
 {% extends "conformity/main.html" %}
+{% load ui_tags %}
 
 {% block header %}
     <h1 class="h2 bi bi-exclamation-diamond">
@@ -9,6 +10,9 @@
 {% endblock %}
 
 {% block content %}
+{% route_url 'conformity:finding_index' as list_url %}
+{% breadcrumb "Findings" list_url finding.short_description %}
+
     {% if finding.archived %}
     <p class="alert alert-dark" role="alert">
         <i class="bi bi-archive"></i> This finding is archived.
