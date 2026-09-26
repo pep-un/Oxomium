@@ -1,5 +1,4 @@
 import django_tables2 as tables
-from django.urls import reverse
 from django.utils.html import format_html
 from django_tables2.utils import A
 
@@ -140,13 +139,13 @@ class ActionTable(BaseRichTable):
                 {% endif %}
                 {% if record.findings_count %}
                     <a href="{% url 'conformity:finding_index' %}?action={{ record.pk }}"
-                       class="btn btn-sm btn-outline-secondary">
+                       class="btn btn-sm btn-outline-secondary w-100">
                         {{ record.findings_count }} finding{{ record.findings_count|pluralize }}
                     </a>
                 {% endif %}
                 {% if record.controlpoints_count %}
                     <a href="{% url 'conformity:controlpoint_index' %}?action={{ record.pk }}"
-                       class="btn btn-sm btn-outline-secondary">
+                       class="btn btn-sm btn-outline-secondary w-100">
                         {{ record.controlpoints_count }} control point{{ record.controlpoints_count|pluralize }}
                     </a>
                 {% endif %}
