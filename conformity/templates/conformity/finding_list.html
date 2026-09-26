@@ -1,48 +1,13 @@
 {% extends "conformity/main.html" %}
 {% load render_table from django_tables2 %}
+{% load ui_tags %}
 
 {% block header %}
     <h1 class="h1 bi bi-exclamation-diamond"> Active findings </h1>
 {% endblock %}
 
 {% block content %}
-
-<div class="row">
-
-    <div id="filter-btn" class="col-1 btn-group">
-        <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-            Filter
-        </button>
-        <div class="dropdown-menu">
-            <form class="m-3">
-                {{ filter.form.as_div }}
-                <div class="dropdown-divider my-2"></div>
-                <div class="row d-flex justify-content-evenly">
-                    <button type="submit" class="btn btn-primary col-4">Apply filters</button>
-                    <a href="?" class="btn btn-danger col-4">Clear filters</a>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <div class="col-1 btn-group">
-        <a type="button" class="btn btn-secondary"
-           href="{% url 'conformity:finding_export' %}">
-             Export</a>
-        <a type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
-            <span class="visually-hidden">Toggle Dropdown</span>
-        </a>
-        <ul class="dropdown-menu" style="z-index:1500">
-            <li><a class="dropdown-item" href="{% url 'conformity:finding_export' %}?format=csv">CSV Format</a></li>
-            <li><a class="dropdown-item" href="{% url 'conformity:finding_export' %}?format=xlsx">XLSX Format</a></li>
-        </ul>
-    </div>
-
-    <div class="col"></div>
-
-    <span class="badge rounded-pill text-bg-secondary m-2 fs-6 col-1"> {{ object_list | length }} items </span>
-
-</div>
-
+{% route_url 'conformity:finding_export' as export_url %}
+{% include "includes/list_toolbar.html" with export_url=export_url filter=filter item_count=object_list|length %}
 {% render_table table %}
 {% endblock %}
