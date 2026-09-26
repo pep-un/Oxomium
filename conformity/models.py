@@ -769,6 +769,20 @@ class Action(models.Model):
         FROZEN = '7', _('Frozen')
         CANCELED = '9', _('Canceled')
 
+    class Priority(models.IntegerChoices):
+        """Business priority, from most important (1) to least important (5)."""
+        PRIORITY_1 = 1, _('Priority 1')
+        PRIORITY_2 = 2, _('Priority 2')
+        PRIORITY_3 = 3, _('Priority 3')
+        PRIORITY_4 = 4, _('Priority 4')
+        PRIORITY_5 = 5, _('Priority 5')
+
+    PRIORITY_REQUIRED_STATUSES = frozenset({
+        Status.PLANNING,
+        Status.IMPLEMENTING,
+        Status.CONTROLLING,
+    })
+
     ' Generic'
     title = models.CharField(max_length=256)
     create_date = models.DateField(default=timezone.now)
@@ -784,6 +798,7 @@ class Action(models.Model):
     active = models.BooleanField(default=True)
 
     ' Analyse Phase'
+    priority = models.PositiveSmallIntegerField(choices=Priority.choices, null=True, blank=True)
     description = models.TextField(max_length=4096, blank=True)
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, blank=True, null=True)
     associated_conformity = models.ManyToManyField(Conformity, blank=True, related_name='actions')
@@ -837,8 +852,70 @@ class Action(models.Model):
     def is_completed(self) -> bool:
         return self.status == Action.Status.ENDED
 
+    def validate_priority_transition(self, update_fields=None):
+        """Enforce priority when an Action leaves Analysis for the active workflow."""
+        previous = None
+        if self.pk:
+            previous = (
+                Action.objects
+                .filter(pk=self.pk)
+                .values('status', 'priority')
+                .first()
+            )
+
+        effective_status = self.status
+        effective_priority = self.priority
+        if previous is not None and update_fields is not None:
+            if 'status' not in update_fields:
+                effective_status = previous['status']
+            if 'priority' not in update_fields:
+                effective_priority = previous['priority']
+
+        try:
+            cleaned_priority = self._meta.get_field('priority').clean(
+                effective_priority,
+                self,
+            )
+        except ValidationError as exc:
+            raise ValidationError({'priority': exc}) from exc
+
+        if update_fields is None or 'priority' in update_fields:
+            self.priority = cleaned_priority
+
+        # New objects have not transitioned from Analysis. This preserves
+        # compatibility with existing paths that create non-Analysis Actions
+        # directly, while transition validation still applies to persisted rows.
+        if previous is None:
+            return
+
+        if (
+            previous['status'] == Action.Status.ANALYSING
+            and effective_status in Action.PRIORITY_REQUIRED_STATUSES
+            and cleaned_priority is None
+        ):
+            raise ValidationError({
+                'priority': _('Priority is required before leaving the Analysis phase.')
+            })
+
+        # Legacy rows that were already outside Analysis with NULL priority stay
+        # editable. Once a priority has been established, it cannot be cleared
+        # while the Action remains in an active post-Analysis workflow state.
+        if (
+            previous['priority'] is not None
+            and cleaned_priority is None
+            and effective_status in Action.PRIORITY_REQUIRED_STATUSES
+        ):
+            raise ValidationError({
+                'priority': _('Priority is required in post-Analysis workflow states.')
+            })
+
+    def clean(self):
+        super().clean()
+        self.validate_priority_transition()
+
     def save(self, *args, **kwargs):
         """ On save, update timestamps """
+        self.validate_priority_transition(update_fields=kwargs.get('update_fields'))
         if not self.id:
             self.create_date = timezone.now()
         self.update_date = timezone.now()

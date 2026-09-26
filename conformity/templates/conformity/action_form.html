@@ -27,6 +27,7 @@
                         <div id="collapseAnalyse" class="accordion-collapse collapse" aria-labelledby="headingAnalyse"
                              data-bs-parent="#accordion">
                             <div class="accordion-body text-bg-light">
+                                {% bootstrap_field form.priority layout='floating' %}
                                 {% bootstrap_field form.description layout='floating' %}
                                 {% bootstrap_field form.organization layout='floating' %}
                                 {% bootstrap_field form.associated_conformity layout='floating' %}

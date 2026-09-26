@@ -4,7 +4,7 @@ View of the Conformity Module
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
-from django.db.models import Count, Prefetch
+from django.db.models import Count, F, Prefetch
 from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import UpdateView, CreateView
 from django_filters.views import FilterView
@@ -401,7 +401,7 @@ class ActionIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     template_name = "conformity/action_list.html"
 
     def get_queryset(self):
-        return (
+        queryset = (
             Action.objects
             .select_related("owner")
             .annotate(
@@ -409,6 +409,15 @@ class ActionIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
                 findings_count=Count("associated_findings", distinct=True),
                 controlpoints_count=Count("associated_controlPoints", distinct=True),
             )
+        )
+        if not self.request.GET.get('status'):
+            queryset = queryset.exclude(
+                status__in=[Action.Status.ENDED, Action.Status.CANCELED]
+            )
+        return queryset.order_by(
+            F('priority').asc(nulls_last=True),
+            'status',
+            '-update_date',
         )
 
 

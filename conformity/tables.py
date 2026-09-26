@@ -60,6 +60,13 @@ class ActionTable(BaseRichTable):
         attrs=PRIMARY_COLUMN,
     )
     owner = tables.Column(default="", attrs={"td": {"class": "text-nowrap"}})
+    priority = tables.TemplateColumn(
+        template_code="""
+            {% include 'conformity/includes/action_priority.html' with action=record %}
+        """,
+        order_by=("priority",),
+        attrs=CENTER,
+    )
     status = tables.TemplateColumn(
         template_code="""
             {% include 'conformity/includes/action_status.html' with action=record %}
@@ -89,21 +96,14 @@ class ActionTable(BaseRichTable):
                         {{ record.controlpoints_count }} control point{{ record.controlpoints_count|pluralize }}
                     </a>
                 {% endif %}
+                {% if record.reference %}
+                    <a href="{{ record.reference }}" target="_blank" rel="noopener"
+                       class="btn btn-sm btn-outline-secondary w-75 mx-auto"
+                       title="ITSM Reference link">
+                        ITSM Ticket <i class="bi bi-box-arrow-up-right ms-1" aria-hidden="true"></i>
+                    </a>
+                {% endif %}
             </div>
-        """,
-        orderable=False,
-        attrs=CENTER,
-    )
-
-    actions = tables.TemplateColumn(
-        verbose_name="Reference",
-        template_code="""
-            {% if record.reference %}
-                <a href="{{ record.reference }}" target="_blank" rel="noopener"
-                   class="btn btn-sm btn-secondary bi bi-box-arrow-up-right" title="ITSM Reference link">
-                    <span class="visually-hidden">Open ITSM reference</span>
-                </a>
-            {% endif %}
         """,
         orderable=False,
         attrs=CENTER,
@@ -111,7 +111,7 @@ class ActionTable(BaseRichTable):
 
     class Meta(BaseRichTable.Meta):
         model = Action
-        fields = ("title", "owner", "status", "update_date")
+        fields = ("title", "owner", "priority", "status", "update_date")
 
 
 class AuditTable(BaseRichTable):
