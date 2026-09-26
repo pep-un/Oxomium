@@ -101,13 +101,13 @@
             <br />
         </div>
         <div class="col-md-4">
-            <div class="card bg-secondary text-white">
+            <div class="card bg-light text-dark border">
                 <div class="card-header position-relative"> Comment
-                    <span class="badge bg-light text-black position-absolute top-50 end-0 translate-middle-y me-3"> {{ audit.get_other_findings | length }} </span>
+                    <span class="badge text-bg-dark position-absolute top-50 end-0 translate-middle-y me-3"> {{ audit.get_other_findings | length }} </span>
                 </div>
                 <ul class="list-group list-group-flush">
                     {% for finding in audit.get_other_findings %}
-                        <a href="{% url 'conformity:finding_detail' finding.id %}" class="list-group-item list-group-item-secondary">
+                        <a href="{% url 'conformity:finding_detail' finding.id %}" class="list-group-item list-group-item-light">
                             {% if finding.archived %}<i class="bi bi-archive"></i> {% endif%}
                             {{ finding.short_description }}
                         </a>

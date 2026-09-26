@@ -106,7 +106,7 @@ FINDING_SEVERITY_STYLES = {
     "MAJ": "text-bg-danger",
     "MIN": "text-bg-warning",
     "OBS": "text-bg-info",
-    "OTHER": "text-bg-dark",
+    "OTHER": "text-bg-light text-dark border",
     "POS": "text-bg-success",
 }
 
