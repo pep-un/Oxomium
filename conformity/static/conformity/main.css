@@ -142,3 +142,10 @@
     color: var(--bs-primary);
     text-decoration: underline;
 }
+
+/* Keep CVSS severity pills visually stable in tables and grouped views. */
+.cvss-badge {
+    display: inline-block;
+    width: 10rem;
+    text-align: center;
+}
