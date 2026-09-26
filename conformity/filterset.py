@@ -29,7 +29,7 @@ class ActionFilter(FilterSet):
 
     class Meta:
         model = Action
-        fields = ['title', 'owner', 'status', 'organization',
+        fields = ['title', 'owner', 'status', 'priority', 'organization',
                   'associated_conformity', 'associated_findings', 'associated_controlPoints']
 
 

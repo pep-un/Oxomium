@@ -60,6 +60,13 @@ class ActionTable(BaseRichTable):
         attrs=PRIMARY_COLUMN,
     )
     owner = tables.Column(default="", attrs={"td": {"class": "text-nowrap"}})
+    priority = tables.TemplateColumn(
+        template_code="""
+            {% include 'conformity/includes/action_priority.html' with action=record %}
+        """,
+        order_by=("priority",),
+        attrs=CENTER,
+    )
     status = tables.TemplateColumn(
         template_code="""
             {% include 'conformity/includes/action_status.html' with action=record %}
@@ -111,7 +118,7 @@ class ActionTable(BaseRichTable):
 
     class Meta(BaseRichTable.Meta):
         model = Action
-        fields = ("title", "owner", "status", "update_date")
+        fields = ("title", "owner", "priority", "status", "update_date")
 
 
 class AuditTable(BaseRichTable):
