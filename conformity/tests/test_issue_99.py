@@ -406,7 +406,7 @@ class ActionPriorityListTests(TestCase):
         self.assertContains(response, "Not defined")
         self.assertContains(response, "text-bg-light")
 
-    def test_external_reference_uses_light_association_style(self):
+    def test_external_reference_is_rendered_in_associations_column(self):
         action = Action.objects.create(
             title="ITSM linked",
             organization=self.organization,
@@ -414,11 +414,19 @@ class ActionPriorityListTests(TestCase):
             reference="https://itsm.example.test/tickets/42",
         )
 
+        table = ActionTable([])
+        self.assertIn("associations", table.columns)
+        self.assertNotIn("actions", table.columns)
+
         response = self.client.get(reverse("conformity:action_index"))
 
         self.assertContains(response, action.reference)
         self.assertContains(response, 'target="_blank"')
         self.assertContains(response, 'rel="noopener"')
-        self.assertContains(response, 'class="btn btn-sm btn-light w-75 mx-auto"')
+        self.assertContains(
+            response,
+            'class="btn btn-sm btn-outline-secondary w-75 mx-auto"',
+        )
         self.assertContains(response, "ITSM Ticket")
         self.assertContains(response, 'class="bi bi-box-arrow-up-right ms-1"')
+        self.assertNotContains(response, ">Reference</")

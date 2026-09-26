@@ -96,19 +96,10 @@ class ActionTable(BaseRichTable):
                         {{ record.controlpoints_count }} control point{{ record.controlpoints_count|pluralize }}
                     </a>
                 {% endif %}
-            </div>
-        """,
-        orderable=False,
-        attrs=CENTER,
-    )
-
-    actions = tables.TemplateColumn(
-        verbose_name="Reference",
-        template_code="""
-            <div class="d-grid gap-1">
                 {% if record.reference %}
                     <a href="{{ record.reference }}" target="_blank" rel="noopener"
-                       class="btn btn-sm btn-light w-75 mx-auto" title="ITSM Reference link">
+                       class="btn btn-sm btn-outline-secondary w-75 mx-auto"
+                       title="ITSM Reference link">
                         ITSM Ticket <i class="bi bi-box-arrow-up-right ms-1" aria-hidden="true"></i>
                     </a>
                 {% endif %}
