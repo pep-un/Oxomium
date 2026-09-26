@@ -3,7 +3,7 @@ import django_tables2 as tables
 from .models import Action, Audit, Conformity, Control, ControlPoint, Finding, Framework, Organization
 
 
-CENTER = {"th": {"class": "text-center"}, "td": {"class": "text-center"}}
+CENTER = {"cell": {"class": "text-center"}}
 
 
 class BaseRichTable(tables.Table):
@@ -68,7 +68,6 @@ class ActionTable(BaseRichTable):
     class Meta(BaseRichTable.Meta):
         model = Action
         fields = ("title", "owner", "status", "update_date")
-        sequence = ("title", "owner", "status", "update_date", "association", "actions")
 
 
 class AuditTable(BaseRichTable):
@@ -106,7 +105,6 @@ class AuditTable(BaseRichTable):
     class Meta(BaseRichTable.Meta):
         model = Audit
         fields = ("name", "auditor", "type", "start_date", "end_date")
-        sequence = ("name", "auditor", "type", "start_date", "end_date", "findings", "actions")
 
 
 class FindingTable(BaseRichTable):
@@ -171,7 +169,6 @@ class FindingTable(BaseRichTable):
     class Meta(BaseRichTable.Meta):
         model = Finding
         fields = ("name", "short_description", "cvss", "audit")
-        sequence = ("name", "short_description", "cvss", "audit", "associated_actions", "actions")
 
 
 class OrganizationTable(BaseRichTable):
@@ -220,7 +217,6 @@ class OrganizationTable(BaseRichTable):
     class Meta(BaseRichTable.Meta):
         model = Organization
         fields = ("name", "description")
-        sequence = ("name", "description", "frameworks", "actions")
 
 
 class FrameworkTable(BaseRichTable):
@@ -249,7 +245,6 @@ class FrameworkTable(BaseRichTable):
     class Meta(BaseRichTable.Meta):
         model = Framework
         fields = ("name", "version", "language", "publish_by", "type")
-        sequence = ("name", "version", "language", "publish_by", "type", "requirements")
 
 
 class ConformityTable(BaseRichTable):
@@ -293,7 +288,6 @@ class ConformityTable(BaseRichTable):
     class Meta(BaseRichTable.Meta):
         model = Conformity
         fields = ("organization", "status")
-        sequence = ("organization", "framework", "requirements", "completeness", "status", "actions")
 
 
 class ControlTable(BaseRichTable):
@@ -338,7 +332,6 @@ class ControlTable(BaseRichTable):
     class Meta(BaseRichTable.Meta):
         model = Control
         fields = ("title", "level", "frequency")
-        sequence = ("title", "level", "frequency", "requirements", "actions")
 
 
 class ControlPointTable(BaseRichTable):
@@ -372,4 +365,3 @@ class ControlPointTable(BaseRichTable):
     class Meta(BaseRichTable.Meta):
         model = ControlPoint
         fields = ("period_start_date", "period_end_date", "control_user", "status")
-        sequence = ("period_start_date", "period_end_date", "control_user", "status", "actions")
