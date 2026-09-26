@@ -19,7 +19,6 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 # Third-party
-from magic import Magic
 from mptt.models import MPTTModel, TreeForeignKey
 from pycountry import languages
 
@@ -941,13 +940,17 @@ class Attachment(models.Model):
     def __str__(self):
         return self.file.name.split("/")[1]
 
-    @staticmethod
-    def autoset_mimetype(instance):
-        # Read file and set mime_type
-        file_content = instance.file.read()
-        instance.file.seek(0)
-        mime = Magic(mime=True)
-        instance.mime_type = mime.from_buffer(file_content)
+    def clean(self):
+        super().clean()
+        if self.file:
+            from .validators import validate_attachment
+            self.mime_type = validate_attachment(self.file)
+
+    def save(self, *args, **kwargs):
+        # Enforce the upload policy for every Attachment persistence path,
+        # including direct ORM creation outside ModelForms.
+        self.full_clean()
+        return super().save(*args, **kwargs)
 
 
 

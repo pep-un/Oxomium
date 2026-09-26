@@ -3,6 +3,7 @@ View of the Conformity Module
 """
 
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Count, F, Prefetch
 from django.views.generic import DetailView, ListView, TemplateView
@@ -80,7 +81,22 @@ class AuditDetailView(LoginRequiredMixin, DetailView):
     model = Audit
 
 
-class AuditUpdateView(LoginRequiredMixin, UpdateView):
+class AttachmentUploadViewMixin:
+    """Validate all files before saving the parent object or any Attachment."""
+
+    def form_valid(self, form):
+        attachments = self.request.FILES.getlist('attachments')
+        try:
+            from .validators import validate_attachment
+            for uploaded_file in attachments:
+                validate_attachment(uploaded_file)
+        except ValidationError as exc:
+            form.add_error('attachments', exc)
+            return self.form_invalid(form)
+        return super().form_valid(form)
+
+
+class AuditUpdateView(AttachmentUploadViewMixin, LoginRequiredMixin, UpdateView):
     model = Audit
     form_class = AuditForm
 
@@ -94,7 +110,7 @@ class AuditUpdateView(LoginRequiredMixin, UpdateView):
 
 
 
-class AuditCreateView(LoginRequiredMixin, CreateView):
+class AuditCreateView(AttachmentUploadViewMixin, LoginRequiredMixin, CreateView):
     model = Audit
     form_class = AuditForm
 
@@ -214,7 +230,7 @@ class OrganizationDetailView(LoginRequiredMixin, DetailView):
     model = Organization
 
 
-class OrganizationFrameworkFormMixin:
+class OrganizationFrameworkFormMixin(AttachmentUploadViewMixin):
     """Save organization fields and reconcile frameworks through the service."""
 
     def form_valid(self, form):
@@ -527,7 +543,7 @@ class ControlPointIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
         return ControlPoint.objects.select_related("control", "control_user")
 
 
-class ControlPointUpdateView(LoginRequiredMixin, UpdateView):
+class ControlPointUpdateView(AttachmentUploadViewMixin, LoginRequiredMixin, UpdateView):
     model = ControlPoint
     form_class = ControlPointForm
 
