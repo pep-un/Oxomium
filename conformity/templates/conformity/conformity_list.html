@@ -6,8 +6,6 @@
 {% endblock %}
 
 {% block content %}
-
-{% include "includes/filter_row.html" %}
-
+{% include "includes/list_toolbar.html" with filter=filter item_count=object_list|length %}
 {% render_table table %}
 {% endblock %}
