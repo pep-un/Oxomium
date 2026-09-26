@@ -8,8 +8,8 @@ The design goal is to make the trigger and purpose of every workflow obvious fro
 
 Python versions are defined once in `.github/ci-python-versions.json`:
 
-- `current` is the Python version used for normal branch CI, main CI and Sonar coverage;
-- `supported` is the compatibility matrix enforced on pull requests.
+- `current` is the Python version used for normal branch CI, Pylint/Sonar on `main`, and Sonar coverage;
+- `supported` is the Django compatibility matrix enforced on pull requests and revalidated on `main`.
 
 Each workflow starts with a small `Python version configuration` job that reads and validates this file. The current version must also be present in the supported list.
 
@@ -21,7 +21,7 @@ To adopt or retire a Python version, update this file first. Pull-request job na
 | --- | --- | --- | --- | --- |
 | `.github/workflows/ci-branch.yml` | Push to any branch except main | Fast developer feedback | Current only | None |
 | `.github/workflows/ci-pull-request.yml` | Pull request targeting main | Compatibility and merge gate | All supported versions | Lint/config validation only, when Docker files change |
-| `.github/workflows/ci-main.yml` | Push to main | Canonical post-merge integration validation | Current only | Full build, security scan and smoke test |
+| `.github/workflows/ci-main.yml` | Push to main | Canonical post-merge integration validation | Django/migrations on all supported versions; Pylint/Sonar on current | Full build, security scan and smoke test |
 | `.github/workflows/docker-publish.yml` | Manual `workflow_dispatch` | Explicit Docker Hub publication outside the release flow | N/A | Build and publish |
 | `.github/workflows/release.yml` | Published GitHub Release | Build, scan, publish and attach release artifacts | N/A | Release build and publication |
 
@@ -94,7 +94,7 @@ Application-only changes and dependency-only changes do not run Docker checks in
 
 `ci-main.yml` runs on every push to `main`.
 
-Django, migrations, Pylint and Sonar use the configured `current` Python version. Compatibility across every supported Python version has already been enforced by the pull-request gate.
+Django tests and migration checks run again on every Python version in `supported`, validating the exact integrated state of `main`. Pylint and Sonar use only the configured `current` Python version to avoid repeating low-value static-analysis work across the whole matrix.
 
 Docker validation always runs on `main`, regardless of which files changed. This validates the exact canonical commit after integration.
 
