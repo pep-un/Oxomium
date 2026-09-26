@@ -1,0 +1,191 @@
+name: CI · Pull Request to main
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  python_versions:
+    name: Python version configuration
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      current: ${{ steps.versions.outputs.current }}
+      supported: ${{ steps.versions.outputs.supported }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Read Python versions
+        id: versions
+        shell: bash
+        run: |
+          set -euo pipefail
+          current="$(jq -r '.current' .github/ci-python-versions.json)"
+          supported="$(jq -c '.supported' .github/ci-python-versions.json)"
+          jq -e --arg current "$current" '.supported | index($current) != null'             .github/ci-python-versions.json > /dev/null
+          echo "current=$current" >> "$GITHUB_OUTPUT"
+          echo "supported=$supported" >> "$GITHUB_OUTPUT"
+
+  django:
+    name: Django (Python ${{ matrix.python-version }})
+    needs: python_versions
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        python-version: ${{ fromJSON(needs.python_versions.outputs.supported) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade --only-binary=:all: pip
+          pip install --only-binary=:all: -r requirements.txt
+      - name: Run tests
+        run: python manage.py test
+      - name: Check model migrations
+        run: python manage.py makemigrations --check --dry-run
+
+  pylint:
+    name: Pylint (Python ${{ matrix.python-version }})
+    needs: python_versions
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        python-version: ${{ fromJSON(needs.python_versions.outputs.supported) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade --only-binary=:all: pip
+          pip install --only-binary=:all: -r requirements.txt pylint-django
+      - name: Analyse Python code
+        run: >-
+          pylint -E --load-plugins pylint_django
+          --django-settings-module=oxomium
+          --ignore-paths='.*/migrations/'
+          --ignore=__init__.py,manage.py
+          $(git ls-files '*.py')
+
+  dependency_check:
+    name: DependencyCheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Dependency Review
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5
+
+  sonarqube:
+    name: SonarQube
+    needs: python_versions
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+      - name: Require SonarCloud token for repository pull requests
+        if: ${{ env.SONAR_TOKEN == '' && github.event.pull_request.head.repo.full_name == github.repository }}
+        run: |
+          echo "::error::SONAR_TOKEN is required for pull requests from this repository."
+          exit 1
+      - name: Explain SonarCloud limitation for fork pull requests
+        if: ${{ env.SONAR_TOKEN == '' && github.event.pull_request.head.repo.full_name != github.repository }}
+        run: |
+          echo "::notice::SonarCloud analysis cannot use repository secrets on pull requests from forks."
+      - name: Set up Python ${{ needs.python_versions.outputs.current }}
+        if: ${{ env.SONAR_TOKEN != '' }}
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: ${{ needs.python_versions.outputs.current }}
+          cache: pip
+      - name: Install dependencies
+        if: ${{ env.SONAR_TOKEN != '' }}
+        run: |
+          python -m pip install --upgrade --only-binary=:all: pip
+          pip install --only-binary=:all: -r requirements.txt coverage
+      - name: Run coverage tests
+        if: ${{ env.SONAR_TOKEN != '' }}
+        run: |
+          coverage run manage.py test
+          coverage xml
+      - name: SonarCloud Scan
+        if: ${{ env.SONAR_TOKEN != '' }}
+        uses: SonarSource/sonarqube-scan-action@ba9859eae8dd6bd29e412f25ddbbef3d032000f4 # v8
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  changes:
+    name: Detect Docker-file changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      docker: ${{ steps.filter.outputs.docker }}
+    steps:
+      - name: Checkout history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+      - name: Detect Docker files
+        id: filter
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed_files="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+          printf '%s\n' "$changed_files"
+
+          if printf '%s\n' "$changed_files" | grep -Eq             '^(Dockerfile|\.dockerignore|docker-compose\.yml|env-exemple|docker/)'; then
+            echo "docker=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "docker=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  docker_lint:
+    name: Docker Lint
+    needs: changes
+    if: ${{ needs.changes.outputs.docker == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Lint Dockerfile
+        uses: hadolint/hadolint-action@54c9adbab1582c2ef04b2016b760714a4bfde3cf # v3.1.0
+        with:
+          dockerfile: Dockerfile
+          failure-threshold: error
+      - name: Validate Compose file
+        run: docker compose config --quiet
