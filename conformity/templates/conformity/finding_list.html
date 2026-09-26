@@ -1,15 +1,10 @@
 {% extends "conformity/main.html" %}
 {% load render_table from django_tables2 %}
 {% load ui_tags %}
-
-{% block header %}
-    <h1 class="h1 bi bi-exclamation-diamond"> Active findings </h1>
-{% endblock %}
-
+{% block header %}<h1 class="h1 bi bi-exclamation-diamond"> Active findings </h1>{% endblock %}
 {% block content %}
 {% breadcrumb "Findings" %}
-
 {% route_url 'conformity:finding_export' as export_url %}
 {% include "includes/list_toolbar.html" with export_url=export_url filter=filter item_count=object_list|length %}
-{% render_table table %}
+{% if object_list %}{% render_table table %}{% else %}{% include "includes/empty_state.html" with empty_message="No active findings are available." %}{% endif %}
 {% endblock %}
