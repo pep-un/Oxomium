@@ -283,7 +283,7 @@ class ActionPriorityRenderingTests(TestCase):
                     "conformity/includes/action_priority.html",
                     {"action": Action(priority=priority)},
                 )
-                self.assertIn("badge rounded-pill", html)
+                self.assertIn("badge rounded-pill w-75", html)
                 self.assertIn(css_class, html)
                 self.assertIn(label, html)
 

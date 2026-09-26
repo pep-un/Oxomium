@@ -1,13 +1,13 @@
 {% if action.priority == 1 %}
-    <span class="badge rounded-pill text-bg-dark">{{ action.get_priority_display }}</span>
+    <span class="badge rounded-pill w-75 text-bg-dark">{{ action.get_priority_display }}</span>
 {% elif action.priority == 2 %}
-    <span class="badge rounded-pill text-bg-danger">{{ action.get_priority_display }}</span>
+    <span class="badge rounded-pill w-75 text-bg-danger">{{ action.get_priority_display }}</span>
 {% elif action.priority == 3 %}
-    <span class="badge rounded-pill text-bg-warning">{{ action.get_priority_display }}</span>
+    <span class="badge rounded-pill w-75 text-bg-warning">{{ action.get_priority_display }}</span>
 {% elif action.priority == 4 %}
-    <span class="badge rounded-pill text-bg-secondary">{{ action.get_priority_display }}</span>
+    <span class="badge rounded-pill w-75 text-bg-secondary">{{ action.get_priority_display }}</span>
 {% elif action.priority == 5 %}
-    <span class="badge rounded-pill text-bg-info">{{ action.get_priority_display }}</span>
+    <span class="badge rounded-pill w-75 text-bg-info">{{ action.get_priority_display }}</span>
 {% else %}
-    <span class="badge rounded-pill text-bg-light text-dark border">Not defined</span>
+    <span class="badge rounded-pill w-75 text-bg-light text-dark border">Not defined</span>
 {% endif %}
