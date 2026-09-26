@@ -89,7 +89,7 @@
     flex: 0 0 auto;
     font-size: .8em;
     font-weight: 400;
-    opacity: 0;
+    opacity: .35;
     transition: opacity .15s ease-in-out;
 }
 
@@ -100,7 +100,7 @@
 
 .table thead th.orderable:hover > a::after,
 .table thead th.orderable > a:focus-visible::after {
-    opacity: .35;
+    opacity: .6;
 }
 
 .table thead th.orderable > a:focus-visible {
