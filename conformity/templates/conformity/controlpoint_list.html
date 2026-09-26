@@ -1,4 +1,5 @@
 {% extends "conformity/main.html" %}
+{% load ui_tags %}
 {% load render_table from django_tables2 %}
 
 {% block header %}
@@ -8,6 +9,9 @@
 {% endblock %}
 
 {% block content %}
+{% route_url 'conformity:control_index' as controls_url %}
+{% breadcrumb "Controls" controls_url "Control points" %}
+
 <div class="row">
     {% if filter.form.data.control %}
         <div class="col col-4">
@@ -48,13 +52,5 @@
         {% render_table table %}
     </div>
   </div>
-</div>
-<div class="row mt-4">
-    <div class="col text-center">
-                    <a href="{% url 'conformity:control_index' %}"
-                       class="btn btn-secondary bi bi-caret-left-square">
-                        Return to control list
-                    </a>
-    </div>
 </div>
 {% endblock %}
