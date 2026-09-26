@@ -1,0 +1,15 @@
+{% with score=finding.cvss|floatformat:1 %}
+    {% if finding.severity == "CRT" %}
+        <span class="badge rounded-pill cvss-badge text-bg-dark">Critical ({{ score|default:"-" }})</span>
+    {% elif finding.severity == "MAJ" %}
+        <span class="badge rounded-pill cvss-badge text-bg-danger">Major ({{ score|default:"-" }})</span>
+    {% elif finding.severity == "MIN" %}
+        <span class="badge rounded-pill cvss-badge text-bg-warning">Minor ({{ score|default:"-" }})</span>
+    {% elif finding.severity == "OBS" %}
+        <span class="badge rounded-pill cvss-badge text-bg-info">Opportunity ({{ score|default:"-" }})</span>
+    {% elif finding.severity == "OTHER" %}
+        <span class="badge rounded-pill cvss-badge text-bg-light text-dark border">Other ({{ score|default:"-" }})</span>
+    {% elif finding.severity == "POS" %}
+        <span class="badge rounded-pill cvss-badge text-bg-success">Positive ({{ score|default:"-" }})</span>
+    {% endif %}
+{% endwith %}

@@ -3,24 +3,7 @@
 {% block header %}
     <h1 class="h2 bi bi-exclamation-diamond">
         Finding "{{ finding.short_description }}"
-        {% if finding.severity == "CRT" %}
-            <span class="badge rounded-pill bg-dark">Critical ({{ finding.cvss }})</span>
-        {% endif %}
-        {% if finding.severity == "MAJ" %}
-            <span class="badge rounded-pill bg-danger">Major ({{ finding.cvss }})</span>
-        {% endif %}
-        {% if finding.severity == "MIN" %}
-            <span class="badge rounded-pill bg-warning">Minor ({{ finding.cvss }})</span>
-        {% endif %}
-        {% if finding.severity == "OBS" %}
-            <span class="badge rounded-pill bg-info">Opportunity ({{ finding.cvss }})</span>
-        {% endif %}
-        {% if finding.severity == "OTHER" %}
-            <span class="badge rounded-pill bg-secondary">Remark ({{ finding.cvss }})</span>
-        {% endif %}
-        {% if finding.severity == "POS" %}
-            <span class="badge rounded-pill bg-success">Positive ({{ finding.cvss }})</span>
-        {% endif %}
+        {% include 'conformity/includes/finding_cvss_badge.html' with finding=finding %}
 
     </h1>
 {% endblock %}
@@ -63,7 +46,10 @@
     <div class="col-4 list-group mb-3">
         {% for action in finding.get_action %}
             <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-start" href="{% url 'conformity:action_form' action.id %}">
-                {{action}} <span class="badge bg-primary rounded-pill"> {{ action.get_status_display }} </span>
+                <span>{{ action }}</span>
+                <span class="badge rounded-pill text-bg-light text-dark border col-5 text-center">
+                    {% include 'conformity/includes/action_status.html' with action=action %}
+                </span>
             </a>
         {% empty %}
             <p class="list-group-item list-group-item-warning text-center my-0">No action associated</p>

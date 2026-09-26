@@ -1,0 +1,12 @@
+{% if controlpoint.status == "SCHD" %}
+    <i class="bi bi-hexagon text-dark"></i>
+{% elif controlpoint.status == "TOBE" %}
+    <i class="bi bi-hexagon-fill text-info"></i>
+{% elif controlpoint.status == "NOK" %}
+    <i class="bi bi-hexagon-fill text-danger"></i>
+{% elif controlpoint.status == "OK" %}
+    <i class="bi bi-hexagon-fill text-success"></i>
+{% elif controlpoint.status == "MISS" %}
+    <i class="bi bi-hexagon text-danger"></i>
+{% endif %}
+{{ controlpoint.get_status_display }}

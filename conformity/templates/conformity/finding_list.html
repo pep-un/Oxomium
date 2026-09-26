@@ -1,4 +1,5 @@
 {% extends "conformity/main.html" %}
+{% load render_table from django_tables2 %}
 
 {% block header %}
     <h1 class="h1 bi bi-exclamation-diamond"> Active findings </h1>
@@ -43,83 +44,5 @@
 
 </div>
 
-<table class="table table-striped align-middle">
-  <caption class="d-none">List of Critical, Major, Minor finding and Opportunity for improvement.</caption>
-    <thead>
-        <tr>
-            <th class="text-center">Finding</th>
-            <th class="">Description</th>
-            <th class="text-center">CVSS</th>
-            <th class="text-center">Audit campaign</th>
-            <th class="text-center">Associated actions</th>
-            <th class="text-center">Action</th>
-        </tr>
-    </thead>
-    <tbody>
-    {% for finding in finding_list %}
-        <tr>
-            <td class="col-2 text-center">
-                {{ finding.name | default:"Unnamed finding" }}
-            </td>
-            <td class="col">
-                {{ finding.short_description }}
-            </td>
-            <td class="col-1 text-center">
-                {% if finding.severity == "CRT" %}
-                    <span class="badge rounded-pill w-75 text-bg-dark">
-                {% endif %}
-                {% if finding.severity == "MAJ" %}
-                    <span class="badge rounded-pill w-75 text-bg-danger">
-                {% endif %}
-                {% if finding.severity == "MIN" %}
-                    <span class="badge rounded-pill w-75 text-bg-warning">
-                {% endif %}
-                {% if finding.severity == "OBS" %}
-                    <span class="badge rounded-pill w-75 text-bg-info">
-                {% endif %}
-                {% if finding.severity == "OTHER" %}
-                    <span class="badge rounded-pill w-75 text-bg-secondary">
-                {% endif %}
-                {% if finding.severity == "POS" %}
-                    <span class="badge rounded-pill w-75 text-bg-success">
-                {% endif %}
-                {{ finding.cvss | default:'-'}}
-                </span>
-            </td>
-            <td class="col text-center">
-                <a href="{% url 'conformity:audit_detail' finding.audit.id %}">
-                    <button type="button" class="btn btn-outline-primary btn-sm w-75">
-                        {{ finding.audit }}
-                    </button>
-                </a>
-            </td>
-            <td class="col text-center">
-                {% if finding.get_action %}
-                    <a href="{% url 'conformity:action_index' %}?associated_findings={{finding.id}}">
-                        <button type="button" class="btn btn-outline-primary btn-sm">
-                            {{ finding.get_action | length}} associated actions
-                        </button>
-                    </a>
-                {% endif %}
-            </td>
-            <td class="col text-center">
-                <div class="btn-group">
-                    <a href="{% url 'conformity:finding_detail' finding.id %}"
-                       class="btn btn-sm btn-primary bi bi-eye" title="View">
-                        <span class="visually-hidden">View finding</span>
-                    </a>
-                    <a href="{% url 'conformity:finding_form' finding.id %}"
-                       class="btn btn-sm btn-warning bi bi-pencil-square" title="Edit">
-                        <span class="visually-hidden">Edit finding</span>
-                    </a>
-                </div>
-            </td>
-        </tr>
-    {% empty %}
-        <div class="alert alert-info" role="alert">
-            No finding recorded.
-        </div>
-        <tr><td colspan="6">No data to display</td></tr>
-    {% endfor %}
-</table>
+{% render_table table %}
 {% endblock %}

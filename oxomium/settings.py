@@ -169,4 +169,16 @@ CONSTANCE_CONFIG = {
         "Bonjour !",
         "This text will be printed on the login page",
         str),
+    'TABLE_PAGE_SIZE': (
+        20,
+        "Number of rows displayed per page in rich tables",
+        int),
+    'HOME_ITEMS_LIMIT': (
+        50,
+        "Maximum number of items displayed in each home dashboard list",
+        int),
 }
+
+
+# Rich table configuration
+DJANGO_TABLES2_TEMPLATE = 'django_tables2/bootstrap5-responsive.html'
