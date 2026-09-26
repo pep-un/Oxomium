@@ -198,7 +198,11 @@ class FindingTable(BaseRichTable):
         verbose_name="Audit campaign",
         linkify=("conformity:audit_detail", [A("audit__pk")]),
         order_by=("audit__name",),
-        attrs=CENTER,
+        attrs={
+            "th": {"class": "text-center"},
+            "td": {"class": "text-center"},
+            "a": {"class": "btn btn-sm btn-outline-secondary"},
+        },
     )
     associated_actions = tables.Column(
         accessor="actions_count",
@@ -208,7 +212,11 @@ class FindingTable(BaseRichTable):
             if record.actions_count
             else None
         ),
-        attrs=CENTER,
+        attrs={
+            "th": {"class": "text-center"},
+            "td": {"class": "text-center"},
+            "a": {"class": "btn btn-sm btn-outline-secondary"},
+        },
     )
 
     actions = EditColumn("conformity:finding_form", "finding")
@@ -235,7 +243,7 @@ class OrganizationTable(BaseRichTable):
         template_code="""
             {% for item in record.get_frameworks %}
                 <a href="{% url 'conformity:conformity_detail_index' record.id item.id %}"
-                   class="badge bg-light text-dark border text-decoration-none my-1">{{ item }}</a>
+                   class="btn btn-sm btn-outline-secondary my-1">{{ item }}</a>
             {% empty %}
                 <span class="text-body-secondary">None</span>
             {% endfor %}
@@ -325,8 +333,9 @@ class ControlTable(BaseRichTable):
         verbose_name="Associated requirements",
         template_code="""
             {% for conformity in record.conformity.all %}
-                <span class="badge rounded-pill text-bg-secondary"
-                      title="{{ conformity.requirement.title }}">{{ conformity.requirement.full_path }}</span>
+                <a href="{% url 'conformity:conformity_detail_index' conformity.organization.id conformity.requirement.framework.id %}#requirement-{{ conformity.requirement.id }}"
+                   class="btn btn-sm btn-outline-secondary my-1"
+                   title="{{ conformity.requirement.title }}">{{ conformity.requirement.full_path }}</a>
             {% empty %}
                 <span class="text-body-secondary">None</span>
             {% endfor %}

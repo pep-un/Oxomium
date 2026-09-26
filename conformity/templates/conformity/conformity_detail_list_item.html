@@ -1,7 +1,7 @@
 {% if con.requirement.is_parent and con.requirement.level < 3 %}
-<tr class="table-{{style}}">
+<tr id="requirement-{{ con.requirement.id }}" class="table-{{style}}">
 {% else %}
-<tr class="">
+<tr id="requirement-{{ con.requirement.id }}" class="">
 {% endif %}
 
     {% if con.requirement.is_leaf_node %}
