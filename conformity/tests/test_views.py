@@ -249,7 +249,8 @@ class SharedUxComponentsTests(BaseDataMixin, TestCase):
         self.assertContains(response, "Reset filters")
         self.assertContains(response, 'btn btn-primary dropdown-toggle')
         self.assertContains(response, 'badge text-bg-light ms-1">1</span>')
-        self.assertNotContains(response, "btn-outline-")
+        self.assertContains(response, 'class="btn btn-secondary" href="/action/export"')
+        self.assertContains(response, 'class="btn btn-secondary dropdown-toggle dropdown-toggle-split"')
         self.assertNotContains(response, "btn-danger")
 
     def test_pagination_does_not_mark_filters_active(self):
