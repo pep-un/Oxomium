@@ -7,6 +7,8 @@
 {% endblock %}
 
 {% block content %}
+{% breadcrumb "Actions" %}
+
 {% route_url 'conformity:action_create' as create_url %}
 {% route_url 'conformity:action_export' as export_url %}
 {% include "includes/list_toolbar.html" with create_url=create_url export_url=export_url filter=filter item_count=object_list|length %}
