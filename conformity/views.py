@@ -498,7 +498,7 @@ class ControlPointIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     template_name = 'conformity/controlpoint_list.html'
 
     def get_queryset(self):
-        return ControlPoint.objects.select_related("control_user")
+        return ControlPoint.objects.select_related("control", "control_user")
 
 
 class ControlPointUpdateView(LoginRequiredMixin, UpdateView):

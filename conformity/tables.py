@@ -382,15 +382,20 @@ class ControlTable(BaseRichTable):
 
 
 class ControlPointTable(BaseRichTable):
-    period_start_date = tables.DateColumn(
-        verbose_name="Start date",
-        format="d-M-Y",
+    name = tables.Column(
+        accessor="control__title",
+        verbose_name="Name",
+        default="",
         linkify=("conformity:controlpoint_form", [A("pk")]),
+        order_by=("control__title",),
         attrs=PRIMARY_COLUMN,
     )
+    period_start_date = tables.DateColumn(verbose_name="Start date", format="d-M-Y")
     period_end_date = tables.DateColumn(verbose_name="End date", format="d-M-Y")
     control_user = tables.Column(verbose_name="Owner", default="")
     status = StatusColumn(CONTROL_POINT_STATUS_STYLES)
+
     class Meta(BaseRichTable.Meta):
         model = ControlPoint
         fields = ("period_start_date", "period_end_date", "control_user", "status")
+        sequence = ("name", "period_start_date", "period_end_date", "control_user", "status")
