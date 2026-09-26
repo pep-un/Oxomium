@@ -27,6 +27,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          if [[ "$RELEASE_TAG" != v* ]]; then
+            echo "::error::Release tag must follow the existing v<semver> convention: $RELEASE_TAG"
+            exit 1
+          fi
           version="${RELEASE_TAG#v}"
           if [ -z "$version" ]; then
             echo "::error::Unable to derive a release version from $RELEASE_TAG"
@@ -49,6 +53,8 @@ jobs:
           file: ${{ steps.version.outputs.tarball }}
           format: cyclonedx-json
           output-file: ${{ steps.version.outputs.tarball_sbom }}
+          upload-artifact: false
+          upload-release-assets: false
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
@@ -101,6 +107,8 @@ jobs:
           image: ${{ env.IMAGE }}:${{ steps.version.outputs.version }}
           format: cyclonedx-json
           output-file: ${{ steps.version.outputs.docker_sbom }}
+          upload-artifact: false
+          upload-release-assets: false
 
       - name: Generate SHA-256 checksums
         shell: bash
@@ -126,6 +134,17 @@ jobs:
           flavor: |
             latest=auto
 
+      - name: Validate Docker release tags
+        shell: bash
+        env:
+          DOCKER_TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          set -euo pipefail
+          if [ -z "$DOCKER_TAGS" ]; then
+            echo "::error::No Docker tags were generated from release tag $RELEASE_TAG"
+            exit 1
+          fi
+
       - name: Tag and push the validated Docker image
         shell: bash
         env:
@@ -142,6 +161,7 @@ jobs:
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           tag_name: ${{ env.RELEASE_TAG }}
+          fail_on_unmatched_files: true
           files: |
             ${{ steps.version.outputs.tarball }}
             ${{ steps.version.outputs.tarball_sbom }}
