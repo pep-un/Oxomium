@@ -120,11 +120,7 @@ jobs:
       - name: Build Compose web image
         run: docker compose --project-name oxomium-ci build web
       - name: Tag validated image
-        run: |
-          set -euo pipefail
-          image_id="$(docker compose --project-name oxomium-ci images -q web)"
-          test -n "$image_id"
-          docker image tag "$image_id" oxomium:ci
+        run: docker image tag oxomium-ci-web oxomium:ci
       - name: Run Django system checks
         run: docker run --rm --entrypoint python oxomium:ci manage.py check
       - name: Scan image for vulnerabilities
