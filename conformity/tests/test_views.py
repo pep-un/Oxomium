@@ -264,15 +264,15 @@ class SharedUxComponentsTests(BaseDataMixin, TestCase):
         response = self.client.get(reverse("conformity:action_index"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "No actions have been created yet.")
-        self.assertContains(response, reverse("conformity:action_create"))
+        self.assertContains(response, 'href="' + reverse("conformity:action_create") + '"', count=2)
         self.assertNotContains(response, "No results match the active filters.")
 
     def test_filtered_empty_result_offers_reset_instead_of_create(self):
         response = self.client.get(reverse("conformity:action_index"), {"title": "missing-action"})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "No results match the active filters.")
-        self.assertContains(response, "> Reset filters</a>", html=True)
-        self.assertNotContains(response, 'href="' + reverse("conformity:action_create") + '"')
+        self.assertContains(response, "Reset filters", count=2)
+        self.assertContains(response, 'href="' + reverse("conformity:action_create") + '"', count=1)
 
     def test_empty_state_without_create_url_does_not_offer_create(self):
         Finding.objects.all().delete()
