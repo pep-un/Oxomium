@@ -80,3 +80,29 @@ class RichTableInteractionTests(TestCase):
         self.assertEqual(descending.status_code, 200)
         self.assertContains(descending, 'class="desc orderable"')
 
+    def test_all_rich_table_indexes_render(self):
+        view_names = (
+            "conformity:action_index",
+            "conformity:audit_index",
+            "conformity:conformity_index",
+            "conformity:control_index",
+            "conformity:controlpoint_index",
+            "conformity:finding_index",
+            "conformity:framework_index",
+            "conformity:organization_index",
+        )
+        for view_name in view_names:
+            with self.subTest(view_name=view_name):
+                response = self.client.get(reverse(view_name))
+                self.assertEqual(response.status_code, 200)
+
+    def test_primary_label_links_to_organization_detail(self):
+        organization = Organization.objects.order_by("pk").first()
+        response = self.client.get(reverse("conformity:organization_index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            reverse("conformity:organization_detail", args=[organization.pk]),
+        )
+
