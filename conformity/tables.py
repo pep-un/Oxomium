@@ -6,7 +6,11 @@ from .models import Action, Audit, Conformity, Control, ControlPoint, Finding, F
 
 
 CENTER = {"cell": {"class": "text-center"}}
-PRIMARY_LINK = {"a": {"class": "table-primary-link"}}
+PRIMARY_COLUMN = {
+    "th": {"class": "col-2 text-start"},
+    "td": {"class": "col-2 text-start"},
+    "a": {"class": "table-primary-link"},
+}
 
 
 class StatusColumn(tables.Column):
@@ -120,9 +124,9 @@ class BaseRichTable(tables.Table):
 
 class ActionTable(BaseRichTable):
     title = tables.Column(
-        verbose_name="Title",
+        verbose_name="Name",
         linkify=("conformity:action_form", [A("pk")]),
-        attrs=PRIMARY_LINK,
+        attrs=PRIMARY_COLUMN,
     )
     owner = tables.Column(default="", attrs={"td": {"class": "text-nowrap"}})
     status = StatusColumn(ACTION_STATUS_STYLES)
@@ -176,8 +180,9 @@ class ActionTable(BaseRichTable):
 
 class AuditTable(BaseRichTable):
     name = tables.Column(
+        verbose_name="Name",
         linkify=("conformity:audit_detail", [A("pk")]),
-        attrs=PRIMARY_LINK,
+        attrs=PRIMARY_COLUMN,
     )
     auditor = tables.Column()
     type = tables.Column(accessor="get_type_display", verbose_name="Type", order_by=("type",))
@@ -205,14 +210,10 @@ class AuditTable(BaseRichTable):
 
 class FindingTable(BaseRichTable):
     name = tables.Column(
-        verbose_name="Finding",
+        verbose_name="Name",
         default="Unnamed finding",
         linkify=("conformity:finding_detail", [A("pk")]),
-        attrs={
-            "th": {"class": "text-center"},
-            "td": {"class": "text-center"},
-            "a": {"class": "table-primary-link"},
-        },
+        attrs=PRIMARY_COLUMN,
     )
     short_description = tables.Column(verbose_name="Description")
     cvss = BadgeColumn(
@@ -256,9 +257,9 @@ class FindingTable(BaseRichTable):
 
 class OrganizationTable(BaseRichTable):
     name = tables.Column(
-        verbose_name="Organization",
+        verbose_name="Name",
         linkify=("conformity:organization_detail", [A("pk")]),
-        attrs=PRIMARY_LINK,
+        attrs=PRIMARY_COLUMN,
     )
     administrative_id = tables.Column(
         verbose_name="Identifier",
@@ -289,9 +290,9 @@ class OrganizationTable(BaseRichTable):
 
 class FrameworkTable(BaseRichTable):
     name = tables.Column(
-        verbose_name="Framework",
+        verbose_name="Name",
         linkify=("conformity:framework_detail", [A("pk")]),
-        attrs=PRIMARY_LINK,
+        attrs=PRIMARY_COLUMN,
     )
     version = tables.Column(default="-", attrs=CENTER)
     language = tables.Column(accessor="get_language_display", order_by=("language",), attrs=CENTER)
@@ -311,7 +312,7 @@ class FrameworkTable(BaseRichTable):
 
 class ConformityTable(BaseRichTable):
     conformity = tables.TemplateColumn(
-        verbose_name="Conformity",
+        verbose_name="Name",
         template_code="""
             <a href="{% url 'conformity:conformity_detail_index' record.organization.id record.requirement.framework.id %}"
                class="table-primary-link">
@@ -319,6 +320,7 @@ class ConformityTable(BaseRichTable):
             </a>
         """,
         order_by=("organization__name", "requirement__framework__name"),
+        attrs=PRIMARY_COLUMN,
     )
     requirements = tables.TemplateColumn(
         verbose_name="Requirements",
@@ -352,9 +354,9 @@ class ConformityTable(BaseRichTable):
 
 class ControlTable(BaseRichTable):
     title = tables.Column(
-        verbose_name="Title",
+        verbose_name="Name",
         linkify=("conformity:control_detail", [A("pk")]),
-        attrs=PRIMARY_LINK,
+        attrs=PRIMARY_COLUMN,
     )
     level = tables.Column(accessor="get_level_display", order_by=("level",), attrs=CENTER)
     frequency = tables.Column(accessor="get_frequency_display", order_by=("frequency",), attrs=CENTER)
@@ -384,7 +386,7 @@ class ControlPointTable(BaseRichTable):
         verbose_name="Start date",
         format="d-M-Y",
         linkify=("conformity:controlpoint_form", [A("pk")]),
-        attrs=PRIMARY_LINK,
+        attrs=PRIMARY_COLUMN,
     )
     period_end_date = tables.DateColumn(verbose_name="End date", format="d-M-Y")
     control_user = tables.Column(verbose_name="Owner", default="")
