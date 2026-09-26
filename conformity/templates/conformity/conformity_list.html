@@ -1,4 +1,5 @@
 {% extends "conformity/main.html" %}
+{% load ui_tags %}
 {% load render_table from django_tables2 %}
 
 {% block header %}
@@ -6,6 +7,8 @@
 {% endblock %}
 
 {% block content %}
+{% breadcrumb "Conformities" %}
+
 {% include "includes/list_toolbar.html" with filter=filter item_count=object_list|length %}
 {% render_table table %}
 {% endblock %}
