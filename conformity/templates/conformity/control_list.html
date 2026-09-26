@@ -12,33 +12,97 @@
         <div class="row">
             <div class="col">
                 <div class="card">
-                    <div class="card-header">Inventory</div>
+                    <div class="card-header">
+                        Inventory
+                    </div>
                     <ul class="list-group list-group-flush">
-                        <li class="list-group-item"><span>Control </span> <span class="badge text-bg-secondary float-end w-25">{{ control_list.count | default:"-" }} </span></li>
-                        <li class="list-group-item"><span><i class="bi bi-caret-right-fill"></i> 1st level </span> <span class="badge text-bg-primary float-end w-25">{{ c1st | default:"-" }} </span></li>
-                        <li class="list-group-item"><span><i class="bi bi-caret-right-fill"></i> 2nd level </span> <span class="badge text-bg-success float-end w-25">{{ c2nd | default:"-" }} </span></li>
-                        <li class="list-group-item"><span>Control Point </span> <span class="badge text-bg-secondary float-end w-25">{{ controlpoint_list.count | default:"-" }} </span></li>
+                        <li class="list-group-item">
+                            <span>Control </span> <span class="badge text-bg-secondary float-end w-25">{{ control_list.count | default:"-" }} </span>
+                        </li>
+                        <li class="list-group-item">
+                            <span><i class="bi bi-caret-right-fill"></i> 1st level </span> <span class="badge text-bg-primary float-end w-25">{{ c1st | default:"-" }} </span>
+                        </li>
+                        <li class="list-group-item">
+                            <span><i class="bi bi-caret-right-fill"></i> 2nd level </span> <span class="badge text-bg-success float-end w-25">{{ c2nd | default:"-" }} </span>
+                        </li>
+                        <li class="list-group-item">
+                            <span>Control Point </span> <span class="badge text-bg-secondary float-end w-25">{{ controlpoint_list.count | default:"-" }} </span>
+                        </li>
                     </ul>
                 </div>
             </div>
         </div>
     </div>
+
     <div class="col">
         <h3 class="mx-4">Controls to evaluate</h3>
         <div class="row mx-3">
-            {% for frequency, label, count in control_due_cards %}
             <div class="col">
                 <div class="card">
                     <div class="card-body">
-                        <h4 class="text-primary display-5">{{ count }}</h4>
-                        <p class="m-0">{{ label }}</p>
+                        <h4 class="text-primary display-5">{{ cp0x }}</h4>
+                        <p class="m-0">All controls</p>
                     </div>
                     <div class="card-footer text-end">
-                        <a href="{% url 'conformity:controlpoint_index' %}?status=TOBE{% if frequency %}&control__frequency={{ frequency }}{% endif %}" class="small">See more &gt;</a>
+                        <a href="{% url 'conformity:controlpoint_index' %}?status=TOBE" class="small">See more ></a>
                     </div>
                 </div>
             </div>
-            {% endfor %}
+            <div class="col">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="text-primary display-5">{{ cp1x }}</h4>
+                        <p class="m-0">Yearly</p>
+                    </div>
+                    <div class="card-footer text-end">
+                        <a href="{% url 'conformity:controlpoint_index' %}?status=TOBE&control__frequency=1"  class="small">See more ></a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="text-primary display-5">{{ cp2x }}</h4>
+                        <p class="m-0">Half-Yearly</p>
+                    </div>
+                    <div class="card-footer text-end">
+                        <a href="{% url 'conformity:controlpoint_index' %}?status=TOBE&control__frequency=2" class="small">See more ></a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="text-primary display-5">{{ cp4x }}</h4>
+                        <p class="m-0">Quarterly</p>
+                    </div>
+                    <div class="card-footer text-end">
+                        <a href="{% url 'conformity:controlpoint_index' %}?status=TOBE&control__frequency=4" class="small">See more ></a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="text-primary display-5">{{ cp6x }}</h4>
+                        <p class="m-0">Bimonthly</p>
+                    </div>
+                    <div class="card-footer text-end">
+                        <a href="{% url 'conformity:controlpoint_index' %}?status=TOBE&control__frequency=6" class="small">See more ></a>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="text-primary display-5">{{ cp12x }}</h4>
+                        <p class="m-0">Monthly</p>
+                    </div>
+                    <div class="card-footer text-end">
+                        <a href="{% url 'conformity:controlpoint_index' %}?status=TOBE&control__frequency=12" class="small">See more ></a>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -48,5 +112,7 @@
 {% route_url 'conformity:control_create' as create_url %}
 {% route_url 'conformity:control_export' as export_url %}
 {% include "includes/list_toolbar.html" with create_url=create_url export_url=export_url filter=filter item_count=object_list|length %}
+
 {% render_table table %}
+
 {% endblock %}
