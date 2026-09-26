@@ -13,7 +13,7 @@
 {% breadcrumb "Controls" controls_url "Control points" %}
 
 <div class="row">
-    {% if filter.form.data.control %}
+    {% if filter.form.data.control and object_list %}
         <div class="col col-4">
 
             <div class="card">
@@ -48,7 +48,11 @@
             <h2>Control Point List</h2>
         {% endif %}
 
-        {% render_table table %}
+        {% if object_list %}
+            {% render_table table %}
+        {% else %}
+            {% include "includes/empty_state.html" with empty_message="No control points are available." %}
+        {% endif %}
     </div>
   </div>
 </div>
