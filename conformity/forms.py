@@ -6,6 +6,7 @@ from django.forms import ModelForm, FileField, ClearableFileInput, BooleanField,
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from .models import Conformity, Organization, Audit, Finding, Action, Control, ControlPoint, Indicator, IndicatorPoint
+from .validators import attachment_accept, attachment_max_size_help, validate_attachment
 
 
 class ConformityForm(ModelForm):
@@ -23,14 +24,14 @@ class ConformityForm(ModelForm):
             self.fields['status'].disabled = True
 
 
-class OrganizationForm(ModelForm):
+class OrganizationForm(AttachmentUploadFormMixin, ModelForm):
     attachments = FileField(required=False, widget=ClearableFileInput())
     class Meta:
         model = Organization
         fields = ['name', 'administrative_id', 'description', 'applicable_frameworks']
 
 
-class AuditForm(ModelForm):
+class AuditForm(AttachmentUploadFormMixin, ModelForm):
     attachments = FileField(required=False, widget=ClearableFileInput())
     class Meta:
         model = Audit
@@ -159,7 +160,7 @@ class ControlForm(ModelForm):
             self.fields['conformity'].disabled = True
 
 
-class ControlPointForm(ModelForm):
+class ControlPointForm(AttachmentUploadFormMixin, ModelForm):
     attachments = FileField(required=False, widget=ClearableFileInput())
     class Meta:
         model = ControlPoint
