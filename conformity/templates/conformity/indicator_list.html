@@ -102,10 +102,9 @@
     </div>
 
     {% empty %}
-    <div class="alert alert-info" role="alert">
-        No indicator recorded.
+    <div class="col-12">
+        {% include "includes/empty_state.html" with empty_message="No indicators have been created yet." create_url=create_url %}
     </div>
-
     {% endfor %}
 </div>
 
