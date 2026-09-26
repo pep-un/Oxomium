@@ -3,6 +3,7 @@ from unittest.mock import patch
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
+from constance.test import override_config
 
 from conformity.forms import AuditForm, OrganizationForm
 from conformity.models import Attachment
@@ -28,7 +29,7 @@ class AttachmentValidationTests(TestCase):
         with self.assertRaisesMessage(ValidationError, "does not match detected type"):
             validate_attachment(self.upload(name="report.exe"))
 
-    @patch("conformity.validators.config.ATTACHMENT_MAX_SIZE_MB", 1, create=True)
+    @override_config(ATTACHMENT_MAX_SIZE_MB=1)
     def test_oversized_file_is_rejected(self):
         upload = self.upload(content=b"x" * (1024 * 1024 + 1))
         with self.assertRaisesMessage(ValidationError, "maximum allowed size"):
@@ -42,11 +43,9 @@ class AttachmentValidationTests(TestCase):
 
     @patch("conformity.validators.detect_mime", return_value="application/pdf")
     def test_attachment_model_validates_direct_orm_save(self, _detect):
-        attachment = Attachment(file=self.upload())
-        with patch("django.db.models.Model.save") as model_save:
-            attachment.save()
+        attachment = Attachment.objects.create(file=self.upload())
         self.assertEqual(attachment.mime_type, "application/pdf")
-        model_save.assert_called_once()
+        self.assertTrue(attachment.pk)
 
     def test_upload_forms_expose_configured_accept_and_size_hint(self):
         for form in (AuditForm(), OrganizationForm()):
@@ -54,5 +53,5 @@ class AttachmentValidationTests(TestCase):
             self.assertIn("Maximum file size", str(form.fields["attachments"].help_text))
 
     def test_accept_hint_comes_from_configured_mime_types(self):
-        with patch("conformity.validators.config.ATTACHMENT_ALLOWED_MIME_TYPES", "image/png, application/pdf", create=True):
+        with override_config(ATTACHMENT_ALLOWED_MIME_TYPES="image/png, application/pdf"):
             self.assertEqual(attachment_accept(), "application/pdf,image/png")
