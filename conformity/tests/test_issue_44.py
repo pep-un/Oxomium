@@ -34,10 +34,10 @@ class RichTableConfigurationTests(TestCase):
                 self.assertIs(view.table_class, table)
 
     def test_secondary_navigation_filters_are_available(self):
-        self.assertIn("audit", FindingFilter.base_filters)
-        self.assertIn("action", FindingFilter.base_filters)
-        self.assertIn("action", ConformityFilter.base_filters)
-        self.assertIn("action", ControlPointFilter.base_filters)
+        self.assertIn("audit", getattr(FindingFilter, "base_filters"))
+        self.assertIn("action", getattr(FindingFilter, "base_filters"))
+        self.assertIn("action", getattr(ConformityFilter, "base_filters"))
+        self.assertIn("action", getattr(ControlPointFilter, "base_filters"))
 
     def test_primary_columns_share_name_and_width(self):
         table_classes = (
@@ -69,7 +69,7 @@ class RichTableConfigurationTests(TestCase):
 
     def test_control_point_name_uses_control_title(self):
         self.assertEqual(
-            str(ControlPointTable.base_columns["name"].accessor),
+            str(getattr(ControlPointTable, "base_columns")["name"].accessor),
             "control__title",
         )
 
