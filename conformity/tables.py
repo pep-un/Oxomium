@@ -82,7 +82,7 @@ class EditColumn(tables.Column):
 
 ACTION_STATUS_STYLES = {
     Action.Status.ANALYSING: ("bi-hexagon-fill", "text-info"),
-    Action.Status.PLANNING: ("bi-hexagon-fill", "text-primary"),
+    Action.Status.PLANNING: ("bi-hexagon-fill", "text-info"),
     Action.Status.IMPLEMENTING: ("bi-hexagon-fill", "text-warning"),
     Action.Status.CONTROLLING: ("bi-hexagon-fill", "text-success"),
     Action.Status.ENDED: ("bi-hexagon-fill", ""),
@@ -91,8 +91,8 @@ ACTION_STATUS_STYLES = {
 }
 
 CONTROL_POINT_STATUS_STYLES = {
-    ControlPoint.Status.SCHEDULED: ("bi-hexagon", "text-secondary"),
-    ControlPoint.Status.TOBEEVALUATED: ("bi-hexagon-fill", "text-secondary"),
+    ControlPoint.Status.SCHEDULED: ("bi-hexagon", "text-dark"),
+    ControlPoint.Status.TOBEEVALUATED: ("bi-hexagon-fill", "text-info"),
     ControlPoint.Status.NONCOMPLIANT: ("bi-hexagon-fill", "text-danger"),
     ControlPoint.Status.COMPLIANT: ("bi-hexagon-fill", "text-success"),
     ControlPoint.Status.MISSED: ("bi-hexagon", "text-danger"),
@@ -217,7 +217,7 @@ class FindingTable(BaseRichTable):
         attrs={
             "th": {"class": "text-center"},
             "td": {"class": "text-center"},
-            "a": {"class": "link-primary fw-semibold text-decoration-none"},
+            "a": {"class": "btn btn-sm btn-outline-primary"},
         },
     )
     short_description = tables.Column(verbose_name="Description")
@@ -338,7 +338,7 @@ class ConformityTable(BaseRichTable):
         attrs=CENTER,
     )
     status = tables.TemplateColumn(
-        verbose_name="Conformity",
+        verbose_name="Status",
         template_code="""
             <div class="progress" role="progressbar" aria-valuenow="{{ record.status|default_if_none:'0' }}"
                  aria-valuemin="0" aria-valuemax="100">
