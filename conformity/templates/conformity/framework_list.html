@@ -6,14 +6,10 @@
 {% endblock %}
 
 {% block content %}
-
-{% include "includes/filter_row.html" %}
-
-    {% if framework_list %}
-        {% render_table table %}
-    {% else %}
-        <div class="alert alert-info" role="alert">
-          No framework registered.
-        </div>
-    {% endif %}
+{% include "includes/list_toolbar.html" with filter=filter item_count=object_list|length %}
+{% if framework_list %}
+    {% render_table table %}
+{% else %}
+    <div class="alert alert-info" role="alert">No framework registered.</div>
+{% endif %}
 {% endblock %}
