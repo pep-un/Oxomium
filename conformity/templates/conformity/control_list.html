@@ -115,6 +115,10 @@
 {% route_url 'conformity:control_export' as export_url %}
 {% include "includes/list_toolbar.html" with create_url=create_url export_url=export_url filter=filter item_count=object_list|length %}
 
-{% render_table table %}
+{% if object_list %}
+    {% render_table table %}
+{% else %}
+    {% include "includes/empty_state.html" with empty_message="No controls have been created yet." create_url=create_url %}
+{% endif %}
 
 {% endblock %}
