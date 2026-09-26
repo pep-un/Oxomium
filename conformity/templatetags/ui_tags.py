@@ -7,14 +7,20 @@ register = template.Library()
 @register.inclusion_tag("includes/breadcrumb.html")
 def breadcrumb(*items):
     breadcrumb_items = []
+    pending_label = None
+
     for item in items:
-        if not item:
+        if item is None:
             continue
-        if isinstance(item, (list, tuple)) and len(item) == 2:
-            label, url = item
+        if pending_label is None:
+            pending_label = item
         else:
-            label, url = item, None
-        breadcrumb_items.append({"label": label, "url": url})
+            breadcrumb_items.append({"label": pending_label, "url": item or None})
+            pending_label = None
+
+    if pending_label is not None:
+        breadcrumb_items.append({"label": pending_label, "url": None})
+
     return {"breadcrumb_items": breadcrumb_items}
 
 
