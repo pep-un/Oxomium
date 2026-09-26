@@ -73,7 +73,7 @@ class ActionTable(BaseRichTable):
 class AuditTable(BaseRichTable):
     name = tables.Column()
     auditor = tables.Column()
-    type = tables.Column(accessor="type", verbose_name="Type")
+    type = tables.Column(accessor="get_type_display", verbose_name="Type", order_by=("type",))
     start_date = tables.DateColumn(verbose_name="Start", format="d-M-Y")
     end_date = tables.DateColumn(verbose_name="End", format="d-M-Y")
     findings = tables.TemplateColumn(
@@ -98,9 +98,6 @@ class AuditTable(BaseRichTable):
         orderable=False,
         attrs=CENTER,
     )
-
-    def render_type(self, record):
-        return record.get_type()
 
     class Meta(BaseRichTable.Meta):
         model = Audit
@@ -222,9 +219,9 @@ class OrganizationTable(BaseRichTable):
 class FrameworkTable(BaseRichTable):
     name = tables.Column(verbose_name="Framework")
     version = tables.Column(default="-", attrs=CENTER)
-    language = tables.Column(attrs=CENTER)
+    language = tables.Column(accessor="get_language_display", order_by=("language",), attrs=CENTER)
     publish_by = tables.Column(verbose_name="Published by")
-    type = tables.Column(verbose_name="Type")
+    type = tables.Column(accessor="get_type_display", verbose_name="Type", order_by=("type",))
     requirements = tables.TemplateColumn(
         template_code="""
             <a href="{% url 'conformity:framework_detail' record.id %}"
@@ -235,12 +232,6 @@ class FrameworkTable(BaseRichTable):
         orderable=False,
         attrs=CENTER,
     )
-
-    def render_language(self, record):
-        return record.get_language_display()
-
-    def render_type(self, record):
-        return record.get_type()
 
     class Meta(BaseRichTable.Meta):
         model = Framework
@@ -292,8 +283,8 @@ class ConformityTable(BaseRichTable):
 
 class ControlTable(BaseRichTable):
     title = tables.Column(verbose_name="Title")
-    level = tables.Column(attrs=CENTER)
-    frequency = tables.Column(attrs=CENTER)
+    level = tables.Column(accessor="get_level_display", order_by=("level",), attrs=CENTER)
+    frequency = tables.Column(accessor="get_frequency_display", order_by=("frequency",), attrs=CENTER)
     requirements = tables.TemplateColumn(
         verbose_name="Associated requirements",
         template_code="""
@@ -322,12 +313,6 @@ class ControlTable(BaseRichTable):
         orderable=False,
         attrs=CENTER,
     )
-
-    def render_level(self, record):
-        return record.get_level_display()
-
-    def render_frequency(self, record):
-        return record.get_frequency_display()
 
     class Meta(BaseRichTable.Meta):
         model = Control
