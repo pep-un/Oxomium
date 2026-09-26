@@ -79,15 +79,31 @@ class ConformityFilter(FilterSet):
     organization = ModelChoiceFilter(queryset=Organization.objects.all(), label="Organization")
     requirement__framework = ModelChoiceFilter(queryset=Framework.objects.all(), label="Framework")
     action = ModelChoiceFilter(
-        field_name='actions',
         queryset=Action.objects.all(),
         label='Action',
-        distinct=True,
+        method='filter_action',
     )
 
     class Meta:
         model = Conformity
         fields = ['organization', 'requirement__framework', 'action']
+
+    def filter_action(self, queryset, name, action):
+        if not action:
+            return queryset
+
+        mappings = action.associated_conformity.values_list(
+            'organization_id',
+            'requirement__framework_id',
+        ).distinct()
+
+        condition = Q(pk__in=[])
+        for organization_id, framework_id in mappings:
+            condition |= Q(
+                organization_id=organization_id,
+                requirement__framework_id=framework_id,
+            )
+        return queryset.filter(condition)
 
 class AuditFilter(FilterSet):
     name = CharFilter(lookup_expr='icontains', label='Name')
