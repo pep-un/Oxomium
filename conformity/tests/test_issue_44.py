@@ -241,11 +241,17 @@ class RichTableInteractionTests(TestCase):
 
         ascending = self.client.get(url, {"sort": "name"})
         self.assertEqual(ascending.status_code, 200)
-        self.assertContains(ascending, 'class="asc orderable"')
+        self.assertRegex(
+            ascending.content.decode(),
+            r'<th class="[^"]*\basc\b[^"]*\borderable\b[^"]*"',
+        )
 
         descending = self.client.get(url, {"sort": "-name"})
         self.assertEqual(descending.status_code, 200)
-        self.assertContains(descending, 'class="desc orderable"')
+        self.assertRegex(
+            descending.content.decode(),
+            r'<th class="[^"]*\bdesc\b[^"]*\borderable\b[^"]*"',
+        )
 
     def test_all_rich_table_indexes_render(self):
         view_names = (
