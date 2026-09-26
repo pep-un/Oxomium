@@ -62,16 +62,6 @@ class EditColumn(tables.Column):
         )
 
 
-ACTION_STATUS_STYLES = {
-    Action.Status.ANALYSING: ("bi-hexagon-fill", "text-info"),
-    Action.Status.PLANNING: ("bi-hexagon-fill", "text-primary"),
-    Action.Status.IMPLEMENTING: ("bi-hexagon-fill", "text-warning"),
-    Action.Status.CONTROLLING: ("bi-hexagon-fill", "text-success"),
-    Action.Status.ENDED: ("bi-hexagon-fill", ""),
-    Action.Status.FROZEN: ("bi-hexagon", "text-info"),
-    Action.Status.CANCELED: ("bi-hexagon-fill", "text-danger"),
-}
-
 CONTROL_POINT_STATUS_STYLES = {
     ControlPoint.Status.SCHEDULED: ("bi-hexagon", "text-dark"),
     ControlPoint.Status.TOBEEVALUATED: ("bi-hexagon-fill", "text-info"),
@@ -99,7 +89,12 @@ class ActionTable(BaseRichTable):
         attrs=PRIMARY_COLUMN,
     )
     owner = tables.Column(default="", attrs={"td": {"class": "text-nowrap"}})
-    status = StatusColumn(ACTION_STATUS_STYLES)
+    status = tables.TemplateColumn(
+        template_code="""
+            {% include 'conformity/includes/action_status.html' with action=record %}
+        """,
+        order_by=("status",),
+    )
     update_date = tables.DateColumn(verbose_name="Last update", format="d-M-Y")
     associations = tables.TemplateColumn(
         verbose_name="Associations",

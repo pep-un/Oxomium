@@ -6,7 +6,7 @@ from django.urls import reverse
 
 from conformity.models import Action, Audit, Control, ControlPoint, Finding, Organization
 from conformity.tables import (
-    ACTION_STATUS_STYLES, CONTROL_POINT_STATUS_STYLES, ActionTable, AuditTable,
+    CONTROL_POINT_STATUS_STYLES, ActionTable, AuditTable,
     ConformityTable, ControlTable, ControlPointTable, FindingTable, FrameworkTable,
     OrganizationTable, StatusColumn,
 )
@@ -68,25 +68,31 @@ class RichTableConfigurationTests(TestCase):
         )
 
 
-class StatusColumnRenderingTests(TestCase):
-    def test_action_status_uses_raw_choice_value_for_style_lookup(self):
+class ActionStatusComponentTests(TestCase):
+    def test_planning_uses_primary_filled_hexagon(self):
         action = Action(status=Action.Status.PLANNING)
-        column = StatusColumn(ACTION_STATUS_STYLES)
 
-        html = str(column.render(action.get_status_display(), action))
+        html = render_to_string(
+            "conformity/includes/action_status.html",
+            {"action": action},
+        )
 
         self.assertIn("bi-hexagon-fill text-primary", html)
         self.assertIn("Planning", html)
 
-    def test_frozen_action_status_uses_info_outline(self):
+    def test_frozen_uses_info_outline_hexagon(self):
         action = Action(status=Action.Status.FROZEN)
-        column = StatusColumn(ACTION_STATUS_STYLES)
 
-        html = str(column.render(action.get_status_display(), action))
+        html = render_to_string(
+            "conformity/includes/action_status.html",
+            {"action": action},
+        )
 
         self.assertIn("bi-hexagon text-info", html)
         self.assertIn("Frozen", html)
 
+
+class StatusColumnRenderingTests(TestCase):
     def test_control_point_status_uses_raw_choice_value_for_style_lookup(self):
         control_point = ControlPoint(status=ControlPoint.Status.NONCOMPLIANT)
         column = StatusColumn(CONTROL_POINT_STATUS_STYLES)
@@ -95,6 +101,46 @@ class StatusColumnRenderingTests(TestCase):
 
         self.assertIn("bi-hexagon-fill text-danger", html)
         self.assertIn("Non-Compliant", html)
+
+
+class FindingActionStatusTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = get_user_model().objects.create_user(username="finding-status")
+        organization = Organization.objects.create(name="Finding status org")
+        cls.audit = Audit.objects.create(
+            name="Finding status audit",
+            organization=organization,
+            auditor="Auditor",
+        )
+        cls.finding = Finding.objects.create(
+            name="Finding status",
+            short_description="Finding status",
+            audit=cls.audit,
+            severity=Finding.Severity.MAJOR,
+            cvss=7.0,
+        )
+        cls.action = Action.objects.create(
+            title="Planning action",
+            status=Action.Status.PLANNING,
+        )
+        cls.action.associated_findings.add(cls.finding)
+
+    def setUp(self):
+        self.client.force_login(self.user)
+
+    def test_finding_detail_wraps_shared_action_status_in_neutral_pill(self):
+        response = self.client.get(
+            reverse("conformity:finding_detail", args=[self.finding.pk]),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            'badge rounded-pill text-bg-light text-dark border col-5 text-center',
+        )
+        self.assertContains(response, "bi-hexagon-fill text-primary")
+        self.assertContains(response, "Planning")
 
 
 class FindingCvssBadgeTests(TestCase):

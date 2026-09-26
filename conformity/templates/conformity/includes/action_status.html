@@ -1,0 +1,16 @@
+{% if action.status == "1" %}
+    <i class="bi bi-hexagon-fill text-info"></i>
+{% elif action.status == "2" %}
+    <i class="bi bi-hexagon-fill text-primary"></i>
+{% elif action.status == "3" %}
+    <i class="bi bi-hexagon-fill text-warning"></i>
+{% elif action.status == "4" %}
+    <i class="bi bi-hexagon-fill text-success"></i>
+{% elif action.status == "5" %}
+    <i class="bi bi-hexagon-fill"></i>
+{% elif action.status == "6" %}
+    <i class="bi bi-hexagon text-info"></i>
+{% elif action.status == "7" %}
+    <i class="bi bi-hexagon-fill text-danger"></i>
+{% endif %}
+{{ action.get_status_display }}
