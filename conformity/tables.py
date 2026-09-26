@@ -293,6 +293,7 @@ class ConformityTable(BaseRichTable):
     class Meta(BaseRichTable.Meta):
         model = Conformity
         fields = ("organization", "status")
+        sequence = ("organization", "framework", "requirements", "completeness", "status")
 
 
 class ControlTable(BaseRichTable):
