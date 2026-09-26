@@ -22,7 +22,7 @@ class StatusColumn(tables.Column):
         # django-tables2 resolves model choice fields to their display label
         # before calling render(); use the raw model value for style lookup.
         status = record.status
-        icon, color = self.styles.get(status, ("bi-hexagon", "text-secondary"))
+        icon, color = self.styles.get(status, ("bi-hexagon", "text-dark"))
         return format_html(
             '<i class="bi {} {}"></i> {}',
             icon,
@@ -42,7 +42,7 @@ class BadgeColumn(tables.Column):
     def render(self, value, record):
         style = self.styles.get(
             getattr(record, self.style_accessor),
-            "text-bg-secondary",
+            "text-bg-dark",
         )
         display = value if value not in (None, "") else self.default
         return format_html(
@@ -103,7 +103,7 @@ FINDING_SEVERITY_STYLES = {
     "MAJ": "text-bg-danger",
     "MIN": "text-bg-warning",
     "OBS": "text-bg-info",
-    "OTHER": "text-bg-secondary",
+    "OTHER": "text-bg-dark",
     "POS": "text-bg-success",
 }
 
