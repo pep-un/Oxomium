@@ -336,11 +336,7 @@ class ConformityUpdateView(LoginRequiredMixin, UserFeedbackMixin, UpdateView):
             self.object.update_status()
 
         # Manage Save&Next and Save&Stay submitting to allow easy filling of the conformity.
-        # These early redirects bypass UserFeedbackMixin.form_valid(), so add the
-        # same success feedback here after the conformity has been saved.
-        if self.request.POST.get("action") in {"save_next", "save_stay"}:
-            messages.success(self.request, "Conformity updated successfully.")
-
+        # These successful early redirects bypass UserFeedbackMixin.form_valid().
         if self.request.POST.get("action") == "save_next":
             nxt_req = self.object.requirement.get_next_sibling()
             if nxt_req:
@@ -349,11 +345,13 @@ class ConformityUpdateView(LoginRequiredMixin, UserFeedbackMixin, UpdateView):
                         organization=self.object.organization,
                         requirement=nxt_req,
                     )
+                    messages.success(self.request, "Conformity updated successfully.")
                     return redirect("conformity:conformity_form", nxt.pk)
                 except Conformity.DoesNotExist:
                     pass
 
         elif self.request.POST.get("action") == "save_stay":
+            messages.success(self.request, "Conformity updated successfully.")
             return redirect("conformity:conformity_form", self.object.pk)
 
         return super().form_valid(form)
