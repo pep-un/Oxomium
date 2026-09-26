@@ -70,7 +70,7 @@ class ActionForm(ModelForm):
         model = Action
         fields = [
             'title', 'create_date', 'update_date', 'owner', 'status', 'status_comment',
-            'reference', 'active', 'description', 'organization', 'associated_conformity',
+            'reference', 'active', 'priority', 'description', 'organization', 'associated_conformity',
             'associated_findings', 'associated_controlPoints', 'plan_start_date',
             'plan_end_date', 'plan_comment', 'implement_start_date', 'implement_end_date',
             'implement_status', 'implement_comment', 'control_date', 'control_comment',
@@ -81,6 +81,7 @@ class ActionForm(ModelForm):
         super(ActionForm, self).__init__(*args, **kwargs)
         self.fields['create_date'].disabled = True
         self.fields['update_date'].disabled = True
+        self.fields['priority'].choices = [('', _('Not defined')), *Action.Priority.choices]
 
         organization = self.initial.get('organization')
         if organization is None:
@@ -105,7 +106,7 @@ class ActionForm(ModelForm):
         if self.instance.pk is None and 'organization' in self.initial:
             self.fields['organization'].disabled = True
 
-        generic_fields = ['title', 'owner', 'status', 'status_comment', 'reference']
+        generic_fields = ['title', 'owner', 'status', 'status_comment', 'reference', 'priority']
         analyse_fields = ['organization', 'associated_conformity', 'associated_findings', 'associated_controlPoints', 'description']
         plan_fields = ['plan_start_date', 'plan_end_date', 'plan_comment']
         implement_fields = ['implement_start_date', 'implement_end_date', 'implement_status', 'implement_comment']
@@ -120,9 +121,17 @@ class ActionForm(ModelForm):
             Action.Status.ENDED.value: generic_fields,
         }
 
+        current_status = self.get_initial_for_field(self.fields['status'], 'status')
         for key, value in self.fields.items():
-            if key not in fields_by_status[self.get_initial_for_field(self.fields['status'], 'status')]:
+            if key not in fields_by_status[current_status]:
                 self.fields[key].disabled = True
+
+        if (
+            self.instance.pk is not None
+            and current_status != Action.Status.ANALYSING.value
+            and self.instance.priority is not None
+        ):
+            self.fields['priority'].disabled = True
 
 
 class ControlForm(ModelForm):
