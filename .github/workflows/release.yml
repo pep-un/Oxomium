@@ -1,0 +1,169 @@
+name: Publish release artifacts
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish release
+    runs-on: ubuntu-latest
+    env:
+      IMAGE: docker.io/pepun/oxomium
+      RELEASE_TAG: ${{ github.event.release.tag_name }}
+
+    steps:
+      - name: Checkout released tag
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          fetch-depth: 0
+
+      - name: Derive release version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$RELEASE_TAG" != v* ]]; then
+            echo "::error::Release tag must follow the existing v<semver> convention: $RELEASE_TAG"
+            exit 1
+          fi
+          version="${RELEASE_TAG#v}"
+          if [ -z "$version" ]; then
+            echo "::error::Unable to derive a release version from $RELEASE_TAG"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tarball=oxomium-$version.tar.gz" >> "$GITHUB_OUTPUT"
+          echo "tarball_sbom=oxomium-$version.sbom.cdx.json" >> "$GITHUB_OUTPUT"
+          echo "docker_sbom=oxomium-$version-docker.sbom.cdx.json" >> "$GITHUB_OUTPUT"
+
+      - name: Build source tarball from released commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git archive             --format=tar.gz             --prefix="oxomium-${{ steps.version.outputs.version }}/"             --output="${{ steps.version.outputs.tarball }}"             "${RELEASE_TAG}^{commit}"
+
+      - name: Generate tarball SBOM
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0
+        with:
+          file: ${{ steps.version.outputs.tarball }}
+          format: cyclonedx-json
+          output-file: ${{ steps.version.outputs.tarball_sbom }}
+          upload-artifact: false
+          upload-release-assets: false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - name: Build final Docker image
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          file: Dockerfile
+          load: true
+          push: false
+          tags: ${{ env.IMAGE }}:${{ steps.version.outputs.version }}
+
+      - name: Scan final image for vulnerabilities
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
+        with:
+          image-ref: ${{ env.IMAGE }}:${{ steps.version.outputs.version }}
+          format: json
+          output: trivy-release-report.json
+          severity: CRITICAL,HIGH
+          exit-code: 0
+
+      - name: Upload Trivy release report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: trivy-release-report
+          path: trivy-release-report.json
+
+      - name: Fail on high or critical vulnerabilities
+        shell: bash
+        run: |
+          set -euo pipefail
+          findings="$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH" or .Severity == "CRITICAL")] | length' trivy-release-report.json)"
+          if [ "$findings" -gt 0 ]; then
+            jq '.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH" or .Severity == "CRITICAL") | {
+              target: .Target,
+              package: .PkgName,
+              installed: .InstalledVersion,
+              fixed: .FixedVersion,
+              severity: .Severity,
+              vulnerability: .VulnerabilityID
+            }' trivy-release-report.json
+            exit 1
+          fi
+
+      - name: Generate Docker image SBOM
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0
+        with:
+          image: ${{ env.IMAGE }}:${{ steps.version.outputs.version }}
+          format: cyclonedx-json
+          output-file: ${{ steps.version.outputs.docker_sbom }}
+          upload-artifact: false
+          upload-release-assets: false
+
+      - name: Generate SHA-256 checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum             "${{ steps.version.outputs.tarball }}"             "${{ steps.version.outputs.tarball_sbom }}"             "${{ steps.version.outputs.docker_sbom }}"             > SHA256SUMS
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=semver,pattern={{version}},value=${{ env.RELEASE_TAG }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ env.RELEASE_TAG }}
+            type=semver,pattern={{major}},value=${{ env.RELEASE_TAG }}
+          flavor: |
+            latest=auto
+
+      - name: Validate Docker release tags
+        shell: bash
+        env:
+          DOCKER_TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          set -euo pipefail
+          if [ -z "$DOCKER_TAGS" ]; then
+            echo "::error::No Docker tags were generated from release tag $RELEASE_TAG"
+            exit 1
+          fi
+
+      - name: Tag and push the validated Docker image
+        shell: bash
+        env:
+          DOCKER_TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          set -euo pipefail
+          while IFS= read -r tag; do
+            [ -n "$tag" ] || continue
+            docker tag "${IMAGE}:${{ steps.version.outputs.version }}" "$tag"
+            docker push "$tag"
+          done <<< "$DOCKER_TAGS"
+
+      - name: Attach release artifacts
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          fail_on_unmatched_files: true
+          files: |
+            ${{ steps.version.outputs.tarball }}
+            ${{ steps.version.outputs.tarball_sbom }}
+            ${{ steps.version.outputs.docker_sbom }}
+            SHA256SUMS

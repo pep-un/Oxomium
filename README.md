@@ -24,10 +24,26 @@ An online demonstration in available with user `demo` and password `6NLYm6F4PBBQ
 
 A wiki page detail the process of [installation](https://github.com/pep-un/Oxomium/wiki/Instalation).
 
-## Docker image
+## Docker image and releases
 
-Release tags matching `v*` publish `docker.io/pepun/oxomium` with semantic-version
-tags and `latest`.
+Publishing a GitHub Release for a `v<semver>` tag builds the exact released tag and publishes
+`docker.io/pepun/oxomium` with semantic-version tags and `latest`.
+
+The release workflow also attaches these files to the GitHub Release:
+
+- `oxomium-<version>.tar.gz`, built directly from the released Git commit;
+- `oxomium-<version>.sbom.cdx.json`, a CycloneDX SBOM generated from the delivered tarball;
+- `oxomium-<version>-docker.sbom.cdx.json`, a CycloneDX SBOM generated from the final Docker image;
+- `SHA256SUMS`, containing SHA-256 checksums for the GitHub release artifacts.
+
+Before publication, the final Docker image is scanned with Trivy for HIGH and
+CRITICAL vulnerabilities. SBOM publication is deferred until the explicit final
+release-upload step. A build, SBOM, vulnerability scan, checksum, Docker
+publication, or release-upload failure fails the release workflow.
+
+Docker Hub publication requires the `DOCKERHUB_USERNAME` and
+`DOCKERHUB_TOKEN` repository secrets. The workflow uses the GitHub token only
+to attach artifacts to the release.
 
 Pull and run the latest image with:
 
