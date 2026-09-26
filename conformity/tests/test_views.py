@@ -259,6 +259,34 @@ class SharedUxComponentsTests(BaseDataMixin, TestCase):
         self.assertContains(response, 'btn btn-secondary dropdown-toggle')
         self.assertNotContains(response, 'badge text-bg-light ms-1">')
 
+    def test_empty_dataset_offers_create_action(self):
+        Action.objects.all().delete()
+        response = self.client.get(reverse("conformity:action_index"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "No actions have been created yet.")
+        self.assertContains(response, reverse("conformity:action_create"))
+        self.assertNotContains(response, "No results match the active filters.")
+
+    def test_filtered_empty_result_offers_reset_instead_of_create(self):
+        response = self.client.get(reverse("conformity:action_index"), {"title": "missing-action"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "No results match the active filters.")
+        self.assertContains(response, "> Reset filters</a>", html=True)
+        self.assertNotContains(response, 'href="' + reverse("conformity:action_create") + '"')
+
+    def test_empty_state_without_create_url_does_not_offer_create(self):
+        Finding.objects.all().delete()
+        response = self.client.get(reverse("conformity:finding_index"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "No active findings are available.")
+        self.assertNotContains(response, "> Create</a>", html=True)
+
+    def test_indicator_cards_use_shared_empty_state(self):
+        response = self.client.get(reverse("conformity:indicator_index"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "No indicators have been created yet.")
+        self.assertContains(response, reverse("conformity:indicator_create"))
+
     def test_audit_detail_uses_accessible_breadcrumb(self):
         response = self.client.get(reverse("conformity:audit_detail", args=[self.audit.pk]))
         self.assertEqual(response.status_code, 200)
