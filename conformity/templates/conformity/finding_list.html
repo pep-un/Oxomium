@@ -7,6 +7,8 @@
 {% endblock %}
 
 {% block content %}
+{% breadcrumb "Findings" %}
+
 {% route_url 'conformity:finding_export' as export_url %}
 {% include "includes/list_toolbar.html" with export_url=export_url filter=filter item_count=object_list|length %}
 {% render_table table %}
