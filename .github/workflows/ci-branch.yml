@@ -1,0 +1,59 @@
+name: CI · Branch Push
+
+on:
+  push:
+    branches-ignore:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-branch-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  django:
+    name: Branch Django (Python 3.12)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade --only-binary=:all: pip
+          pip install --only-binary=:all: -r requirements.txt
+      - name: Run tests
+        run: python manage.py test
+      - name: Check model migrations
+        run: python manage.py makemigrations --check --dry-run
+
+  pylint:
+    name: Branch Pylint (Python 3.12)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade --only-binary=:all: pip
+          pip install --only-binary=:all: -r requirements.txt pylint-django
+      - name: Analyse Python code
+        run: >-
+          pylint -E --load-plugins pylint_django
+          --django-settings-module=oxomium
+          --ignore-paths='.*/migrations/'
+          --ignore=__init__.py,manage.py
+          $(git ls-files '*.py')

@@ -1,9 +1,4 @@
-
-[![Pylint Error](https://github.com/pep-un/Oxomium/actions/workflows/pylint.yml/badge.svg)](https://github.com/pep-un/Oxomium/actions/workflows/pylint.yml)
-[![Django CI](https://github.com/pep-un/Oxomium/actions/workflows/django.yml/badge.svg)](https://github.com/pep-un/Oxomium/actions/workflows/django.yml)
-[![Dependency Review](https://github.com/pep-un/Oxomium/actions/workflows/dependency-review.yml/badge.svg?branch=main)](https://github.com/pep-un/Oxomium/actions/workflows/dependency-review.yml)
-
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=pep-un_Oxomium&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=pep-un_Oxomium)
+[![Main CI](https://github.com/pep-un/Oxomium/actions/workflows/ci-main.yml/badge.svg?branch=main)](https://github.com/pep-un/Oxomium/actions/workflows/ci-main.yml)\n\n[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=pep-un_Oxomium&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=pep-un_Oxomium)
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=pep-un_Oxomium&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=pep-un_Oxomium)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=pep-un_Oxomium&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=pep-un_Oxomium)
 [![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=pep-un_Oxomium&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=pep-un_Oxomium)
@@ -22,7 +17,7 @@ More information on [Oxomium Website](https://www.oxomium.org).
 
 An online demonstration in available with user `demo` and password `6NLYm6F4PBBQBjc`:  [Oxomium Demo](https://demo.oxomium.org)
 
-A wiki page detail the process of [installation](https://github.com/pep-un/Oxomium/wiki/Instalation).
+A wiki page detail the process of [installation](https://github.com/pep-un/Oxomium/wiki/Instalation).\n\nThe CI/CD workflow responsibilities and trigger strategy are documented in [docs/ci.md](docs/ci.md).
 
 ## Docker image and releases
 
