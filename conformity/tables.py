@@ -201,7 +201,9 @@ class FindingTable(BaseRichTable):
             {% with actions=record.get_action %}
                 {% if actions %}
                     <a href="{% url 'conformity:action_index' %}?associated_findings={{ record.id }}"
-                       class="btn btn-outline-primary btn-sm">{{ actions|length }} associated actions</a>
+                       class="badge text-bg-secondary text-decoration-none">
+                        {{ actions|length }} associated actions
+                    </a>
                 {% endif %}
             {% endwith %}
         """,
@@ -220,23 +222,18 @@ class OrganizationTable(BaseRichTable):
         verbose_name="Organization",
         linkify=("conformity:organization_detail", [A("pk")]),
     )
-    description = tables.TemplateColumn(
-        template_code="""
-            <p>{{ record.description|linebreaksbr }}</p>
-            {% if record.administrative_id %}
-                <p class="alert alert-info py-1 mb-0">Company identifier: {{ record.administrative_id }}</p>
-            {% else %}
-                <p class="alert alert-warning py-1 mb-0">No identifier</p>
-            {% endif %}
-        """,
-        order_by=("description",),
+    administrative_id = tables.Column(
+        verbose_name="Identifier",
+        default="—",
+        attrs={"cell": {"class": "text-nowrap"}},
     )
+    description = tables.Column()
     frameworks = tables.TemplateColumn(
         verbose_name="Applicable frameworks",
         template_code="""
             {% for item in record.get_frameworks %}
                 <a href="{% url 'conformity:conformity_detail_index' record.id item.id %}"
-                   class="btn btn-outline-primary btn-sm my-1">{{ item }}</a>
+                   class="badge bg-light text-dark border text-decoration-none my-1">{{ item }}</a>
             {% empty %}
                 <span class="text-body-secondary">None</span>
             {% endfor %}
@@ -248,7 +245,7 @@ class OrganizationTable(BaseRichTable):
 
     class Meta(BaseRichTable.Meta):
         model = Organization
-        fields = ("name", "description")
+        fields = ("name", "administrative_id", "description")
 
 
 class FrameworkTable(BaseRichTable):
