@@ -3,6 +3,12 @@ name: Publish release artifacts
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing GitHub Release tag to publish or retry
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -13,13 +19,13 @@ jobs:
     runs-on: ubuntu-latest
     env:
       IMAGE: docker.io/pepun/oxomium
-      RELEASE_TAG: ${{ github.event.release.tag_name }}
+      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
 
     steps:
       - name: Checkout released tag
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ env.RELEASE_TAG }}
           fetch-depth: 0
 
       - name: Derive release version
@@ -27,16 +33,16 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [[ "$RELEASE_TAG" != v* ]]; then
-            echo "::error::Release tag must follow the existing v<semver> convention: $RELEASE_TAG"
+          if [[ ! "$RELEASE_TAG" =~ ^v([0-9]+)\.([0-9]+)(\.([0-9]+))?$ ]]; then
+            echo "::error::Release tag must match Oxomium's version convention: v<major>.<minor> or v<major>.<minor>.<patch> (got $RELEASE_TAG)"
             exit 1
           fi
           version="${RELEASE_TAG#v}"
-          if [ -z "$version" ]; then
-            echo "::error::Unable to derive a release version from $RELEASE_TAG"
-            exit 1
-          fi
+          major="${BASH_REMATCH[1]}"
+          major_minor="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}"
           echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "major=$major" >> "$GITHUB_OUTPUT"
+          echo "major_minor=$major_minor" >> "$GITHUB_OUTPUT"
           echo "tarball=oxomium-$version.tar.gz" >> "$GITHUB_OUTPUT"
           echo "tarball_sbom=oxomium-$version.sbom.cdx.json" >> "$GITHUB_OUTPUT"
           echo "docker_sbom=oxomium-$version-docker.sbom.cdx.json" >> "$GITHUB_OUTPUT"
@@ -122,33 +128,35 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Extract Docker metadata
-        id: meta
-        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
-        with:
-          images: ${{ env.IMAGE }}
-          tags: |
-            type=semver,pattern={{version}},value=${{ env.RELEASE_TAG }}
-            type=semver,pattern={{major}}.{{minor}},value=${{ env.RELEASE_TAG }}
-            type=semver,pattern={{major}},value=${{ env.RELEASE_TAG }}
-          flavor: |
-            latest=auto
-
-      - name: Validate Docker release tags
+      - name: Prepare Docker release tags
+        id: docker_tags
         shell: bash
         env:
-          DOCKER_TAGS: ${{ steps.meta.outputs.tags }}
+          VERSION: ${{ steps.version.outputs.version }}
+          MAJOR: ${{ steps.version.outputs.major }}
+          MAJOR_MINOR: ${{ steps.version.outputs.major_minor }}
         run: |
           set -euo pipefail
-          if [ -z "$DOCKER_TAGS" ]; then
-            echo "::error::No Docker tags were generated from release tag $RELEASE_TAG"
-            exit 1
+          tags=("${IMAGE}:${VERSION}")
+
+          if [ "$VERSION" != "$MAJOR_MINOR" ]; then
+            tags+=("${IMAGE}:${MAJOR_MINOR}")
           fi
+
+          tags+=("${IMAGE}:${MAJOR}" "${IMAGE}:latest")
+
+          {
+            echo "tags<<EOF"
+            printf '%s\n' "${tags[@]}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+          printf 'Docker tags to publish:\n%s\n' "${tags[@]}"
 
       - name: Tag and push the validated Docker image
         shell: bash
         env:
-          DOCKER_TAGS: ${{ steps.meta.outputs.tags }}
+          DOCKER_TAGS: ${{ steps.docker_tags.outputs.tags }}
         run: |
           set -euo pipefail
           while IFS= read -r tag; do
