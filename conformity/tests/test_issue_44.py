@@ -3,7 +3,7 @@ from django.test import TestCase
 from constance.test import override_config
 from django.urls import reverse
 
-from conformity.models import Action, Audit, ControlPoint, Finding, Organization
+from conformity.models import Action, Audit, Control, ControlPoint, Finding, Organization
 from conformity.tables import (
     ACTION_STATUS_STYLES, CONTROL_POINT_STATUS_STYLES, ActionTable, AuditTable,
     ConformityTable, ControlTable, ControlPointTable, FindingTable, FrameworkTable,
@@ -178,6 +178,30 @@ class RichTableInteractionTests(TestCase):
             row.record.pk for row in filtered.context["table"].page.object_list
         ]
         self.assertIn(self.relation_only_finding.pk, filtered_ids)
+
+
+    def test_control_detail_renders_generated_control_points(self):
+        control = Control.objects.create(
+            title="Rendered control",
+            frequency=Control.Frequency.YEARLY,
+        )
+        control_points = control.get_controlpoint()
+        self.assertTrue(control_points.exists())
+
+        control_point = control_points.first()
+        response = self.client.get(
+            reverse("conformity:control_detail", args=[control.pk]),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            control_point.period_start_date.strftime("%d-%b-%Y"),
+        )
+        self.assertContains(
+            response,
+            control_point.period_end_date.strftime("%d-%b-%Y"),
+        )
 
 
     def test_primary_label_links_to_organization_detail(self):

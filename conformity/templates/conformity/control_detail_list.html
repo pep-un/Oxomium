@@ -34,7 +34,7 @@
         </tr>
     </thead>
     <tbody>
-    {% for cp in control.controlpoint %}
+    {% for cp in control.get_controlpoint %}
         <tr>
             <td class="col">
                 {{ cp.period_start_date | date:'d-M-Y'}}
