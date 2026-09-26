@@ -2,14 +2,14 @@ from unittest.mock import patch
 
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import SimpleTestCase, override_settings
+from django.test import TestCase
 
 from conformity.forms import AuditForm, OrganizationForm
 from conformity.models import Attachment
 from conformity.validators import attachment_accept, validate_attachment
 
 
-class AttachmentValidationTests(SimpleTestCase):
+class AttachmentValidationTests(TestCase):
     def upload(self, name="report.pdf", content=b"%PDF-1.4 test", content_type="application/octet-stream"):
         return SimpleUploadedFile(name, content, content_type=content_type)
 
@@ -28,7 +28,7 @@ class AttachmentValidationTests(SimpleTestCase):
         with self.assertRaisesMessage(ValidationError, "does not match detected type"):
             validate_attachment(self.upload(name="report.exe"))
 
-    @patch("conformity.validators.config.ATTACHMENT_MAX_SIZE_MB", 1)
+    @patch("conformity.validators.config.ATTACHMENT_MAX_SIZE_MB", 1, create=True)
     def test_oversized_file_is_rejected(self):
         upload = self.upload(content=b"x" * (1024 * 1024 + 1))
         with self.assertRaisesMessage(ValidationError, "maximum allowed size"):
@@ -54,5 +54,5 @@ class AttachmentValidationTests(SimpleTestCase):
             self.assertIn("Maximum file size", str(form.fields["attachments"].help_text))
 
     def test_accept_hint_comes_from_configured_mime_types(self):
-        with patch("conformity.validators.config.ATTACHMENT_ALLOWED_MIME_TYPES", "image/png, application/pdf"):
+        with patch("conformity.validators.config.ATTACHMENT_ALLOWED_MIME_TYPES", "image/png, application/pdf", create=True):
             self.assertEqual(attachment_accept(), "application/pdf,image/png")
