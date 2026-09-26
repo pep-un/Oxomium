@@ -95,13 +95,19 @@
                         </ul>
 
                         <h6 class="sidebar-heading px-3 mt-4 mb-1 text-muted">
-                            <span>Continuous Improvements</span>
+                            <span>Control plan</span>
                         </h6>
                         <ul class="nav flex-column">
                             <li class="nav-item">
                                 <a class="nav-link" href="{% url 'conformity:control_index' %}">
                                     <span class="bi bi-clipboard2-check"></span>
                                     Controls
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'conformity:indicator_index' %}">
+                                    <span class="bi bi-speedometer"></span>
+                                    Indicators
                                 </a>
                             </li>
                             <li class="nav-item">
@@ -116,16 +122,16 @@
                                     Finding
                                 </a>
                             </li>
+			</ul>
+
+                        <h6 class="sidebar-heading px-3 mt-4 mb-1 text-muted">
+                            <span>Action plan</span>
+                        </h6>
+			<ul class="nav flex-column">
                             <li class="nav-item">
                                 <a class="nav-link" href="{% url 'conformity:action_index' %}">
                                     <span class="bi bi-arrow-repeat"></span>
                                     Actions
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'conformity:indicator_index' %}">
-                                    <span class="bi bi-speedometer"></span>
-                                    Indicators
                                 </a>
                             </li>
                         </ul>
