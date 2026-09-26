@@ -1,9 +1,47 @@
 import django_tables2 as tables
+from django.utils.html import format_html
 
 from .models import Action, Audit, Conformity, Control, ControlPoint, Finding, Framework, Organization
 
 
 CENTER = {"cell": {"class": "text-center"}}
+
+
+class StatusColumn(tables.Column):
+    """Render a model choice status with a Bootstrap icon and contextual color."""
+
+    def __init__(self, styles, **kwargs):
+        self.styles = styles
+        kwargs.setdefault("order_by", ("status",))
+        super().__init__(empty_values=(), **kwargs)
+
+    def render(self, value, record):
+        icon, color = self.styles.get(value, ("bi-hexagon", "text-secondary"))
+        return format_html(
+            '<i class="bi {} {}"></i> {}',
+            icon,
+            color,
+            record.get_status_display(),
+        )
+
+
+ACTION_STATUS_STYLES = {
+    Action.Status.ANALYSING: ("bi-hexagon-fill", "text-info"),
+    Action.Status.PLANNING: ("bi-hexagon-fill", "text-primary"),
+    Action.Status.IMPLEMENTING: ("bi-hexagon-fill", "text-warning"),
+    Action.Status.CONTROLLING: ("bi-hexagon-fill", "text-success"),
+    Action.Status.ENDED: ("bi-hexagon-fill", ""),
+    Action.Status.FROZEN: ("bi-hexagon", "text-danger"),
+    Action.Status.CANCELED: ("bi-hexagon-fill", "text-danger"),
+}
+
+CONTROL_POINT_STATUS_STYLES = {
+    ControlPoint.Status.SCHEDULED: ("bi-hexagon", "text-secondary"),
+    ControlPoint.Status.TOBEEVALUATED: ("bi-hexagon-fill", "text-secondary"),
+    ControlPoint.Status.NONCOMPLIANT: ("bi-hexagon-fill", "text-danger"),
+    ControlPoint.Status.COMPLIANT: ("bi-hexagon-fill", "text-success"),
+    ControlPoint.Status.MISSED: ("bi-hexagon", "text-danger"),
+}
 
 
 class BaseRichTable(tables.Table):
@@ -20,19 +58,7 @@ class BaseRichTable(tables.Table):
 class ActionTable(BaseRichTable):
     title = tables.Column(verbose_name="Title")
     owner = tables.Column(default="", attrs={"td": {"class": "text-nowrap"}})
-    status = tables.TemplateColumn(
-        template_code="""
-            {% if record.status == "1" %}<i class="bi bi-hexagon-fill text-info"></i>{% endif %}
-            {% if record.status == "2" %}<i class="bi bi-hexagon-fill text-primary"></i>{% endif %}
-            {% if record.status == "3" %}<i class="bi bi-hexagon-fill text-warning"></i>{% endif %}
-            {% if record.status == "4" %}<i class="bi bi-hexagon-fill text-success"></i>{% endif %}
-            {% if record.status == "5" %}<i class="bi bi-hexagon-fill"></i>{% endif %}
-            {% if record.status == "7" %}<i class="bi bi-hexagon text-danger"></i>{% endif %}
-            {% if record.status == "9" %}<i class="bi bi-hexagon-fill text-danger"></i>{% endif %}
-            {{ record.get_status_display }}
-        """,
-        order_by=("status",),
-    )
+    status = StatusColumn(ACTION_STATUS_STYLES)
     update_date = tables.DateColumn(verbose_name="Last update", format="d-M-Y")
     association = tables.TemplateColumn(
         verbose_name="Association",
@@ -323,17 +349,7 @@ class ControlPointTable(BaseRichTable):
     period_start_date = tables.DateColumn(verbose_name="Start date", format="d-M-Y")
     period_end_date = tables.DateColumn(verbose_name="End date", format="d-M-Y")
     control_user = tables.Column(verbose_name="Owner", default="")
-    status = tables.TemplateColumn(
-        template_code="""
-            {% if record.status == "SCHD" %}<i class="bi bi-hexagon text-secondary"></i>{% endif %}
-            {% if record.status == "TOBE" %}<i class="bi bi-hexagon-fill text-secondary"></i>{% endif %}
-            {% if record.status == "NOK" %}<i class="bi bi-hexagon-fill text-danger"></i>{% endif %}
-            {% if record.status == "OK" %}<i class="bi bi-hexagon-fill text-success"></i>{% endif %}
-            {% if record.status == "MISS" %}<i class="bi bi-hexagon text-danger"></i>{% endif %}
-            {{ record.get_status_display }}
-        """,
-        order_by=("status",),
-    )
+    status = StatusColumn(CONTROL_POINT_STATUS_STYLES)
     actions = tables.TemplateColumn(
         verbose_name="Action",
         template_code="""
