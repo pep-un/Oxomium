@@ -503,15 +503,6 @@ class ControlIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
         context['cp4x'] = ControlPoint.objects.filter(control__frequency="4").filter(status="TOBE").count()
         context['cp6x'] = ControlPoint.objects.filter(control__frequency="6").filter(status="TOBE").count()
         context['cp12x'] = ControlPoint.objects.filter(control__frequency="12").filter(status="TOBE").count()
-        context['control_due_cards'] = [
-            ("", "All controls", context['cp0x']),
-            ("1", "Yearly", context['cp1x']),
-            ("2", "Half-Yearly", context['cp2x']),
-            ("4", "Quarterly", context['cp4x']),
-            ("6", "Bimonthly", context['cp6x']),
-            ("12", "Monthly", context['cp12x']),
-        ]
-
         return context
 
 
