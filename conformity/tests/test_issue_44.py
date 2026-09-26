@@ -68,3 +68,15 @@ class RichTableInteractionTests(TestCase):
         table = response.context["table"]
         self.assertEqual(table.paginator.per_page, 7)
         self.assertEqual(len(table.page.object_list), 7)
+
+    def test_sorted_header_exposes_direction_classes_for_styling(self):
+        url = reverse("conformity:organization_index")
+
+        ascending = self.client.get(url, {"sort": "name"})
+        self.assertEqual(ascending.status_code, 200)
+        self.assertContains(ascending, 'class="asc orderable"')
+
+        descending = self.client.get(url, {"sort": "-name"})
+        self.assertEqual(descending.status_code, 200)
+        self.assertContains(descending, 'class="desc orderable"')
+

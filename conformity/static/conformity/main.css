@@ -61,3 +61,71 @@
     border-color: transparent;
     box-shadow: 0 0 0 3px rgba(255, 255, 255, .25);
 }
+
+/*
+ * django-tables2 adds orderable/asc/desc classes to table headers.
+ * Use them directly so sortable headers look like table controls rather than links.
+ */
+.table thead th.orderable {
+    cursor: pointer;
+    transition: background-color .15s ease-in-out, box-shadow .15s ease-in-out;
+}
+
+.table thead th.orderable > a {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    width: 100%;
+    color: inherit;
+    text-decoration: none;
+}
+
+.table thead th.text-center.orderable > a {
+    justify-content: center;
+}
+
+.table thead th.orderable > a::after {
+    content: "↕";
+    flex: 0 0 auto;
+    font-size: .8em;
+    font-weight: 400;
+    opacity: 0;
+    transition: opacity .15s ease-in-out;
+}
+
+.table thead th.orderable:hover,
+.table thead th.orderable:focus-within {
+    background-color: rgba(var(--bs-primary-rgb), .06);
+}
+
+.table thead th.orderable:hover > a::after,
+.table thead th.orderable > a:focus-visible::after {
+    opacity: .35;
+}
+
+.table thead th.orderable > a:focus-visible {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: 2px;
+    border-radius: var(--bs-border-radius-sm);
+}
+
+.table thead th.asc,
+.table thead th.desc {
+    background-color: rgba(var(--bs-primary-rgb), .1);
+    box-shadow: inset 0 -2px 0 var(--bs-primary);
+}
+
+.table thead th.asc > a,
+.table thead th.desc > a {
+    font-weight: 600;
+}
+
+.table thead th.asc > a::after {
+    content: "↑";
+    opacity: 1;
+}
+
+.table thead th.desc > a::after {
+    content: "↓";
+    opacity: 1;
+}
