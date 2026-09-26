@@ -4,10 +4,13 @@ View of the Conformity Module
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
-from django.db.models import Prefetch
+from django.db.models import Count, Prefetch
 from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import UpdateView, CreateView
 from django_filters.views import FilterView
+from constance import config as constance_config
+from django_tables2.views import SingleTableMixin
+from django.utils import timezone
 from auditlog.models import LogEntry
 from import_export.formats import base_formats
 from mptt.templatetags.mptt_tags import cache_tree_children
@@ -19,11 +22,19 @@ from .forms import ConformityForm, AuditForm, FindingForm, ActionForm, Organizat
 from .models import Organization, Framework, Conformity, Audit, Action, Finding, Control, ControlPoint, Attachment, \
     Requirement, Indicator, IndicatorPoint
 from .resources import ConformityResource, ControlResource, FindingResource, ActionResource, IndicatorResource, AuditResource
+from .tables import ActionTable, AuditTable, ConformityTable, ControlTable, ControlPointTable, FindingTable, FrameworkTable, OrganizationTable
 
 from django.views import View
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 import os
+
+class RichTableMixin(SingleTableMixin):
+    """Common pagination policy for filtered rich tables."""
+
+    def get_paginate_by(self, table_data):
+        return constance_config.TABLE_PAGE_SIZE
+
 
 #
 # Home
@@ -41,11 +52,11 @@ class HomeView(LoginRequiredMixin, TemplateView):
         context['conformity_list'] = Conformity.objects.with_related().roots()
         context['audit_list'] = Audit.objects.all()
         context['action_list'] = Action.objects.all()
-        context['my_action'] = Action.objects.filter(owner=user).filter(active=True).order_by('status')[:50]
+        context['my_action'] = Action.objects.filter(owner=user).filter(active=True).order_by('status')[:constance_config.HOME_ITEMS_LIMIT]
         context['my_conformity'] = Conformity.objects.with_related().filter(
             responsible=user
         ).order_by('status')[:50]
-        context['cp_list'] = ControlPoint.objects.filter(status='TOBE').order_by('period_end_date')[:50]
+        context['cp_list'] = ControlPoint.objects.filter(status='TOBE').order_by('period_end_date')[:constance_config.HOME_ITEMS_LIMIT]
 
         return context
 
@@ -53,10 +64,16 @@ class HomeView(LoginRequiredMixin, TemplateView):
 #
 # Audit
 #
-class AuditIndexView(LoginRequiredMixin, FilterView):
+class AuditIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     model = Audit
+    table_class = AuditTable
     filterset_class = AuditFilter
     template_name = "conformity/audit_list.html"
+
+    def get_queryset(self):
+        return Audit.objects.annotate(
+            findings_count=Count("finding", distinct=True),
+        )
 
 
 class AuditDetailView(LoginRequiredMixin, DetailView):
@@ -112,14 +129,25 @@ class AuditExportView(LoginRequiredMixin, View):
 #
 # Findings
 #
-class FindingIndexView(LoginRequiredMixin, FilterView):
+class FindingIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     model = Finding
+    table_class = FindingTable
     filterset_class = FindingFilter
     template_name = "conformity/finding_list.html"
 
 
     def get_queryset(self, **kwargs):
-        return Finding.objects.filter(severity__in=["CRT","MAJ","MIN", "OBS"]).filter(archived=False)
+        queryset = (
+            Finding.objects
+            .select_related("audit")
+            .annotate(actions_count=Count("actions", distinct=True))
+        )
+        if self.request.GET.get("audit") or self.request.GET.get("action"):
+            return queryset
+        return queryset.filter(
+            severity__in=["CRT", "MAJ", "MIN", "OBS"],
+            archived=False,
+        )
 
 
 class FindingCreateView(LoginRequiredMixin, CreateView):
@@ -172,10 +200,14 @@ class FindingExportView(LoginRequiredMixin, View):
 #
 
 
-class OrganizationIndexView(LoginRequiredMixin, FilterView):
+class OrganizationIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     model = Organization
+    table_class = OrganizationTable
     filterset_class = OrganizationFilter
     template_name = "conformity/organization_list.html"
+
+    def get_queryset(self):
+        return Organization.objects.prefetch_related("applicable_frameworks")
 
 
 class OrganizationDetailView(LoginRequiredMixin, DetailView):
@@ -212,10 +244,14 @@ class OrganizationCreateView(LoginRequiredMixin, OrganizationFrameworkFormMixin,
 #
 
 
-class FrameworkIndexView(LoginRequiredMixin, FilterView):
+class FrameworkIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     model = Framework
+    table_class = FrameworkTable
     filterset_class = FrameworkFilter
     template_name = 'conformity/framework_list.html'
+
+    def get_queryset(self):
+        return Framework.objects.prefetch_related("requirements")
 
 
 class FrameworkDetailView(LoginRequiredMixin, DetailView):
@@ -232,8 +268,9 @@ class FrameworkDetailView(LoginRequiredMixin, DetailView):
 #
 # Conformity
 #
-class ConformityIndexView(LoginRequiredMixin, FilterView):
+class ConformityIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     model = Conformity
+    table_class = ConformityTable
     template_name = 'conformity/conformity_list.html'
     filterset_class = ConformityFilter
 
@@ -357,10 +394,22 @@ class ActionCreateView(LoginRequiredMixin, CreateView):
         return initial
 
 
-class ActionIndexView(LoginRequiredMixin, FilterView):
+class ActionIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     model = Action
+    table_class = ActionTable
     filterset_class = ActionFilter
     template_name = "conformity/action_list.html"
+
+    def get_queryset(self):
+        return (
+            Action.objects
+            .select_related("owner")
+            .annotate(
+                conformities_count=Count("associated_conformity", distinct=True),
+                findings_count=Count("associated_findings", distinct=True),
+                controlpoints_count=Count("associated_controlPoints", distinct=True),
+            )
+        )
 
 
 class ActionUpdateView(LoginRequiredMixin, UpdateView):
@@ -409,10 +458,30 @@ class ControlCreateView(LoginRequiredMixin, CreateView):
         return initial
 
 
-class ControlIndexView(LoginRequiredMixin, FilterView):
+class ControlIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     model = Control
+    table_class = ControlTable
     filterset_class = ControlFilter
     template_name = 'conformity/control_list.html'
+
+    def get_queryset(self):
+        today = timezone.localdate()
+        current_points = ControlPoint.objects.filter(
+            period_start_date__lte=today,
+            period_end_date__gte=today,
+        ).order_by("period_start_date")
+        return (
+            Control.objects
+            .select_related("organization")
+            .prefetch_related(
+                "conformity__requirement",
+                Prefetch(
+                    "controlpoint_set",
+                    queryset=current_points,
+                    to_attr="current_controlpoints",
+                ),
+            )
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -439,10 +508,14 @@ class ControlDetailView(LoginRequiredMixin, DetailView):
     template_name = 'conformity/control_detail_list.html'
 
 
-class ControlPointIndexView(LoginRequiredMixin, FilterView):
+class ControlPointIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     model = ControlPoint
+    table_class = ControlPointTable
     filterset_class = ControlPointFilter
     template_name = 'conformity/controlpoint_list.html'
+
+    def get_queryset(self):
+        return ControlPoint.objects.select_related("control", "control_user")
 
 
 class ControlPointUpdateView(LoginRequiredMixin, UpdateView):
@@ -571,7 +644,9 @@ class AuditLogDetailView(LoginRequiredMixin, FilterView):
     model = LogEntry
     template_name = 'auditlog/logentry_list.html'
     filterset_class = AuditLogFilter
-    paginate_by = 20
+
+    def get_paginate_by(self, queryset):
+        return constance_config.TABLE_PAGE_SIZE
 
     def get_queryset(self, **kwargs):
         return LogEntry.objects.all().order_by('-timestamp')

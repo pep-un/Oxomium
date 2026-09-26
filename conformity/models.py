@@ -91,9 +91,8 @@ class Framework(models.Model):
                 .order_by('tree_id', 'lft'))
 
     def get_requirements_number(self):
-        """return the number of leaf Requirement related to the Framework"""
-        from django.db.models import F
-        return Requirement.objects.filter(framework=self, rght=F('lft') + 1).count()
+        """Return the number of leaf requirements in this framework."""
+        return sum(1 for requirement in self.requirements.all() if requirement.is_leaf_node())
 
     def get_root_requirement(self):
         """return the root Requirement of the Framework"""
@@ -291,13 +290,12 @@ class Conformity(models.Model):
 
     def get_completeness(self):
         leaves = self.get_leaf() or []
-        total = len(self.get_leaf())
-        if total ==0:
+        total = len(leaves)
+        if total == 0:
             return 0
 
-        complete = sum(1 for n in leaves if n.status is not None)
-
-        return round( (complete / total) * 100)
+        complete = sum(1 for conformity in leaves if conformity.status is not None)
+        return round((complete / total) * 100)
 
     def get_absolute_url(self):
         """Return the absolute URL of the class for Form, probably not the best way to do it"""
