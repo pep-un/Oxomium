@@ -9,7 +9,8 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+  pylint:
+    name: Pylint (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     strategy:
       matrix:

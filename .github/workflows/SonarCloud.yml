@@ -1,4 +1,4 @@
-name: SonarCloud
+name: SonarQube
 permissions:
   contents: read
 
@@ -10,8 +10,8 @@ on:
     types: [opened, synchronize, reopened]
 
 jobs:
-  sonarcloud:
-    name: SonarCloud
+  sonarqube:
+    name: SonarQube
     runs-on: ubuntu-latest
     env:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
