@@ -6,9 +6,8 @@ from django.urls import reverse
 
 from conformity.models import Action, Audit, Control, ControlPoint, Finding, Organization
 from conformity.tables import (
-    CONTROL_POINT_STATUS_STYLES, ActionTable, AuditTable,
-    ConformityTable, ControlTable, ControlPointTable, FindingTable, FrameworkTable,
-    OrganizationTable, StatusColumn,
+    ActionTable, AuditTable, ConformityTable, ControlTable, ControlPointTable,
+    FindingTable, FrameworkTable, OrganizationTable,
 )
 from conformity.filterset import ConformityFilter, ControlPointFilter, FindingFilter
 from conformity.views import (
@@ -92,15 +91,18 @@ class ActionStatusComponentTests(TestCase):
         self.assertIn("Frozen", html)
 
 
-class StatusColumnRenderingTests(TestCase):
-    def test_control_point_status_uses_raw_choice_value_for_style_lookup(self):
+class ControlPointStatusComponentTests(TestCase):
+    def test_non_compliant_uses_danger_filled_hexagon(self):
         control_point = ControlPoint(status=ControlPoint.Status.NONCOMPLIANT)
-        column = StatusColumn(CONTROL_POINT_STATUS_STYLES)
 
-        html = str(column.render(control_point.get_status_display(), control_point))
+        html = render_to_string(
+            "conformity/includes/controlpoint_status.html",
+            {"controlpoint": control_point},
+        )
 
         self.assertIn("bi-hexagon-fill text-danger", html)
         self.assertIn("Non-Compliant", html)
+
 
 
 class FindingActionStatusTests(TestCase):

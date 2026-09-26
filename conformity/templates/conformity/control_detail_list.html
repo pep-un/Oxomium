@@ -46,22 +46,7 @@
                 {{ cp.control_user| default_if_none:"" }}
             </td>
             <td class="col">
-                {% if cp.status == "SCHD" %}
-                    <i class="bi bi-hexagon text-dark"></i>
-                {% endif %}
-                {% if cp.status == "TOBE" %}
-                    <i class="bi bi-hexagon-fill text-info"></i>
-                {% endif %}
-                {% if cp.status == "NOK" %}
-                    <i class="bi bi-hexagon-fill text-danger"></i>
-                {% endif %}
-                {% if cp.status == "OK" %}
-                    <i class="bi bi-hexagon-fill text-success"></i>
-                {% endif %}
-                {% if cp.status == "MISS" %}
-                    <i class="bi bi-hexagon text-danger"></i>
-                {% endif %}
-                {{ cp.get_status_display }}
+                {% include 'conformity/includes/controlpoint_status.html' with controlpoint=cp %}
             </td>
             <td class="col text-center">
                 <a href="{% url 'conformity:controlpoint_form' cp.id %}" >

@@ -13,27 +13,6 @@ PRIMARY_COLUMN = {
 }
 
 
-class StatusColumn(tables.Column):
-    """Render a model choice status with a Bootstrap icon and contextual color."""
-
-    def __init__(self, styles, **kwargs):
-        self.styles = styles
-        kwargs.setdefault("order_by", ("status",))
-        super().__init__(empty_values=(), **kwargs)
-
-    def render(self, value, record):
-        # django-tables2 resolves model choice fields to their display label
-        # before calling render(); use the raw model value for style lookup.
-        status = record.status
-        icon, color = self.styles.get(status, ("bi-hexagon", "text-dark"))
-        return format_html(
-            '<i class="bi {} {}"></i> {}',
-            icon,
-            color,
-            record.get_status_display(),
-        )
-
-
 class EditColumn(tables.Column):
     """Compact, consistent edit action used by rich tables."""
 
@@ -61,14 +40,6 @@ class EditColumn(tables.Column):
             self.label,
         )
 
-
-CONTROL_POINT_STATUS_STYLES = {
-    ControlPoint.Status.SCHEDULED: ("bi-hexagon", "text-dark"),
-    ControlPoint.Status.TOBEEVALUATED: ("bi-hexagon-fill", "text-info"),
-    ControlPoint.Status.NONCOMPLIANT: ("bi-hexagon-fill", "text-danger"),
-    ControlPoint.Status.COMPLIANT: ("bi-hexagon-fill", "text-success"),
-    ControlPoint.Status.MISSED: ("bi-hexagon", "text-danger"),
-}
 
 
 class BaseRichTable(tables.Table):
@@ -358,7 +329,12 @@ class ControlPointTable(BaseRichTable):
     period_start_date = tables.DateColumn(verbose_name="Start date", format="d-M-Y")
     period_end_date = tables.DateColumn(verbose_name="End date", format="d-M-Y")
     control_user = tables.Column(verbose_name="Owner", default="")
-    status = StatusColumn(CONTROL_POINT_STATUS_STYLES)
+    status = tables.TemplateColumn(
+        template_code="""
+            {% include 'conformity/includes/controlpoint_status.html' with controlpoint=record %}
+        """,
+        order_by=("status",),
+    )
 
     class Meta(BaseRichTable.Meta):
         model = ControlPoint
