@@ -250,6 +250,11 @@ class SharedUxComponentsTests(BaseDataMixin, TestCase):
         self.assertContains(response, ">Active<")
         self.assertNotContains(response, "btn-danger")
 
+    def test_pagination_does_not_mark_filters_active(self):
+        response = self.client.get(reverse("conformity:action_index"), {"page": "1"})
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, ">Active<")
+
     def test_audit_detail_uses_accessible_breadcrumb(self):
         response = self.client.get(reverse("conformity:audit_detail", args=[self.audit.pk]))
         self.assertEqual(response.status_code, 200)
