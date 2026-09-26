@@ -60,6 +60,13 @@ class RichTableConfigurationTests(TestCase):
                 self.assertIn("col-2", first_column.attrs["td"]["class"])
                 self.assertIn("text-start", first_column.attrs["td"]["class"])
 
+    def test_control_table_exposes_organization_and_last_result(self):
+        table = ControlTable([])
+        self.assertIn("organization", table.columns)
+        self.assertIn("last_result", table.columns)
+        self.assertEqual(table.columns["organization"].verbose_name, "Organization")
+        self.assertEqual(table.columns["last_result"].verbose_name, "Last result")
+
     def test_control_point_name_uses_control_title(self):
         self.assertEqual(
             str(ControlPointTable.base_columns["name"].accessor),
@@ -272,6 +279,51 @@ class RichTableInteractionTests(TestCase):
         ]
         self.assertIn(self.relation_only_finding.pk, filtered_ids)
 
+
+    def test_control_index_shows_current_point_evaluate_call_to_action(self):
+        organization = Organization.objects.create(name="Control result org")
+        control = Control.objects.create(
+            title="Control awaiting evaluation",
+            organization=organization,
+            frequency=Control.Frequency.YEARLY,
+        )
+        current_point = next(
+            point for point in control.get_controlpoint()
+            if point.is_current_period()
+        )
+
+        response = self.client.get(reverse("conformity:control_index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            reverse("conformity:organization_detail", args=[organization.pk]),
+        )
+        self.assertContains(
+            response,
+            reverse("conformity:controlpoint_form", args=[current_point.pk]),
+        )
+        self.assertContains(response, "Evaluate")
+
+    def test_control_index_shows_current_control_point_result_when_completed(self):
+        organization = Organization.objects.create(name="Completed control org")
+        control = Control.objects.create(
+            title="Completed current control",
+            organization=organization,
+            frequency=Control.Frequency.YEARLY,
+        )
+        current_point = next(
+            point for point in control.get_controlpoint()
+            if point.is_current_period()
+        )
+        current_point.status = ControlPoint.Status.COMPLIANT
+        current_point.save(update_fields=["status"])
+
+        response = self.client.get(reverse("conformity:control_index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "bi-hexagon-fill text-success")
+        self.assertContains(response, "Compliant")
 
     def test_control_detail_renders_generated_control_points(self):
         control = Control.objects.create(

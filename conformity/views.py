@@ -10,6 +10,7 @@ from django.views.generic.edit import UpdateView, CreateView
 from django_filters.views import FilterView
 from constance import config as constance_config
 from django_tables2.views import SingleTableMixin
+from django.utils import timezone
 from auditlog.models import LogEntry
 from import_export.formats import base_formats
 from mptt.templatetags.mptt_tags import cache_tree_children
@@ -464,7 +465,23 @@ class ControlIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     template_name = 'conformity/control_list.html'
 
     def get_queryset(self):
-        return Control.objects.prefetch_related("conformity__requirement")
+        today = timezone.localdate()
+        current_points = ControlPoint.objects.filter(
+            period_start_date__lte=today,
+            period_end_date__gte=today,
+        ).order_by("period_start_date")
+        return (
+            Control.objects
+            .select_related("organization")
+            .prefetch_related(
+                "conformity__requirement",
+                Prefetch(
+                    "controlpoint_set",
+                    queryset=current_points,
+                    to_attr="current_controlpoints",
+                ),
+            )
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

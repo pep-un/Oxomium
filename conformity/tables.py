@@ -294,8 +294,45 @@ class ControlTable(BaseRichTable):
         linkify=("conformity:control_detail", [A("pk")]),
         attrs=PRIMARY_COLUMN,
     )
+    organization = tables.TemplateColumn(
+        verbose_name="Organization",
+        template_code="""
+            {% if record.organization %}
+                <a href="{% url 'conformity:organization_detail' record.organization.pk %}"
+                   class="btn btn-sm btn-outline-secondary w-75 mx-auto">
+                    {{ record.organization }}
+                </a>
+            {% endif %}
+        """,
+        order_by=("organization__name",),
+        attrs=CENTER,
+    )
     level = tables.Column(accessor="get_level_display", order_by=("level",), attrs=CENTER)
     frequency = tables.Column(accessor="get_frequency_display", order_by=("frequency",), attrs=CENTER)
+    last_result = tables.TemplateColumn(
+        verbose_name="Last result",
+        template_code="""
+            {% with point=record.current_controlpoints.0 %}
+                {% if point %}
+                    {% if point.is_final_status %}
+                        {% include 'conformity/includes/controlpoint_status.html' with controlpoint=point %}
+                    {% else %}
+                        <a href="{% url 'conformity:controlpoint_form' point.pk %}"
+                           class="btn btn-sm btn-outline-primary w-75 mx-auto bi bi-pencil-square">
+                            Evaluate
+                        </a>
+                    {% endif %}
+                {% else %}
+                    <a href="{% url 'conformity:control_form' record.pk %}"
+                       class="btn btn-sm btn-outline-secondary w-75 mx-auto bi bi-arrow-repeat">
+                        Update control
+                    </a>
+                {% endif %}
+            {% endwith %}
+        """,
+        orderable=False,
+        attrs=CENTER,
+    )
     requirements = tables.TemplateColumn(
         verbose_name="Associated requirements",
         template_code="""
@@ -314,8 +351,16 @@ class ControlTable(BaseRichTable):
 
     class Meta(BaseRichTable.Meta):
         model = Control
-        fields = ("title", "level", "frequency")
-
+        fields = ("title", "organization", "level", "frequency")
+        sequence = (
+            "title",
+            "organization",
+            "level",
+            "frequency",
+            "last_result",
+            "requirements",
+            "actions",
+        )
 
 class ControlPointTable(BaseRichTable):
     name = tables.Column(
