@@ -9,22 +9,36 @@ permissions:
   contents: read
 
 jobs:
-  django:
-    name: Django (Python ${{ matrix.python-version }})
+  python_versions:
+    name: Python version configuration
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      max-parallel: 4
-      matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+    timeout-minutes: 5
+    outputs:
+      current: ${{ steps.versions.outputs.current }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Read Python versions
+        id: versions
+        shell: bash
+        run: |
+          set -euo pipefail
+          current="$(jq -r '.current' .github/ci-python-versions.json)"
+          jq -e --arg current "$current" '.supported | index($current) != null'             .github/ci-python-versions.json > /dev/null
+          echo "current=$current" >> "$GITHUB_OUTPUT"
+
+  django:
+    name: Django (Python ${{ needs.python_versions.outputs.current }})
+    needs: python_versions
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Set up Python ${{ needs.python_versions.outputs.current }}
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: ${{ needs.python_versions.outputs.current }}
           cache: pip
       - name: Install dependencies
         run: |
@@ -36,21 +50,17 @@ jobs:
         run: python manage.py makemigrations --check --dry-run
 
   pylint:
-    name: Pylint (Python ${{ matrix.python-version }})
+    name: Pylint (Python ${{ needs.python_versions.outputs.current }})
+    needs: python_versions
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      max-parallel: 4
-      matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up Python ${{ needs.python_versions.outputs.current }}
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: ${{ needs.python_versions.outputs.current }}
           cache: pip
       - name: Install dependencies
         run: |
@@ -66,6 +76,7 @@ jobs:
 
   sonarqube:
     name: SonarQube
+    needs: python_versions
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -80,11 +91,11 @@ jobs:
         run: |
           echo "::error::SONAR_TOKEN is required for SonarCloud analysis."
           exit 1
-      - name: Set up Python 3.12
+      - name: Set up Python ${{ needs.python_versions.outputs.current }}
         if: ${{ env.SONAR_TOKEN != '' }}
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
-          python-version: "3.12"
+          python-version: ${{ needs.python_versions.outputs.current }}
           cache: pip
       - name: Install dependencies
         if: ${{ env.SONAR_TOKEN != '' }}
@@ -160,6 +171,4 @@ jobs:
             exit 1
           fi
           curl --fail --silent --show-error http://127.0.0.1:3000/
-          curl --fail --silent --show-error \
-            http://127.0.0.1:3000/static/admin/css/base.css \
-            > /dev/null
+          curl --fail --silent --show-error             http://127.0.0.1:3000/static/admin/css/base.css             > /dev/null

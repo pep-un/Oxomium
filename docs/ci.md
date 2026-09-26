@@ -4,43 +4,54 @@ This document defines how Oxomium uses GitHub Actions and the responsibility of 
 
 The design goal is to make the trigger and purpose of every workflow obvious from its filename while keeping pull-request checks compatible with the main branch ruleset.
 
+## Python version source of truth
+
+Python versions are defined once in `.github/ci-python-versions.json`:
+
+- `current` is the Python version used for normal branch CI, main CI and Sonar coverage;
+- `supported` is the compatibility matrix enforced on pull requests.
+
+Each workflow starts with a small `Python version configuration` job that reads and validates this file. The current version must also be present in the supported list.
+
+To adopt or retire a Python version, update this file first. Pull-request job names are generated from the supported matrix, so changing that list may require a coordinated update of the `main` ruleset required status checks.
+
 ## Workflow map
 
-| Workflow | Trigger | Purpose | Expected cost |
-| --- | --- | --- | --- |
-| <code>.github/workflows/ci-branch.yml</code> | Push to any branch except main | Fast developer feedback on a representative Python version | Low |
-| <code>.github/workflows/ci-pull-request.yml</code> | Pull request targeting main | Full merge gate and code-quality validation | Medium; Docker is conditional |
-| <code>.github/workflows/ci-main.yml</code> | Push to main | Full post-merge validation of the canonical branch, including Docker | High |
-| <code>.github/workflows/docker-publish.yml</code> | Manual workflow_dispatch | Explicit Docker Hub publication outside the release flow | On demand |
-| <code>.github/workflows/release.yml</code> | Published GitHub Release | Build, scan, publish and attach release artifacts | Release only |
+| Workflow | Trigger | Purpose | Python policy | Docker policy |
+| --- | --- | --- | --- | --- |
+| `.github/workflows/ci-branch.yml` | Push to any branch except main | Fast developer feedback | Current only | None |
+| `.github/workflows/ci-pull-request.yml` | Pull request targeting main | Compatibility and merge gate | All supported versions | Lint/config validation only, when Docker files change |
+| `.github/workflows/ci-main.yml` | Push to main | Canonical post-merge integration validation | Current only | Full build, security scan and smoke test |
+| `.github/workflows/docker-publish.yml` | Manual `workflow_dispatch` | Explicit Docker Hub publication outside the release flow | N/A | Build and publish |
+| `.github/workflows/release.yml` | Published GitHub Release | Build, scan, publish and attach release artifacts | N/A | Release build and publication |
 
 CI workflows are intentionally separated by event. A contributor should be able to infer when a workflow runs without first reading its YAML.
 
 ## Branch push CI
 
-<code>ci-branch.yml</code> runs on every push to a branch other than main. Its purpose is fast feedback before or outside a pull request.
+`ci-branch.yml` runs on every push to a branch other than `main`. Its purpose is fast feedback before or outside a pull request.
 
-It runs Django tests, the migration consistency check and Pylint on Python 3.12. Python 3.12 is the representative fast-feedback runtime; the full supported-version matrix is checked on pull requests and main.
+It runs Django tests, the migration consistency check and Pylint using the `current` Python version from `.github/ci-python-versions.json`.
 
 Older runs for the same branch are cancelled when a newer commit is pushed, avoiding runner time on stale revisions.
 
 ## Pull-request CI
 
-<code>ci-pull-request.yml</code> runs for pull requests targeting main and is the merge gate.
+`ci-pull-request.yml` runs for pull requests targeting `main` and is the merge gate.
 
 It runs:
 
-- Django tests and migration checks on Python 3.10, 3.11, 3.12, 3.13 and 3.14;
-- Pylint on the same matrix;
+- Django tests and migration checks on every Python version in `supported`;
+- Pylint on every Python version in `supported`;
 - GitHub dependency review;
-- SonarQube/SonarCloud analysis;
-- Docker validation only for Docker-impacting changes.
+- SonarQube/SonarCloud analysis using the current Python version;
+- Docker lint/config validation only when Docker-related files changed.
 
-The Python matrices use <code>fail-fast: false</code> so one incompatible version does not hide results from other supported versions.
+The compatibility matrices use `fail-fast: false` so one incompatible version does not hide results from other supported versions.
 
 ### Required status checks
 
-The current main ruleset requires:
+The current `main` ruleset requires:
 
 - Django (Python 3.10)
 - Django (Python 3.11)
@@ -56,95 +67,102 @@ The current main ruleset requires:
 
 The ruleset also requires the SonarCloud code-analysis check produced by the SonarCloud integration.
 
-These names must not be changed casually. Renaming a required job without updating the ruleset can block all pull requests.
+These names must not be changed casually. When `supported` changes, update the ruleset together with the workflow matrix.
 
-### Conditional Docker validation
+### Docker checks on pull requests
 
-Docker validation is intentionally not filtered with <code>on.pull_request.paths</code>. The pull-request workflow always starts and a lightweight Detect Docker-impacting changes job decides whether Docker Validation runs.
+A pull request does not build a Docker image.
 
-Docker validation runs when a pull request changes one of:
+A lightweight `Detect Docker-file changes` job enables `Docker Lint` only when the pull request changes:
 
-- .github/workflows/ci-pull-request.yml
-- .github/workflows/ci-main.yml
-- Dockerfile
-- .dockerignore
-- docker-compose.yml
-- docker/**
-- env-exemple
-- requirements.txt
+- `Dockerfile`
+- `.dockerignore`
+- `docker-compose.yml`
+- `docker/**`
+- `env-exemple`
 
-Application-only changes under conformity/**, oxomium/** or manage.py do not run the expensive container pipeline on every pull-request update. They remain covered by Django, Pylint and Sonar before merge, while the canonical main commit is still validated in Docker after merge.
+The pull-request Docker job runs only:
 
-This job-level condition is deliberate. GitHub documents that a whole workflow skipped by branch/path filtering can leave required checks pending, while a job skipped by an if condition reports a successful skipped result.
+1. Hadolint on `Dockerfile`;
+2. `docker compose config --quiet`.
+
+The purpose is to catch Dockerfile style/errors and invalid Compose configuration cheaply before merge. Runtime integration, image vulnerability scanning and HTTP smoke testing are deliberately deferred to the canonical `main` commit.
+
+Application-only changes and dependency-only changes do not run Docker checks in the pull request.
 
 ## Main push CI
 
-<code>ci-main.yml</code> runs on every push to main. It repeats the full supported Python matrix and Sonar analysis because main is the canonical integration state and may also receive administrative or automated updates.
+`ci-main.yml` runs on every push to `main`.
 
-Docker validation always runs on main regardless of which files changed, providing a final integration signal for the exact canonical commit.
+Django, migrations, Pylint and Sonar use the configured `current` Python version. Compatibility across every supported Python version has already been enforced by the pull-request gate.
 
-## Docker validation stages
+Docker validation always runs on `main`, regardless of which files changed. This validates the exact canonical commit after integration.
 
-The Docker job proves that the repository can produce and run a deployable container without known HIGH or CRITICAL vulnerabilities.
+## Docker validation on main
+
+The full Docker job proves that the repository can produce and run a deployable container without known HIGH or CRITICAL vulnerabilities.
 
 Its stages are:
 
-1. lint Dockerfile with Hadolint;
-2. validate docker-compose.yml;
+1. lint `Dockerfile` with Hadolint;
+2. validate `docker-compose.yml`;
 3. build the Compose web image once;
-4. run python manage.py check inside that image;
+4. run `python manage.py check` inside that image;
 5. scan the validated image with Trivy;
 6. fail on HIGH or CRITICAL findings;
-7. start the already-built Compose stack with --no-build;
+7. start the already-built Compose stack with `--no-build`;
 8. smoke-test the application root and an admin static asset;
 9. tear the Compose stack down.
 
-The previous workflow built an image explicitly and later called docker compose up --build, which could perform redundant build work. The new flow builds the Compose image once and reuses it for Django checks, scanning and the smoke test.
+The Compose image is built once and reused for Django checks, Trivy and the smoke test.
 
 ## Security and reliability rules
 
 All CI workflows follow these rules:
 
-- GITHUB_TOKEN defaults to contents: read;
+- `GITHUB_TOKEN` defaults to `contents: read`;
 - third-party actions remain pinned to full commit SHAs;
 - repository secrets are not exposed to fork pull requests;
-- Sonar explicitly handles the absence of SONAR_TOKEN on forks;
+- Sonar explicitly handles the absence of `SONAR_TOKEN` on forks;
 - jobs have explicit timeouts;
-- Python dependency caching uses actions/setup-python with cache: pip;
-- stale branch and pull-request runs are cancelled with concurrency;
-- no CI workflow uses pull_request_target to execute pull-request code.
+- Python dependency caching uses `actions/setup-python` with `cache: pip`;
+- stale branch and pull-request runs are cancelled with `concurrency`;
+- no CI workflow uses `pull_request_target` to execute pull-request code.
 
 ## Why common jobs are not reusable workflows yet
 
 GitHub recommends reusable workflows when workflows share the same implementation.
 
-Oxomium currently protects main using exact status-check names. Moving Django or Pylint matrices behind reusable workflow calls can change the displayed check context and would require a coordinated ruleset migration.
+Oxomium currently protects `main` using exact status-check names. Moving Django or Pylint matrices behind reusable workflow calls can change the displayed check context and would require a coordinated ruleset migration.
 
-For this refactor, preserving merge-gate compatibility is more important than eliminating YAML duplication. The three event entrypoints therefore remain self-contained.
-
-A later refactor can extract common implementation after the branch ruleset is intentionally migrated and the resulting check names are verified.
+For this refactor, preserving merge-gate compatibility is more important than eliminating YAML duplication. Shared Python policy is therefore centralized as data in `.github/ci-python-versions.json`, while the event entrypoints remain self-contained.
 
 ## Maintaining the workflows
 
 When adding a check, classify it first:
 
-- every branch commit: ci-branch.yml, only for cheap immediate feedback;
-- before merge: ci-pull-request.yml;
-- canonical integration verification: ci-main.yml;
-- release/publication: release.yml or docker-publish.yml.
+- every branch commit: `ci-branch.yml`, only for cheap immediate feedback;
+- before merge: `ci-pull-request.yml`;
+- canonical integration verification: `ci-main.yml`;
+- release/publication: `release.yml` or `docker-publish.yml`.
+
+When changing Python support:
+
+1. update `.github/ci-python-versions.json`;
+2. validate the generated PR job names;
+3. update the `main` ruleset required checks if the supported matrix changed;
+4. merge only after the ruleset and matrix agree.
 
 When adding a new required status check:
 
 1. add and validate the job;
 2. verify its exact check name in a pull request;
-3. update the main ruleset;
+3. update the `main` ruleset;
 4. only then remove or rename an old required check.
-
-When Docker inputs change, update the Docker-impacting file detector in ci-pull-request.yml.
 
 ## Local equivalents
 
-Before opening a pull request:
+Before opening a pull request, use the current Python version from `.github/ci-python-versions.json`:
 
 ~~~bash
 python manage.py test
@@ -156,15 +174,14 @@ pylint -E --load-plugins pylint_django \
   $(git ls-files '*.py')
 ~~~
 
-For Docker-impacting changes:
+For Docker-file changes:
 
 ~~~bash
 docker compose config --quiet
-docker compose build web
-docker compose up --no-build --detach --wait --wait-timeout 60
-curl --fail http://127.0.0.1:3000/
-docker compose down --volumes --remove-orphans
+hadolint Dockerfile
 ~~~
+
+The full Docker build and runtime smoke test are performed after merge on `main`.
 
 ## References
 

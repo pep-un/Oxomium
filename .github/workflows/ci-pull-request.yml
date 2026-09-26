@@ -13,15 +13,37 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  python_versions:
+    name: Python version configuration
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      current: ${{ steps.versions.outputs.current }}
+      supported: ${{ steps.versions.outputs.supported }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Read Python versions
+        id: versions
+        shell: bash
+        run: |
+          set -euo pipefail
+          current="$(jq -r '.current' .github/ci-python-versions.json)"
+          supported="$(jq -c '.supported' .github/ci-python-versions.json)"
+          jq -e --arg current "$current" '.supported | index($current) != null'             .github/ci-python-versions.json > /dev/null
+          echo "current=$current" >> "$GITHUB_OUTPUT"
+          echo "supported=$supported" >> "$GITHUB_OUTPUT"
+
   django:
     name: Django (Python ${{ matrix.python-version }})
+    needs: python_versions
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
       fail-fast: false
       max-parallel: 4
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        python-version: ${{ fromJSON(needs.python_versions.outputs.supported) }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -41,13 +63,14 @@ jobs:
 
   pylint:
     name: Pylint (Python ${{ matrix.python-version }})
+    needs: python_versions
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
       fail-fast: false
       max-parallel: 4
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        python-version: ${{ fromJSON(needs.python_versions.outputs.supported) }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -80,6 +103,7 @@ jobs:
 
   sonarqube:
     name: SonarQube
+    needs: python_versions
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -98,11 +122,11 @@ jobs:
         if: ${{ env.SONAR_TOKEN == '' && github.event.pull_request.head.repo.full_name != github.repository }}
         run: |
           echo "::notice::SonarCloud analysis cannot use repository secrets on pull requests from forks."
-      - name: Set up Python 3.12
+      - name: Set up Python ${{ needs.python_versions.outputs.current }}
         if: ${{ env.SONAR_TOKEN != '' }}
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
-          python-version: "3.12"
+          python-version: ${{ needs.python_versions.outputs.current }}
           cache: pip
       - name: Install dependencies
         if: ${{ env.SONAR_TOKEN != '' }}
@@ -122,7 +146,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   changes:
-    name: Detect Docker-impacting changes
+    name: Detect Docker-file changes
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
@@ -132,7 +156,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
-      - name: Detect Docker-impacting files
+      - name: Detect Docker files
         id: filter
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
@@ -143,19 +167,18 @@ jobs:
           changed_files="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
           printf '%s\n' "$changed_files"
 
-          if printf '%s\n' "$changed_files" | grep -Eq \
-            '^(\.github/workflows/ci-(pull-request|main)\.yml|Dockerfile|\.dockerignore|docker-compose\.yml|env-exemple|requirements\.txt|docker/)'; then
+          if printf '%s\n' "$changed_files" | grep -Eq             '^(Dockerfile|\.dockerignore|docker-compose\.yml|env-exemple|docker/)'; then
             echo "docker=true" >> "$GITHUB_OUTPUT"
           else
             echo "docker=false" >> "$GITHUB_OUTPUT"
           fi
 
-  docker_validation:
-    name: Docker Validation
+  docker_lint:
+    name: Docker Lint
     needs: changes
     if: ${{ needs.changes.outputs.docker == 'true' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -166,49 +189,3 @@ jobs:
           failure-threshold: error
       - name: Validate Compose file
         run: docker compose config --quiet
-      - name: Build Compose web image
-        run: docker compose --project-name oxomium-ci build web
-      - name: Tag validated image
-        run: docker image tag oxomium-ci-web oxomium:ci
-      - name: Run Django system checks
-        run: docker run --rm --entrypoint python oxomium:ci manage.py check
-      - name: Scan image for vulnerabilities
-        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
-        with:
-          image-ref: oxomium:ci
-          format: json
-          output: trivy-report.json
-          severity: CRITICAL,HIGH
-          exit-code: 0
-      - name: Upload Trivy report
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: trivy-report-pr
-          path: trivy-report.json
-      - name: Fail on high or critical vulnerabilities
-        run: |
-          findings="$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH" or .Severity == "CRITICAL")] | length' trivy-report.json)"
-          if [ "$findings" -gt 0 ]; then
-            jq '.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH" or .Severity == "CRITICAL") | {
-              target: .Target,
-              package: .PkgName,
-              installed: .InstalledVersion,
-              fixed: .FixedVersion,
-              severity: .Severity,
-              vulnerability: .VulnerabilityID
-            }' trivy-report.json
-            exit 1
-          fi
-      - name: Start Compose services and smoke test
-        run: |
-          set -euo pipefail
-          trap 'docker compose --project-name oxomium-ci down --volumes --remove-orphans' EXIT
-          if ! docker compose --project-name oxomium-ci up --no-build --detach --wait --wait-timeout 60; then
-            docker compose --project-name oxomium-ci logs
-            exit 1
-          fi
-          curl --fail --silent --show-error http://127.0.0.1:3000/
-          curl --fail --silent --show-error \
-            http://127.0.0.1:3000/static/admin/css/base.css \
-            > /dev/null
