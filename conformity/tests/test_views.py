@@ -247,13 +247,16 @@ class SharedUxComponentsTests(BaseDataMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'class="d-flex flex-wrap gap-2 align-items-center justify-content-between mb-3 list-toolbar"')
         self.assertContains(response, "Reset filters")
-        self.assertContains(response, "1 active")
+        self.assertContains(response, 'btn btn-primary dropdown-toggle')
+        self.assertContains(response, 'badge text-bg-light ms-1">1</span>')
+        self.assertNotContains(response, "btn-outline-")
         self.assertNotContains(response, "btn-danger")
 
     def test_pagination_does_not_mark_filters_active(self):
         response = self.client.get(reverse("conformity:action_index"), {"page": "1"})
         self.assertEqual(response.status_code, 200)
-        self.assertNotContains(response, ">Active<")
+        self.assertContains(response, 'btn btn-secondary dropdown-toggle')
+        self.assertNotContains(response, 'badge text-bg-light ms-1">')
 
     def test_audit_detail_uses_accessible_breadcrumb(self):
         response = self.client.get(reverse("conformity:audit_detail", args=[self.audit.pk]))
