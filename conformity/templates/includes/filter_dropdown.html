@@ -1,12 +1,13 @@
 {% load ui_tags %}
+{% active_filter_count as active_filters %}
 <div class="dropdown">
     <button type="button"
             class="btn btn-outline-secondary dropdown-toggle"
             data-bs-toggle="dropdown"
             aria-expanded="false">
         <i class="bi bi-funnel"></i> Filter
-        {% if request.GET|has_active_filters %}
-            <span class="badge text-bg-primary ms-1">Active</span>
+        {% if active_filters %}
+            <span class="badge text-bg-primary ms-1">{{ active_filters }} active</span>
         {% endif %}
     </button>
     <div class="dropdown-menu p-3 filter-dropdown">
