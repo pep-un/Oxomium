@@ -3,10 +3,11 @@ from django.test import TestCase
 from constance.test import override_config
 from django.urls import reverse
 
-from conformity.models import Organization
+from conformity.models import Action, ControlPoint, Organization
 from conformity.tables import (
-    ActionTable, AuditTable, ConformityTable, ControlTable, ControlPointTable,
-    FindingTable, FrameworkTable, OrganizationTable,
+    ACTION_STATUS_STYLES, CONTROL_POINT_STATUS_STYLES, ActionTable, AuditTable,
+    ConformityTable, ControlTable, ControlPointTable, FindingTable, FrameworkTable,
+    OrganizationTable, StatusColumn,
 )
 from conformity.views import (
     ActionIndexView, AuditIndexView, ConformityIndexView, ControlIndexView,
@@ -30,6 +31,26 @@ class RichTableConfigurationTests(TestCase):
         for view, table in expected.items():
             with self.subTest(view=view.__name__):
                 self.assertIs(view.table_class, table)
+
+
+class StatusColumnRenderingTests(TestCase):
+    def test_action_status_uses_raw_choice_value_for_style_lookup(self):
+        action = Action(status=Action.Status.PLANNING)
+        column = StatusColumn(ACTION_STATUS_STYLES)
+
+        html = str(column.render(action.get_status_display(), action))
+
+        self.assertIn("bi-hexagon-fill text-primary", html)
+        self.assertIn("Planning", html)
+
+    def test_control_point_status_uses_raw_choice_value_for_style_lookup(self):
+        control_point = ControlPoint(status=ControlPoint.Status.NONCOMPLIANT)
+        column = StatusColumn(CONTROL_POINT_STATUS_STYLES)
+
+        html = str(column.render(control_point.get_status_display(), control_point))
+
+        self.assertIn("bi-hexagon-fill text-danger", html)
+        self.assertIn("Non-Compliant", html)
 
 
 class RichTableInteractionTests(TestCase):

@@ -18,7 +18,10 @@ class StatusColumn(tables.Column):
         super().__init__(empty_values=(), **kwargs)
 
     def render(self, value, record):
-        icon, color = self.styles.get(value, ("bi-hexagon", "text-secondary"))
+        # django-tables2 resolves model choice fields to their display label
+        # before calling render(); use the raw model value for style lookup.
+        status = record.status
+        icon, color = self.styles.get(status, ("bi-hexagon", "text-secondary"))
         return format_html(
             '<i class="bi {} {}"></i> {}',
             icon,
