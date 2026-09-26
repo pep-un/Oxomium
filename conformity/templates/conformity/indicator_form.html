@@ -1,11 +1,15 @@
 {% extends "conformity/main.html" %}
 {% load django_bootstrap5 %}
+{% load ui_tags %}
 
 {% block header %}
 <h1 class="h1 bi bi-pencil-square" > Edit of a indicator</h1>
 {% endblock %}
 
 {% block content %}
+{% route_url 'conformity:indicator_index' as list_url %}
+{% if object %}{% route_url 'conformity:indicator_detail' object.pk as detail_url %}{% breadcrumb "Indicators" list_url object.name detail_url "Edit" %}{% else %}{% breadcrumb "Indicators" list_url "Create" %}{% endif %}
+
     <form class="form" method="post" action="">
         {% csrf_token %}
         <div class="row justify-content-center">

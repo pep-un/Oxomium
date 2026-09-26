@@ -1,0 +1,22 @@
+{% load ui_tags %}
+{% active_filter_count as active_filters %}
+<div class="dropdown">
+    <button type="button"
+            class="btn {% if active_filters %}btn-primary{% else %}btn-secondary{% endif %} dropdown-toggle"
+            data-bs-toggle="dropdown"
+            aria-expanded="false">
+        <i class="bi bi-funnel"></i> Filter
+        {% if active_filters %}
+            <span class="badge text-bg-light ms-1">{{ active_filters }}</span>
+        {% endif %}
+    </button>
+    <div class="dropdown-menu p-3 filter-dropdown">
+        <form method="get">
+            {{ filter.form.as_div }}
+            <div class="d-flex flex-wrap gap-2 mt-3 pt-3 border-top">
+                <button type="submit" class="btn btn-primary">Apply filters</button>
+                <a href="?" class="btn btn-secondary">Reset filters</a>
+            </div>
+        </form>
+    </div>
+</div>

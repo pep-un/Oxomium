@@ -1,4 +1,5 @@
 {% extends "conformity/main.html" %}
+{% load ui_tags %}
 {% load render_table from django_tables2 %}
 
 {% block header %}
@@ -8,8 +9,11 @@
 {% endblock %}
 
 {% block content %}
+{% route_url 'conformity:control_index' as controls_url %}
+{% breadcrumb "Controls" controls_url "Control points" %}
+
 <div class="row">
-    {% if filter.form.data.control %}
+    {% if filter.form.data.control and object_list %}
         <div class="col col-4">
 
             <div class="card">
@@ -39,22 +43,17 @@
     {% endif %}
 
     <div class="col">
+        {% include "includes/list_toolbar.html" with filter=filter item_count=object_list|length %}
         {% if filter.form.data.control %}
-        <h2>Control Point List</h2>
-        {% else %}
-            {% include "includes/filter_row.html" %}
+            <h2>Control Point List</h2>
         {% endif %}
 
-        {% render_table table %}
+        {% if object_list %}
+            {% render_table table %}
+        {% else %}
+            {% include "includes/empty_state.html" with empty_message="No control points are available." %}
+        {% endif %}
     </div>
   </div>
-</div>
-<div class="row mt-4">
-    <div class="col text-center">
-                    <a href="{% url 'conformity:control_index' %}"
-                       class="btn btn-secondary bi bi-caret-left-square">
-                        Return to control list
-                    </a>
-    </div>
 </div>
 {% endblock %}

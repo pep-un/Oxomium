@@ -1,4 +1,5 @@
 {% extends "conformity/main.html" %}
+{% load ui_tags %}
 
 {% block header %}
 <h1 class="h1 bi bi-shield-shaded" xmlns="">
@@ -7,6 +8,9 @@
 {% endblock %}
 
 {% block content %}
+{% route_url 'conformity:conformity_index' as list_url %}
+{% breadcrumb "Conformities" list_url conformity_list.0.organization.name %}
+
 <h3>
     <div class="d-flex">
         <span class="badge rounded-pill bg-secondary me-4"> {{ conformity_list.0.get_leaf | length }} Requirements</span>

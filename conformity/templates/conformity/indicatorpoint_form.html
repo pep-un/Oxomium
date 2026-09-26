@@ -1,4 +1,5 @@
 {% extends "conformity/main.html" %}
+{% load ui_tags %}
 {% load django_bootstrap5 %}
 
 {% block header %}
@@ -6,6 +7,10 @@
 {% endblock %}
 
 {% block content %}
+{% route_url 'conformity:indicator_index' as indicators_url %}
+{% route_url 'conformity:indicator_detail' indicatorpoint.indicator.pk as indicator_url %}
+{% breadcrumb "Indicators" indicators_url indicatorpoint.indicator.name indicator_url "Measurement" %}
+
     <form class="form" method="post" action="">
         {% csrf_token %}
         <div class="row justify-content-center">

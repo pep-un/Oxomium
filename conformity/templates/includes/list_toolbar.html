@@ -1,0 +1,35 @@
+<div class="d-flex flex-wrap gap-2 align-items-center justify-content-between mb-3 list-toolbar">
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+        {% if create_url %}
+            <a href="{{ create_url }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Create
+            </a>
+        {% endif %}
+
+        {% if filter %}
+            {% include "includes/filter_dropdown.html" %}
+        {% endif %}
+
+        {% if export_url %}
+            <div class="btn-group">
+                <a class="btn btn-secondary" href="{{ export_url }}">
+                    <i class="bi bi-download"></i> Export
+                </a>
+                <button type="button"
+                        class="btn btn-secondary dropdown-toggle dropdown-toggle-split"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false">
+                    <span class="visually-hidden">Choose export format</span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{{ export_url }}?format=csv">CSV</a></li>
+                    <li><a class="dropdown-item" href="{{ export_url }}?format=xlsx">XLSX</a></li>
+                </ul>
+            </div>
+        {% endif %}
+    </div>
+
+    {% if item_count != None %}
+        <span class="badge rounded-pill text-bg-secondary">{{ item_count }} items</span>
+    {% endif %}
+</div>
