@@ -7,6 +7,7 @@ from .models import Action, Audit, Conformity, Control, ControlPoint, Finding, F
 
 
 CENTER = {"cell": {"class": "text-center"}}
+PRIMARY_LINK = {"a": {"class": "link-primary fw-semibold text-decoration-none"}}
 
 
 class StatusColumn(tables.Column):
@@ -122,6 +123,7 @@ class ActionTable(BaseRichTable):
     title = tables.Column(
         verbose_name="Title",
         linkify=("conformity:action_form", [A("pk")]),
+        attrs=PRIMARY_LINK,
     )
     owner = tables.Column(default="", attrs={"td": {"class": "text-nowrap"}})
     status = StatusColumn(ACTION_STATUS_STYLES)
@@ -152,7 +154,10 @@ class ActionTable(BaseRichTable):
 
 
 class AuditTable(BaseRichTable):
-    name = tables.Column(linkify=("conformity:audit_detail", [A("pk")]))
+    name = tables.Column(
+        linkify=("conformity:audit_detail", [A("pk")]),
+        attrs=PRIMARY_LINK,
+    )
     auditor = tables.Column()
     type = tables.Column(accessor="get_type_display", verbose_name="Type", order_by=("type",))
     start_date = tables.DateColumn(verbose_name="Start", format="d-M-Y")
@@ -174,7 +179,11 @@ class FindingTable(BaseRichTable):
         verbose_name="Finding",
         default="Unnamed finding",
         linkify=("conformity:finding_detail", [A("pk")]),
-        attrs=CENTER,
+        attrs={
+            "th": {"class": "text-center"},
+            "td": {"class": "text-center"},
+            "a": {"class": "link-primary fw-semibold text-decoration-none"},
+        },
     )
     short_description = tables.Column(verbose_name="Description")
     cvss = BadgeColumn(
@@ -213,6 +222,7 @@ class OrganizationTable(BaseRichTable):
     name = tables.Column(
         verbose_name="Organization",
         linkify=("conformity:organization_detail", [A("pk")]),
+        attrs=PRIMARY_LINK,
     )
     administrative_id = tables.Column(
         verbose_name="Identifier",
@@ -244,6 +254,7 @@ class FrameworkTable(BaseRichTable):
     name = tables.Column(
         verbose_name="Framework",
         linkify=("conformity:framework_detail", [A("pk")]),
+        attrs=PRIMARY_LINK,
     )
     version = tables.Column(default="-", attrs=CENTER)
     language = tables.Column(accessor="get_language_display", order_by=("language",), attrs=CENTER)
@@ -262,13 +273,16 @@ class FrameworkTable(BaseRichTable):
 
 
 class ConformityTable(BaseRichTable):
-    organization = tables.Column(
-        linkify=(
-            "conformity:conformity_detail_index",
-            [A("organization__pk"), A("requirement__framework__pk")],
-        )
+    conformity = tables.TemplateColumn(
+        verbose_name="Conformity",
+        template_code="""
+            <a href="{% url 'conformity:conformity_detail_index' record.organization.id record.requirement.framework.id %}"
+               class="link-primary fw-semibold text-decoration-none">
+                {{ record.organization }} / {{ record.requirement.framework }}
+            </a>
+        """,
+        order_by=("organization__name", "requirement__framework__name"),
     )
-    framework = tables.Column(accessor="requirement__framework", order_by=("requirement__framework__name",))
     requirements = tables.TemplateColumn(
         verbose_name="Requirements",
         template_code="{{ record.get_leaf|length }}",
@@ -295,16 +309,15 @@ class ConformityTable(BaseRichTable):
     )
     class Meta(BaseRichTable.Meta):
         model = Conformity
-        fields = ("organization", "status")
-        sequence = ("organization", "framework", "requirements", "completeness", "status")
+        fields = ("status",)
+        sequence = ("conformity", "requirements", "completeness", "status")
 
 
 class ControlTable(BaseRichTable):
     title = tables.Column(
         verbose_name="Title",
-        linkify=lambda record: (
-            f'{reverse("conformity:controlpoint_index")}?control={record.pk}'
-        ),
+        linkify=("conformity:control_detail", [A("pk")]),
+        attrs=PRIMARY_LINK,
     )
     level = tables.Column(accessor="get_level_display", order_by=("level",), attrs=CENTER)
     frequency = tables.Column(accessor="get_frequency_display", order_by=("frequency",), attrs=CENTER)
@@ -332,6 +345,7 @@ class ControlPointTable(BaseRichTable):
         verbose_name="Start date",
         format="d-M-Y",
         linkify=("conformity:controlpoint_form", [A("pk")]),
+        attrs=PRIMARY_LINK,
     )
     period_end_date = tables.DateColumn(verbose_name="End date", format="d-M-Y")
     control_user = tables.Column(verbose_name="Owner", default="")
