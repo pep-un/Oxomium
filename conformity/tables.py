@@ -211,7 +211,7 @@ class FindingTable(BaseRichTable):
         attrs={
             "th": {"class": "text-center"},
             "td": {"class": "text-center"},
-            "a": {"class": "link-dark fw-semibold text-decoration-none"},
+            "a": {"class": "table-primary-link"},
         },
     )
     short_description = tables.Column(verbose_name="Description")
