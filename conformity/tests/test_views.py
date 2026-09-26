@@ -249,7 +249,7 @@ class SharedUxComponentsTests(BaseDataMixin, TestCase):
         self.assertContains(response, "Reset filters")
         self.assertContains(response, 'btn btn-primary dropdown-toggle')
         self.assertContains(response, 'badge text-bg-light ms-1">1</span>')
-        self.assertContains(response, 'class="btn btn-secondary" href="/action/export"')
+        self.assertContains(response, 'class="btn btn-secondary" href="' + reverse("conformity:action_export") + '"')
         self.assertContains(response, 'class="btn btn-secondary dropdown-toggle dropdown-toggle-split"')
         self.assertNotContains(response, "btn-danger")
 
