@@ -128,9 +128,34 @@ class ActionTable(BaseRichTable):
     owner = tables.Column(default="", attrs={"td": {"class": "text-nowrap"}})
     status = StatusColumn(ACTION_STATUS_STYLES)
     update_date = tables.DateColumn(verbose_name="Last update", format="d-M-Y")
-    association = tables.Column(
-        accessor="association_count",
-        verbose_name="Association",
+    associations = tables.TemplateColumn(
+        verbose_name="Associations",
+        template_code="""
+            <div class="d-flex flex-wrap gap-1 justify-content-center">
+                {% if record.conformities_count %}
+                    <a href="{% url 'conformity:conformity_index' %}?action={{ record.pk }}"
+                       class="btn btn-sm btn-outline-secondary">
+                        {{ record.conformities_count }} conformity{{ record.conformities_count|pluralize:"y,ies" }}
+                    </a>
+                {% endif %}
+                {% if record.findings_count %}
+                    <a href="{% url 'conformity:finding_index' %}?action={{ record.pk }}"
+                       class="btn btn-sm btn-outline-secondary">
+                        {{ record.findings_count }} finding{{ record.findings_count|pluralize }}
+                    </a>
+                {% endif %}
+                {% if record.controlpoints_count %}
+                    <a href="{% url 'conformity:controlpoint_index' %}?action={{ record.pk }}"
+                       class="btn btn-sm btn-outline-secondary">
+                        {{ record.controlpoints_count }} control point{{ record.controlpoints_count|pluralize }}
+                    </a>
+                {% endif %}
+                {% if not record.conformities_count and not record.findings_count and not record.controlpoints_count %}
+                    <span class="text-body-secondary">None</span>
+                {% endif %}
+            </div>
+        """,
+        orderable=False,
         attrs=CENTER,
     )
 
@@ -162,9 +187,19 @@ class AuditTable(BaseRichTable):
     type = tables.Column(accessor="get_type_display", verbose_name="Type", order_by=("type",))
     start_date = tables.DateColumn(verbose_name="Start", format="d-M-Y")
     end_date = tables.DateColumn(verbose_name="End", format="d-M-Y")
-    findings = tables.Column(
-        accessor="findings_count",
+    findings = tables.TemplateColumn(
         verbose_name="Findings",
+        template_code="""
+            {% if record.findings_count %}
+                <a href="{% url 'conformity:finding_index' %}?audit={{ record.pk }}"
+                   class="btn btn-sm btn-outline-secondary">
+                    {{ record.findings_count }} finding{{ record.findings_count|pluralize }}
+                </a>
+            {% else %}
+                <span class="text-body-secondary">0</span>
+            {% endif %}
+        """,
+        order_by=("findings_count",),
         attrs=CENTER,
     )
     actions = EditColumn("conformity:audit_form", "audit")

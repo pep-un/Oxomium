@@ -9,6 +9,7 @@ from conformity.tables import (
     ConformityTable, ControlTable, ControlPointTable, FindingTable, FrameworkTable,
     OrganizationTable, StatusColumn,
 )
+from conformity.filterset import ConformityFilter, ControlPointFilter, FindingFilter
 from conformity.views import (
     ActionIndexView, AuditIndexView, ConformityIndexView, ControlIndexView,
     ControlPointIndexView, FindingIndexView, FrameworkIndexView,
@@ -31,6 +32,12 @@ class RichTableConfigurationTests(TestCase):
         for view, table in expected.items():
             with self.subTest(view=view.__name__):
                 self.assertIs(view.table_class, table)
+
+    def test_secondary_navigation_filters_are_available(self):
+        self.assertIn("audit", FindingFilter.base_filters)
+        self.assertIn("action", FindingFilter.base_filters)
+        self.assertIn("action", ConformityFilter.base_filters)
+        self.assertIn("action", ControlPointFilter.base_filters)
 
 
 class StatusColumnRenderingTests(TestCase):

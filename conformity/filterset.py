@@ -45,10 +45,16 @@ class ControlFilter(FilterSet):
 
 class ControlPointFilter(FilterSet):
     control = ModelChoiceFilter(queryset=Control.objects.all(), label='Control')
+    action = ModelChoiceFilter(
+        field_name='actions',
+        queryset=Action.objects.all(),
+        label='Action',
+        distinct=True,
+    )
+
     class Meta:
         model = ControlPoint
-        fields = [ 'status',
-                   'control', 'control__frequency']
+        fields = ['status', 'control', 'control__frequency', 'action']
 
 class FrameworkFilter(FilterSet):
     name = CharFilter(lookup_expr='icontains', label="Name")
@@ -72,10 +78,16 @@ class OrganizationFilter(FilterSet):
 class ConformityFilter(FilterSet):
     organization = ModelChoiceFilter(queryset=Organization.objects.all(), label="Organization")
     requirement__framework = ModelChoiceFilter(queryset=Framework.objects.all(), label="Framework")
+    action = ModelChoiceFilter(
+        field_name='actions',
+        queryset=Action.objects.all(),
+        label='Action',
+        distinct=True,
+    )
 
     class Meta:
         model = Conformity
-        fields = [ 'organization', 'requirement__framework' ]
+        fields = ['organization', 'requirement__framework', 'action']
 
 class AuditFilter(FilterSet):
     name = CharFilter(lookup_expr='icontains', label='Name')
@@ -90,10 +102,17 @@ class FindingFilter(FilterSet):
     name = CharFilter(lookup_expr='icontains', label='Name')
     short_description = CharFilter(lookup_expr='icontains', label='Short Description')
     cvss = CharFilter(lookup_expr='icontains', label='CVSS')
+    audit = ModelChoiceFilter(queryset=Audit.objects.all(), label='Audit')
+    action = ModelChoiceFilter(
+        field_name='actions',
+        queryset=Action.objects.all(),
+        label='Action',
+        distinct=True,
+    )
 
     class Meta:
         model = Finding
-        fields = [ 'name', 'short_description', 'cvss']
+        fields = ['name', 'short_description', 'cvss', 'audit', 'action']
 
 class IndicatorFilter(FilterSet):
     name = CharFilter(lookup_expr='icontains', label='Name')

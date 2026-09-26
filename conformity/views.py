@@ -399,11 +399,9 @@ class ActionIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
             Action.objects
             .select_related("owner")
             .annotate(
-                association_count=(
-                    Count("associated_conformity", distinct=True)
-                    + Count("associated_findings", distinct=True)
-                    + Count("associated_controlPoints", distinct=True)
-                )
+                conformities_count=Count("associated_conformity", distinct=True),
+                findings_count=Count("associated_findings", distinct=True),
+                controlpoints_count=Count("associated_controlPoints", distinct=True),
             )
         )
 
