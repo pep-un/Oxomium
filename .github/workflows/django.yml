@@ -1,4 +1,4 @@
-name: Django CI
+name: Django
 permissions:
   contents: read
 
@@ -9,7 +9,8 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+  django:
+    name: Django (Python ${{ matrix.python-version }})
 
     runs-on: ubuntu-latest
     strategy:

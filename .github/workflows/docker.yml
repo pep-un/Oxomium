@@ -1,4 +1,4 @@
-name: Docker
+name: Docker Validation
 
 on:
   push:
@@ -30,8 +30,8 @@ permissions:
   contents: read
 
 jobs:
-  validate:
-    name: Validate Docker configuration
+  docker_validation:
+    name: Docker Validation
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
