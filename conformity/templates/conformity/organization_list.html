@@ -1,17 +1,13 @@
 {% extends "conformity/main.html" %}
 {% load render_table from django_tables2 %}
+{% load ui_tags %}
 
 {% block header %}
     <h1 class="h1 bi bi-building"> Organizations</h1>
 {% endblock %}
 
 {% block content %}
-
-{% include "includes/filter_row.html" %}
-
-    {% render_table table %}
-
-<div class="text-center mt-3">
-    <a href="{% url 'conformity:organization_create' %}" class="btn btn-success bi bi-plus-circle">Register a new organization</a>
-</div>
+{% route_url 'conformity:organization_create' as create_url %}
+{% include "includes/list_toolbar.html" with create_url=create_url filter=filter item_count=object_list|length %}
+{% render_table table %}
 {% endblock %}
