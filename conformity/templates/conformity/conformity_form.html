@@ -1,4 +1,5 @@
 {% extends "conformity/main.html" %}
+{% load ui_tags %}
 {% load django_bootstrap5 %}
 {% load mptt_tags %}
 
@@ -9,6 +10,9 @@
 {% endblock %}
 
 {% block content %}
+{% route_url 'conformity:conformity_index' as list_url %}
+{% breadcrumb "Conformities" list_url conformity.organization.name %}
+
     <form class="form" method="post" action="">
         {% csrf_token %}
 
