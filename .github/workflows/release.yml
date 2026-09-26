@@ -1,4 +1,4 @@
-name: Publish release artifacts
+name: Release
 
 on:
   release:
@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   release:
-    name: Build and publish release
+    name: Release
     runs-on: ubuntu-latest
     env:
       IMAGE: docker.io/pepun/oxomium

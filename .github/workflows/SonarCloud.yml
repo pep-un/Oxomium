@@ -1,15 +1,17 @@
-name: SonarCloud
+name: SonarQube
 permissions:
   contents: read
+
 on:
   push:
     branches:
       - main
   pull_request:
     types: [opened, synchronize, reopened]
+
 jobs:
-  sonarcloud:
-    name: SonarCloud
+  sonarqube:
+    name: SonarQube
     runs-on: ubuntu-latest
     env:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -17,23 +19,43 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
-      - name: Skip SonarCloud when no token is available
-        if: ${{ env.SONAR_TOKEN == '' }}
-        run: echo "SONAR_TOKEN is unavailable in this event; skipping SonarCloud analysis."
+
+      # Secrets are intentionally unavailable to workflows triggered by pull
+      # requests from forks. Keep those PRs testable without turning a missing
+      # repository secret into a successful SonarCloud check for trusted PRs.
+      - name: Require SonarCloud token
+        if: ${{ env.SONAR_TOKEN == '' && github.event_name != 'pull_request' }}
+        run: |
+          echo "::error::SONAR_TOKEN is required for SonarCloud analysis."
+          exit 1
+
+      - name: Require SonarCloud token for repository pull requests
+        if: ${{ env.SONAR_TOKEN == '' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+        run: |
+          echo "::error::SONAR_TOKEN is required for pull requests from this repository."
+          exit 1
+
+      - name: Explain SonarCloud limitation for fork pull requests
+        if: ${{ env.SONAR_TOKEN == '' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
+        run: |
+          echo "::notice::SonarCloud analysis cannot use repository secrets on pull requests from forks."
+
       - name: Install Dependencies
         if: ${{ env.SONAR_TOKEN != '' }}
         run: |
           python -m pip install --upgrade --only-binary=:all: pip
           pip install --only-binary=:all: -r requirements.txt
           pip install --only-binary=:all: coverage
+
       - name: Run coverage test
         if: ${{ env.SONAR_TOKEN != '' }}
         run: |
           coverage run manage.py test
           coverage xml
+
       - name: SonarCloud Scan
         if: ${{ env.SONAR_TOKEN != '' }}
         uses: SonarSource/sonarqube-scan-action@ba9859eae8dd6bd29e412f25ddbbef3d032000f4 # v8
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

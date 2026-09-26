@@ -1,4 +1,4 @@
-name: Publish Docker image
+name: Docker Publish
 
 # Docker publication is handled by release.yml when a GitHub Release is
 # published. Keep this workflow available for explicit manual publication.
@@ -9,8 +9,8 @@ permissions:
   contents: read
 
 jobs:
-  publish:
-    name: Publish to Docker Hub
+  docker_publish:
+    name: Docker Publish
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
