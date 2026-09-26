@@ -6,7 +6,7 @@ from .models import Action, Audit, Conformity, Control, ControlPoint, Finding, F
 
 
 CENTER = {"cell": {"class": "text-center"}}
-PRIMARY_LINK = {"a": {"class": "link-dark fw-semibold text-decoration-none"}}
+PRIMARY_LINK = {"a": {"class": "table-primary-link"}}
 
 
 class StatusColumn(tables.Column):
@@ -133,19 +133,19 @@ class ActionTable(BaseRichTable):
             <div class="d-grid gap-1">
                 {% if record.conformities_count %}
                     <a href="{% url 'conformity:conformity_index' %}?action={{ record.pk }}"
-                       class="btn btn-sm btn-outline-secondary w-100">
+                       class="btn btn-sm btn-outline-secondary w-75 mx-auto">
                         {{ record.conformities_count }} conformit{{ record.conformities_count|pluralize:"y,ies" }}
                     </a>
                 {% endif %}
                 {% if record.findings_count %}
                     <a href="{% url 'conformity:finding_index' %}?action={{ record.pk }}"
-                       class="btn btn-sm btn-outline-secondary w-100">
+                       class="btn btn-sm btn-outline-secondary w-75 mx-auto">
                         {{ record.findings_count }} finding{{ record.findings_count|pluralize }}
                     </a>
                 {% endif %}
                 {% if record.controlpoints_count %}
                     <a href="{% url 'conformity:controlpoint_index' %}?action={{ record.pk }}"
-                       class="btn btn-sm btn-outline-secondary w-100">
+                       class="btn btn-sm btn-outline-secondary w-75 mx-auto">
                         {{ record.controlpoints_count }} control point{{ record.controlpoints_count|pluralize }}
                     </a>
                 {% endif %}
@@ -188,7 +188,7 @@ class AuditTable(BaseRichTable):
         template_code="""
             {% if record.findings_count %}
                 <a href="{% url 'conformity:finding_index' %}?audit={{ record.pk }}"
-                   class="btn btn-sm btn-outline-secondary w-100">
+                   class="btn btn-sm btn-outline-secondary w-75 mx-auto">
                     {{ record.findings_count }} finding{{ record.findings_count|pluralize }}
                 </a>
             {% endif %}
@@ -230,7 +230,7 @@ class FindingTable(BaseRichTable):
         attrs={
             "th": {"class": "text-center"},
             "td": {"class": "text-center"},
-            "a": {"class": "btn btn-sm btn-outline-secondary w-100"},
+            "a": {"class": "btn btn-sm btn-outline-secondary w-75 mx-auto"},
         },
     )
     associated_actions = tables.TemplateColumn(
@@ -238,7 +238,7 @@ class FindingTable(BaseRichTable):
         template_code="""
             {% if record.actions_count %}
                 <a href="{% url 'conformity:action_index' %}?associated_findings={{ record.pk }}"
-                   class="btn btn-sm btn-outline-secondary w-100">
+                   class="btn btn-sm btn-outline-secondary w-75 mx-auto">
                     {{ record.actions_count }} action{{ record.actions_count|pluralize }}
                 </a>
             {% endif %}
@@ -272,7 +272,7 @@ class OrganizationTable(BaseRichTable):
             <div class="d-grid gap-1">
                 {% for item in record.get_frameworks %}
                     <a href="{% url 'conformity:conformity_detail_index' record.id item.id %}"
-                       class="btn btn-sm btn-outline-secondary w-100">{{ item }}</a>
+                       class="btn btn-sm btn-outline-secondary w-75 mx-auto">{{ item }}</a>
                 {% endfor %}
             </div>
         """,
@@ -314,7 +314,7 @@ class ConformityTable(BaseRichTable):
         verbose_name="Conformity",
         template_code="""
             <a href="{% url 'conformity:conformity_detail_index' record.organization.id record.requirement.framework.id %}"
-               class="link-dark fw-semibold text-decoration-none">
+               class="table-primary-link">
                 {{ record.organization }} / {{ record.requirement.framework }}
             </a>
         """,
@@ -364,7 +364,7 @@ class ControlTable(BaseRichTable):
             <div class="d-grid gap-1">
                 {% for conformity in record.conformity.all %}
                     <a href="{% url 'conformity:conformity_detail_index' conformity.organization.id conformity.requirement.framework.id %}#requirement-{{ conformity.requirement.id }}"
-                       class="btn btn-sm btn-outline-secondary w-100"
+                       class="btn btn-sm btn-outline-secondary w-75 mx-auto"
                        title="{{ conformity.requirement.title }}">{{ conformity.requirement.full_path }}</a>
                 {% endfor %}
             </div>
