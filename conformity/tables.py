@@ -76,9 +76,9 @@ class AuditTable(BaseRichTable):
     type = tables.Column(accessor="get_type_display", verbose_name="Type", order_by=("type",))
     start_date = tables.DateColumn(verbose_name="Start", format="d-M-Y")
     end_date = tables.DateColumn(verbose_name="End", format="d-M-Y")
-    findings = tables.TemplateColumn(
+    findings = tables.Column(
+        accessor="get_findings_number",
         verbose_name="Findings",
-        template_code="{{ record.get_findings_number }}",
         orderable=False,
         attrs=CENTER,
     )
