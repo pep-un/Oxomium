@@ -1,5 +1,3 @@
-from types import SimpleNamespace
-
 from django.template import Context, Template
 from django.test import SimpleTestCase
 
@@ -31,8 +29,14 @@ class AttachmentIconTests(SimpleTestCase):
         self.assertEqual(attachment_icon("IMAGE/PNG; charset=binary"), "bi-file-earmark-image")
 
     def test_shared_component_keeps_filename_link_and_secondary_mime(self):
-        attachment = SimpleNamespace(id=42, mime_type="application/pdf")
-        attachment.__class__.__str__ = lambda self: "report.pdf"
+        class AttachmentStub:
+            id = 42
+            mime_type = "application/pdf"
+
+            def __str__(self):
+                return "report.pdf"
+
+        attachment = AttachmentStub()
         template = Template('{% include "includes/attachment_link.html" with attachment=attachment %}')
         html = template.render(Context({"attachment": attachment}))
         self.assertIn("bi-file-earmark-pdf", html)
