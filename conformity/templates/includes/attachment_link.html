@@ -1,0 +1,6 @@
+{% load attachment_tags %}
+<a href="{% url 'conformity:attachment_download' attachment.id %}"
+   {% if attachment.mime_type %}title="{{ attachment.mime_type }}"{% endif %}>
+    <i class="bi {{ attachment.mime_type|attachment_icon }} me-1" aria-hidden="true"></i>
+    <span>{{ attachment|truncatechars:50 }}</span>
+</a>
