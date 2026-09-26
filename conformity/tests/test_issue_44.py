@@ -3,7 +3,7 @@ from django.test import TestCase
 from constance.test import override_config
 from django.urls import reverse
 
-from conformity.models import Action, ControlPoint, Organization
+from conformity.models import Action, Audit, ControlPoint, Finding, Organization
 from conformity.tables import (
     ACTION_STATUS_STYLES, CONTROL_POINT_STATUS_STYLES, ActionTable, AuditTable,
     ConformityTable, ControlTable, ControlPointTable, FindingTable, FrameworkTable,
@@ -69,6 +69,18 @@ class RichTableInteractionTests(TestCase):
             for index in range(25)
         )
         Organization.objects.create(name="Beta", description="not matching")
+        organization = Organization.objects.order_by("pk").first()
+        cls.audit = Audit.objects.create(
+            name="Navigation audit",
+            organization=organization,
+            auditor="Auditor",
+        )
+        cls.relation_only_finding = Finding.objects.create(
+            name="Positive relation finding",
+            short_description="Only visible through explicit relation navigation",
+            audit=cls.audit,
+            severity=Finding.Severity.POSITIVE,
+        )
 
     def setUp(self):
         self.client.force_login(self.user)
@@ -123,6 +135,23 @@ class RichTableInteractionTests(TestCase):
             with self.subTest(view_name=view_name):
                 response = self.client.get(reverse(view_name))
                 self.assertEqual(response.status_code, 200)
+
+    def test_relation_filtered_findings_include_items_hidden_from_general_list(self):
+        general = self.client.get(reverse("conformity:finding_index"))
+        general_ids = [
+            row.record.pk for row in general.context["table"].page.object_list
+        ]
+        self.assertNotIn(self.relation_only_finding.pk, general_ids)
+
+        filtered = self.client.get(
+            reverse("conformity:finding_index"),
+            {"audit": self.audit.pk},
+        )
+        filtered_ids = [
+            row.record.pk for row in filtered.context["table"].page.object_list
+        ]
+        self.assertIn(self.relation_only_finding.pk, filtered_ids)
+
 
     def test_primary_label_links_to_organization_detail(self):
         organization = Organization.objects.order_by("pk").first()
