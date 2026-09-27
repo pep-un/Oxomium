@@ -24,9 +24,8 @@ class FeedbackComponentTests(TestCase):
         messages.add_message(request, level, text)
         return render_to_string("includes/messages.html", request=request)
 
-    def test_message_levels_map_to_accessible_bootstrap_alerts(self):
+    def test_non_success_message_levels_map_to_dismissible_bootstrap_alerts(self):
         cases = (
-            (messages.SUCCESS, "Saved", "alert-success", 'role="status"'),
             (messages.INFO, "Information", "alert-info", 'role="status"'),
             (messages.WARNING, "Warning", "alert-warning", 'role="status"'),
             (messages.ERROR, "Error", "alert-danger", 'role="alert"'),
@@ -39,19 +38,12 @@ class FeedbackComponentTests(TestCase):
                 self.assertIn(text, html)
                 self.assertIn("bi-", html)
                 self.assertIn("alert-dismissible", html)
-                self.assertIn("app-message-timer", html)
+                self.assertIn('data-bs-dismiss="alert"', html)
 
-    def test_message_levels_have_expected_auto_dismiss_delays(self):
-        cases = (
-            (messages.SUCCESS, "10000"),
-            (messages.INFO, "10000"),
-            (messages.WARNING, "30000"),
-            (messages.ERROR, "60000"),
-        )
-        for level, delay in cases:
-            with self.subTest(level=level):
-                html = self.render_message(level, "Timed message")
-                self.assertIn(f'data-auto-dismiss="{delay}"', html)
+    def test_success_messages_are_not_rendered(self):
+        html = self.render_message(messages.SUCCESS, "Saved")
+        self.assertNotIn("Saved", html)
+        self.assertNotIn("alert-success", html)
 
 
 class FormFeedbackTests(TestCase):
@@ -59,17 +51,17 @@ class FormFeedbackTests(TestCase):
         self.user = User.objects.create_user(username="feedback-user", password="p@ss")
         self.client.force_login(self.user)
 
-    def test_create_feedback_survives_redirect(self):
+    def test_success_feedback_is_not_rendered_after_create(self):
         response = self.client.post(
             reverse("conformity:organization_create"),
             {"name": "Created organization"},
             follow=True,
         )
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Organization created successfully.")
-        self.assertContains(response, "alert-success")
+        self.assertNotContains(response, "created successfully")
+        self.assertNotContains(response, "alert-success")
 
-    def test_update_feedback_survives_redirect(self):
+    def test_success_feedback_is_not_rendered_after_update(self):
         organization = Organization.objects.create(name="Before update")
         response = self.client.post(
             reverse("conformity:organization_form", args=[organization.pk]),
@@ -77,7 +69,8 @@ class FormFeedbackTests(TestCase):
             follow=True,
         )
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Organization updated successfully.")
+        self.assertNotContains(response, "updated successfully")
+        self.assertNotContains(response, "alert-success")
 
     def test_field_validation_error_stays_inline_without_global_error(self):
         response = self.client.post(
