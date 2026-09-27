@@ -17,6 +17,7 @@ from conformity.validators import (
     inspect_attachment,
     mime_category_details,
     validate_attachment,
+    validate_attachment_once,
 )
 
 
@@ -156,7 +157,7 @@ class AttachmentValidationTests(TestCase):
                 str(field.help_text),
             )
 
-    @patch("conformity.forms.validate_attachment")
+    @patch("conformity.forms.validate_attachment_once")
     def test_multiple_upload_field_validates_every_selected_file(self, validate):
         first = self.upload(name="first.pdf")
         second = self.upload(name="second.pdf")
@@ -172,6 +173,17 @@ class AttachmentValidationTests(TestCase):
         self.assertTrue(form.is_valid(), form.errors)
         self.assertEqual(len(form.cleaned_data["attachments"]), 2)
         self.assertEqual(validate.call_count, 2)
+
+    @patch("conformity.validators.validate_attachment", return_value=("application/pdf", "f" * 64))
+    def test_validate_attachment_once_reuses_cached_result(self, validate):
+        upload = self.upload()
+
+        first = validate_attachment_once(upload)
+        second = validate_attachment_once(upload)
+
+        self.assertEqual(first, ("application/pdf", "f" * 64))
+        self.assertEqual(second, first)
+        validate.assert_called_once_with(upload)
 
     def test_accept_hint_comes_from_configured_mime_types(self):
         with override_config(
