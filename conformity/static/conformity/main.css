@@ -201,14 +201,14 @@
 }
 
 .attachment-dropzone.is-dragging {
-    padding-top: 1.5rem;
-    padding-bottom: 1.5rem;
+    padding-top: 2.25rem;
+    padding-bottom: 2.25rem;
     background-color: var(--bs-info-bg-subtle);
     outline: 2px dashed var(--bs-info);
     outline-offset: -.4rem;
 }
 
 .attachment-dropzone.is-dragging .attachment-drop-copy {
-    padding-top: 1rem !important;
-    padding-bottom: 1rem !important;
+    padding-top: 1.5rem !important;
+    padding-bottom: 1.5rem !important;
 }
