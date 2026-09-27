@@ -55,8 +55,8 @@ For Docker-impacting changes, also validate the Compose configuration and contai
 ~~~bash
 cp .env.example .env
 docker compose config --quiet
-docker compose -f deploy/docker/system-nginx.yaml config --quiet
-docker compose -f deploy/docker/integrated-nginx.yaml config --quiet
+docker compose --project-directory . -f deploy/docker/system-nginx.yaml config --quiet
+docker compose --project-directory . -f deploy/docker/integrated-nginx.yaml config --quiet
 docker compose build web
 ~~~
 
