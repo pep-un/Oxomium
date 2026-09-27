@@ -11,7 +11,7 @@
 
 {% route_url 'conformity:indicator_create' as create_url %}
 {% route_url 'conformity:indicator_export' as export_url %}
-{% include "includes/list_toolbar.html" with create_url=create_url export_url=export_url filter=filter item_count=object_list|length %}
+{% include "includes/list_toolbar.html" with create_url=create_url export_url=export_url filter=filter %}
 
 <div class="row">
     {% for indicator in indicator_list %}
