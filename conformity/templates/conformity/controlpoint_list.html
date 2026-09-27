@@ -42,7 +42,7 @@
     {% endif %}
 
     <div class="col">
-        {% include "includes/list_toolbar.html" with filter=filter item_count=object_list|length %}
+        {% include "includes/list_toolbar.html" with filter=filter %}
         {% if filter.form.data.control %}
             <h2>Control Point List</h2>
         {% endif %}
