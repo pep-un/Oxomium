@@ -201,18 +201,21 @@ attachmentInputs.forEach((input) => {
         }
     });
 
-    document.addEventListener('drop', () => {
+    document.addEventListener('drop', (event) => {
+        if (hasDraggedFiles(event)) {
+            event.preventDefault();
+        }
         dropzone.classList.remove('is-dragging');
     });
 
-    dropzone.addEventListener('dragover', (event) => {
+    panel.addEventListener('dragover', (event) => {
         if (hasDraggedFiles(event)) {
             event.preventDefault();
             event.dataTransfer.dropEffect = 'copy';
         }
     });
 
-    dropzone.addEventListener('drop', (event) => {
+    panel.addEventListener('drop', (event) => {
         if (!hasDraggedFiles(event)) {
             return;
         }
