@@ -50,9 +50,8 @@
                             <i class="bi bi-plus-circle"></i> Register a corrective action
                         </a>
                 </div>
-                <br />
-                <br />
-                {% bootstrap_button button_type="submit" content="Save" %}
+                {% url 'conformity:control_detail' controlpoint.control.pk as cancel_url %}
+                {% include "includes/form_toolbar.html" with cancel_url=cancel_url %}
             </div>
         </div>
     </form>
