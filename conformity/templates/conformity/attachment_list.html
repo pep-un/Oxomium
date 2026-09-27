@@ -6,67 +6,74 @@
 {% endblock %}
 
 {% block content %}
-    <table class="table table-striped align-middle">
-    <caption class="d-none">Attachment library</caption>
-    <thead>
-        <tr>
-            <th class="col-3">Attachment</th>
-            <th class="col-2">MIME type</th>
-            <th class="col-2">SHA-256</th>
-            <th class="col-2 text-center">Creation date</th>
-            <th class="col-3 text-center">References</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for attachment in attachment_list %}
-            <tr>
-                <td>
-                    {% include "includes/attachment_link.html" with attachment=attachment %}
-                </td>
-                <td>
-                    <code>{{ attachment.mime_type|default:"—" }}</code>
-                </td>
-                <td>
-                    {% if attachment.sha256 %}
-                        <div class="d-flex align-items-center gap-2">
-                            <code title="{{ attachment.sha256 }}">{{ attachment.sha256|truncatechars:18 }}</code>
-                            <button
-                                type="button"
-                                class="btn btn-sm btn-outline-secondary"
-                                title="Copy SHA-256"
-                                aria-label="Copy SHA-256"
-                                data-copy-value="{{ attachment.sha256 }}"
-                                onclick="navigator.clipboard.writeText(this.dataset.copyValue)">
-                                <i class="bi bi-copy" aria-hidden="true"></i>
-                            </button>
-                        </div>
-                    {% else %}
-                        <span class="text-muted">—</span>
-                    {% endif %}
-                </td>
-                <td class="text-center">
-                    {{ attachment.create_date }}
-                </td>
-                <td>
-                    {% for org in attachment.organizations.all %}
-                    <a href="{% url 'conformity:organization_detail' org.id %}"><span class="badge mx-2 text-bg-dark px-3"> <i class="bi bi-building pe-2"></i> {{ org }} </span></a>
-                    {% endfor %}
-                    {% for framework in attachment.frameworks.all %}
-                    <a href="{% url 'conformity:framework_detail' framework.id %}#attachments"><span class="badge mx-2 text-bg-primary px-3"> <i class="bi bi-card-checklist pe-2"></i> {{ framework }} </span></a>
-                    {% endfor %}
-                    {% for cp in attachment.ControlPoint.all %}
-                    <a href="{% url 'conformity:controlpoint_form' cp.id %}"><span class="badge mx-2 text-bg-secondary px-3"> <i class="bi bi-clipboard2-check pe-2"></i> {{ cp }} </span></a>
-                    {% endfor %}
-                    {% for audit in attachment.audits.all %}
-                    <a href="{% url 'conformity:audit_detail' audit.id %}"><span class="badge mx-2 text-bg-success px-3"> <i class="bi bi-ui-checks-grid pe-2"></i> {{ audit }} </span></a>
-                    {% endfor %}
-                </td>
-            </tr>
-        {% empty %}
-            <div class="alert alert-info" role="alert">
-                No attachment in the library.
-            </div>
-        {% endfor %}
-    </tbody>
-    </table>
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <caption class="d-none">Attachment library</caption>
+            <thead>
+                <tr>
+                    <th scope="col">Attachment</th>
+                    <th scope="col">MIME type</th>
+                    <th scope="col">SHA-256</th>
+                    <th scope="col" class="text-center text-nowrap">Creation date</th>
+                    <th scope="col" class="text-center">References</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for attachment in attachment_list %}
+                    <tr>
+                        <td class="text-break">
+                            {% include "includes/attachment_link.html" with attachment=attachment %}
+                        </td>
+                        <td class="text-break">
+                            <code>{{ attachment.mime_type|default:"—" }}</code>
+                        </td>
+                        <td class="text-nowrap">
+                            {% if attachment.sha256 %}
+                                <div class="d-inline-flex align-items-center gap-1">
+                                    <code title="{{ attachment.sha256 }}">{{ attachment.sha256|slice:":16" }}…</code>
+                                    <button
+                                        type="button"
+                                        class="btn btn-sm btn-outline-secondary py-0 px-1 js-copy-sha256"
+                                        title="Copy SHA-256"
+                                        aria-label="Copy SHA-256"
+                                        data-copy-value="{{ attachment.sha256 }}">
+                                        <i class="bi bi-clipboard" aria-hidden="true"></i>
+                                    </button>
+                                </div>
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center text-nowrap">
+                            {{ attachment.create_date }}
+                        </td>
+                        <td>
+                            <div class="d-flex flex-wrap gap-1 justify-content-center">
+                                {% for org in attachment.organizations.all %}
+                                    <a href="{% url 'conformity:organization_detail' org.id %}"><span class="badge text-bg-dark px-3"><i class="bi bi-building pe-2"></i>{{ org }}</span></a>
+                                {% endfor %}
+                                {% for framework in attachment.frameworks.all %}
+                                    <a href="{% url 'conformity:framework_detail' framework.id %}#attachments"><span class="badge text-bg-primary px-3"><i class="bi bi-card-checklist pe-2"></i>{{ framework }}</span></a>
+                                {% endfor %}
+                                {% for cp in attachment.ControlPoint.all %}
+                                    <a href="{% url 'conformity:controlpoint_form' cp.id %}"><span class="badge text-bg-secondary px-3"><i class="bi bi-clipboard2-check pe-2"></i>{{ cp }}</span></a>
+                                {% endfor %}
+                                {% for audit in attachment.audits.all %}
+                                    <a href="{% url 'conformity:audit_detail' audit.id %}"><span class="badge text-bg-success px-3"><i class="bi bi-ui-checks-grid pe-2"></i>{{ audit }}</span></a>
+                                {% endfor %}
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5">
+                            <div class="alert alert-info mb-0" role="alert">
+                                No attachment in the library.
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 {% endblock %}
