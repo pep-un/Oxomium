@@ -8,7 +8,7 @@ ignore-paths = [".*/migrations/.*"]
 branch = true
 relative_files = true
 source = ["."]
-omit = ["*/migrations/*"]
+omit = ["*/migrations/*", "scripts/*"]
 
 [tool.coverage.report]
 show_missing = true
