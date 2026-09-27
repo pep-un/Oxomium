@@ -2,14 +2,15 @@
 {% load ui_tags %}
 
 {% block header %}
-<h1 class="h1 bi bi-shield-shaded" xmlns="">
-        {{ conformity_list.0.organization }} conformity to {{ conformity_list.0.requirement.framework }}:
-    </h1>
+<h1 class="h1 d-flex align-items-center gap-2" xmlns="">
+    <a href="{% url 'conformity:conformity_index' %}" class="header-back-link" aria-label="Back to conformities" title="Back to conformities">
+        <i class="bi bi-chevron-left" aria-hidden="true"></i>
+    </a>
+    {{ conformity_list.0.organization }} — {{ conformity_list.0.requirement.framework }}
+</h1>
 {% endblock %}
 
 {% block content %}
-{% route_url 'conformity:conformity_index' as list_url %}
-{% breadcrumb "Conformities" list_url conformity_list.0.organization.name %}
 
 <h3>
     <div class="d-flex">
