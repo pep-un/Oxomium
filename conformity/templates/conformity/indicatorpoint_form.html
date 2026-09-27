@@ -3,13 +3,15 @@
 {% load django_bootstrap5 %}
 
 {% block header %}
-<h1 class="h1 bi bi-pencil-square" > Edit of a indicator point</h1>
+<h1 class="h1 d-flex align-items-center gap-2">
+    <a href="{% url 'conformity:indicator_detail' indicatorpoint.indicator.pk %}" class="header-back-link" aria-label="Back to indicator" title="Back to indicator">
+        <i class="bi bi-chevron-left" aria-hidden="true"></i>
+    </a>
+    {{ indicatorpoint.indicator.name }}
+</h1>
 {% endblock %}
 
 {% block content %}
-{% route_url 'conformity:indicator_index' as indicators_url %}
-{% route_url 'conformity:indicator_detail' indicatorpoint.indicator.pk as indicator_url %}
-{% breadcrumb "Indicators" indicators_url indicatorpoint.indicator.name indicator_url "Measurement" %}
 
     <form class="form" method="post" action="">
         {% csrf_token %}
