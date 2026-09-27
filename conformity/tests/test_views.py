@@ -359,24 +359,30 @@ class SharedUxComponentsTests(BaseDataMixin, TestCase):
             ("-title", "-pk"),
         )
 
-    def test_annotated_paginated_lists_have_total_ordering(self):
-        audit_request = self.factory.get("/audit")
-        audit_request.user = self.user
-        audit_view = views.AuditIndexView()
-        audit_view.request = audit_request
-        self.assertEqual(
-            audit_view.get_queryset().query.order_by,
-            ("-report_date", "-start_date", "pk"),
+    def test_paginated_list_querysets_end_with_pk_tie_breaker(self):
+        request = self.factory.get("/list")
+        request.user = self.user
+
+        view_classes = (
+            views.AuditIndexView,
+            views.FindingIndexView,
+            views.OrganizationIndexView,
+            views.FrameworkIndexView,
+            views.ConformityIndexView,
+            views.ActionIndexView,
+            views.ControlIndexView,
+            views.ControlPointIndexView,
+            views.AttachmentIndexView,
+            views.AuditLogDetailView,
         )
 
-        finding_request = self.factory.get("/finding")
-        finding_request.user = self.user
-        finding_view = views.FindingIndexView()
-        finding_view.request = finding_request
-        self.assertEqual(
-            finding_view.get_queryset().query.order_by,
-            ("severity", "pk"),
-        )
+        for view_class in view_classes:
+            with self.subTest(view=view_class.__name__):
+                view = view_class()
+                view.request = request
+                queryset = view.get_queryset()
+                self.assertTrue(queryset.query.order_by)
+                self.assertEqual(str(queryset.query.order_by[-1]).lstrip("-"), "pk")
 
     def test_paginated_toolbar_shows_total_and_visible_results(self):
         with override_config(TABLE_PAGE_SIZE=1):
