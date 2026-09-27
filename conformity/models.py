@@ -967,6 +967,33 @@ class Attachment(models.Model):
         attachment.save()
         return attachment, True
 
+    def calculate_checksum_and_merge(self):
+        """Calculate a missing checksum and merge this attachment into an existing duplicate."""
+        if self.sha256:
+            return self, False
+
+        from .validators import validate_attachment
+
+        mime_type, checksum = validate_attachment(self.file)
+        existing = type(self).objects.filter(sha256=checksum).exclude(pk=self.pk).first()
+        if not existing:
+            self.mime_type = mime_type
+            self.sha256 = checksum
+            self.save(update_fields=['mime_type', 'sha256'])
+            return self, False
+
+        for relation in self._meta.related_objects:
+            if not relation.many_to_many:
+                continue
+            source_manager = getattr(self, relation.get_accessor_name())
+            target_manager = getattr(existing, relation.get_accessor_name())
+            target_manager.add(*source_manager.all())
+
+        duplicate_file = self.file
+        self.delete()
+        duplicate_file.delete(save=False)
+        return existing, True
+
 
 
 class Indicator (models.Model):
