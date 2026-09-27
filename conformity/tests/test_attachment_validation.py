@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -7,7 +7,7 @@ from constance.test import override_config
 
 from conformity.forms import AuditForm, OrganizationForm
 from conformity.models import Attachment
-from conformity.validators import attachment_accept, validate_attachment
+from conformity.validators import attachment_accept, detect_mime, validate_attachment
 
 
 class AttachmentValidationTests(TestCase):
@@ -40,6 +40,20 @@ class AttachmentValidationTests(TestCase):
     def test_boundary_size_is_allowed(self, _detect):
         upload = self.upload(content=b"x" * (1024 * 1024))
         self.assertEqual(validate_attachment(upload), "application/pdf")
+
+    @patch("conformity.validators.Magic")
+    def test_detect_mime_reads_full_file_and_restores_position(self, magic_class):
+        content = b"x" * 16384
+        upload = self.upload(content=content)
+        upload.seek(123)
+
+        magic = MagicMock()
+        magic.from_buffer.return_value = "application/pdf; charset=binary"
+        magic_class.return_value = magic
+
+        self.assertEqual(detect_mime(upload), "application/pdf")
+        magic.from_buffer.assert_called_once_with(content)
+        self.assertEqual(upload.tell(), 123)
 
     @patch("conformity.validators.detect_mime", return_value="application/pdf")
     def test_attachment_model_validates_direct_orm_save(self, _detect):
