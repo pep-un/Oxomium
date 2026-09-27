@@ -8,7 +8,7 @@ from django.utils import timezone
 from conformity import views
 from conformity.models import (
     Organization, Framework, Requirement, Conformity,
-    Audit, Action, Finding, Control, ControlPoint, Attachment
+    Audit, Action, Finding, Control, ControlPoint, Attachment, Indicator, IndicatorPoint
 )
 from conformity.views import ConformityUpdateView
 
@@ -241,6 +241,73 @@ class SharedUxComponentsTests(BaseDataMixin, TestCase):
     def setUp(self):
         super().setUp()
         self.client.force_login(self.user)
+
+    def test_crud_forms_use_shared_footer_toolbar(self):
+        indicator = Indicator.objects.create(
+            name="Toolbar indicator",
+            responsible=self.user,
+            organization=self.org,
+        )
+        indicator_point = IndicatorPoint.objects.create(
+            indicator=indicator,
+            period_start_date=timezone.localdate(),
+            period_end_date=timezone.localdate(),
+        )
+        form_urls = (
+            reverse("conformity:audit_form", args=[self.audit.pk]),
+            reverse("conformity:finding_form", args=[self.find_obs.pk]),
+            reverse("conformity:organization_form", args=[self.org.pk]),
+            reverse("conformity:action_form", args=[self.act1.pk]),
+            reverse("conformity:control_form", args=[self.ctrl_q.pk]),
+            reverse("conformity:controlpoint_form", args=[self.cp.pk]),
+            reverse("conformity:conformity_form", args=[self.c_a.pk]),
+            reverse("conformity:indicator_form", args=[indicator.pk]),
+            reverse("conformity:indicatorpoint_form", args=[indicator_point.pk]),
+        )
+
+        for url in form_urls:
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, "form-toolbar")
+                self.assertContains(response, 'name="action" value="save"')
+                self.assertContains(response, 'name="action" value="save_stay"')
+                self.assertContains(response, "btn btn-outline-danger w-100")
+
+    def test_save_next_only_appears_on_conformity_form(self):
+        conformity_response = self.client.get(
+            reverse("conformity:conformity_form", args=[self.c_a.pk])
+        )
+        self.assertContains(conformity_response, "Save &amp; Next")
+
+        for url in (
+            reverse("conformity:audit_form", args=[self.audit.pk]),
+            reverse("conformity:finding_form", args=[self.find_obs.pk]),
+            reverse("conformity:organization_form", args=[self.org.pk]),
+            reverse("conformity:action_form", args=[self.act1.pk]),
+            reverse("conformity:control_form", args=[self.ctrl_q.pk]),
+            reverse("conformity:controlpoint_form", args=[self.cp.pk]),
+        ):
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertNotContains(response, "Save &amp; Next")
+
+    def test_organization_create_save_stay_redirects_to_edit_form(self):
+        response = self.client.post(
+            reverse("conformity:organization_create"),
+            {
+                "name": "Save Stay Organization",
+                "administrative_id": "",
+                "description": "",
+                "action": "save_stay",
+            },
+        )
+        organization = Organization.objects.get(name="Save Stay Organization")
+        self.assertRedirects(
+            response,
+            reverse("conformity:organization_form", args=[organization.pk]),
+            fetch_redirect_response=False,
+        )
 
     def test_action_list_uses_shared_toolbar_and_active_filter_state(self):
         response = self.client.get(reverse("conformity:action_index"), {"title": "Act"})
