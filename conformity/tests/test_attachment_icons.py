@@ -68,7 +68,7 @@ class AttachmentIconTests(SimpleTestCase):
         html = template.render(Context({"attachment": attachment}))
         self.assertIn("bi-file-earmark-pdf", html)
         self.assertIn("report.pdf", html)
-        self.assertIn('title="report.pdf"', html)
+        self.assertIn('title="report.pdf (application/pdf)"', html)
         self.assertIn("/attachment/42/", html)
         self.assertIn('aria-hidden="true"', html)
         self.assertNotIn(">application/pdf<", html)
