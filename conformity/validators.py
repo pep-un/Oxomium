@@ -9,6 +9,66 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from magic import Magic
 
+ATTACHMENT_MIME_CATEGORIES = {
+    "images": {
+        "label": "Images",
+        "mimes": ("image/*",),
+    },
+    "pdf": {
+        "label": "PDF",
+        "mimes": ("application/pdf",),
+    },
+    "text_documents": {
+        "label": "Text documents (DOC, DOCX, ODT)",
+        "mimes": (
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/vnd.oasis.opendocument.text",
+        ),
+    },
+    "spreadsheets": {
+        "label": "Spreadsheets (XLS, XLSX, ODS, CSV)",
+        "mimes": (
+            "application/vnd.ms-excel",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "application/vnd.oasis.opendocument.spreadsheet",
+            "text/csv",
+        ),
+    },
+    "presentations": {
+        "label": "Presentations (PPT, PPTX, ODP)",
+        "mimes": (
+            "application/vnd.ms-powerpoint",
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            "application/vnd.oasis.opendocument.presentation",
+        ),
+    },
+    "json": {
+        "label": "JSON",
+        "mimes": ("application/json", "text/json"),
+    },
+    "xml": {
+        "label": "XML",
+        "mimes": ("application/xml", "text/xml"),
+    },
+    "html": {
+        "label": "HTML",
+        "mimes": ("text/html", "application/xhtml+xml"),
+    },
+    "archives": {
+        "label": "ZIP archives",
+        "mimes": ("application/zip",),
+    },
+    "plain_text": {
+        "label": "Plain text",
+        "mimes": ("text/plain",),
+    },
+}
+
+ATTACHMENT_MIME_CATEGORY_CHOICES = tuple(
+    (key, value["label"]) for key, value in ATTACHMENT_MIME_CATEGORIES.items()
+)
+
 MIME_EXTENSIONS = {
     "application/pdf": {".pdf"},
     "image/jpeg": {".jpg", ".jpeg"},
@@ -34,8 +94,51 @@ MIME_EXTENSIONS = {
 }
 
 
+def _parse_mime_list(value):
+    return {
+        item.strip().lower()
+        for item in (value or "").split(",")
+        if item.strip()
+    }
+
+
+def mime_category_details():
+    """Return category labels and their exact MIME patterns for UI/help text."""
+    return tuple(
+        {
+            "key": key,
+            "label": value["label"],
+            "mimes": value["mimes"],
+        }
+        for key, value in ATTACHMENT_MIME_CATEGORIES.items()
+    )
+
+
+def configured_mime_policy():
+    """Return effective allow/deny MIME patterns. Deny always takes precedence."""
+    categories = getattr(config, "ATTACHMENT_ALLOWED_CATEGORIES", ()) or ()
+    allowed = set()
+    for category in categories:
+        category_config = ATTACHMENT_MIME_CATEGORIES.get(category)
+        if category_config:
+            allowed.update(category_config["mimes"])
+
+    allowed.update(_parse_mime_list(getattr(config, "ATTACHMENT_ALLOWED_MIME_TYPES", "")))
+    denied = _parse_mime_list(getattr(config, "ATTACHMENT_DENIED_MIME_TYPES", ""))
+    return allowed, denied
+
+
+def _matches_mime_pattern(mime_type, patterns):
+    return any(
+        mime_type == pattern
+        or (pattern.endswith("/*") and mime_type.startswith(pattern[:-1]))
+        for pattern in patterns
+    )
+
+
 def allowed_mime_types():
-    return {item.strip().lower() for item in config.ATTACHMENT_ALLOWED_MIME_TYPES.split(",") if item.strip()}
+    """Compatibility helper returning configured allow patterns."""
+    return configured_mime_policy()[0]
 
 
 def attachment_accept():
@@ -90,12 +193,14 @@ def validate_attachment(uploaded_file):
         )
 
     detected, checksum = inspect_attachment(uploaded_file)
-    allowed = allowed_mime_types()
-    allowed_by_prefix = any(
-        item.endswith("/*") and detected.startswith(item[:-1])
-        for item in allowed
-    )
-    if detected not in allowed and not allowed_by_prefix:
+    allowed, denied = configured_mime_policy()
+    if _matches_mime_pattern(detected, denied):
+        raise ValidationError(
+            _("Unsupported file type: %(mime)s."),
+            code="attachment_mime_denied",
+            params={"mime": detected},
+        )
+    if not _matches_mime_pattern(detected, allowed):
         raise ValidationError(
             _("Unsupported file type: %(mime)s."),
             code="attachment_mime_not_allowed",
