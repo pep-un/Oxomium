@@ -104,7 +104,7 @@ class AuditUpdateView(AttachmentUploadViewMixin, LoginRequiredMixin, UpdateView)
         response = super().form_valid(form)
         attachments = self.request.FILES.getlist('attachments')
         for file in attachments:
-            attachment = Attachment.objects.create(file=file)
+            attachment = Attachment.get_or_create_for_upload(file)[0]
             self.object.attachment.add(attachment)
         return response
 
@@ -118,7 +118,7 @@ class AuditCreateView(AttachmentUploadViewMixin, LoginRequiredMixin, CreateView)
         response = super().form_valid(form)
         attachments = self.request.FILES.getlist('attachments')
         for file in attachments:
-            attachment = Attachment.objects.create(file=file)
+            attachment = Attachment.get_or_create_for_upload(file)[0]
             self.object.attachment.add(attachment)
         return response
 
@@ -241,7 +241,7 @@ class OrganizationFrameworkFormMixin(AttachmentUploadViewMixin):
             self.object.save()
             set_frameworks(self.object, form.cleaned_data['applicable_frameworks'])
             for file in self.request.FILES.getlist('attachments'):
-                attachment = Attachment.objects.create(file=file)
+                attachment = Attachment.get_or_create_for_upload(file)[0]
                 self.object.attachment.add(attachment)
         return HttpResponseRedirect(self.get_success_url())
 
@@ -556,7 +556,7 @@ class ControlPointUpdateView(AttachmentUploadViewMixin, LoginRequiredMixin, Upda
         response = super().form_valid(form)
         attachments = self.request.FILES.getlist('attachments')
         for file in attachments:
-            attachment = Attachment.objects.create(file=file)
+            attachment = Attachment.get_or_create_for_upload(file)[0]
             self.object.attachment.add(attachment)
         return response
 
