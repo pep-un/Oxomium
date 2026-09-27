@@ -13,6 +13,12 @@
 
 {% block content %}
 
+    <div class="row justify-content-center">
+        <div class="col col-6">
+            {% include "includes/attachment_panel.html" with attachments=controlpoint.attachment.all owner=controlpoint owner_type="controlpoint" editable=True %}
+        </div>
+    </div>
+
     <form class="form" method="post" action="" enctype="multipart/form-data">
         {% csrf_token %}
         <div class="row justify-content-center">
@@ -24,16 +30,6 @@
                 <li>Control frequency: {{ controlpoint.control.get_frequency_display }}</li>
                 <li>Control period: From {{controlpoint.period_start_date}} to {{controlpoint.period_end_date}}</li>
                 </ul>
-                <div class="alert alert-info p-1">
-                    <b class="bi bi-paperclip"> Attachments </b>
-                    <ul class="m-0">
-                        {% for attachment in controlpoint.attachment.all %}
-                        <li><a href="{% url 'conformity:attachment_download' attachment.id %}"> {{ attachment }} </a></li>
-                        {% empty %}
-                        <i>No attachment</i>
-                        {% endfor %}
-                    </ul>
-                </div>
                 <hr />
                 {% bootstrap_form form %}
 
