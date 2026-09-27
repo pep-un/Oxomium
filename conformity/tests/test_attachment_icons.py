@@ -10,10 +10,36 @@ class AttachmentIconTests(SimpleTestCase):
             "application/pdf": "bi-file-earmark-pdf",
             "image/png": "bi-file-earmark-image",
             "text/plain": "bi-file-earmark-text",
+
+            # Structured formats.
+            "application/json": "bi-filetype-json",
+            "text/json": "bi-filetype-json",
+            "application/xml": "bi-filetype-xml",
+            "text/xml": "bi-filetype-xml",
+            "text/html": "bi-filetype-html",
+            "application/xhtml+xml": "bi-filetype-html",
+
+            # Office text documents.
             "application/msword": "bi-file-earmark-text",
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "bi-file-earmark-text",
+            "application/vnd.ms-word.document.macroenabled.12": "bi-file-earmark-text",
+            "application/vnd.oasis.opendocument.text": "bi-file-earmark-text",
+            "application/rtf": "bi-file-earmark-text",
+
+            # Office spreadsheets, including CSV.
             "application/vnd.ms-excel": "bi-file-earmark-spreadsheet",
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "bi-file-earmark-spreadsheet",
+            "application/vnd.ms-excel.sheet.macroenabled.12": "bi-file-earmark-spreadsheet",
+            "application/vnd.ms-excel.sheet.binary.macroenabled.12": "bi-file-earmark-spreadsheet",
+            "application/vnd.oasis.opendocument.spreadsheet": "bi-file-earmark-spreadsheet",
+            "text/csv": "bi-file-earmark-spreadsheet",
+
+            # Office presentations.
+            "application/vnd.ms-powerpoint": "bi-file-earmark-slides",
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation": "bi-file-earmark-slides",
+            "application/vnd.ms-powerpoint.presentation.macroenabled.12": "bi-file-earmark-slides",
+            "application/vnd.oasis.opendocument.presentation": "bi-file-earmark-slides",
+
             "application/zip": "bi-file-earmark-zip",
         }
         for mime_type, expected in cases.items():
@@ -27,6 +53,7 @@ class AttachmentIconTests(SimpleTestCase):
 
     def test_mime_parameters_and_case_are_normalized(self):
         self.assertEqual(attachment_icon("IMAGE/PNG; charset=binary"), "bi-file-earmark-image")
+        self.assertEqual(attachment_icon("APPLICATION/JSON; charset=utf-8"), "bi-filetype-json")
 
     def test_shared_component_keeps_filename_link_and_secondary_mime(self):
         class AttachmentStub:
