@@ -718,9 +718,18 @@ class AttachmentIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
         return Attachment.objects.prefetch_related(
             "organizations",
             "frameworks",
-            "audits",
-            "ControlPoint",
-            "IndicatorPoint",
+            Prefetch(
+                "audits",
+                queryset=Audit.objects.select_related("organization"),
+            ),
+            Prefetch(
+                "ControlPoint",
+                queryset=ControlPoint.objects.select_related("control__organization"),
+            ),
+            Prefetch(
+                "IndicatorPoint",
+                queryset=IndicatorPoint.objects.select_related("indicator"),
+            ),
         )
 
 
