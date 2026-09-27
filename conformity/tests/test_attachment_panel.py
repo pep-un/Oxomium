@@ -153,6 +153,11 @@ class AttachmentPanelTests(TestCase):
                 self.assertContains(response, "No file selected")
                 self.assertContains(response, 'type="file"')
                 self.assertContains(response, 'name="attachments"')
+                self.assertContains(response, "multiple")
+                self.assertContains(response, "drag &amp; drop")
+                self.assertContains(response, "paste a screenshot")
+                self.assertContains(response, "js-attachment-dropzone")
+                self.assertContains(response, "js-attachment-pending")
                 self.assertContains(response, 'form="object-form"')
                 html = response.content.decode()
                 self.assertLess(
@@ -185,6 +190,11 @@ class AttachmentPanelTests(TestCase):
                 self.assertContains(response, "No file selected")
                 self.assertContains(response, 'type="file"')
                 self.assertContains(response, 'name="attachments"')
+                self.assertContains(response, "multiple")
+                self.assertContains(response, "drag &amp; drop")
+                self.assertContains(response, "paste a screenshot")
+                self.assertContains(response, "js-attachment-dropzone")
+                self.assertContains(response, "js-attachment-pending")
                 self.assertContains(response, 'form="object-form"')
                 html = response.content.decode()
                 self.assertLess(
@@ -192,12 +202,19 @@ class AttachmentPanelTests(TestCase):
                     html.index("form-toolbar"),
                 )
 
-    def test_indicator_point_upload_creates_attachment_relation(self):
-        upload = SimpleUploadedFile(
-            "indicator-note.txt",
-            b"indicator attachment",
-            content_type="text/plain",
-        )
+    def test_indicator_point_upload_creates_multiple_attachment_relations(self):
+        uploads = [
+            SimpleUploadedFile(
+                "indicator-note.txt",
+                b"indicator attachment",
+                content_type="text/plain",
+            ),
+            SimpleUploadedFile(
+                "indicator-proof.txt",
+                b"second indicator attachment",
+                content_type="text/plain",
+            ),
+        ]
 
         response = self.client.post(
             reverse(
@@ -206,9 +223,9 @@ class AttachmentPanelTests(TestCase):
             ),
             {
                 "value": 50,
-                "comment": "with attachment",
+                "comment": "with attachments",
                 "action": "save_stay",
-                "attachments": upload,
+                "attachments": uploads,
             },
         )
 
@@ -220,10 +237,10 @@ class AttachmentPanelTests(TestCase):
             ),
             fetch_redirect_response=False,
         )
-        self.assertEqual(self.indicator_point.attachment.count(), 1)
+        self.assertEqual(self.indicator_point.attachment.count(), 2)
         self.assertEqual(
-            str(self.indicator_point.attachment.get()),
-            "indicator-note.txt",
+            {str(item) for item in self.indicator_point.attachment.all()},
+            {"indicator-note.txt", "indicator-proof.txt"},
         )
 
     def test_unlink_shared_attachment_preserves_document_and_other_links(self):
