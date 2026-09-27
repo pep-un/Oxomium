@@ -4,10 +4,11 @@ from unittest.mock import MagicMock, patch
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
+from django.urls import reverse
 from constance.test import override_config
 
 from conformity.forms import AuditForm, OrganizationForm
-from conformity.models import Attachment, Organization
+from conformity.models import Attachment, Audit, Framework, Organization
 from conformity.validators import attachment_accept, inspect_attachment, validate_attachment
 
 
@@ -103,9 +104,14 @@ class AttachmentValidationTests(TestCase):
         duplicate = Attachment.objects.create(file=self.upload(name="duplicate.pdf"))
         Attachment.objects.filter(pk=duplicate.pk).update(sha256=None)
         duplicate.refresh_from_db()
+        duplicate_path = duplicate.file.path
 
         org = Organization.objects.create(name="Checksum merge org")
+        framework = Framework.objects.create(name="Checksum framework", publish_by="Test")
+        audit = Audit.objects.create(organization=org, auditor="Tester")
         org.attachment.add(duplicate)
+        framework.attachment.add(duplicate)
+        audit.attachment.add(duplicate)
 
         result, merged = duplicate.calculate_checksum_and_merge()
 
@@ -113,7 +119,10 @@ class AttachmentValidationTests(TestCase):
         self.assertEqual(result.pk, existing.pk)
         self.assertFalse(Attachment.objects.filter(pk=duplicate.pk).exists())
         self.assertTrue(org.attachment.filter(pk=existing.pk).exists())
+        self.assertTrue(framework.attachment.filter(pk=existing.pk).exists())
+        self.assertTrue(audit.attachment.filter(pk=existing.pk).exists())
         self.assertEqual(org.attachment.filter(pk=existing.pk).count(), 1)
+        self.assertFalse(existing.file.storage.exists(duplicate_path))
 
     def test_upload_forms_expose_configured_accept_and_size_hint(self):
         for form in (AuditForm(), OrganizationForm()):
@@ -123,3 +132,68 @@ class AttachmentValidationTests(TestCase):
     def test_accept_hint_comes_from_configured_mime_types(self):
         with override_config(ATTACHMENT_ALLOWED_MIME_TYPES="image/png, application/pdf"):
             self.assertEqual(attachment_accept(), "application/pdf,image/png")
+
+
+class AttachmentChecksumViewTests(TestCase):
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        self.user = get_user_model().objects.create_user(username="attachment-checksum-user")
+        self.client.force_login(self.user)
+
+    def upload(self, name="report.pdf", content=b"%PDF-1.4 test"):
+        return SimpleUploadedFile(name, content, content_type="application/pdf")
+
+    @patch("conformity.models.Attachment.calculate_checksum_and_merge")
+    def test_checksum_endpoint_is_post_only_and_redirects_to_library(self, calculate):
+        attachment = Attachment.objects.create(
+            file=self.upload(),
+            mime_type="application/pdf",
+            sha256="f" * 64,
+        )
+
+        get_response = self.client.get(
+            reverse("conformity:attachment_checksum", args=[attachment.pk])
+        )
+        self.assertEqual(get_response.status_code, 405)
+        calculate.assert_not_called()
+
+        post_response = self.client.post(
+            reverse("conformity:attachment_checksum", args=[attachment.pk])
+        )
+        self.assertRedirects(post_response, reverse("conformity:attachment_index"))
+        calculate.assert_called_once_with()
+
+    def test_attachment_library_renders_split_checksum_control(self):
+        checksum = "1" * 64
+        attachment = Attachment.objects.create(
+            file=self.upload(),
+            mime_type="application/pdf",
+            sha256=checksum,
+        )
+
+        response = self.client.get(reverse("conformity:attachment_index"))
+
+        self.assertContains(response, checksum[:16] + "…")
+        self.assertContains(response, f'data-copy-value="{checksum}"')
+        self.assertContains(response, 'aria-label="Copy SHA-256"')
+        self.assertNotContains(
+            response,
+            reverse("conformity:attachment_checksum", args=[attachment.pk]),
+        )
+
+    def test_attachment_library_renders_calculate_button_for_missing_checksum(self):
+        attachment = Attachment.objects.create(
+            file=self.upload(name="legacy.pdf"),
+            mime_type="application/pdf",
+            sha256="2" * 64,
+        )
+        Attachment.objects.filter(pk=attachment.pk).update(sha256=None)
+
+        response = self.client.get(reverse("conformity:attachment_index"))
+
+        self.assertContains(
+            response,
+            reverse("conformity:attachment_checksum", args=[attachment.pk]),
+        )
+        self.assertContains(response, "Calculate SHA-256")
+        self.assertContains(response, ">Calculate<", html=True)
