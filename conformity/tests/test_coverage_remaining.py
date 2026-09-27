@@ -368,4 +368,4 @@ class RemainingCoverageTests(TestCase):
         self.assertIn("controlpoint_list", context)
 
         log_view = AuditLogDetailView()
-        self.assertEqual(log_view.get_queryset().query.order_by, ("-timestamp",))
+        self.assertEqual(log_view.get_queryset().query.order_by, ("-timestamp", "-pk"))
