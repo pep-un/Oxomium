@@ -157,6 +157,7 @@ class AttachmentPanelTests(TestCase):
                 self.assertContains(response, "paste a screenshot")
                 self.assertContains(response, "js-attachment-dropzone")
                 self.assertContains(response, "js-attachment-pending")
+                self.assertContains(response, "bi bi-download")
                 self.assertContains(response, 'form="object-form"')
                 html = response.content.decode()
                 self.assertLess(
