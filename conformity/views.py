@@ -660,6 +660,15 @@ class AttachmentDownloadView(LoginRequiredMixin, View):
         return response
 
 
+class AttachmentChecksumView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        attachment = get_object_or_404(Attachment, id=pk)
+        attachment.calculate_checksum_and_merge()
+        return redirect('conformity:attachment_index')
+
+
+
+
 #
 # AuditLog
 #
