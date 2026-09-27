@@ -18,12 +18,12 @@ from import_export.formats import base_formats
 from mptt.templatetags.mptt_tags import cache_tree_children
 
 from .filterset import ActionFilter, ControlFilter, ControlPointFilter, FrameworkFilter, OrganizationFilter, \
-    ConformityFilter, AuditFilter, FindingFilter, IndicatorFilter, AuditLogFilter
+    ConformityFilter, AuditFilter, FindingFilter, IndicatorFilter, AttachmentFilter, AuditLogFilter
 from .forms import ConformityForm, AuditForm, FindingForm, ActionForm, OrganizationForm, ControlForm, ControlPointForm, \
     IndicatorForm, IndicatorPointForm
 from .models import Organization, Framework, Conformity, Audit, Action, Finding, Control, ControlPoint, Attachment, \
     Requirement, Indicator, IndicatorPoint
-from .resources import ConformityResource, ControlResource, FindingResource, ActionResource, IndicatorResource, AuditResource
+from .resources import ActionResource, AttachmentResource, AuditLogResource, AuditResource, ConformityResource, ControlPointResource, ControlResource, FindingResource, FrameworkResource, IndicatorResource, OrganizationResource
 from .tables import ActionTable, AttachmentTable, AuditLogTable, AuditTable, ConformityTable, ControlTable, ControlPointTable, FindingTable, FrameworkTable, OrganizationTable
 
 from django.views import View
@@ -667,9 +667,10 @@ class IndicatorExportView(LoginRequiredMixin, View):
 #
 
 
-class AttachmentIndexView(LoginRequiredMixin, RichTableMixin, ListView):
+class AttachmentIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     model = Attachment
     table_class = AttachmentTable
+    filterset_class = AttachmentFilter
     template_name = "conformity/attachment_list.html"
 
 
@@ -738,3 +739,58 @@ class AuditLogDetailView(LoginRequiredMixin, RichTableMixin, FilterView):
             else:
                 logentry.standard_changes = standard_changes
         return context
+
+
+
+class FrameworkExportView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        dataset = FrameworkResource().export(Framework.objects.all())
+        export_format = base_formats.CSV() if request.GET.get("format") == "csv" else base_formats.XLSX()
+        response = HttpResponse(export_format.export_data(dataset), content_type=export_format.get_content_type())
+        response["Content-Disposition"] = f'attachment; filename="frameworks.{export_format.get_extension()}"'
+        return response
+
+
+class OrganizationExportView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        dataset = OrganizationResource().export(Organization.objects.all())
+        export_format = base_formats.CSV() if request.GET.get("format") == "csv" else base_formats.XLSX()
+        response = HttpResponse(export_format.export_data(dataset), content_type=export_format.get_content_type())
+        response["Content-Disposition"] = f'attachment; filename="organizations.{export_format.get_extension()}"'
+        return response
+
+
+class ConformityIndexExportView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        dataset = ConformityResource().export(Conformity.objects.all())
+        export_format = base_formats.CSV() if request.GET.get("format") == "csv" else base_formats.XLSX()
+        response = HttpResponse(export_format.export_data(dataset), content_type=export_format.get_content_type())
+        response["Content-Disposition"] = f'attachment; filename="conformities.{export_format.get_extension()}"'
+        return response
+
+
+class ControlPointExportView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        dataset = ControlPointResource().export(ControlPoint.objects.all())
+        export_format = base_formats.CSV() if request.GET.get("format") == "csv" else base_formats.XLSX()
+        response = HttpResponse(export_format.export_data(dataset), content_type=export_format.get_content_type())
+        response["Content-Disposition"] = f'attachment; filename="controlpoints.{export_format.get_extension()}"'
+        return response
+
+
+class AttachmentExportView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        dataset = AttachmentResource().export(Attachment.objects.all())
+        export_format = base_formats.CSV() if request.GET.get("format") == "csv" else base_formats.XLSX()
+        response = HttpResponse(export_format.export_data(dataset), content_type=export_format.get_content_type())
+        response["Content-Disposition"] = f'attachment; filename="attachments.{export_format.get_extension()}"'
+        return response
+
+
+class AuditLogExportView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        dataset = AuditLogResource().export(LogEntry.objects.all().order_by("-timestamp"))
+        export_format = base_formats.CSV() if request.GET.get("format") == "csv" else base_formats.XLSX()
+        response = HttpResponse(export_format.export_data(dataset), content_type=export_format.get_content_type())
+        response["Content-Disposition"] = f'attachment; filename="audit-log.{export_format.get_extension()}"'
+        return response
