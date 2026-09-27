@@ -27,7 +27,7 @@ On Windows, activate the virtual environment with the appropriate command for yo
 - Add or update tests for changed behaviour.
 - Include Django migrations when model changes require them.
 - Keep commits and pull requests scoped to one coherent change.
-- Follow the existing project structure and coding conventions.
+- Follow the existing project structure and coding conventions. Tool configuration that belongs in `pyproject.toml` should be kept there.
 - Do not commit local configuration, credentials, virtual environments, caches, or generated files unless they are intentionally part of the project.
 
 ## Checks before opening a pull request
@@ -57,7 +57,7 @@ docker compose config --quiet
 docker compose build web
 ~~~
 
-See [docs/ci.md](docs/ci.md) for the complete CI/CD trigger model, required checks, Docker-validation policy and maintainer guidance.
+See [docs/development/ci.md](docs/development/ci.md) for the complete CI/CD trigger model, required checks, Docker-validation policy and maintainer guidance.
 
 ## Pull requests
 

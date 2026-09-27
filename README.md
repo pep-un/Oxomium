@@ -1,54 +1,106 @@
 [![Main CI](https://github.com/pep-un/Oxomium/actions/workflows/ci-main.yml/badge.svg?branch=main)](https://github.com/pep-un/Oxomium/actions/workflows/ci-main.yml)
-
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=pep-un_Oxomium&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=pep-un_Oxomium)
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=pep-un_Oxomium&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=pep-un_Oxomium)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=pep-un_Oxomium&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=pep-un_Oxomium)
 [![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=pep-un_Oxomium&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=pep-un_Oxomium)
-[![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=pep-un_Oxomium&metric=sqale_index)](https://sonarcloud.io/summary/new_code?id=pep-un_Oxomium)
-[![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=pep-un_Oxomium&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=pep-un_Oxomium)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=pep-un_Oxomium&metric=coverage)](https://sonarcloud.io/summary/new_code?id=pep-un_Oxomium)
 
+# Oxomium
 
-# Oxomium Project
+Oxomium is an open-source governance, risk, and compliance (GRC) application built with Django. It helps security teams manage cybersecurity frameworks, requirements, controls, audits, findings, and remediation actions from a single application.
 
-Oxomium is an opensource project build to help company to manage the cybersecurity compliance of organisations. 
+More information is available on the [Oxomium website](https://www.oxomium.org).
 
-It provides help to CISO or other security people to follow conformity to a Framework.
+## Documentation
 
-More information on [Oxomium Website](https://www.oxomium.org).
+The repository documentation is the canonical documentation source. Start with [docs/main.md](docs/main.md).
 
-An online demonstration in available with user `demo` and password `6NLYm6F4PBBQBjc`:  [Oxomium Demo](https://demo.oxomium.org)
+The installation documentation covers:
 
-A wiki page detail the process of [installation](https://github.com/pep-un/Oxomium/wiki/Instalation).
+- [manual Linux installation](docs/installation/manual-linux.md);
+- [Docker with system Nginx](docs/installation/docker-system-nginx.md);
+- [Docker with integrated Nginx](docs/installation/docker-integrated-nginx.md).
 
-The CI/CD workflow responsibilities and trigger strategy are documented in [docs/ci.md](docs/ci.md).
+The historical GitHub Wiki is being replaced by the versioned documentation stored in this repository.
 
-## Docker image and releases
+## Quick start with Docker
 
-Publishing a GitHub Release for a `v<semver>` tag builds the exact released tag and publishes
-`docker.io/pepun/oxomium` with semantic-version tags and `latest`.
+Create a local environment file and start the default development stack:
 
-The release workflow also attaches these files to the GitHub Release:
+```shell
+cp .env.example .env
+docker compose up --build
+```
+
+The default Compose file is `compose.yaml`.
+
+For production deployments, use an explicit Oxomium release tag instead of `latest` and follow one of the deployment guides above.
+
+A published image is available from Docker Hub:
+
+```shell
+docker pull docker.io/pepun/oxomium:latest
+docker run --rm --env-file .env -p 8000:8000 docker.io/pepun/oxomium:latest
+```
+
+## Online demonstration
+
+An online demonstration is available at [demo.oxomium.org](https://demo.oxomium.org) with:
+
+- username: `demo`
+- password: `6NLYm6F4PBBQBjc`
+
+Do not reuse these credentials for any other environment.
+
+## Development
+
+Create a virtual environment and install the dependencies:
+
+```shell
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+Run the test suite with:
+
+```shell
+python manage.py test
+```
+
+Development and CI guidance is documented in [docs/development/ci.md](docs/development/ci.md). Contribution guidelines are in [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Deployment resources
+
+Reusable deployment resources are grouped by technology:
+
+```text
+deploy/
+├── docker/
+├── nginx/
+└── systemd/
+```
+
+Utility scripts that are not deployment configuration live under `scripts/`.
+
+## Docker images and releases
+
+Publishing a GitHub Release for a `v<semver>` tag builds the exact released tag and publishes `docker.io/pepun/oxomium` with semantic-version tags and `latest`.
+
+The release workflow also attaches:
 
 - `oxomium-<version>.tar.gz`, built directly from the released Git commit;
 - `oxomium-<version>.sbom.cdx.json`, a CycloneDX SBOM generated from the delivered tarball;
 - `oxomium-<version>-docker.sbom.cdx.json`, a CycloneDX SBOM generated from the final Docker image;
-- `SHA256SUMS`, containing SHA-256 checksums for the GitHub release artifacts.
+- `SHA256SUMS`, containing SHA-256 checksums for the release artifacts.
 
-Before publication, the final Docker image is scanned with Trivy for HIGH and
-CRITICAL vulnerabilities. SBOM publication is deferred until the explicit final
-release-upload step. A build, SBOM, vulnerability scan, checksum, Docker
-publication, or release-upload failure fails the release workflow.
+Before publication, the final Docker image is scanned with Trivy for HIGH and CRITICAL vulnerabilities. A build, SBOM, vulnerability scan, checksum, Docker publication, or release-upload failure fails the release workflow.
 
-Docker Hub publication requires the `DOCKERHUB_USERNAME` and
-`DOCKERHUB_TOKEN` repository secrets. The workflow uses the GitHub token only
-to attach artifacts to the release.
+## Security
 
-Pull and run the latest image with:
+See [SECURITY.md](SECURITY.md) for the current security policy.
 
-```shell
-docker pull docker.io/pepun/oxomium:latest
-docker run --rm --env-file env-exemple -p 8000:8000 docker.io/pepun/oxomium:latest
-```
+## License
 
-For the included Compose setup, run `docker compose up --build`.
+Oxomium is distributed under the terms in [LICENSE](LICENSE).

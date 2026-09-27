@@ -77,9 +77,10 @@ A lightweight `Detect Docker-file changes` job enables `Docker Lint` only when t
 
 - `Dockerfile`
 - `.dockerignore`
-- `docker-compose.yml`
+- `compose.yaml`
 - `docker/**`
-- `env-exemple`
+- `deploy/**`
+- `.env.example`
 
 The pull-request Docker job runs only:
 
@@ -105,7 +106,7 @@ The full Docker job proves that the repository can produce and run a deployable 
 Its stages are:
 
 1. lint `Dockerfile` with Hadolint;
-2. validate `docker-compose.yml`;
+2. validate `compose.yaml`;
 3. build the Compose web image once;
 4. run `python manage.py check` inside that image;
 5. scan the validated image with Trivy;
