@@ -17,6 +17,8 @@ class AttachmentUploadFormMixin:
         field = self.fields.get('attachments')
         if field:
             field.widget.attrs['accept'] = attachment_accept()
+            field.widget.attrs['form'] = 'object-form'
+            field.widget.attrs['class'] = 'visually-hidden js-attachment-input'
             field.help_text = attachment_max_size_help()
 
     def clean_attachments(self):
