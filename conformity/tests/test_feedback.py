@@ -38,6 +38,20 @@ class FeedbackComponentTests(TestCase):
                 self.assertIn(role, html)
                 self.assertIn(text, html)
                 self.assertIn("bi-", html)
+                self.assertIn("alert-dismissible", html)
+                self.assertIn("app-message-timer", html)
+
+    def test_message_levels_have_expected_auto_dismiss_delays(self):
+        cases = (
+            (messages.SUCCESS, "10000"),
+            (messages.INFO, "10000"),
+            (messages.WARNING, "30000"),
+            (messages.ERROR, "60000"),
+        )
+        for level, delay in cases:
+            with self.subTest(level=level):
+                html = self.render_message(level, "Timed message")
+                self.assertIn(f'data-auto-dismiss="{delay}"', html)
 
 
 class FormFeedbackTests(TestCase):
