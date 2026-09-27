@@ -8,7 +8,7 @@ from django.test import TestCase
 from django.urls import reverse
 from constance.test import override_config
 
-from conformity.forms import AuditForm, OrganizationForm
+from conformity.forms import AuditForm, ControlPointForm, IndicatorPointForm, OrganizationForm
 from conformity.models import Attachment, Audit, Framework, Organization
 from conformity.validators import (
     attachment_accept,
@@ -137,9 +137,20 @@ class AttachmentValidationTests(TestCase):
         self.assertFalse(existing.file.storage.exists(duplicate_path))
 
     def test_upload_forms_expose_configured_accept_and_size_hint(self):
-        for form in (AuditForm(), OrganizationForm()):
-            self.assertEqual(form.fields["attachments"].widget.attrs["accept"], attachment_accept())
-            self.assertIn("Maximum file size", str(form.fields["attachments"].help_text))
+        for form in (
+            AuditForm(),
+            OrganizationForm(),
+            ControlPointForm(),
+            IndicatorPointForm(),
+        ):
+            self.assertEqual(
+                form.fields["attachments"].widget.attrs["accept"],
+                attachment_accept(),
+            )
+            self.assertIn(
+                "Maximum file size",
+                str(form.fields["attachments"].help_text),
+            )
 
     def test_accept_hint_comes_from_configured_mime_types(self):
         with override_config(
