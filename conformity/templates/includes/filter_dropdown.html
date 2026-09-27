@@ -1,4 +1,5 @@
 {% load ui_tags %}
+{% load django_bootstrap5 %}
 {% active_filter_count as active_filters %}
 <div class="dropdown">
     <button type="button"
@@ -10,12 +11,22 @@
             <span class="badge text-bg-light ms-1">{{ active_filters }}</span>
         {% endif %}
     </button>
-    <div class="dropdown-menu p-3 filter-dropdown">
+    <div class="dropdown-menu p-3 shadow-sm filter-dropdown">
         <form method="get">
-            {{ filter.form.as_div }}
-            <div class="d-flex flex-wrap gap-2 mt-3 pt-3 border-top">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h2 class="h6 mb-0">Filters</h2>
+                {% if active_filters %}
+                    <span class="badge text-bg-primary">{{ active_filters }} active</span>
+                {% endif %}
+            </div>
+
+            {% for field in filter.form %}
+                {% bootstrap_field field layout='horizontal' horizontal_label_class='col-sm-4' horizontal_field_class='col-sm-8' %}
+            {% endfor %}
+
+            <div class="d-flex flex-wrap justify-content-end gap-2 mt-3 pt-3 border-top">
+                <a href="?" class="btn btn-outline-secondary">Reset filters</a>
                 <button type="submit" class="btn btn-primary">Apply filters</button>
-                <a href="?" class="btn btn-secondary">Reset filters</a>
             </div>
         </form>
     </div>
