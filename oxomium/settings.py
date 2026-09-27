@@ -178,9 +178,13 @@ CONSTANCE_CONFIG = {
         "Maximum number of items displayed in each home dashboard list",
         int),
     'ATTACHMENT_ALLOWED_MIME_TYPES': (
-        "application/pdf,image/jpeg,image/png,text/plain,text/csv,application/zip,"
+        "application/pdf,image/*,text/plain,text/csv,application/zip,"
+        "application/json,text/json,application/xml,text/xml,text/html,application/xhtml+xml,"
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document,"
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,"
+        "application/vnd.ms-powerpoint,"
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation,"
+        "application/vnd.oasis.opendocument.presentation",
         "Comma-separated allowlist of attachment MIME types",
         str),
     'ATTACHMENT_MAX_SIZE_MB': (
