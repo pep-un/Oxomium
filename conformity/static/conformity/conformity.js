@@ -183,34 +183,79 @@ attachmentInputs.forEach((input) => {
     );
 
     let dragFocusActive = false;
+    let dragVisibilityObserver = null;
 
-    document.addEventListener('dragenter', (event) => {
-        if (!hasDraggedFiles(event)) {
+    const activateDropzone = () => {
+        if (dragFocusActive) {
+            dropzone.classList.add('is-dragging');
+        }
+    };
+
+    const resetDragFocus = () => {
+        dropzone.classList.remove('is-dragging');
+        dragFocusActive = false;
+        if (dragVisibilityObserver) {
+            dragVisibilityObserver.disconnect();
+            dragVisibilityObserver = null;
+        }
+    };
+
+    const isDropzoneVisible = () => {
+        const rect = dropzone.getBoundingClientRect();
+        const visibleHeight = Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0);
+        return visibleHeight > 0 && visibleHeight >= Math.min(rect.height * 0.6, window.innerHeight * 0.5);
+    };
+
+    const focusDropzoneForDrag = () => {
+        if (dragFocusActive) {
             return;
         }
 
-        dropzone.classList.add('is-dragging');
-        if (!dragFocusActive) {
-            dragFocusActive = true;
-            dropzone.scrollIntoView({
-                behavior: 'smooth',
-                block: 'center',
-                inline: 'nearest',
-            });
+        dragFocusActive = true;
+        if (isDropzoneVisible()) {
+            activateDropzone();
+            return;
+        }
+
+        if ('IntersectionObserver' in window) {
+            dragVisibilityObserver = new IntersectionObserver((entries) => {
+                const visible = entries.some(
+                    (entry) => entry.isIntersecting && entry.intersectionRatio >= 0.6
+                );
+                if (visible) {
+                    activateDropzone();
+                    dragVisibilityObserver.disconnect();
+                    dragVisibilityObserver = null;
+                }
+            }, {threshold: [0.6]});
+            dragVisibilityObserver.observe(dropzone);
+        }
+
+        dropzone.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+            inline: 'nearest',
+        });
+    };
+
+    document.addEventListener('dragenter', (event) => {
+        if (hasDraggedFiles(event)) {
+            focusDropzoneForDrag();
         }
     });
 
     document.addEventListener('dragover', (event) => {
         if (hasDraggedFiles(event)) {
             event.preventDefault();
-            dropzone.classList.add('is-dragging');
+            if (dragFocusActive && isDropzoneVisible()) {
+                activateDropzone();
+            }
         }
     });
 
     document.addEventListener('dragleave', (event) => {
         if (!event.relatedTarget) {
-            dropzone.classList.remove('is-dragging');
-            dragFocusActive = false;
+            resetDragFocus();
         }
     });
 
@@ -218,8 +263,7 @@ attachmentInputs.forEach((input) => {
         if (hasDraggedFiles(event)) {
             event.preventDefault();
         }
-        dropzone.classList.remove('is-dragging');
-        dragFocusActive = false;
+        resetDragFocus();
     });
 
     panel.addEventListener('dragover', (event) => {
@@ -235,8 +279,7 @@ attachmentInputs.forEach((input) => {
         }
         event.preventDefault();
         event.stopPropagation();
-        dropzone.classList.remove('is-dragging');
-        dragFocusActive = false;
+        resetDragFocus();
         addFiles(event.dataTransfer.files);
     });
 
