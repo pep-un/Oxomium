@@ -112,7 +112,7 @@
 
 {% route_url 'conformity:control_create' as create_url %}
 {% route_url 'conformity:control_export' as export_url %}
-{% include "includes/list_toolbar.html" with create_url=create_url export_url=export_url filter=filter %}
+{% include "includes/list_toolbar.html" with create_url=create_url export_url=export_url filter=filter total_count=result_total_count visible_count=result_visible_count is_paginated=result_is_paginated %}
 
 {% if object_list %}
     {% render_table table %}
