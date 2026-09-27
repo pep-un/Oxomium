@@ -156,9 +156,16 @@
 }
 
 .filter-dropdown {
-    min-width: min(28rem, calc(100vw - 2rem));
-    max-height: 70vh;
-    overflow-y: auto;
+    width: 36vw;
+    min-width: 30rem;
+    max-width: calc(100vw - 2rem);
+}
+
+@media (max-width: 767.98px) {
+    .filter-dropdown {
+        width: calc(100vw - 2rem);
+        min-width: 0;
+    }
 }
 
 .header-back-link {
