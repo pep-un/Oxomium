@@ -2,13 +2,16 @@
 {% load ui_tags %}
 
 {% block header %}
-    <h1 class="h1 bi bi-building"> Organizations {{ organization }}</h1>
+    <h1 class="h1 d-flex align-items-center gap-2">
+        <a href="{% url 'conformity:organization_index' %}" class="header-back-link" aria-label="Back to organizations" title="Back to organizations">
+            <i class="bi bi-chevron-left" aria-hidden="true"></i>
+        </a>
+        {{ organization.name }}
+    </h1>
     <span class="badge text-bg-secondary ms-3"> {{ organization.administrative_id | default:'ø' }}</span>
 {% endblock %}
 
 {% block content %}
-{% route_url 'conformity:organization_index' as list_url %}
-{% breadcrumb "Organizations" list_url organization.name %}
 
     <p> {{ organization.description  | linebreaksbr }}</p>
 
