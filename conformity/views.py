@@ -4,7 +4,6 @@ View of the Conformity Module
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Count, F, Prefetch
 from django.views.generic import DetailView, ListView, TemplateView
@@ -157,7 +156,7 @@ class AuditDetailView(LoginRequiredMixin, DetailView):
 
 
 class AttachmentUploadViewMixin:
-    """Validate uploads before persistence and surface attachment errors clearly."""
+    """Surface attachment validation errors from the shared upload forms."""
 
     def form_invalid(self, form):
         for error in form.errors.get('attachments', ()):
@@ -167,17 +166,6 @@ class AttachmentUploadViewMixin:
                 fail_silently=True,
             )
         return super().form_invalid(form)
-
-    def form_valid(self, form):
-        attachments = self.request.FILES.getlist('attachments')
-        try:
-            from .validators import validate_attachment
-            for uploaded_file in attachments:
-                validate_attachment(uploaded_file)
-        except ValidationError as exc:
-            form.add_error('attachments', exc)
-            return self.form_invalid(form)
-        return super().form_valid(form)
 
 
 class AuditUpdateView(AttachmentUploadViewMixin, LoginRequiredMixin, SaveStayMixin, UpdateView):
@@ -725,6 +713,15 @@ class AttachmentIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     table_class = AttachmentTable
     filterset_class = AttachmentFilter
     template_name = "conformity/attachment_list.html"
+
+    def get_queryset(self):
+        return Attachment.objects.prefetch_related(
+            "organizations",
+            "frameworks",
+            "audits",
+            "ControlPoint",
+            "IndicatorPoint",
+        )
 
 
 class AttachmentDownloadView(LoginRequiredMixin, View):
