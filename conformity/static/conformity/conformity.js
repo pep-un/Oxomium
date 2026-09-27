@@ -182,9 +182,21 @@ attachmentInputs.forEach((input) => {
         Array.from(event.dataTransfer.types || []).includes('Files')
     );
 
+    let dragFocusActive = false;
+
     document.addEventListener('dragenter', (event) => {
-        if (hasDraggedFiles(event)) {
-            dropzone.classList.add('is-dragging');
+        if (!hasDraggedFiles(event)) {
+            return;
+        }
+
+        dropzone.classList.add('is-dragging');
+        if (!dragFocusActive) {
+            dragFocusActive = true;
+            dropzone.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center',
+                inline: 'nearest',
+            });
         }
     });
 
@@ -198,6 +210,7 @@ attachmentInputs.forEach((input) => {
     document.addEventListener('dragleave', (event) => {
         if (!event.relatedTarget) {
             dropzone.classList.remove('is-dragging');
+            dragFocusActive = false;
         }
     });
 
@@ -206,6 +219,7 @@ attachmentInputs.forEach((input) => {
             event.preventDefault();
         }
         dropzone.classList.remove('is-dragging');
+        dragFocusActive = false;
     });
 
     panel.addEventListener('dragover', (event) => {
@@ -222,6 +236,7 @@ attachmentInputs.forEach((input) => {
         event.preventDefault();
         event.stopPropagation();
         dropzone.classList.remove('is-dragging');
+        dragFocusActive = false;
         addFiles(event.dataTransfer.files);
     });
 
