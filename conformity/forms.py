@@ -199,11 +199,11 @@ class ControlPointForm(AttachmentUploadFormMixin, ModelForm):
                 (ControlPoint.Status.COMPLIANT, ControlPoint.Status.COMPLIANT.label),
                 (ControlPoint.Status.NONCOMPLIANT, ControlPoint.Status.NONCOMPLIANT.label),
             ]
-        # Switch to display mode if ControlPoint is not to be evaluated
+        # Keep attachment uploads available even when the control result is read-only.
         else:
-            del self.fields['attachments']
-            for field in self.fields:
-                self.fields[field].disabled = True
+            for field_name, field in self.fields.items():
+                if field_name != 'attachments':
+                    field.disabled = True
 
 
 class IndicatorForm(ModelForm):
@@ -215,10 +215,12 @@ class IndicatorForm(ModelForm):
         ]
 
 
-class IndicatorPointForm(ModelForm):
+class IndicatorPointForm(AttachmentUploadFormMixin, ModelForm):
+    attachments = FileField(required=False, widget=ClearableFileInput())
+
     class Meta:
         model = IndicatorPoint
-        fields = ['value', 'comment', 'attachment']
+        fields = ['value', 'comment', 'attachments']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
