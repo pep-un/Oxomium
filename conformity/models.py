@@ -114,7 +114,7 @@ class Organization(models.Model):
     attachment = models.ManyToManyField('Attachment', blank=True, related_name='organizations')
 
     class Meta:
-        ordering = ['name']
+        ordering = ['name', 'pk']
 
     def __str__(self):
         return str(self.name)
