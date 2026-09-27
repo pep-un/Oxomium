@@ -285,6 +285,7 @@ class SharedUxComponentsTests(BaseDataMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "No results match the active filters.")
         self.assertContains(response, "Reset filters", count=2)
+        self.assertContains(response, 'href="?" class="btn btn-outline-danger"')
         self.assertContains(response, 'href="' + reverse("conformity:action_create") + '"', count=1)
 
     def test_empty_state_without_create_url_does_not_offer_create(self):
