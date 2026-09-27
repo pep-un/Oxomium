@@ -10,9 +10,11 @@
     <caption class="d-none">Attachment library</caption>
     <thead>
         <tr>
-            <th class="col-4">Attachment</th>
+            <th class="col-3">Attachment</th>
+            <th class="col-2">MIME type</th>
+            <th class="col-2">SHA-256</th>
             <th class="col-2 text-center">Creation date</th>
-            <th class="col-4 text-center">References</th>
+            <th class="col-3 text-center">References</th>
         </tr>
     </thead>
     <tbody>
@@ -21,10 +23,31 @@
                 <td>
                     {% include "includes/attachment_link.html" with attachment=attachment %}
                 </td>
+                <td>
+                    <code>{{ attachment.mime_type|default:"—" }}</code>
+                </td>
+                <td>
+                    {% if attachment.sha256 %}
+                        <div class="d-flex align-items-center gap-2">
+                            <code title="{{ attachment.sha256 }}">{{ attachment.sha256|truncatechars:18 }}</code>
+                            <button
+                                type="button"
+                                class="btn btn-sm btn-outline-secondary"
+                                title="Copy SHA-256"
+                                aria-label="Copy SHA-256"
+                                data-copy-value="{{ attachment.sha256 }}"
+                                onclick="navigator.clipboard.writeText(this.dataset.copyValue)">
+                                <i class="bi bi-copy" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                    {% else %}
+                        <span class="text-muted">—</span>
+                    {% endif %}
+                </td>
                 <td class="text-center">
                     {{ attachment.create_date }}
                 </td>
-                <td class="">
+                <td>
                     {% for org in attachment.organizations.all %}
                     <a href="{% url 'conformity:organization_detail' org.id %}"><span class="badge mx-2 text-bg-dark px-3"> <i class="bi bi-building pe-2"></i> {{ org }} </span></a>
                     {% endfor %}
