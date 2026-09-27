@@ -25,11 +25,16 @@
                         </td>
                         <td class="text-nowrap">
                             {% if attachment.sha256 %}
-                                <div class="d-inline-flex align-items-center gap-1">
-                                    <span class="font-monospace" title="{{ attachment.sha256 }}">{{ attachment.sha256|slice:":16" }}…</span>
+                                <div class="btn-group btn-group-sm" role="group" aria-label="SHA-256 checksum">
+                                    <span
+                                        class="btn btn-outline-secondary disabled font-monospace"
+                                        title="{{ attachment.sha256 }}"
+                                        aria-disabled="true">
+                                        {{ attachment.sha256|slice:":16" }}…
+                                    </span>
                                     <button
                                         type="button"
-                                        class="btn btn-sm btn-outline-secondary py-0 px-1 js-copy-sha256"
+                                        class="btn btn-outline-secondary js-copy-sha256"
                                         title="Copy SHA-256"
                                         aria-label="Copy SHA-256"
                                         data-copy-value="{{ attachment.sha256 }}">
