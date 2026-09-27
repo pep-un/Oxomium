@@ -2,7 +2,12 @@
 {% load ui_tags %}
 
 {% block header %}
-<h1 class="h2 bi bi-card-checklist"> Framework: {{ framework.name }}</h1>
+<h1 class="h2 d-flex align-items-center gap-2">
+    <a href="{% url 'conformity:framework_index' %}" class="header-back-link" aria-label="Back to frameworks" title="Back to frameworks">
+        <i class="bi bi-chevron-left" aria-hidden="true"></i>
+    </a>
+    {{ framework.name }}
+</h1>
 <h4>
     <span class="badge text-bg-secondary"> Version : {{ framework.version | default:'-' }} </span>
     <span class="badge text-bg-secondary"> Language : {{ framework.get_language_display | default:'-' }} </span>
@@ -12,8 +17,6 @@
 {% endblock %}
 
 {% block content %}
-{% route_url 'conformity:framework_index' as list_url %}
-{% breadcrumb "Frameworks" list_url framework.name %}
 
     {% for requirement in framework.get_requirements %}
             {% if requirement.level == 1 %}
