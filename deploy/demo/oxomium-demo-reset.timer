@@ -1,0 +1,11 @@
+[Unit]
+Description=Reset Oxomium demonstration data every night
+
+[Timer]
+OnCalendar=*-*-* 03:00:00
+Persistent=true
+RandomizedDelaySec=10m
+Unit=oxomium-demo-reset.service
+
+[Install]
+WantedBy=timers.target

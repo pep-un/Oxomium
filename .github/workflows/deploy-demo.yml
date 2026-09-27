@@ -1,0 +1,93 @@
+name: Deploy · Demo
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Published release tag to deploy (for example v1.2.3)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: demo-deployment
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy demo
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: demo
+    env:
+      RELEASE_TAG: ${{ github.event_name == 'release' && github.event.release.tag_name || inputs.release_tag }}
+      DEMO_HOST: ${{ vars.DEMO_HOST }}
+      DEMO_SSH_USER: ${{ vars.DEMO_SSH_USER }}
+      DEMO_SSH_PORT: ${{ vars.DEMO_SSH_PORT }}
+      DEMO_DEPLOY_PATH: ${{ vars.DEMO_DEPLOY_PATH }}
+      DEMO_HEALTHCHECK_URL: ${{ vars.DEMO_HEALTHCHECK_URL }}
+    steps:
+      - name: Checkout released deployment files
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+
+      - name: Validate deployment configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "${DEMO_HOST:?DEMO_HOST is required}"
+          : "${DEMO_SSH_USER:?DEMO_SSH_USER is required}"
+          : "${DEMO_HEALTHCHECK_URL:?DEMO_HEALTHCHECK_URL is required}"
+          : "${DEMO_DEPLOY_PATH:?DEMO_DEPLOY_PATH is required}"
+          [[ "$RELEASE_TAG" == v* ]] || { echo "::error::Release tag must use v<semver>."; exit 1; }
+          [[ "$DEMO_HEALTHCHECK_URL" == https://* ]] || { echo "::error::Health check must use HTTPS."; exit 1; }
+          echo "OXOMIUM_VERSION=${RELEASE_TAG#v}" > /tmp/release.env
+
+      - name: Configure SSH
+        shell: bash
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.DEMO_SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.DEMO_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          : "${SSH_PRIVATE_KEY:?DEMO_SSH_PRIVATE_KEY is required}"
+          : "${SSH_KNOWN_HOSTS:?DEMO_SSH_KNOWN_HOSTS is required}"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/demo_deploy
+          chmod 600 ~/.ssh/demo_deploy
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Install deployment definition
+        shell: bash
+        run: |
+          set -euo pipefail
+          port="${DEMO_SSH_PORT:-22}"
+          common=(-i ~/.ssh/demo_deploy -o BatchMode=yes -o StrictHostKeyChecking=yes)
+          ssh "${common[@]}" -p "$port" "$DEMO_SSH_USER@$DEMO_HOST" "test -d '$DEMO_DEPLOY_PATH' && test -f '$DEMO_DEPLOY_PATH/.env'"
+          scp "${common[@]}" -P "$port" deploy/demo/compose.yaml "$DEMO_SSH_USER@$DEMO_HOST:$DEMO_DEPLOY_PATH/compose.yaml"
+          version="$(cat /tmp/release.env)"
+          ssh "${common[@]}" -p "$port" "$DEMO_SSH_USER@$DEMO_HOST" "grep -v '^OXOMIUM_VERSION=' '$DEMO_DEPLOY_PATH/.env' > '$DEMO_DEPLOY_PATH/.env.next'; printf '%s\\n' '$version' >> '$DEMO_DEPLOY_PATH/.env.next'; mv '$DEMO_DEPLOY_PATH/.env.next' '$DEMO_DEPLOY_PATH/.env'"
+
+      - name: Deploy release
+        shell: bash
+        run: |
+          set -euo pipefail
+          port="${DEMO_SSH_PORT:-22}"
+          ssh -i ~/.ssh/demo_deploy -p "$port" -o BatchMode=yes -o StrictHostKeyChecking=yes "$DEMO_SSH_USER@$DEMO_HOST" "cd '$DEMO_DEPLOY_PATH' && docker compose pull web && docker compose up -d --wait web"
+
+      - name: Verify HTTPS
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in {1..12}; do
+            curl --fail --silent --show-error --location --max-time 10 "$DEMO_HEALTHCHECK_URL" > /dev/null && exit 0
+            sleep 5
+          done
+          echo "::error::Demo did not become healthy at $DEMO_HEALTHCHECK_URL"
+          exit 1

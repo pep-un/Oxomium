@@ -1,0 +1,9 @@
+[Unit]
+Description=Reset Oxomium demonstration data
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/oxomium-demo
+ExecStart=/opt/oxomium-demo/reset-demo.sh
