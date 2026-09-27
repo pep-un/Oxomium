@@ -35,15 +35,18 @@
         {% if attachment_field %}
             <li class="list-group-item attachment-dropzone js-attachment-dropzone"
                 data-attachment-input-id="{{ attachment_field.id_for_label }}">
-                <div class="attachment-drop-copy text-center py-2">
-                    <label for="{{ attachment_field.id_for_label }}"
-                           class="btn btn-sm btn-outline-primary mb-1">
-                        <i class="bi bi-plus-circle me-1" aria-hidden="true"></i>
-                        Add another document
-                    </label>
+                <div class="attachment-drop-icon" aria-hidden="true">
+                    <i class="bi bi-download"></i>
+                </div>
+                <div class="attachment-drop-copy d-flex align-items-center justify-content-between gap-3 py-2">
                     <div class="small text-body-secondary">
                         Select one or more files, drag &amp; drop, or paste a screenshot.
                     </div>
+                    <label for="{{ attachment_field.id_for_label }}"
+                           class="btn btn-sm btn-outline-primary flex-shrink-0 mb-0">
+                        <i class="bi bi-plus-circle me-1" aria-hidden="true"></i>
+                        Add another document
+                    </label>
                 </div>
 
                 {{ attachment_field }}
