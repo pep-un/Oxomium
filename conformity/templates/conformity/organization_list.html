@@ -4,6 +4,6 @@
 {% block header %}<h1 class="h1 bi bi-building"> Organizations</h1>{% endblock %}
 {% block content %}
 {% route_url 'conformity:organization_create' as create_url %}
-{% include "includes/list_toolbar.html" with create_url=create_url filter=filter item_count=object_list|length %}
+{% include "includes/list_toolbar.html" with create_url=create_url filter=filter %}
 {% if object_list %}{% render_table table %}{% else %}{% include "includes/empty_state.html" with empty_message="No organizations have been created yet." create_url=create_url %}{% endif %}
 {% endblock %}
