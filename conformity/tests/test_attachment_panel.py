@@ -144,6 +144,13 @@ class AttachmentPanelTests(TestCase):
                 self.assertEqual(response.status_code, 200)
                 self.assertContains(response, "card border-info mb-3")
                 self.assertContains(response, "Remove attachment")
+                self.assertContains(response, 'type="file"')
+                self.assertContains(response, 'name="attachments"')
+                html = response.content.decode()
+                self.assertLess(
+                    html.index("card border-info mb-3"),
+                    html.index('name="attachments"'),
+                )
                 self.assertContains(
                     response,
                     reverse(
@@ -151,6 +158,58 @@ class AttachmentPanelTests(TestCase):
                         args=[owner_type, owner.pk, self.attachment.pk],
                     ),
                 )
+
+    def test_create_forms_show_empty_panel_next_to_file_upload(self):
+        for url in (
+            reverse("conformity:audit_create"),
+            reverse("conformity:organization_create"),
+        ):
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, "card border-info mb-3")
+                self.assertContains(response, "No attachment")
+                self.assertContains(response, 'type="file"')
+                self.assertContains(response, 'name="attachments"')
+                html = response.content.decode()
+                self.assertLess(
+                    html.index("card border-info mb-3"),
+                    html.index('name="attachments"'),
+                )
+
+    def test_indicator_point_upload_creates_attachment_relation(self):
+        upload = SimpleUploadedFile(
+            "indicator-note.txt",
+            b"indicator attachment",
+            content_type="text/plain",
+        )
+
+        response = self.client.post(
+            reverse(
+                "conformity:indicatorpoint_form",
+                args=[self.indicator_point.pk],
+            ),
+            {
+                "value": 50,
+                "comment": "with attachment",
+                "action": "save_stay",
+                "attachments": upload,
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            reverse(
+                "conformity:indicatorpoint_form",
+                args=[self.indicator_point.pk],
+            ),
+            fetch_redirect_response=False,
+        )
+        self.assertEqual(self.indicator_point.attachment.count(), 1)
+        self.assertEqual(
+            str(self.indicator_point.attachment.get()),
+            "indicator-note.txt",
+        )
 
     def test_unlink_shared_attachment_preserves_document_and_other_links(self):
         self.control_point.attachment.add(self.attachment)
