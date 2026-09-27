@@ -6,6 +6,24 @@ from django.forms import ModelForm, FileField, ClearableFileInput, BooleanField,
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from .models import Conformity, Organization, Audit, Finding, Action, Control, ControlPoint, Indicator, IndicatorPoint
+from .validators import attachment_accept, attachment_max_size_help, validate_attachment
+
+
+class AttachmentUploadFormMixin:
+    """Apply the shared attachment policy to every multi-upload form."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        field = self.fields.get('attachments')
+        if field:
+            field.widget.attrs['accept'] = attachment_accept()
+            field.help_text = attachment_max_size_help()
+
+    def clean_attachments(self):
+        uploaded_file = self.cleaned_data.get('attachments')
+        if uploaded_file:
+            validate_attachment(uploaded_file)
+        return uploaded_file
 
 
 class ConformityForm(ModelForm):
@@ -23,14 +41,14 @@ class ConformityForm(ModelForm):
             self.fields['status'].disabled = True
 
 
-class OrganizationForm(ModelForm):
+class OrganizationForm(AttachmentUploadFormMixin, ModelForm):
     attachments = FileField(required=False, widget=ClearableFileInput())
     class Meta:
         model = Organization
         fields = ['name', 'administrative_id', 'description', 'applicable_frameworks']
 
 
-class AuditForm(ModelForm):
+class AuditForm(AttachmentUploadFormMixin, ModelForm):
     attachments = FileField(required=False, widget=ClearableFileInput())
     class Meta:
         model = Audit
@@ -159,7 +177,7 @@ class ControlForm(ModelForm):
             self.fields['conformity'].disabled = True
 
 
-class ControlPointForm(ModelForm):
+class ControlPointForm(AttachmentUploadFormMixin, ModelForm):
     attachments = FileField(required=False, widget=ClearableFileInput())
     class Meta:
         model = ControlPoint

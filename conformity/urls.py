@@ -60,6 +60,7 @@ urlpatterns = [
 
     path('attachment/', views.AttachmentIndexView.as_view(), name='attachment_index'),
     path('attachment/<int:pk>/', views.AttachmentDownloadView.as_view(), name='attachment_download'),
+    path('attachment/<int:pk>/checksum/', views.AttachmentChecksumView.as_view(), name='attachment_checksum'),
 
     path('help/', TemplateView.as_view(template_name='help.html'), name='help'),
     path('auditlog/', views.AuditLogDetailView.as_view(), name='auditlog_index'),

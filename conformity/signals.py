@@ -1,6 +1,6 @@
 from django.db.models.signals import m2m_changed, pre_save, post_save
 from django.dispatch import receiver
-from .models import Requirement, Control, ControlPoint, Attachment, Action, Finding, Conformity, \
+from .models import Requirement, Control, ControlPoint, Action, Finding, Conformity, \
     Indicator, IndicatorPoint
 
 
@@ -11,10 +11,6 @@ def control_post_save_bootstrap(instance: Control, **kwargs):
 @receiver(pre_save, sender=ControlPoint)
 def controlpoint_pre_save_status(sender, instance: ControlPoint, **kwargs):
     ControlPoint.update_status(instance)
-
-@receiver(pre_save, sender=Attachment)
-def attachment_pre_autoset_mimetype(sender, instance: Attachment, **kwargs):
-    Attachment.autoset_mimetype(instance)
 
 @receiver(pre_save, sender=Requirement)
 def requirement_pre_save_naming(instance, **kwargs):

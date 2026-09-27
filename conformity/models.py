@@ -19,7 +19,6 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 # Third-party
-from magic import Magic
 from mptt.models import MPTTModel, TreeForeignKey
 from pycountry import languages
 
@@ -933,6 +932,7 @@ class Attachment(models.Model):
     file = models.FileField(upload_to='attachments/')
     comment = models.TextField(max_length=4096, blank=True)
     mime_type = models.CharField(max_length=255, blank=True)
+    sha256 = models.CharField(max_length=64, unique=True, null=True, blank=True, editable=False)
     create_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -941,13 +941,58 @@ class Attachment(models.Model):
     def __str__(self):
         return self.file.name.split("/")[1]
 
-    @staticmethod
-    def autoset_mimetype(instance):
-        # Read file and set mime_type
-        file_content = instance.file.read()
-        instance.file.seek(0)
-        mime = Magic(mime=True)
-        instance.mime_type = mime.from_buffer(file_content)
+    def clean(self):
+        super().clean()
+        if self.file and not self.sha256:
+            from .validators import validate_attachment
+            self.mime_type, self.sha256 = validate_attachment(self.file)
+
+    def save(self, *args, **kwargs):
+        # Enforce the upload policy for every Attachment persistence path,
+        # including direct ORM creation outside ModelForms.
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    @classmethod
+    def get_or_create_for_upload(cls, uploaded_file):
+        """Validate an upload and reuse an existing identical attachment when possible."""
+        from .validators import validate_attachment
+
+        mime_type, checksum = validate_attachment(uploaded_file)
+        existing = cls.objects.filter(sha256=checksum).first()
+        if existing:
+            return existing, False
+
+        attachment = cls(file=uploaded_file, mime_type=mime_type, sha256=checksum)
+        attachment.save()
+        return attachment, True
+
+    def calculate_checksum_and_merge(self):
+        """Calculate a missing checksum and merge this attachment into an existing duplicate."""
+        if self.sha256:
+            return self, False
+
+        from .validators import validate_attachment
+
+        mime_type, checksum = validate_attachment(self.file)
+        existing = type(self).objects.filter(sha256=checksum).exclude(pk=self.pk).first()
+        if not existing:
+            self.mime_type = mime_type
+            self.sha256 = checksum
+            self.save(update_fields=['mime_type', 'sha256'])
+            return self, False
+
+        for relation in self._meta.related_objects:
+            if not relation.many_to_many:
+                continue
+            source_manager = getattr(self, relation.get_accessor_name())
+            target_manager = getattr(existing, relation.get_accessor_name())
+            target_manager.add(*source_manager.all())
+
+        duplicate_file = self.file
+        self.delete()
+        duplicate_file.delete(save=False)
+        return existing, True
 
 
 

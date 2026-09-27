@@ -25,7 +25,10 @@ class RelationAuditTests(TestCase):
         self.user = get_user_model().objects.create_user(username='relation_audit', email='relations@example.com')
         self.org = Organization.objects.create(name='Organization')
         self.frameworks = [Framework.objects.create(name=f'Framework {i}') for i in range(2)]
-        self.attachments = [Attachment.objects.create(file=SimpleUploadedFile(f'audit{i}.txt', b'content')) for i in range(2)]
+        self.attachments = [
+            Attachment.objects.create(file=SimpleUploadedFile(f'audit{i}.txt', f'content-{i}'.encode()))
+            for i in range(2)
+        ]
         self.conformities = [Conformity.objects.create(organization=self.org, requirement=Requirement.objects.create(framework=self.frameworks[i], code=f'ROOT{i}')) for i in range(2)]
         self.audit = Audit.objects.create(organization=self.org, auditor='Auditor')
         self.findings = [Finding.objects.create(audit=self.audit, short_description=f'Finding {i}') for i in range(2)]

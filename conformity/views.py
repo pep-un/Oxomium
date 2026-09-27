@@ -3,6 +3,7 @@ View of the Conformity Module
 """
 
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Count, F, Prefetch
 from django.views.generic import DetailView, ListView, TemplateView
@@ -80,7 +81,22 @@ class AuditDetailView(LoginRequiredMixin, DetailView):
     model = Audit
 
 
-class AuditUpdateView(LoginRequiredMixin, UpdateView):
+class AttachmentUploadViewMixin:
+    """Validate all files before saving the parent object or any Attachment."""
+
+    def form_valid(self, form):
+        attachments = self.request.FILES.getlist('attachments')
+        try:
+            from .validators import validate_attachment
+            for uploaded_file in attachments:
+                validate_attachment(uploaded_file)
+        except ValidationError as exc:
+            form.add_error('attachments', exc)
+            return self.form_invalid(form)
+        return super().form_valid(form)
+
+
+class AuditUpdateView(AttachmentUploadViewMixin, LoginRequiredMixin, UpdateView):
     model = Audit
     form_class = AuditForm
 
@@ -88,13 +104,13 @@ class AuditUpdateView(LoginRequiredMixin, UpdateView):
         response = super().form_valid(form)
         attachments = self.request.FILES.getlist('attachments')
         for file in attachments:
-            attachment = Attachment.objects.create(file=file)
+            attachment = Attachment.get_or_create_for_upload(file)[0]
             self.object.attachment.add(attachment)
         return response
 
 
 
-class AuditCreateView(LoginRequiredMixin, CreateView):
+class AuditCreateView(AttachmentUploadViewMixin, LoginRequiredMixin, CreateView):
     model = Audit
     form_class = AuditForm
 
@@ -102,7 +118,7 @@ class AuditCreateView(LoginRequiredMixin, CreateView):
         response = super().form_valid(form)
         attachments = self.request.FILES.getlist('attachments')
         for file in attachments:
-            attachment = Attachment.objects.create(file=file)
+            attachment = Attachment.get_or_create_for_upload(file)[0]
             self.object.attachment.add(attachment)
         return response
 
@@ -214,7 +230,7 @@ class OrganizationDetailView(LoginRequiredMixin, DetailView):
     model = Organization
 
 
-class OrganizationFrameworkFormMixin:
+class OrganizationFrameworkFormMixin(AttachmentUploadViewMixin):
     """Save organization fields and reconcile frameworks through the service."""
 
     def form_valid(self, form):
@@ -225,7 +241,7 @@ class OrganizationFrameworkFormMixin:
             self.object.save()
             set_frameworks(self.object, form.cleaned_data['applicable_frameworks'])
             for file in self.request.FILES.getlist('attachments'):
-                attachment = Attachment.objects.create(file=file)
+                attachment = Attachment.get_or_create_for_upload(file)[0]
                 self.object.attachment.add(attachment)
         return HttpResponseRedirect(self.get_success_url())
 
@@ -527,7 +543,7 @@ class ControlPointIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
         return ControlPoint.objects.select_related("control", "control_user")
 
 
-class ControlPointUpdateView(LoginRequiredMixin, UpdateView):
+class ControlPointUpdateView(AttachmentUploadViewMixin, LoginRequiredMixin, UpdateView):
     model = ControlPoint
     form_class = ControlPointForm
 
@@ -540,7 +556,7 @@ class ControlPointUpdateView(LoginRequiredMixin, UpdateView):
         response = super().form_valid(form)
         attachments = self.request.FILES.getlist('attachments')
         for file in attachments:
-            attachment = Attachment.objects.create(file=file)
+            attachment = Attachment.get_or_create_for_upload(file)[0]
             self.object.attachment.add(attachment)
         return response
 
@@ -642,6 +658,15 @@ class AttachmentDownloadView(LoginRequiredMixin, View):
         response = HttpResponse(open(file_path, 'rb'), content_type='application/octet-stream')
         response['Content-Disposition'] = f'attachment; filename="{file_name}"'
         return response
+
+
+class AttachmentChecksumView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        attachment = get_object_or_404(Attachment, id=pk)
+        attachment.calculate_checksum_and_merge()
+        return redirect('conformity:attachment_index')
+
+
 
 
 #

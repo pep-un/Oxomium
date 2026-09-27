@@ -21,7 +21,7 @@
                     <b class="bi bi-paperclip"> Attachments </b>
                     <ul class="m-0">
                         {% for attachment in controlpoint.attachment.all %}
-                        <li><a href="{% url 'conformity:attachment_download' attachment.id %}"> {{ attachment }} </a></li>
+                        <li>{% include "includes/attachment_link.html" with attachment=attachment %}</li>
                         {% empty %}
                         <i>No attachment</i>
                         {% endfor %}
