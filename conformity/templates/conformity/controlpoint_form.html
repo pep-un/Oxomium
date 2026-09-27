@@ -31,7 +31,16 @@
                 <li>Control period: From {{controlpoint.period_start_date}} to {{controlpoint.period_end_date}}</li>
                 </ul>
                 <hr />
-                {% bootstrap_form form %}
+                {% for field in form %}
+                    {% if field.name == "attachments" %}
+                        {% bootstrap_field field %}
+                    {% endif %}
+                {% endfor %}
+                {% for field in form %}
+                    {% if field.name != "attachments" %}
+                        {% bootstrap_field field %}
+                    {% endif %}
+                {% endfor %}
 
                 <h2 class="h4">Associated actions</h2>
                 <div class="col list-group mb-3">
