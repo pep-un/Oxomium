@@ -6,7 +6,8 @@ ignore-paths = [".*/migrations/.*"]
 
 [tool.coverage.run]
 branch = true
-source = ["conformity", "oxomium"]
+relative_files = true
+source = ["."]
 omit = ["*/migrations/*"]
 
 [tool.coverage.report]

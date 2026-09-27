@@ -15,13 +15,17 @@ More information is available on the [Oxomium website](https://www.oxomium.org).
 
 The repository documentation is the canonical documentation source. Start with [docs/main.md](docs/main.md).
 
+Start with the [Quick start](docs/getting-started/quick-start.md) after installation.
+
 The installation documentation covers:
 
 - [manual Linux installation](docs/installation/manual-linux.md);
 - [Docker with system Nginx](docs/installation/docker-system-nginx.md);
 - [Docker with integrated Nginx](docs/installation/docker-integrated-nginx.md).
 
-The historical GitHub Wiki is being replaced by the versioned documentation stored in this repository.
+Operational guidance is available in [Upgrade Oxomium](docs/operations/upgrade.md), and implementation-level security information is documented in [Security architecture](docs/security/architecture.md).
+
+The historical GitHub Wiki has been consolidated into the versioned documentation stored in this repository.
 
 ## Quick start with Docker
 

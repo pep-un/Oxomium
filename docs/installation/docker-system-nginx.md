@@ -53,12 +53,7 @@ docker compose exec web python manage.py createsuperuser
 
 ## 5. Upgrade
 
-Back up `/opt/oxomium-docker/data/db.sqlite3`, change `OXOMIUM_VERSION`, then run:
-
-```shell
-docker compose pull
-docker compose up -d
-```
+Use the common [Upgrade Oxomium](../operations/upgrade.md) procedure. It includes backup, image update, validation, and rollback guidance.
 
 ## Diagnostics
 

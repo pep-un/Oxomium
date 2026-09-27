@@ -29,3 +29,12 @@ deploy/
 ```
 
 The environment template is `.env.example`.
+
+
+## After installation
+
+Continue with the [Quick start](../getting-started/quick-start.md) to create an organization and load or import a framework.
+
+For production hardening, review [Security architecture](../security/architecture.md) and run Django's deployment checks with the production configuration.
+
+For later maintenance, use the common [Upgrade Oxomium](../operations/upgrade.md) procedure.

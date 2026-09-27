@@ -44,12 +44,7 @@ The supplied container Nginx template listens on HTTP. For a public production d
 
 ## 5. Upgrade
 
-Back up the `dbdata` volume, change `OXOMIUM_VERSION`, then run:
-
-```shell
-docker compose pull
-docker compose up -d
-```
+Use the common [Upgrade Oxomium](../operations/upgrade.md) procedure. It includes backup, image update, validation, and rollback guidance.
 
 ## Diagnostics
 

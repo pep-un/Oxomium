@@ -101,18 +101,7 @@ Replace the example hostname and certificate paths with the real deployment valu
 
 ## 7. Upgrade
 
-Back up `/srv/web/Oxomium/data/db.sqlite3`, then update to the required release:
-
-```shell
-sudo systemctl stop oxomium.service
-cd /srv/web/Oxomium
-sudo git fetch --tags
-sudo git checkout <release-tag>
-sudo .venv/bin/pip install -r requirements.txt
-sudo -u www-data .venv/bin/python manage.py migrate --no-input
-sudo -u www-data .venv/bin/python manage.py collectstatic --no-input
-sudo systemctl start oxomium.service
-```
+Use the common [Upgrade Oxomium](../operations/upgrade.md) procedure. It includes backup, dependency, migration, static-file, deployment-check, and rollback guidance.
 
 ## Diagnostics
 

@@ -2,6 +2,11 @@
 
 This directory is the canonical documentation source for Oxomium. Documentation changes should be committed with the code or configuration changes they describe.
 
+## Getting started
+
+- [Getting started overview](getting-started/main.md)
+- [Quick start](getting-started/quick-start.md)
+
 ## Installation
 
 Start with [Installation overview](installation/main.md).
@@ -9,6 +14,16 @@ Start with [Installation overview](installation/main.md).
 - [Manual Linux installation](installation/manual-linux.md)
 - [Docker with system Nginx](installation/docker-system-nginx.md)
 - [Docker with integrated Nginx](installation/docker-integrated-nginx.md)
+
+## Operations
+
+- [Operations overview](operations/main.md)
+- [Upgrade Oxomium](operations/upgrade.md)
+
+## Security
+
+- [Security overview](security/main.md)
+- [Security architecture](security/architecture.md)
 
 ## Development and maintenance
 
