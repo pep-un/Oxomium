@@ -245,11 +245,13 @@ class SharedUxComponentsTests(BaseDataMixin, TestCase):
     def test_action_list_uses_shared_toolbar_and_active_filter_state(self):
         response = self.client.get(reverse("conformity:action_index"), {"title": "Act"})
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'class="d-flex flex-wrap gap-2 align-items-center justify-content-between mb-3 list-toolbar"')
+        self.assertContains(response, 'class="d-flex flex-wrap gap-2 align-items-center mb-3 list-toolbar"')
         self.assertContains(response, "Reset filters")
         self.assertContains(response, 'btn btn-primary dropdown-toggle')
         self.assertContains(response, 'badge text-bg-light ms-1">1</span>')
+        self.assertContains(response, 'class="btn btn-success" href="' + reverse("conformity:action_create") + '"')
         self.assertContains(response, 'class="btn btn-secondary" href="' + reverse("conformity:action_export") + '"')
+        self.assertNotContains(response, " items</span>")
         self.assertContains(response, 'class="btn btn-secondary dropdown-toggle dropdown-toggle-split"')
         self.assertNotContains(response, "btn-danger")
 
