@@ -7,7 +7,7 @@ from django.test import TestCase
 from constance.test import override_config
 
 from conformity.forms import AuditForm, OrganizationForm
-from conformity.models import Attachment
+from conformity.models import Attachment, Organization
 from conformity.validators import attachment_accept, inspect_attachment, validate_attachment
 
 
@@ -78,6 +78,42 @@ class AttachmentValidationTests(TestCase):
         self.assertEqual(first.pk, second.pk)
         self.assertEqual(Attachment.objects.count(), 1)
         self.assertEqual(first.file.name, second.file.name)
+
+    @patch("conformity.validators.validate_attachment", return_value=("application/pdf", "d" * 64))
+    def test_calculate_checksum_updates_legacy_attachment(self, _validate):
+        attachment = Attachment.objects.create(file=self.upload())
+        Attachment.objects.filter(pk=attachment.pk).update(sha256=None)
+        attachment.refresh_from_db()
+
+        result, merged = attachment.calculate_checksum_and_merge()
+
+        self.assertFalse(merged)
+        self.assertEqual(result.pk, attachment.pk)
+        attachment.refresh_from_db()
+        self.assertEqual(attachment.sha256, "d" * 64)
+        self.assertEqual(attachment.mime_type, "application/pdf")
+
+    @patch("conformity.validators.validate_attachment", return_value=("application/pdf", "e" * 64))
+    def test_calculate_checksum_merges_into_existing_attachment_and_preserves_relations(self, _validate):
+        existing = Attachment.objects.create(
+            file=self.upload(name="existing.pdf"),
+            mime_type="application/pdf",
+            sha256="e" * 64,
+        )
+        duplicate = Attachment.objects.create(file=self.upload(name="duplicate.pdf"))
+        Attachment.objects.filter(pk=duplicate.pk).update(sha256=None)
+        duplicate.refresh_from_db()
+
+        org = Organization.objects.create(name="Checksum merge org")
+        org.attachment.add(duplicate)
+
+        result, merged = duplicate.calculate_checksum_and_merge()
+
+        self.assertTrue(merged)
+        self.assertEqual(result.pk, existing.pk)
+        self.assertFalse(Attachment.objects.filter(pk=duplicate.pk).exists())
+        self.assertTrue(org.attachment.filter(pk=existing.pk).exists())
+        self.assertEqual(org.attachment.filter(pk=existing.pk).count(), 1)
 
     def test_upload_forms_expose_configured_accept_and_size_hint(self):
         for form in (AuditForm(), OrganizationForm()):
