@@ -1,3 +1,4 @@
+from datetime import date
 import hashlib
 from unittest.mock import MagicMock, patch
 
@@ -10,7 +11,8 @@ from django.utils.datastructures import MultiValueDict
 from constance.test import override_config
 
 from conformity.forms import AuditForm, ControlPointForm, IndicatorPointForm, OrganizationForm
-from conformity.models import Attachment, Audit, Framework, Organization
+from conformity.models import Attachment, Audit, Framework, Indicator, IndicatorPoint, Organization
+from conformity.views import AttachmentIndexView
 from conformity.validators import (
     attachment_accept,
     configured_mime_policy,
@@ -338,6 +340,47 @@ class AttachmentChecksumViewTests(TestCase):
         self.assertNotContains(
             response,
             reverse("conformity:attachment_checksum", args=[attachment.pk]),
+        )
+
+    def test_attachment_library_renders_indicator_point_reference(self):
+        organization = Organization.objects.create(name="Indicator attachment org")
+        indicator = Indicator.objects.create(
+            name="Indicator attachment reference",
+            responsible=self.user,
+            organization=organization,
+        )
+        point = IndicatorPoint.objects.create(
+            indicator=indicator,
+            period_start_date=date.today(),
+            period_end_date=date.today(),
+        )
+        attachment = Attachment.objects.create(
+            file=self.upload(name="indicator-reference.pdf"),
+            mime_type="application/pdf",
+            sha256="3" * 64,
+        )
+        point.attachment.add(attachment)
+
+        response = self.client.get(reverse("conformity:attachment_index"))
+
+        self.assertContains(
+            response,
+            reverse("conformity:indicatorpoint_form", args=[point.pk]),
+        )
+        self.assertContains(response, "bi bi-speedometer")
+
+    def test_attachment_index_prefetches_all_reference_relations(self):
+        queryset = AttachmentIndexView().get_queryset()
+
+        self.assertEqual(
+            set(queryset._prefetch_related_lookups),
+            {
+                "organizations",
+                "frameworks",
+                "audits",
+                "ControlPoint",
+                "IndicatorPoint",
+            },
         )
 
     def test_attachment_library_renders_calculate_button_for_missing_checksum(self):
