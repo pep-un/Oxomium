@@ -4,6 +4,6 @@
 {% block header %}<h1 class="h1 bi bi-ui-checks-grid"> Audits</h1>{% endblock %}
 {% block content %}
 {% route_url 'conformity:audit_create' as create_url %}{% route_url 'conformity:audit_export' as export_url %}
-{% include "includes/list_toolbar.html" with create_url=create_url export_url=export_url filter=filter item_count=object_list|length %}
+{% include "includes/list_toolbar.html" with create_url=create_url export_url=export_url filter=filter %}
 {% if object_list %}{% render_table table %}{% else %}{% include "includes/empty_state.html" with empty_message="No audits have been created yet." create_url=create_url %}{% endif %}
 {% endblock %}
