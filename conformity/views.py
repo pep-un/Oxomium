@@ -84,14 +84,16 @@ class FilteredExportMixin:
         data = request.GET.copy()
         for key in ("format", "scope", "page", "sort"):
             data.pop(key, None)
-        return self.filterset_class(
+        filterset_class = getattr(self, "filterset_class")
+        return filterset_class(
             data=data,
             queryset=self.get_selection_queryset(request),
             request=request,
         ).qs
 
     def get(self, request, *args, **kwargs):
-        dataset = self.resource_class().export(self.get_queryset_for_export(request))
+        resource_class = getattr(self, "resource_class")
+        dataset = resource_class().export(self.get_queryset_for_export(request))
         export_format = (
             base_formats.CSV()
             if request.GET.get("format") == "csv"
