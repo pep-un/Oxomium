@@ -79,3 +79,21 @@ document.querySelectorAll('.js-copy-sha256').forEach((button) => {
         }
     });
 });
+
+
+document.querySelectorAll('.app-message[data-auto-dismiss]').forEach((alertElement) => {
+    const delay = Number(alertElement.dataset.autoDismiss);
+    const timer = alertElement.querySelector('.app-message-timer');
+
+    if (!Number.isFinite(delay) || delay <= 0) {
+        return;
+    }
+
+    if (timer) {
+        timer.style.setProperty('--app-message-duration', `${delay}ms`);
+    }
+
+    window.setTimeout(() => {
+        bootstrap.Alert.getOrCreateInstance(alertElement).close();
+    }, delay);
+});
