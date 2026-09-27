@@ -932,6 +932,7 @@ class Attachment(models.Model):
     file = models.FileField(upload_to='attachments/')
     comment = models.TextField(max_length=4096, blank=True)
     mime_type = models.CharField(max_length=255, blank=True)
+    sha256 = models.CharField(max_length=64, unique=True, null=True, blank=True, editable=False)
     create_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -942,15 +943,29 @@ class Attachment(models.Model):
 
     def clean(self):
         super().clean()
-        if self.file:
+        if self.file and not self.sha256:
             from .validators import validate_attachment
-            self.mime_type = validate_attachment(self.file)
+            self.mime_type, self.sha256 = validate_attachment(self.file)
 
     def save(self, *args, **kwargs):
         # Enforce the upload policy for every Attachment persistence path,
         # including direct ORM creation outside ModelForms.
         self.full_clean()
         return super().save(*args, **kwargs)
+
+    @classmethod
+    def get_or_create_for_upload(cls, uploaded_file):
+        """Validate an upload and reuse an existing identical attachment when possible."""
+        from .validators import validate_attachment
+
+        mime_type, checksum = validate_attachment(uploaded_file)
+        existing = cls.objects.filter(sha256=checksum).first()
+        if existing:
+            return existing, False
+
+        attachment = cls(file=uploaded_file, mime_type=mime_type, sha256=checksum)
+        attachment.save()
+        return attachment, True
 
 
 
