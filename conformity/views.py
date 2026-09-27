@@ -52,6 +52,49 @@ class RichTableMixin(SingleTableMixin):
         return context
 
 
+class FilteredExportMixin:
+    """Export all rows or the current filtered selection."""
+
+    resource_class = None
+    filterset_class = None
+    filename = "export"
+
+    def get_export_queryset(self, request):
+        raise NotImplementedError
+
+    def get_selection_queryset(self, request):
+        return self.get_export_queryset(request)
+
+    def get_queryset_for_export(self, request):
+        if request.GET.get("scope") != "selection" or self.filterset_class is None:
+            return self.get_export_queryset(request)
+
+        data = request.GET.copy()
+        for key in ("format", "scope", "page", "sort"):
+            data.pop(key, None)
+        return self.filterset_class(
+            data=data,
+            queryset=self.get_selection_queryset(request),
+            request=request,
+        ).qs
+
+    def get(self, request, *args, **kwargs):
+        dataset = self.resource_class().export(self.get_queryset_for_export(request))
+        export_format = (
+            base_formats.CSV()
+            if request.GET.get("format") == "csv"
+            else base_formats.XLSX()
+        )
+        response = HttpResponse(
+            export_format.export_data(dataset),
+            content_type=export_format.get_content_type(),
+        )
+        response["Content-Disposition"] = (
+            f'attachment; filename="{self.filename}.{export_format.get_extension()}"'
+        )
+        return response
+
+
 #
 # Home
 #
@@ -147,23 +190,14 @@ class AuditCreateView(AttachmentUploadViewMixin, LoginRequiredMixin, CreateView)
         return response
 
 
-class AuditExportView(LoginRequiredMixin, View):
-    def get(self, request, *args, **kwargs):
-        qs = (Audit.objects.all())
-        dataset = AuditResource().export(qs)
+class AuditExportView(LoginRequiredMixin, FilteredExportMixin, View):
+    resource_class = AuditResource
+    filterset_class = AuditFilter
+    filename = "audits"
 
-        if request.GET.get("format") == "csv":
-            export_format = base_formats.CSV()
-        else:
-            export_format = base_formats.XLSX()
+    def get_export_queryset(self, request):
+        return Audit.objects.all()
 
-        data = export_format.export_data(dataset)
-        content_type = export_format.get_content_type()
-        filename = f"audits.{export_format.get_extension()}"
-
-        response = HttpResponse(data, content_type=content_type)
-        response["Content-Disposition"] = f'attachment; filename="{filename}"'
-        return response
 
 
 #
@@ -217,23 +251,24 @@ class FindingUpdateView(LoginRequiredMixin, UpdateView):
     form_class = FindingForm
 
 
-class FindingExportView(LoginRequiredMixin, View):
-    def get(self, request, *args, **kwargs):
-        qs = (Finding.objects.all())
-        dataset = FindingResource().export(qs)
+class FindingExportView(LoginRequiredMixin, FilteredExportMixin, View):
+    resource_class = FindingResource
+    filterset_class = FindingFilter
+    filename = "findings"
 
-        if request.GET.get("format") == "csv":
-            export_format = base_formats.CSV()
-        else:
-            export_format = base_formats.XLSX()
+    def get_export_queryset(self, request):
+        return Finding.objects.all()
 
-        data = export_format.export_data(dataset)
-        content_type = export_format.get_content_type()
-        filename = f"findings.{export_format.get_extension()}"
+    def get_selection_queryset(self, request):
+        queryset = Finding.objects.all()
+        if request.GET.get("audit") or request.GET.get("action"):
+            return queryset
+        return queryset.filter(
+            severity__in=["CRT", "MAJ", "MIN", "OBS"],
+            archived=False,
+        )
 
-        response = HttpResponse(data, content_type=content_type)
-        response["Content-Disposition"] = f'attachment; filename="{filename}"'
-        return response
+
 
 #
 # Organizations
@@ -466,23 +501,23 @@ class ActionUpdateView(LoginRequiredMixin, UpdateView):
     form_class = ActionForm
 
 
-class ActionExportView(LoginRequiredMixin, View):
-    def get(self, request, *args, **kwargs):
-        qs = (Action.objects.all())
-        dataset = ActionResource().export(qs)
+class ActionExportView(LoginRequiredMixin, FilteredExportMixin, View):
+    resource_class = ActionResource
+    filterset_class = ActionFilter
+    filename = "actions"
 
-        if request.GET.get("format") == "csv":
-            export_format = base_formats.CSV()
-        else:
-            export_format = base_formats.XLSX()
+    def get_export_queryset(self, request):
+        return Action.objects.all()
 
-        data = export_format.export_data(dataset)
-        content_type = export_format.get_content_type()
-        filename = f"actions.{export_format.get_extension()}"
+    def get_selection_queryset(self, request):
+        queryset = Action.objects.all()
+        if not request.GET.get("status"):
+            queryset = queryset.exclude(
+                status__in=[Action.Status.ENDED, Action.Status.CANCELED]
+            )
+        return queryset
 
-        response = HttpResponse(data, content_type=content_type)
-        response["Content-Disposition"] = f'attachment; filename="{filename}"'
-        return response
+
 
 #
 # Control
@@ -584,26 +619,14 @@ class ControlPointUpdateView(AttachmentUploadViewMixin, LoginRequiredMixin, Upda
         return response
 
 
-class ControlExportView(LoginRequiredMixin, View):
-    def get(self, request, *args, **kwargs):
-        qs = (
-            Control.objects.all()
-#            .select_related("requirement__framework", "organization")
-        )
-        dataset = ControlResource().export(qs)
+class ControlExportView(LoginRequiredMixin, FilteredExportMixin, View):
+    resource_class = ControlResource
+    filterset_class = ControlFilter
+    filename = "controls"
 
-        if request.GET.get("format") == "csv":
-            export_format = base_formats.CSV()
-        else:
-            export_format = base_formats.XLSX()
+    def get_export_queryset(self, request):
+        return Control.objects.all()
 
-        data = export_format.export_data(dataset)
-        content_type = export_format.get_content_type()
-        filename = f"controls.{export_format.get_extension()}"
-
-        response = HttpResponse(data, content_type=content_type)
-        response["Content-Disposition"] = f'attachment; filename="{filename}"'
-        return response
 
 
 #
@@ -643,23 +666,14 @@ class IndicatorPointUpdateView(LoginRequiredMixin, UpdateView):
     model = IndicatorPoint
     form_class = IndicatorPointForm
 
-class IndicatorExportView(LoginRequiredMixin, View):
-    def get(self, request, *args, **kwargs):
-        qs = (Indicator.objects.all())
-        dataset = IndicatorResource().export(qs)
+class IndicatorExportView(LoginRequiredMixin, FilteredExportMixin, View):
+    resource_class = IndicatorResource
+    filterset_class = IndicatorFilter
+    filename = "indicators"
 
-        if request.GET.get("format") == "csv":
-            export_format = base_formats.CSV()
-        else:
-            export_format = base_formats.XLSX()
+    def get_export_queryset(self, request):
+        return Indicator.objects.all()
 
-        data = export_format.export_data(dataset)
-        content_type = export_format.get_content_type()
-        filename = f"indicators.{export_format.get_extension()}"
-
-        response = HttpResponse(data, content_type=content_type)
-        response["Content-Disposition"] = f'attachment; filename="{filename}"'
-        return response
 
 
 #
@@ -742,55 +756,58 @@ class AuditLogDetailView(LoginRequiredMixin, RichTableMixin, FilterView):
 
 
 
-class FrameworkExportView(LoginRequiredMixin, View):
-    def get(self, request, *args, **kwargs):
-        dataset = FrameworkResource().export(Framework.objects.all())
-        export_format = base_formats.CSV() if request.GET.get("format") == "csv" else base_formats.XLSX()
-        response = HttpResponse(export_format.export_data(dataset), content_type=export_format.get_content_type())
-        response["Content-Disposition"] = f'attachment; filename="frameworks.{export_format.get_extension()}"'
-        return response
+class FrameworkExportView(LoginRequiredMixin, FilteredExportMixin, View):
+    resource_class = FrameworkResource
+    filterset_class = FrameworkFilter
+    filename = "frameworks"
+
+    def get_export_queryset(self, request):
+        return Framework.objects.all()
 
 
-class OrganizationExportView(LoginRequiredMixin, View):
-    def get(self, request, *args, **kwargs):
-        dataset = OrganizationResource().export(Organization.objects.all())
-        export_format = base_formats.CSV() if request.GET.get("format") == "csv" else base_formats.XLSX()
-        response = HttpResponse(export_format.export_data(dataset), content_type=export_format.get_content_type())
-        response["Content-Disposition"] = f'attachment; filename="organizations.{export_format.get_extension()}"'
-        return response
+class OrganizationExportView(LoginRequiredMixin, FilteredExportMixin, View):
+    resource_class = OrganizationResource
+    filterset_class = OrganizationFilter
+    filename = "organizations"
+
+    def get_export_queryset(self, request):
+        return Organization.objects.all()
 
 
-class ConformityIndexExportView(LoginRequiredMixin, View):
-    def get(self, request, *args, **kwargs):
-        dataset = ConformityResource().export(Conformity.objects.all())
-        export_format = base_formats.CSV() if request.GET.get("format") == "csv" else base_formats.XLSX()
-        response = HttpResponse(export_format.export_data(dataset), content_type=export_format.get_content_type())
-        response["Content-Disposition"] = f'attachment; filename="conformities.{export_format.get_extension()}"'
-        return response
+class ConformityIndexExportView(LoginRequiredMixin, FilteredExportMixin, View):
+    resource_class = ConformityResource
+    filterset_class = ConformityFilter
+    filename = "conformities"
+
+    def get_export_queryset(self, request):
+        return Conformity.objects.all()
+
+    def get_selection_queryset(self, request):
+        return Conformity.objects.with_related().roots()
 
 
-class ControlPointExportView(LoginRequiredMixin, View):
-    def get(self, request, *args, **kwargs):
-        dataset = ControlPointResource().export(ControlPoint.objects.all())
-        export_format = base_formats.CSV() if request.GET.get("format") == "csv" else base_formats.XLSX()
-        response = HttpResponse(export_format.export_data(dataset), content_type=export_format.get_content_type())
-        response["Content-Disposition"] = f'attachment; filename="controlpoints.{export_format.get_extension()}"'
-        return response
+class ControlPointExportView(LoginRequiredMixin, FilteredExportMixin, View):
+    resource_class = ControlPointResource
+    filterset_class = ControlPointFilter
+    filename = "controlpoints"
+
+    def get_export_queryset(self, request):
+        return ControlPoint.objects.all()
 
 
-class AttachmentExportView(LoginRequiredMixin, View):
-    def get(self, request, *args, **kwargs):
-        dataset = AttachmentResource().export(Attachment.objects.all())
-        export_format = base_formats.CSV() if request.GET.get("format") == "csv" else base_formats.XLSX()
-        response = HttpResponse(export_format.export_data(dataset), content_type=export_format.get_content_type())
-        response["Content-Disposition"] = f'attachment; filename="attachments.{export_format.get_extension()}"'
-        return response
+class AttachmentExportView(LoginRequiredMixin, FilteredExportMixin, View):
+    resource_class = AttachmentResource
+    filterset_class = AttachmentFilter
+    filename = "attachments"
+
+    def get_export_queryset(self, request):
+        return Attachment.objects.all()
 
 
-class AuditLogExportView(LoginRequiredMixin, View):
-    def get(self, request, *args, **kwargs):
-        dataset = AuditLogResource().export(LogEntry.objects.all().order_by("-timestamp"))
-        export_format = base_formats.CSV() if request.GET.get("format") == "csv" else base_formats.XLSX()
-        response = HttpResponse(export_format.export_data(dataset), content_type=export_format.get_content_type())
-        response["Content-Disposition"] = f'attachment; filename="audit-log.{export_format.get_extension()}"'
-        return response
+class AuditLogExportView(LoginRequiredMixin, FilteredExportMixin, View):
+    resource_class = AuditLogResource
+    filterset_class = AuditLogFilter
+    filename = "audit-log"
+
+    def get_export_queryset(self, request):
+        return LogEntry.objects.all().order_by("-timestamp")
