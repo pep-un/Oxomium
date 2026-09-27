@@ -1,29 +1,41 @@
 <div class="d-flex flex-wrap gap-2 align-items-center mb-3 list-toolbar">
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+        {% if filter %}
+            {% include "includes/filter_dropdown.html" %}
+        {% endif %}
+
+        {% if export_url %}
+            <div class="btn-group">
+                <a class="btn btn-secondary" href="{{ export_url }}">
+                    <i class="bi bi-download"></i> Export
+                </a>
+                <button type="button"
+                        class="btn btn-secondary dropdown-toggle dropdown-toggle-split"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false">
+                    <span class="visually-hidden">Choose export format</span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{{ export_url }}?format=csv">CSV</a></li>
+                    <li><a class="dropdown-item" href="{{ export_url }}?format=xlsx">XLSX</a></li>
+                </ul>
+            </div>
+        {% endif %}
+
+        {% if total_count != None and visible_count != None %}
+            <span class="text-body-secondary small">
+                {% if is_paginated %}
+                    {{ total_count }} résultat{{ total_count|pluralize }}{% if total_count != 1 %}s{% endif %}, dont {{ visible_count }} affiché{% if visible_count != 1 %}s{% endif %}
+                {% else %}
+                    {{ visible_count }} résultat{% if visible_count != 1 %}s{% endif %} affiché{% if visible_count != 1 %}s{% endif %}
+                {% endif %}
+            </span>
+        {% endif %}
+    </div>
+
     {% if create_url %}
-        <a href="{{ create_url }}" class="btn btn-success">
+        <a href="{{ create_url }}" class="btn btn-success ms-auto">
             <i class="bi bi-plus-circle"></i> Create
         </a>
-    {% endif %}
-
-    {% if filter %}
-        {% include "includes/filter_dropdown.html" %}
-    {% endif %}
-
-    {% if export_url %}
-        <div class="btn-group">
-            <a class="btn btn-secondary" href="{{ export_url }}">
-                <i class="bi bi-download"></i> Export
-            </a>
-            <button type="button"
-                    class="btn btn-secondary dropdown-toggle dropdown-toggle-split"
-                    data-bs-toggle="dropdown"
-                    aria-expanded="false">
-                <span class="visually-hidden">Choose export format</span>
-            </button>
-            <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="{{ export_url }}?format=csv">CSV</a></li>
-                <li><a class="dropdown-item" href="{{ export_url }}?format=xlsx">XLSX</a></li>
-            </ul>
-        </div>
     {% endif %}
 </div>
