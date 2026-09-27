@@ -47,3 +47,35 @@ if (document.getElementById('id_start_date')){
     document.getElementById('id_end_date').type = 'Date'
     document.getElementById('id_report_date').type = 'Date'
 }
+
+
+document.querySelectorAll('.js-copy-sha256').forEach((button) => {
+    button.addEventListener('click', async () => {
+        const value = button.dataset.copyValue;
+        if (!value) {
+            return;
+        }
+
+        const originalTitle = button.getAttribute('title') || 'Copy SHA-256';
+        try {
+            await navigator.clipboard.writeText(value);
+            button.setAttribute('title', 'Copied');
+            button.classList.remove('btn-outline-secondary');
+            button.classList.add('btn-outline-success');
+            window.setTimeout(() => {
+                button.setAttribute('title', originalTitle);
+                button.classList.remove('btn-outline-success');
+                button.classList.add('btn-outline-secondary');
+            }, 1500);
+        } catch (error) {
+            button.setAttribute('title', 'Copy failed');
+            button.classList.remove('btn-outline-secondary');
+            button.classList.add('btn-outline-danger');
+            window.setTimeout(() => {
+                button.setAttribute('title', originalTitle);
+                button.classList.remove('btn-outline-danger');
+                button.classList.add('btn-outline-secondary');
+            }, 1500);
+        }
+    });
+});
