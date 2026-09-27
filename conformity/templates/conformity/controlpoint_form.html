@@ -3,13 +3,15 @@
 {% load django_bootstrap5 %}
 
 {% block header %}
-<h1 class="h1 bi bi-pencil-square" > Edit of a control point</h1>
+<h1 class="h1 d-flex align-items-center gap-2">
+    <a href="{% url 'conformity:control_detail' controlpoint.control.pk %}" class="header-back-link" aria-label="Back to control" title="Back to control">
+        <i class="bi bi-chevron-left" aria-hidden="true"></i>
+    </a>
+    {{ controlpoint.control.title }}
+</h1>
 {% endblock %}
 
 {% block content %}
-{% route_url 'conformity:control_index' as controls_url %}
-{% route_url 'conformity:control_detail' controlpoint.control.pk as control_url %}
-{% breadcrumb "Controls" controls_url controlpoint.control.title control_url "Control point" %}
 
     <form class="form" method="post" action="" enctype="multipart/form-data">
         {% csrf_token %}
