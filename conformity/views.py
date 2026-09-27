@@ -755,7 +755,7 @@ class AttachmentUnlinkView(LoginRequiredMixin, View):
         owner_model, return_route = owner_config
         owner = get_object_or_404(owner_model, pk=owner_pk)
         attachment = get_object_or_404(
-            owner.attachment.all(),
+            getattr(owner, "attachment").all(),
             pk=attachment_pk,
         )
         orphan_deleted = unlink_attachment(owner, attachment)
