@@ -1,4 +1,4 @@
-<div class="card border-info mb-3" id="{{ panel_id|default:'attachments' }}">
+<div class="card border-info mb-3 js-attachment-panel" id="{{ panel_id|default:'attachments' }}">
     <div class="card-header bg-info-subtle d-flex align-items-center justify-content-between gap-2">
         <span class="fw-semibold">
             <i class="bi bi-paperclip me-1" aria-hidden="true"></i>
@@ -33,24 +33,29 @@
             </li>
         {% endfor %}
         {% if attachment_field %}
-            <li class="list-group-item p-0">
-                <label for="{{ attachment_field.id_for_label }}"
-                       class="d-flex align-items-center justify-content-between gap-3 px-3 py-2 text-primary w-100"
-                       role="button">
-                    <span>
+            <li class="list-group-item attachment-dropzone js-attachment-dropzone"
+                data-attachment-input-id="{{ attachment_field.id_for_label }}">
+                <div class="attachment-drop-copy text-center py-2">
+                    <label for="{{ attachment_field.id_for_label }}"
+                           class="btn btn-sm btn-outline-primary mb-1">
                         <i class="bi bi-plus-circle me-1" aria-hidden="true"></i>
                         Add another document
-                    </span>
-                    <span class="small text-body-secondary text-truncate js-attachment-filename">
-                        No file selected
-                    </span>
-                </label>
+                    </label>
+                    <div class="small text-body-secondary">
+                        Select one or more files, drag &amp; drop, or paste a screenshot.
+                    </div>
+                </div>
+
                 {{ attachment_field }}
+
+                <div class="js-attachment-pending d-none border-top mt-2 pt-2"
+                     aria-live="polite"></div>
+
                 {% if attachment_field.help_text %}
-                    <div class="form-text px-3 pb-2">{{ attachment_field.help_text }}</div>
+                    <div class="form-text">{{ attachment_field.help_text }}</div>
                 {% endif %}
                 {% for error in attachment_field.errors %}
-                    <div class="text-danger small px-3 pb-2">{{ error }}</div>
+                    <div class="text-danger small">{{ error }}</div>
                 {% endfor %}
             </li>
         {% endif %}
