@@ -1,0 +1,10 @@
+{% if messages %}
+<div class="app-messages" aria-label="Notifications">
+    {% for message in messages %}
+        <div class="alert {% if message.level == DEFAULT_MESSAGE_LEVELS.SUCCESS %}alert-success{% elif message.level == DEFAULT_MESSAGE_LEVELS.INFO %}alert-info{% elif message.level == DEFAULT_MESSAGE_LEVELS.WARNING %}alert-warning{% elif message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}alert-danger{% else %}alert-secondary{% endif %} d-flex align-items-center" role="{% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}alert{% else %}status{% endif %}">
+            <i class="bi {% if message.level == DEFAULT_MESSAGE_LEVELS.SUCCESS %}bi-check-circle-fill{% elif message.level == DEFAULT_MESSAGE_LEVELS.INFO %}bi-info-circle-fill{% elif message.level == DEFAULT_MESSAGE_LEVELS.WARNING %}bi-exclamation-triangle-fill{% elif message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}bi-x-octagon-fill{% else %}bi-chat-left-text-fill{% endif %} me-2" aria-hidden="true"></i>
+            <span>{{ message }}</span>
+        </div>
+    {% endfor %}
+</div>
+{% endif %}

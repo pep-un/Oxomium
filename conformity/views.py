@@ -2,6 +2,7 @@
 View of the Conformity Module
 """
 
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -29,6 +30,23 @@ from django.views import View
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 import os
+
+class UserFeedbackMixin:
+    """Add consistent success feedback for create and update form views.
+
+    Wording convention: "<Object type> created successfully." for creates and
+    "<Object type> updated successfully." for updates. Field validation errors
+    remain inline on the form and are not duplicated as global messages.
+    """
+
+    def form_valid(self, form):
+        is_update = getattr(form.instance, "pk", None) is not None
+        response = super().form_valid(form)
+        action = "updated" if is_update else "created"
+        label = self.model._meta.verbose_name.capitalize()
+        messages.success(self.request, f"{label} {action} successfully.", fail_silently=True)
+        return response
+
 
 class RichTableMixin(SingleTableMixin):
     """Common pagination policy for filtered rich tables."""
@@ -96,7 +114,7 @@ class AttachmentUploadViewMixin:
         return super().form_valid(form)
 
 
-class AuditUpdateView(AttachmentUploadViewMixin, LoginRequiredMixin, UpdateView):
+class AuditUpdateView(AttachmentUploadViewMixin, LoginRequiredMixin, UserFeedbackMixin, UpdateView):
     model = Audit
     form_class = AuditForm
 
@@ -110,7 +128,7 @@ class AuditUpdateView(AttachmentUploadViewMixin, LoginRequiredMixin, UpdateView)
 
 
 
-class AuditCreateView(AttachmentUploadViewMixin, LoginRequiredMixin, CreateView):
+class AuditCreateView(AttachmentUploadViewMixin, LoginRequiredMixin, UserFeedbackMixin, CreateView):
     model = Audit
     form_class = AuditForm
 
@@ -166,7 +184,7 @@ class FindingIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
         )
 
 
-class FindingCreateView(LoginRequiredMixin, CreateView):
+class FindingCreateView(LoginRequiredMixin, UserFeedbackMixin, CreateView):
     model = Finding
     form_class = FindingForm
 
@@ -188,7 +206,7 @@ class FindingDetailView(LoginRequiredMixin, DetailView):
     model = Finding
 
 
-class FindingUpdateView(LoginRequiredMixin, UpdateView):
+class FindingUpdateView(LoginRequiredMixin, UserFeedbackMixin, UpdateView):
     model = Finding
     form_class = FindingForm
 
@@ -246,12 +264,12 @@ class OrganizationFrameworkFormMixin(AttachmentUploadViewMixin):
         return HttpResponseRedirect(self.get_success_url())
 
 
-class OrganizationUpdateView(LoginRequiredMixin, OrganizationFrameworkFormMixin, UpdateView):
+class OrganizationUpdateView(LoginRequiredMixin, UserFeedbackMixin, OrganizationFrameworkFormMixin, UpdateView):
     model = Organization
     form_class = OrganizationForm
 
 
-class OrganizationCreateView(LoginRequiredMixin, OrganizationFrameworkFormMixin, CreateView):
+class OrganizationCreateView(LoginRequiredMixin, UserFeedbackMixin, OrganizationFrameworkFormMixin, CreateView):
     model = Organization
     form_class = OrganizationForm
 
@@ -314,7 +332,7 @@ class ConformityDetailIndexView(LoginRequiredMixin, ListView):
         return root
 
 
-class ConformityUpdateView(LoginRequiredMixin, UpdateView):
+class ConformityUpdateView(LoginRequiredMixin, UserFeedbackMixin, UpdateView):
     model = Conformity
     form_class = ConformityForm
 
@@ -342,11 +360,13 @@ class ConformityUpdateView(LoginRequiredMixin, UpdateView):
                         organization=self.object.organization,
                         requirement=nxt_req,
                     )
+                    messages.success(self.request, "Conformity updated successfully.", fail_silently=True)
                     return redirect("conformity:conformity_form", nxt.pk)
                 except Conformity.DoesNotExist:
                     pass
 
         elif self.request.POST.get("action") == "save_stay":
+            messages.success(self.request, "Conformity updated successfully.")
             return redirect("conformity:conformity_form", self.object.pk)
 
         return super().form_valid(form)
@@ -382,7 +402,7 @@ class ConformityExportView(LoginRequiredMixin, View):
 #
 
 
-class ActionCreateView(LoginRequiredMixin, CreateView):
+class ActionCreateView(LoginRequiredMixin, UserFeedbackMixin, CreateView):
     model = Action
     form_class = ActionForm
 
@@ -437,7 +457,7 @@ class ActionIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
         )
 
 
-class ActionUpdateView(LoginRequiredMixin, UpdateView):
+class ActionUpdateView(LoginRequiredMixin, UserFeedbackMixin, UpdateView):
     model = Action
     form_class = ActionForm
 
@@ -465,7 +485,7 @@ class ActionExportView(LoginRequiredMixin, View):
 #
 
 
-class ControlCreateView(LoginRequiredMixin, CreateView):
+class ControlCreateView(LoginRequiredMixin, UserFeedbackMixin, CreateView):
     model = Control
     form_class = ControlForm
 
@@ -523,7 +543,7 @@ class ControlIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
         return context
 
 
-class ControlUpdateView(LoginRequiredMixin, UpdateView):
+class ControlUpdateView(LoginRequiredMixin, UserFeedbackMixin, UpdateView):
     model = Control
     form_class = ControlForm
 
@@ -543,7 +563,7 @@ class ControlPointIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
         return ControlPoint.objects.select_related("control", "control_user")
 
 
-class ControlPointUpdateView(AttachmentUploadViewMixin, LoginRequiredMixin, UpdateView):
+class ControlPointUpdateView(AttachmentUploadViewMixin, LoginRequiredMixin, UserFeedbackMixin, UpdateView):
     model = ControlPoint
     form_class = ControlPointForm
 
@@ -588,7 +608,7 @@ class ControlExportView(LoginRequiredMixin, View):
 #
 
 
-class IndicatorCreateView(LoginRequiredMixin, CreateView):
+class IndicatorCreateView(LoginRequiredMixin, UserFeedbackMixin, CreateView):
     model = Indicator
     form_class = IndicatorForm
 
@@ -611,12 +631,12 @@ class IndicatorIndexView(LoginRequiredMixin, FilterView):
     template_name = 'conformity/indicator_list.html'
 
 
-class IndicatorUpdateView(LoginRequiredMixin, UpdateView):
+class IndicatorUpdateView(LoginRequiredMixin, UserFeedbackMixin, UpdateView):
     model = Indicator
     form_class = IndicatorForm
 
 
-class IndicatorPointUpdateView(LoginRequiredMixin, UpdateView):
+class IndicatorPointUpdateView(LoginRequiredMixin, UserFeedbackMixin, UpdateView):
     model = IndicatorPoint
     form_class = IndicatorPointForm
 
