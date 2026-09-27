@@ -3,8 +3,11 @@
 {% load render_table from django_tables2 %}
 
 {% block header %}
-    <h1 class="h1 bi bi-clipboard2-check position-relative col-7">
-        Control detail
+    <h1 class="h1 d-flex align-items-center gap-2 position-relative col-7">
+        <a href="{% url 'conformity:control_index' %}" class="header-back-link" aria-label="Back to controls" title="Back to controls">
+            <i class="bi bi-chevron-left" aria-hidden="true"></i>
+        </a>
+        {{ control.title }}
     </h1>
     <h2 class="col-5 text-center">
         {% if control.level == 1 %} <span class="badge mx-2 text-bg-primary">
@@ -16,8 +19,6 @@
 {% endblock %}
 
 {% block content %}
-{% route_url 'conformity:control_index' as list_url %}
-{% breadcrumb "Controls" list_url control.title %}
 
 <p><strong>Titre : </strong> {{ control.title }} </p>
 <p><strong>Description : </strong> {{ control.description }} </p>
