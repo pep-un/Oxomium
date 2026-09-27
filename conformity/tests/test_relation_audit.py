@@ -8,10 +8,11 @@ from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import transaction
 from django.test import TestCase, override_settings
+from django.utils import timezone
 
 from conformity.models import (
     Action, Attachment, Audit, Conformity, Control, ControlPoint, Finding,
-    Framework, Indicator, IndicatorPoint, Organization, Requirement,
+    Evidence, Framework, Indicator, IndicatorPoint, Organization, Requirement,
 )
 
 
@@ -37,6 +38,10 @@ class RelationAuditTests(TestCase):
         self.action = Action.objects.create(title='Action')
         self.indicator = Indicator.objects.create(name='Indicator', responsible=self.user)
         self.indicator_point = IndicatorPoint.objects.filter(indicator=self.indicator).first()
+        self.evidence = Evidence.objects.create(
+            source_type=Evidence.SourceType.MANUAL,
+            valid_from=timezone.now(),
+        )
         self.cases = [
             (self.frameworks[0], 'attachment', self.attachments),
             (self.org, 'attachment', self.attachments),
@@ -51,6 +56,8 @@ class RelationAuditTests(TestCase):
             (self.action, 'associated_controlPoints', self.points),
             (self.indicator, 'conformity', self.conformities),
             (self.indicator_point, 'attachment', self.attachments),
+            (self.evidence, 'attachments', self.attachments),
+            (self.evidence, 'conformities', self.conformities),
         ]
 
     def assert_event(self, owner, field, operation, targets):

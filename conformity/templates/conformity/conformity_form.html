@@ -60,6 +60,30 @@
 
             <div class="col col-6">
 
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center gap-2">
+                        <span class="h4 mb-0">Evidence</span>
+                        {% if conformity.requirement.is_leaf_node %}
+                        <a class="btn btn-sm btn-success" href="{% url 'conformity:human_evidence_create' conformity.pk %}">
+                            <i class="bi bi-person-check" aria-hidden="true"></i> Human assessment
+                        </a>
+                        {% endif %}
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Evaluation:</strong> {{ conformity.get_evidence_state_display }}</p>
+                        <ul class="list-group list-group-flush">
+                        {% for item in conformity.evidence.all %}
+                            <li class="list-group-item d-flex justify-content-between gap-2">
+                                <span>{{ item.get_source_type_display }}</span>
+                                <span>{{ item.get_result_display }}</span>
+                            </li>
+                        {% empty %}
+                            <li class="list-group-item text-body-secondary">No evidence associated.</li>
+                        {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+
 
                 <br />
 

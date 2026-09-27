@@ -21,9 +21,9 @@ from mptt.templatetags.mptt_tags import cache_tree_children
 from .filterset import ActionFilter, ControlFilter, ControlPointFilter, FrameworkFilter, OrganizationFilter, \
     ConformityFilter, AuditFilter, FindingFilter, IndicatorFilter, AttachmentFilter, AuditLogFilter
 from .forms import ConformityForm, AuditForm, FindingForm, ActionForm, OrganizationForm, ControlForm, ControlPointForm, \
-    IndicatorForm, IndicatorPointForm
+    HumanEvidenceForm, IndicatorForm, IndicatorPointForm
 from .models import Organization, Framework, Conformity, Audit, Action, Finding, Control, ControlPoint, Attachment, \
-    Requirement, Indicator, IndicatorPoint
+    HumanEvidence, Requirement, Indicator, IndicatorPoint
 from .resources import ActionResource, AttachmentResource, AuditLogResource, AuditResource, ConformityResource, ControlPointResource, ControlResource, FindingResource, FrameworkResource, IndicatorResource, OrganizationResource
 from .tables import ActionTable, AttachmentTable, AuditLogTable, AuditTable, ConformityTable, ControlTable, ControlPointTable, FindingTable, FrameworkTable, OrganizationTable
 from .services.attachments import unlink_attachment
@@ -428,6 +428,31 @@ class ConformityUpdateView(LoginRequiredMixin, UpdateView):
             return redirect("conformity:conformity_form", self.object.pk)
 
         return super().form_valid(form)
+
+
+class HumanEvidenceCreateView(LoginRequiredMixin, CreateView):
+    model = HumanEvidence
+    form_class = HumanEvidenceForm
+    template_name = 'conformity/humanevidence_form.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.conformity = get_object_or_404(Conformity, pk=kwargs['conformity_pk'])
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['conformity'] = self.conformity
+        return context
+
+    def form_valid(self, form):
+        with transaction.atomic():
+            self.object = form.save(commit=False)
+            self.object.evaluator = self.request.user
+            self.object.evaluated_at = timezone.now()
+            self.object.save()
+            self.object.conformities.add(self.conformity)
+        messages.success(self.request, 'Human evidence recorded.')
+        return redirect('conformity:conformity_form', self.conformity.pk)
 
 
 class ConformityExportView(LoginRequiredMixin, View):

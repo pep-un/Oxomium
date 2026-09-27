@@ -235,6 +235,83 @@ class ConformityQuerySet(models.QuerySet):
         return self.select_related('organization', 'requirement__framework')
 
 
+class EvidenceQuerySet(models.QuerySet):
+    """Queries implementing Evidence's half-open validity interval."""
+
+    def valid_at(self, at=None):
+        at = at or timezone.now()
+        return self.filter(valid_from__lte=at).filter(
+            Q(valid_to__isnull=True) | Q(valid_to__gt=at)
+        )
+
+    def current(self):
+        return self.valid_at()
+
+    def operational(self):
+        return self.exclude(source_type=Evidence.SourceType.HUMAN)
+
+
+class Evidence(models.Model):
+    """A time-bound fact which can contribute to one or more assessments.
+
+    Validity uses a half-open interval: ``valid_from <= at < valid_to``.
+    A null ``valid_to`` means that no end of validity is currently known.
+    Evidence never references other evidence.
+    """
+
+    class Result(models.TextChoices):
+        POSITIVE = 'POS', _('Positive')
+        NEGATIVE = 'NEG', _('Negative')
+        NEUTRAL = 'NEU', _('Neutral / inconclusive')
+        PARTIAL = 'PAR', _('Partially compliant')
+
+    class SourceType(models.TextChoices):
+        CONTROL = 'CTRL', _('Control')
+        INDICATOR = 'IND', _('Indicator')
+        HUMAN = 'HUM', _('Human assessment')
+        FINDING = 'FIND', _('Audit finding')
+        DOCUMENT = 'DOC', _('Documentary proof')
+        MANUAL = 'MAN', _('Manual evidence')
+
+    source_type = models.CharField(max_length=4, choices=SourceType.choices)
+    result = models.CharField(max_length=3, choices=Result.choices, default=Result.NEUTRAL)
+    valid_from = models.DateTimeField()
+    valid_to = models.DateTimeField(null=True, blank=True)
+    evaluated_at = models.DateTimeField(null=True, blank=True)
+    evaluator = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='evaluated_evidence',
+    )
+    comment = models.TextField(max_length=4096, blank=True)
+    conformities = models.ManyToManyField('Conformity', blank=True, related_name='evidence')
+    attachments = models.ManyToManyField('Attachment', blank=True, related_name='evidence')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    objects = EvidenceQuerySet.as_manager()
+
+    class Meta:
+        ordering = ['-valid_from', '-pk']
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(valid_to__isnull=True) | Q(valid_to__gt=models.F('valid_from')),
+                name='chk_evidence_positive_validity',
+            ),
+        ]
+
+    def clean(self):
+        super().clean()
+        if self.valid_to is not None and self.valid_to <= self.valid_from:
+            raise ValidationError({'valid_to': _('Validity end must be after validity start.')})
+
+    def is_valid_at(self, at=None):
+        at = at or timezone.now()
+        return self.valid_from <= at and (self.valid_to is None or at < self.valid_to)
+
+    def __str__(self):
+        return f'{self.get_source_type_display()}: {self.get_result_display()}'
+
+
 class Conformity(models.Model):
     """
     Conformity represent the conformity of an Organization to a Requirement.
@@ -247,6 +324,14 @@ class Conformity(models.Model):
         ACTION = 'ACT', _('From completed action')
         FINDING = 'FIN', _('From an audit finding')
         CONFORMITY = 'CONF', _('From conformity aggregation')
+        EVIDENCE = 'EVID', _('From evidence')
+
+    class EvidenceState(models.TextChoices):
+        NOT_EVALUATED = 'NONE', _('Not evaluated')
+        COMPLIANT = 'COMP', _('Compliant')
+        PARTIAL = 'PART', _('Partially compliant')
+        NON_COMPLIANT = 'NONC', _('Non-compliant')
+        INCONCLUSIVE = 'INCO', _('Inconclusive')
 
     objects = ConformityQuerySet.as_manager()
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, null=True, related_name='conformities')
@@ -261,6 +346,10 @@ class Conformity(models.Model):
         choices=StatusJustification.choices,
         default=StatusJustification.EXPERT,
         blank=True,
+    )
+    evidence_state = models.CharField(
+        max_length=4, choices=EvidenceState.choices,
+        default=EvidenceState.NOT_EVALUATED,
     )
 
     class Meta:
@@ -455,6 +544,60 @@ class Conformity(models.Model):
         self.status_last_update = timezone.now()
         self.save()
         return True
+
+    def evaluate_evidence(self, at=None, *, persist=True):
+        """Evaluate current operational evidence and any valid human arbitration."""
+        at = at or timezone.now()
+        current = Evidence.objects.filter(conformities=self).valid_at(at)
+        operational = current.exclude(source_type=Evidence.SourceType.HUMAN)
+        results = set(operational.values_list('result', flat=True))
+        positive = Evidence.Result.POSITIVE in results
+        negative = Evidence.Result.NEGATIVE in results
+
+        if positive and negative:
+            human = current.filter(source_type=Evidence.SourceType.HUMAN).order_by(
+                '-valid_from', '-pk'
+            ).first()
+            if human is None:
+                state = self.EvidenceState.INCONCLUSIVE
+            elif human.result == Evidence.Result.POSITIVE:
+                state = self.EvidenceState.COMPLIANT
+            elif human.result == Evidence.Result.NEGATIVE:
+                state = self.EvidenceState.NON_COMPLIANT
+            elif human.result == Evidence.Result.PARTIAL:
+                state = self.EvidenceState.PARTIAL
+            else:
+                state = self.EvidenceState.INCONCLUSIVE
+        elif positive:
+            state = self.EvidenceState.COMPLIANT
+        elif negative:
+            state = self.EvidenceState.NON_COMPLIANT
+        else:
+            state = self.EvidenceState.NOT_EVALUATED
+
+        if persist:
+            self._persist_evidence_state(state, at)
+        return state
+
+    def _persist_evidence_state(self, state, at):
+        state_to_status = {
+            self.EvidenceState.COMPLIANT: 100,
+            self.EvidenceState.PARTIAL: 50,
+            self.EvidenceState.NON_COMPLIANT: 0,
+        }
+        updates = []
+        if self.evidence_state != state:
+            self.evidence_state = state
+            updates.append('evidence_state')
+        if self.requirement.is_leaf_node() and state in state_to_status:
+            value = state_to_status[state]
+            if self.status != value or self.status_justification != self.StatusJustification.EVIDENCE:
+                self.status = value
+                self.status_justification = self.StatusJustification.EVIDENCE
+                self.status_last_update = at
+                updates.extend(['status', 'status_justification', 'status_last_update'])
+        if updates:
+            self.save(update_fields=list(dict.fromkeys(updates)))
 
 
 class Audit(models.Model):
@@ -715,6 +858,10 @@ class ControlPoint(models.Model):
     status = models.CharField(choices=Status.choices, max_length=4, default=Status.SCHEDULED)
     comment = models.TextField(max_length=4096, blank=True)
     attachment = models.ManyToManyField('Attachment', blank=True, related_name='ControlPoint')
+    evidence = models.OneToOneField(
+        Evidence, on_delete=models.PROTECT, null=True, blank=True,
+        related_name='control_point',
+    )
 
     class Meta:
         ordering = ['period_end_date']
@@ -1173,6 +1320,10 @@ class IndicatorPoint(models.Model):
     comment = models.TextField(max_length=4096, blank=True)
     value = models.IntegerField(null=True)
     attachment = models.ManyToManyField('Attachment', blank=True, related_name='IndicatorPoint')
+    evidence = models.OneToOneField(
+        Evidence, on_delete=models.PROTECT, null=True, blank=True,
+        related_name='indicator_point',
+    )
 
     @staticmethod
     def get_absolute_url():
@@ -1240,3 +1391,54 @@ class IndicatorPoint(models.Model):
 
         else:
             self.status = IndicatorPoint.Status.MISSED
+
+
+class HumanEvidence(Evidence):
+    """An auditable human arbitration for a Conformity assessment."""
+
+    class Decision(models.TextChoices):
+        COMPLIANT = Evidence.Result.POSITIVE, _('Compliant')
+        PARTIAL = Evidence.Result.PARTIAL, _('Partially compliant')
+        NON_COMPLIANT = Evidence.Result.NEGATIVE, _('Non-compliant')
+
+    decision = models.CharField(max_length=3, choices=Decision.choices)
+
+    def save(self, *args, **kwargs):
+        self.source_type = Evidence.SourceType.HUMAN
+        self.result = self.decision
+        return super().save(*args, **kwargs)
+
+
+class ManualEvidence(Evidence):
+    """A simple evidence record entered directly by an authorized user."""
+
+    title = models.CharField(max_length=256)
+
+    def save(self, *args, **kwargs):
+        self.source_type = Evidence.SourceType.MANUAL
+        return super().save(*args, **kwargs)
+
+
+class DocumentEvidence(Evidence):
+    """Evidence whose source is an existing documentary attachment."""
+
+    document = models.ForeignKey(
+        Attachment, on_delete=models.PROTECT, related_name='document_evidence'
+    )
+    title = models.CharField(max_length=256, blank=True)
+
+    def save(self, *args, **kwargs):
+        self.source_type = Evidence.SourceType.DOCUMENT
+        return super().save(*args, **kwargs)
+
+
+class FindingEvidence(Evidence):
+    """Evidence derived explicitly from an audit finding."""
+
+    finding = models.OneToOneField(
+        Finding, on_delete=models.CASCADE, related_name='evidence_record'
+    )
+
+    def save(self, *args, **kwargs):
+        self.source_type = Evidence.SourceType.FINDING
+        return super().save(*args, **kwargs)

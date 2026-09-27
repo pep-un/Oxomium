@@ -1,0 +1,23 @@
+{% extends "conformity/main.html" %}
+{% load django_bootstrap5 %}
+
+{% block header %}
+<h1 class="h1 d-flex align-items-center gap-2">
+    <a href="{% url 'conformity:conformity_form' conformity.pk %}" class="header-back-link" aria-label="Back to conformity assessment" title="Back to conformity assessment">
+        <i class="bi bi-chevron-left" aria-hidden="true"></i>
+    </a>
+    Record human evidence
+</h1>
+{% endblock %}
+
+{% block content %}
+<p class="text-body-secondary">
+    {{ conformity.organization }} — {{ conformity.requirement.full_path }}
+</p>
+<form id="object-form" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+    {% url 'conformity:conformity_form' conformity.pk as cancel_url %}
+    {% include "includes/form_toolbar.html" with cancel_url=cancel_url %}
+</form>
+{% endblock %}

@@ -8,10 +8,12 @@ from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
+from django.utils import timezone
 
 from conformity.models import (
     Action, Attachment, Audit, Conformity, Control, ControlPoint, Finding,
-    Framework, Indicator, IndicatorPoint, Organization, Requirement,
+    DocumentEvidence, Evidence, FindingEvidence, Framework, HumanEvidence,
+    Indicator, IndicatorPoint, ManualEvidence, Organization, Requirement,
 )
 
 
@@ -108,6 +110,41 @@ class ModelAuditTests(TestCase):
 
     def test_indicatorpoint_crud(self):
         self.exercise_crud(IndicatorPoint, {'indicator': self.indicator, 'period_start_date': date.today(), 'period_end_date': date.today() + timedelta(days=5), 'comment': 'Before'}, 'comment', 'Before', 'After', {'indicator': self.indicator.pk})
+
+    def test_evidence_crud(self):
+        self.exercise_crud(Evidence, {
+            'source_type': Evidence.SourceType.MANUAL,
+            'result': Evidence.Result.NEUTRAL,
+            'valid_from': timezone.now(), 'comment': 'Before',
+        }, 'comment', 'Before', 'After')
+
+    def test_humanevidence_crud(self):
+        self.exercise_crud(HumanEvidence, {
+            'decision': HumanEvidence.Decision.COMPLIANT,
+            'valid_from': timezone.now(), 'comment': 'Before',
+        }, 'comment', 'Before', 'After')
+
+    def test_manualevidence_crud(self):
+        self.exercise_crud(ManualEvidence, {
+            'title': 'Before', 'result': Evidence.Result.NEUTRAL,
+            'valid_from': timezone.now(),
+        }, 'title', 'Before', 'After')
+
+    def test_documentevidence_crud(self):
+        document = Attachment.objects.create(
+            file=SimpleUploadedFile('evidence.txt', b'evidence')
+        )
+        self.exercise_crud(DocumentEvidence, {
+            'document': document, 'title': 'Before',
+            'result': Evidence.Result.NEUTRAL, 'valid_from': timezone.now(),
+        }, 'title', 'Before', 'After', {'document': document.pk})
+
+    def test_findingevidence_crud(self):
+        finding = Finding.objects.create(audit=self.audit, short_description='Evidence finding')
+        self.exercise_crud(FindingEvidence, {
+            'finding': finding, 'comment': 'Before',
+            'result': Evidence.Result.NEUTRAL, 'valid_from': timezone.now(),
+        }, 'comment', 'Before', 'After', {'finding': finding.pk})
 
     def test_every_business_model_has_a_crud_contract(self):
         models = {model._meta.model_name for model in apps.get_app_config('conformity').get_models()}

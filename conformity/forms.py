@@ -5,7 +5,10 @@ Forms for front-end editing of Models instance
 from django.forms import ModelForm, FileField, ClearableFileInput, BooleanField, ModelChoiceField
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from .models import Conformity, Organization, Audit, Finding, Action, Control, ControlPoint, Indicator, IndicatorPoint
+from .models import (
+    Action, Audit, Conformity, Control, ControlPoint, Finding, HumanEvidence,
+    Indicator, IndicatorPoint, Organization,
+)
 from .validators import attachment_accept, attachment_max_size_help, validate_attachment_once
 
 
@@ -60,6 +63,17 @@ class ConformityForm(ModelForm):
         super(ConformityForm, self).__init__(*args, **kwargs)
         if self.instance.get_descendants().exists():
             self.fields['status'].disabled = True
+
+
+class HumanEvidenceForm(ModelForm):
+    class Meta:
+        model = HumanEvidence
+        fields = ['decision', 'valid_from', 'valid_to', 'comment']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.is_bound and not self.initial.get('valid_from'):
+            self.initial['valid_from'] = timezone.now()
 
 
 class OrganizationForm(AttachmentUploadFormMixin, ModelForm):
