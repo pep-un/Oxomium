@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.messages.storage.fallback import FallbackStorage
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import RequestFactory, TestCase
+from django.test import RequestFactory, TestCase, override_settings
 from django.template.loader import render_to_string
 from django.urls import reverse
 
@@ -40,7 +40,7 @@ class FeedbackComponentTests(TestCase):
                 self.assertIn("alert-dismissible", html)
                 self.assertIn('data-bs-dismiss="alert"', html)
 
-    def test_success_messages_are_not_rendered(self):
+    def test_success_messages_are_not_rendered_by_default(self):
         html = self.render_message(messages.SUCCESS, "Saved")
         self.assertNotIn("Saved", html)
         self.assertNotIn("alert-success", html)
