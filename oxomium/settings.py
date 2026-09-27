@@ -164,6 +164,31 @@ AUDITLOG_EXCLUDE_TRACKING_FIELDS = (
 )
 
 CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
+
+ATTACHMENT_MIME_CATEGORY_CHOICES = (
+    ('images', 'Images'),
+    ('pdf', 'PDF'),
+    ('text_documents', 'Text documents (DOC, DOCX, ODT)'),
+    ('spreadsheets', 'Spreadsheets (XLS, XLSX, ODS, CSV)'),
+    ('presentations', 'Presentations (PPT, PPTX, ODP)'),
+    ('json', 'JSON'),
+    ('xml', 'XML'),
+    ('html', 'HTML'),
+    ('archives', 'ZIP archives'),
+    ('plain_text', 'Plain text'),
+)
+
+CONSTANCE_ADDITIONAL_FIELDS = {
+    'attachment_mime_categories': [
+        'django.forms.fields.MultipleChoiceField',
+        {
+            'widget': 'django.forms.CheckboxSelectMultiple',
+            'choices': ATTACHMENT_MIME_CATEGORY_CHOICES,
+            'required': False,
+        },
+    ],
+}
+
 CONSTANCE_CONFIG = {
     'WELCOME_HEADER': (
         "Bonjour !",
@@ -177,19 +202,20 @@ CONSTANCE_CONFIG = {
         50,
         "Maximum number of items displayed in each home dashboard list",
         int),
+    'ATTACHMENT_ALLOWED_CATEGORIES': (
+        [
+            'images', 'pdf', 'text_documents', 'spreadsheets', 'presentations',
+            'json', 'xml', 'html', 'archives', 'plain_text',
+        ],
+        "Allowed attachment categories. Exact MIME types are documented in attachment validation help.",
+        'attachment_mime_categories'),
     'ATTACHMENT_ALLOWED_MIME_TYPES': (
-        "application/pdf,image/*,text/plain,text/csv,application/zip,"
-        "application/json,text/json,application/xml,text/xml,text/html,application/xhtml+xml,"
-        "application/msword,"
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document,"
-        "application/vnd.oasis.opendocument.text,"
-        "application/vnd.ms-excel,"
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,"
-        "application/vnd.oasis.opendocument.spreadsheet,"
-        "application/vnd.ms-powerpoint,"
-        "application/vnd.openxmlformats-officedocument.presentationml.presentation,"
-        "application/vnd.oasis.opendocument.presentation",
-        "Comma-separated allowlist of attachment MIME types",
+        "",
+        "Additional comma-separated MIME allowlist. Supports patterns such as image/*.",
+        str),
+    'ATTACHMENT_DENIED_MIME_TYPES': (
+        "",
+        "Comma-separated MIME denylist. This takes precedence over categories and the manual allowlist.",
         str),
     'ATTACHMENT_MAX_SIZE_MB': (
         10,
