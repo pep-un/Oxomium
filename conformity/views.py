@@ -148,7 +148,7 @@ class AuditIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     def get_queryset(self):
         return Audit.objects.annotate(
             findings_count=Count("finding", distinct=True),
-        )
+        ).order_by("-report_date", "-start_date", "pk")
 
 
 class AuditDetailView(LoginRequiredMixin, DetailView):
@@ -223,12 +223,12 @@ class FindingIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
             .select_related("audit")
             .annotate(actions_count=Count("actions", distinct=True))
         )
-        if self.request.GET.get("audit") or self.request.GET.get("action"):
-            return queryset
-        return queryset.filter(
-            severity__in=["CRT", "MAJ", "MIN", "OBS"],
-            archived=False,
-        )
+        if not (self.request.GET.get("audit") or self.request.GET.get("action")):
+            queryset = queryset.filter(
+                severity__in=["CRT", "MAJ", "MIN", "OBS"],
+                archived=False,
+            )
+        return queryset.order_by("severity", "pk")
 
 
 class FindingCreateView(LoginRequiredMixin, SaveStayMixin, CreateView):
@@ -505,6 +505,7 @@ class ActionIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
             F('priority').asc(nulls_last=True),
             'status',
             '-update_date',
+            'pk',
         )
 
 
@@ -567,7 +568,7 @@ class ControlIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
         current_points = ControlPoint.objects.filter(
             period_start_date__lte=today,
             period_end_date__gte=today,
-        ).order_by("period_start_date")
+        ).order_by("period_start_date", "pk")
         return (
             Control.objects
             .select_related("organization")
@@ -798,7 +799,7 @@ class AuditLogDetailView(LoginRequiredMixin, RichTableMixin, FilterView):
     filterset_class = AuditLogFilter
 
     def get_queryset(self, **kwargs):
-        return LogEntry.objects.all().order_by('-timestamp')
+        return LogEntry.objects.all().order_by('-timestamp', '-pk')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
