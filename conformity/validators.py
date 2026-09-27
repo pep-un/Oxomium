@@ -18,6 +18,15 @@ MIME_EXTENSIONS = {
     "application/zip": {".zip"},
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document": {".docx"},
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {".xlsx"},
+    "application/json": {".json"},
+    "text/json": {".json"},
+    "application/xml": {".xml"},
+    "text/xml": {".xml"},
+    "text/html": {".html", ".htm"},
+    "application/xhtml+xml": {".xhtml", ".html", ".htm"},
+    "application/vnd.ms-powerpoint": {".ppt"},
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation": {".pptx"},
+    "application/vnd.oasis.opendocument.presentation": {".odp"},
 }
 
 
@@ -78,7 +87,11 @@ def validate_attachment(uploaded_file):
 
     detected, checksum = inspect_attachment(uploaded_file)
     allowed = allowed_mime_types()
-    if detected not in allowed:
+    allowed_by_prefix = any(
+        item.endswith("/*") and detected.startswith(item[:-1])
+        for item in allowed
+    )
+    if detected not in allowed and not allowed_by_prefix:
         raise ValidationError(
             _("Unsupported file type: %(mime)s."),
             code="attachment_mime_not_allowed",
