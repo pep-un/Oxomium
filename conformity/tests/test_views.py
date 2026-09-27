@@ -342,6 +342,42 @@ class SharedUxComponentsTests(BaseDataMixin, TestCase):
         self.assertNotContains(response, "Export CSV (Selection)")
         self.assertNotContains(response, "Export XLSX (Selection)")
 
+    def test_rich_table_sorting_uses_pk_tie_breaker(self):
+        table = views.ActionTable(
+            Action.objects.all(),
+            order_by=("title",),
+        )
+
+        self.assertEqual(
+            tuple(str(item) for item in table.columns["title"].order_by),
+            ("title", "pk"),
+        )
+
+        table.order_by = ("-title",)
+        self.assertEqual(
+            tuple(str(item) for item in table.columns["title"].order_by),
+            ("-title", "-pk"),
+        )
+
+    def test_annotated_paginated_lists_have_total_ordering(self):
+        audit_request = self.factory.get("/audit")
+        audit_request.user = self.user
+        audit_view = views.AuditIndexView()
+        audit_view.request = audit_request
+        self.assertEqual(
+            audit_view.get_queryset().query.order_by,
+            ("-report_date", "-start_date", "pk"),
+        )
+
+        finding_request = self.factory.get("/finding")
+        finding_request.user = self.user
+        finding_view = views.FindingIndexView()
+        finding_view.request = finding_request
+        self.assertEqual(
+            finding_view.get_queryset().query.order_by,
+            ("severity", "pk"),
+        )
+
     def test_paginated_toolbar_shows_total_and_visible_results(self):
         with override_config(TABLE_PAGE_SIZE=1):
             response = self.client.get(reverse("conformity:action_index"))
