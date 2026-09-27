@@ -10,6 +10,7 @@
 
 {% block content %}
 {% route_url 'conformity:control_index' as controls_url %}
+{% route_url 'conformity:controlpoint_export' as export_url %}
 
 <div class="row">
     {% if filter.form.data.control and object_list %}
@@ -42,7 +43,7 @@
     {% endif %}
 
     <div class="col">
-        {% include "includes/list_toolbar.html" with filter=filter total_count=result_total_count visible_count=result_visible_count is_paginated=result_is_paginated %}
+        {% include "includes/list_toolbar.html" with export_url=export_url filter=filter total_count=result_total_count visible_count=result_visible_count is_paginated=result_is_paginated %}
         {% if filter.form.data.control %}
             <h2>Control Point List</h2>
         {% endif %}
