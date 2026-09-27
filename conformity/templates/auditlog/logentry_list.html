@@ -6,7 +6,7 @@
 
 {% block content %}
 
-{% include "includes/list_toolbar.html" with filter=filter %}
+{% include "includes/list_toolbar.html" with filter=filter total_count=page_obj.paginator.count visible_count=page_obj.object_list|length is_paginated=page_obj.has_other_pages %}
 
 {% include "includes/pagination.html" with page_obj=page_obj %}
 
