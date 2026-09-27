@@ -9,6 +9,26 @@ from .models import Conformity, Organization, Audit, Finding, Action, Control, C
 from .validators import attachment_accept, attachment_max_size_help, validate_attachment
 
 
+class MultipleFileInput(ClearableFileInput):
+    """Native file input supporting several selected files."""
+
+    allow_multiple_selected = True
+
+
+class MultipleFileField(FileField):
+    """Validate every file submitted through a multiple file input."""
+
+    widget = MultipleFileInput
+
+    def clean(self, data, initial=None):
+        single_file_clean = super().clean
+        if isinstance(data, (list, tuple)):
+            return [single_file_clean(item, initial) for item in data]
+        if data:
+            return [single_file_clean(data, initial)]
+        return []
+
+
 class AttachmentUploadFormMixin:
     """Apply the shared attachment policy to every multi-upload form."""
 
@@ -22,10 +42,10 @@ class AttachmentUploadFormMixin:
             field.help_text = attachment_max_size_help()
 
     def clean_attachments(self):
-        uploaded_file = self.cleaned_data.get('attachments')
-        if uploaded_file:
+        uploaded_files = self.cleaned_data.get('attachments') or []
+        for uploaded_file in uploaded_files:
             validate_attachment(uploaded_file)
-        return uploaded_file
+        return uploaded_files
 
 
 class ConformityForm(ModelForm):
@@ -44,14 +64,14 @@ class ConformityForm(ModelForm):
 
 
 class OrganizationForm(AttachmentUploadFormMixin, ModelForm):
-    attachments = FileField(required=False, widget=ClearableFileInput())
+    attachments = MultipleFileField(required=False)
     class Meta:
         model = Organization
         fields = ['name', 'administrative_id', 'description', 'applicable_frameworks']
 
 
 class AuditForm(AttachmentUploadFormMixin, ModelForm):
-    attachments = FileField(required=False, widget=ClearableFileInput())
+    attachments = MultipleFileField(required=False)
     class Meta:
         model = Audit
         fields = ['name', 'organization', 'description', 'conclusion', 'auditor', 'audited_frameworks', 'start_date',
@@ -180,7 +200,7 @@ class ControlForm(ModelForm):
 
 
 class ControlPointForm(AttachmentUploadFormMixin, ModelForm):
-    attachments = FileField(required=False, widget=ClearableFileInput())
+    attachments = MultipleFileField(required=False)
     class Meta:
         model = ControlPoint
         fields = ['control_date', 'control_user', 'status', 'comment', 'attachments']
@@ -218,7 +238,7 @@ class IndicatorForm(ModelForm):
 
 
 class IndicatorPointForm(AttachmentUploadFormMixin, ModelForm):
-    attachments = FileField(required=False, widget=ClearableFileInput())
+    attachments = MultipleFileField(required=False)
 
     class Meta:
         model = IndicatorPoint
