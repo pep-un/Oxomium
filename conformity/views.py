@@ -31,6 +31,18 @@ from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 import os
 
+class SaveStayMixin:
+    """Redirect back to the edit form when Save & Stay is requested."""
+
+    stay_url_name = None
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        if self.request.POST.get("action") == "save_stay":
+            return redirect(self.stay_url_name, self.object.pk)
+        return response
+
+
 class RichTableMixin(SingleTableMixin):
     """Common pagination policy and result counts for filtered rich tables."""
 
@@ -163,7 +175,8 @@ class AttachmentUploadViewMixin:
         return super().form_valid(form)
 
 
-class AuditUpdateView(AttachmentUploadViewMixin, LoginRequiredMixin, UpdateView):
+class AuditUpdateView(AttachmentUploadViewMixin, LoginRequiredMixin, SaveStayMixin, UpdateView):
+    stay_url_name = "conformity:audit_form"
     model = Audit
     form_class = AuditForm
 
@@ -177,7 +190,8 @@ class AuditUpdateView(AttachmentUploadViewMixin, LoginRequiredMixin, UpdateView)
 
 
 
-class AuditCreateView(AttachmentUploadViewMixin, LoginRequiredMixin, CreateView):
+class AuditCreateView(AttachmentUploadViewMixin, LoginRequiredMixin, SaveStayMixin, CreateView):
+    stay_url_name = "conformity:audit_form"
     model = Audit
     form_class = AuditForm
 
@@ -224,7 +238,8 @@ class FindingIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
         )
 
 
-class FindingCreateView(LoginRequiredMixin, CreateView):
+class FindingCreateView(LoginRequiredMixin, SaveStayMixin, CreateView):
+    stay_url_name = "conformity:finding_form"
     model = Finding
     form_class = FindingForm
 
@@ -246,7 +261,8 @@ class FindingDetailView(LoginRequiredMixin, DetailView):
     model = Finding
 
 
-class FindingUpdateView(LoginRequiredMixin, UpdateView):
+class FindingUpdateView(LoginRequiredMixin, SaveStayMixin, UpdateView):
+    stay_url_name = "conformity:finding_form"
     model = Finding
     form_class = FindingForm
 
@@ -305,12 +321,14 @@ class OrganizationFrameworkFormMixin(AttachmentUploadViewMixin):
         return HttpResponseRedirect(self.get_success_url())
 
 
-class OrganizationUpdateView(LoginRequiredMixin, OrganizationFrameworkFormMixin, UpdateView):
+class OrganizationUpdateView(LoginRequiredMixin, SaveStayMixin, OrganizationFrameworkFormMixin, UpdateView):
+    stay_url_name = "conformity:organization_form"
     model = Organization
     form_class = OrganizationForm
 
 
-class OrganizationCreateView(LoginRequiredMixin, OrganizationFrameworkFormMixin, CreateView):
+class OrganizationCreateView(LoginRequiredMixin, SaveStayMixin, OrganizationFrameworkFormMixin, CreateView):
+    stay_url_name = "conformity:organization_form"
     model = Organization
     form_class = OrganizationForm
 
@@ -441,7 +459,8 @@ class ConformityExportView(LoginRequiredMixin, View):
 #
 
 
-class ActionCreateView(LoginRequiredMixin, CreateView):
+class ActionCreateView(LoginRequiredMixin, SaveStayMixin, CreateView):
+    stay_url_name = "conformity:action_form"
     model = Action
     form_class = ActionForm
 
@@ -496,7 +515,8 @@ class ActionIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
         )
 
 
-class ActionUpdateView(LoginRequiredMixin, UpdateView):
+class ActionUpdateView(LoginRequiredMixin, SaveStayMixin, UpdateView):
+    stay_url_name = "conformity:action_form"
     model = Action
     form_class = ActionForm
 
@@ -524,7 +544,8 @@ class ActionExportView(LoginRequiredMixin, FilteredExportMixin, View):
 #
 
 
-class ControlCreateView(LoginRequiredMixin, CreateView):
+class ControlCreateView(LoginRequiredMixin, SaveStayMixin, CreateView):
+    stay_url_name = "conformity:control_form"
     model = Control
     form_class = ControlForm
 
@@ -581,7 +602,8 @@ class ControlIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
         return context
 
 
-class ControlUpdateView(LoginRequiredMixin, UpdateView):
+class ControlUpdateView(LoginRequiredMixin, SaveStayMixin, UpdateView):
+    stay_url_name = "conformity:control_form"
     model = Control
     form_class = ControlForm
 
@@ -601,7 +623,8 @@ class ControlPointIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
         return ControlPoint.objects.select_related("control", "control_user")
 
 
-class ControlPointUpdateView(AttachmentUploadViewMixin, LoginRequiredMixin, UpdateView):
+class ControlPointUpdateView(AttachmentUploadViewMixin, LoginRequiredMixin, SaveStayMixin, UpdateView):
+    stay_url_name = "conformity:controlpoint_form"
     model = ControlPoint
     form_class = ControlPointForm
 
@@ -634,7 +657,8 @@ class ControlExportView(LoginRequiredMixin, FilteredExportMixin, View):
 #
 
 
-class IndicatorCreateView(LoginRequiredMixin, CreateView):
+class IndicatorCreateView(LoginRequiredMixin, SaveStayMixin, CreateView):
+    stay_url_name = "conformity:indicator_form"
     model = Indicator
     form_class = IndicatorForm
 
@@ -657,12 +681,14 @@ class IndicatorIndexView(LoginRequiredMixin, FilterView):
     template_name = 'conformity/indicator_list.html'
 
 
-class IndicatorUpdateView(LoginRequiredMixin, UpdateView):
+class IndicatorUpdateView(LoginRequiredMixin, SaveStayMixin, UpdateView):
+    stay_url_name = "conformity:indicator_form"
     model = Indicator
     form_class = IndicatorForm
 
 
-class IndicatorPointUpdateView(LoginRequiredMixin, UpdateView):
+class IndicatorPointUpdateView(LoginRequiredMixin, SaveStayMixin, UpdateView):
+    stay_url_name = "conformity:indicatorpoint_form"
     model = IndicatorPoint
     form_class = IndicatorPointForm
 
