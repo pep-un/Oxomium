@@ -252,8 +252,11 @@ class SharedUxComponentsTests(BaseDataMixin, TestCase):
         self.assertContains(response, 'class="btn btn-success ms-auto" href="' + reverse("conformity:action_create") + '"')
         self.assertContains(response, 'class="btn btn-secondary dropdown-toggle w-100 d-flex align-items-center text-start"')
         self.assertContains(response, "2 résultats affichés")
-        self.assertContains(response, reverse("conformity:action_export") + "?format=csv")
-        self.assertContains(response, reverse("conformity:action_export") + "?format=xlsx")
+        self.assertContains(response, "Export CSV (All)")
+        self.assertContains(response, "Export XLSX (All)")
+        self.assertContains(response, "Export CSV (Selection)")
+        self.assertContains(response, "Export XLSX (Selection)")
+        self.assertNotContains(response, '<h2 class="h6 mb-0">Filters</h2>')
         self.assertContains(response, "btn-outline-danger")
 
     def test_pagination_does_not_mark_filters_active(self):
@@ -263,6 +266,10 @@ class SharedUxComponentsTests(BaseDataMixin, TestCase):
         self.assertNotContains(response, 'badge text-bg-light ms-1">')
         self.assertContains(response, 'btn btn-outline-danger disabled')
         self.assertContains(response, 'aria-disabled="true" tabindex="-1"')
+        self.assertContains(response, "Export CSV (All)")
+        self.assertContains(response, "Export XLSX (All)")
+        self.assertNotContains(response, "Export CSV (Selection)")
+        self.assertNotContains(response, "Export XLSX (Selection)")
 
     def test_paginated_toolbar_shows_total_and_visible_results(self):
         with self.settings(CONSTANCE_CONFIG={
