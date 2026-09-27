@@ -159,6 +159,10 @@
     width: 9.5rem;
 }
 
+.list-toolbar-action > .dropdown-toggle::after {
+    margin-left: auto;
+}
+
 .filter-dropdown {
     width: 36vw;
     min-width: 30rem;
