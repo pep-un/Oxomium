@@ -249,9 +249,9 @@ class SharedUxComponentsTests(BaseDataMixin, TestCase):
         self.assertContains(response, "Reset filters")
         self.assertContains(response, 'btn btn-primary dropdown-toggle')
         self.assertContains(response, 'badge text-bg-light ms-1">1</span>')
-        self.assertContains(response, 'class="btn btn-success" href="' + reverse("conformity:action_create") + '"')
+        self.assertContains(response, 'class="btn btn-success ms-auto" href="' + reverse("conformity:action_create") + '"')
         self.assertContains(response, 'class="btn btn-secondary" href="' + reverse("conformity:action_export") + '"')
-        self.assertNotContains(response, " items</span>")
+        self.assertContains(response, "2 résultats affichés")
         self.assertContains(response, 'class="btn btn-secondary dropdown-toggle dropdown-toggle-split"')
         self.assertNotContains(response, "btn-danger")
 
@@ -260,6 +260,15 @@ class SharedUxComponentsTests(BaseDataMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'btn btn-secondary dropdown-toggle')
         self.assertNotContains(response, 'badge text-bg-light ms-1">')
+
+    def test_paginated_toolbar_shows_total_and_visible_results(self):
+        with self.settings(CONSTANCE_CONFIG={
+            **__import__("django.conf").conf.settings.CONSTANCE_CONFIG,
+            "TABLE_PAGE_SIZE": (1, "Number of rows displayed per page in rich tables", int),
+        }):
+            response = self.client.get(reverse("conformity:action_index"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "2 résultats, dont 1 affiché")
 
     def test_empty_dataset_offers_create_action(self):
         Action.objects.all().delete()
