@@ -9,7 +9,13 @@ from constance.test import override_config
 
 from conformity.forms import AuditForm, OrganizationForm
 from conformity.models import Attachment, Audit, Framework, Organization
-from conformity.validators import attachment_accept, inspect_attachment, validate_attachment
+from conformity.validators import (
+    attachment_accept,
+    configured_mime_policy,
+    inspect_attachment,
+    mime_category_details,
+    validate_attachment,
+)
 
 
 class AttachmentValidationTests(TestCase):
@@ -160,6 +166,43 @@ class AttachmentValidationTests(TestCase):
         }
         from conformity.validators import allowed_mime_types
         self.assertTrue(allowed.issubset(allowed_mime_types()))
+
+    @override_config(
+        ATTACHMENT_ALLOWED_CATEGORIES=["images"],
+        ATTACHMENT_ALLOWED_MIME_TYPES="application/json",
+        ATTACHMENT_DENIED_MIME_TYPES="image/png",
+    )
+    def test_denylist_has_precedence_over_categories_and_manual_allowlist(self):
+        allowed, denied = configured_mime_policy()
+        self.assertIn("image/*", allowed)
+        self.assertIn("application/json", allowed)
+        self.assertIn("image/png", denied)
+
+        with patch("conformity.validators.inspect_attachment", return_value=("image/png", "c" * 64)):
+            with self.assertRaisesMessage(ValidationError, "Unsupported file type"):
+                validate_attachment(self.upload(name="picture.png"))
+
+    @override_config(
+        ATTACHMENT_ALLOWED_CATEGORIES=[],
+        ATTACHMENT_ALLOWED_MIME_TYPES="application/x-custom",
+        ATTACHMENT_DENIED_MIME_TYPES="",
+    )
+    @patch("conformity.validators.inspect_attachment", return_value=("application/x-custom", "d" * 64))
+    def test_manual_allowlist_can_enable_custom_mime(self, _inspect):
+        upload = self.upload(name="custom.bin")
+        self.assertEqual(validate_attachment(upload), ("application/x-custom", "d" * 64))
+
+    def test_mime_category_helper_exposes_exact_patterns(self):
+        details = {item["key"]: item for item in mime_category_details()}
+        self.assertEqual(details["images"]["mimes"], ("image/*",))
+        self.assertIn(
+            "application/vnd.oasis.opendocument.presentation",
+            details["presentations"]["mimes"],
+        )
+        self.assertIn(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            details["spreadsheets"]["mimes"],
+        )
 
     def test_extension_mapping_for_structured_and_presentation_formats(self):
         cases = [
