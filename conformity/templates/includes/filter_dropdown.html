@@ -3,13 +3,16 @@
 {% active_filter_count as active_filters %}
 <div class="dropdown list-toolbar-action">
     <button type="button"
-            class="btn {% if active_filters %}btn-primary{% else %}btn-secondary{% endif %} dropdown-toggle w-100"
+            class="btn {% if active_filters %}btn-primary{% else %}btn-secondary{% endif %} dropdown-toggle w-100 d-flex align-items-center text-start"
             data-bs-toggle="dropdown"
             aria-expanded="false">
-        <i class="bi bi-funnel"></i> Filter
-        {% if active_filters %}
-            <span class="badge text-bg-light ms-1">{{ active_filters }}</span>
-        {% endif %}
+        <span class="d-flex align-items-center gap-2">
+            <i class="bi bi-funnel"></i>
+            <span>Filter</span>
+            {% if active_filters %}
+                <span class="badge text-bg-light">{{ active_filters }}</span>
+            {% endif %}
+        </span>
     </button>
     <div class="dropdown-menu p-3 shadow-sm filter-dropdown">
         <form method="get">
