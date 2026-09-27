@@ -81,15 +81,180 @@ document.querySelectorAll('.js-copy-sha256').forEach((button) => {
 });
 
 
-document.querySelectorAll('.js-attachment-input').forEach((input) => {
+
+const attachmentInputs = Array.from(document.querySelectorAll('.js-attachment-input'));
+
+function attachmentFileKey(file) {
+    return [file.name, file.size, file.type, file.lastModified].join('|');
+}
+
+function screenshotFilename(file) {
+    const date = new Date();
+    const pad = (value) => String(value).padStart(2, '0');
+    const extension = file.type && file.type.includes('/')
+        ? file.type.split('/')[1].replace('jpeg', 'jpg')
+        : 'png';
+    return [
+        'Screenshot',
+        date.getFullYear(),
+        pad(date.getMonth() + 1),
+        pad(date.getDate()),
+        pad(date.getHours()) + pad(date.getMinutes()) + pad(date.getSeconds()),
+    ].join('-') + '.' + extension;
+}
+
+function isTextEditingTarget(target) {
+    if (!target) {
+        return false;
+    }
+    const tagName = target.tagName ? target.tagName.toLowerCase() : '';
+    return target.isContentEditable || tagName === 'textarea' ||
+        (tagName === 'input' && !['file', 'button', 'submit'].includes(target.type));
+}
+
+attachmentInputs.forEach((input) => {
+    const panel = input.closest('.js-attachment-panel');
+    const dropzone = panel ? panel.querySelector('.js-attachment-dropzone') : null;
+    const pending = panel ? panel.querySelector('.js-attachment-pending') : null;
+    const transfer = new DataTransfer();
+
+    if (!dropzone || !pending) {
+        return;
+    }
+
+    const renderPending = () => {
+        pending.replaceChildren();
+        const files = Array.from(transfer.files);
+        pending.classList.toggle('d-none', files.length === 0);
+
+        files.forEach((file, index) => {
+            const row = document.createElement('div');
+            row.className = 'd-flex align-items-center justify-content-between gap-3 py-1';
+
+            const label = document.createElement('span');
+            label.className = 'small text-truncate';
+            label.innerHTML = '<i class="bi bi-file-earmark-plus me-1" aria-hidden="true"></i>';
+            label.append(document.createTextNode(file.name));
+
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.className = 'btn btn-sm btn-outline-secondary flex-shrink-0';
+            remove.setAttribute('aria-label', 'Remove pending file ' + file.name);
+            remove.setAttribute('title', 'Remove pending file');
+            remove.innerHTML = '<i class="bi bi-x-lg" aria-hidden="true"></i>';
+            remove.addEventListener('click', () => {
+                const next = new DataTransfer();
+                Array.from(transfer.files).forEach((current, currentIndex) => {
+                    if (currentIndex !== index) {
+                        next.items.add(current);
+                    }
+                });
+                transfer.items.clear();
+                Array.from(next.files).forEach((current) => transfer.items.add(current));
+                input.files = transfer.files;
+                renderPending();
+            });
+
+            row.append(label, remove);
+            pending.append(row);
+        });
+    };
+
+    const addFiles = (files) => {
+        const known = new Set(Array.from(transfer.files).map(attachmentFileKey));
+        Array.from(files).forEach((file) => {
+            const key = attachmentFileKey(file);
+            if (!known.has(key)) {
+                transfer.items.add(file);
+                known.add(key);
+            }
+        });
+        input.files = transfer.files;
+        renderPending();
+    };
+
     input.addEventListener('change', () => {
-        const item = input.closest('.list-group-item');
-        const filename = item ? item.querySelector('.js-attachment-filename') : null;
-        if (!filename) {
+        addFiles(Array.from(input.files));
+    });
+
+    const hasDraggedFiles = (event) => (
+        event.dataTransfer &&
+        Array.from(event.dataTransfer.types || []).includes('Files')
+    );
+
+    document.addEventListener('dragenter', (event) => {
+        if (hasDraggedFiles(event)) {
+            dropzone.classList.add('is-dragging');
+        }
+    });
+
+    document.addEventListener('dragover', (event) => {
+        if (hasDraggedFiles(event)) {
+            event.preventDefault();
+            dropzone.classList.add('is-dragging');
+        }
+    });
+
+    document.addEventListener('dragleave', (event) => {
+        if (!event.relatedTarget) {
+            dropzone.classList.remove('is-dragging');
+        }
+    });
+
+    document.addEventListener('drop', () => {
+        dropzone.classList.remove('is-dragging');
+    });
+
+    dropzone.addEventListener('dragover', (event) => {
+        if (hasDraggedFiles(event)) {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'copy';
+        }
+    });
+
+    dropzone.addEventListener('drop', (event) => {
+        if (!hasDraggedFiles(event)) {
             return;
         }
-        filename.textContent = input.files.length
-            ? Array.from(input.files).map((file) => file.name).join(', ')
-            : 'No file selected';
+        event.preventDefault();
+        event.stopPropagation();
+        dropzone.classList.remove('is-dragging');
+        addFiles(event.dataTransfer.files);
     });
+
+    input._addAttachmentFiles = addFiles;
+});
+
+document.addEventListener('paste', (event) => {
+    if (isTextEditingTarget(event.target)) {
+        return;
+    }
+
+    const pastedFiles = Array.from(event.clipboardData?.files || []);
+    if (!pastedFiles.length) {
+        return;
+    }
+
+    const input = attachmentInputs.find((candidate) => candidate.offsetParent !== null);
+    if (!input || typeof input._addAttachmentFiles !== 'function') {
+        return;
+    }
+
+    const normalized = pastedFiles.map((file) => {
+        if (!file.type.startsWith('image/')) {
+            return file;
+        }
+        try {
+            return new File(
+                [file],
+                screenshotFilename(file),
+                {type: file.type, lastModified: Date.now()},
+            );
+        } catch (error) {
+            return file;
+        }
+    });
+
+    event.preventDefault();
+    input._addAttachmentFiles(normalized);
 });
