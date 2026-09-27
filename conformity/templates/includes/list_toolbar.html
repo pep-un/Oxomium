@@ -25,7 +25,7 @@
         {% if total_count != None and visible_count != None %}
             <span class="text-body-secondary small">
                 {% if is_paginated %}
-                    {{ total_count }} résultat{{ total_count|pluralize }}{% if total_count != 1 %}s{% endif %}, dont {{ visible_count }} affiché{% if visible_count != 1 %}s{% endif %}
+                    {{ total_count }} résultat{% if total_count != 1 %}s{% endif %}, dont {{ visible_count }} affiché{% if visible_count != 1 %}s{% endif %}
                 {% else %}
                     {{ visible_count }} résultat{% if visible_count != 1 %}s{% endif %} affiché{% if visible_count != 1 %}s{% endif %}
                 {% endif %}
