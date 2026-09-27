@@ -9,12 +9,14 @@ from django.db import transaction
 from django.db.models import Count, F, Prefetch
 from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import UpdateView, CreateView
+from django_filters import FilterSet
 from django_filters.views import FilterView
 from constance import config as constance_config
 from django_tables2.views import SingleTableMixin
 from django.utils import timezone
 from auditlog.models import LogEntry
 from import_export.formats import base_formats
+from import_export.resources import ModelResource
 from mptt.templatetags.mptt_tags import cache_tree_children
 
 from .filterset import ActionFilter, ControlFilter, ControlPointFilter, FrameworkFilter, OrganizationFilter, \
@@ -68,8 +70,8 @@ class RichTableMixin(SingleTableMixin):
 class FilteredExportMixin:
     """Export all rows or the current filtered selection."""
 
-    resource_class = None
-    filterset_class = None
+    resource_class = ModelResource
+    filterset_class = FilterSet
     filename = "export"
 
     def get_export_queryset(self, request):
@@ -79,7 +81,7 @@ class FilteredExportMixin:
         return self.get_export_queryset(request)
 
     def get_queryset_for_export(self, request):
-        if request.GET.get("scope") != "selection" or self.filterset_class is None:
+        if request.GET.get("scope") != "selection":
             return self.get_export_queryset(request)
 
         data = request.GET.copy()
