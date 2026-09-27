@@ -466,6 +466,13 @@ class AttachmentTable(BaseRichTable):
                         </span>
                     </a>
                 {% endfor %}
+                {% for point in record.IndicatorPoint.all %}
+                    <a href="{% url 'conformity:indicatorpoint_form' point.id %}">
+                        <span class="badge text-bg-info px-3">
+                            <i class="bi bi-speedometer pe-2"></i>{{ point }}
+                        </span>
+                    </a>
+                {% endfor %}
             </div>
         """,
         orderable=False,
