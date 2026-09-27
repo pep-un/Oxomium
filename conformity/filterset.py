@@ -7,8 +7,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from django import forms
 from django_filters import FilterSet, CharFilter, DateFilter, ModelChoiceFilter, ChoiceFilter
-from .models import Action, Control, ControlPoint, Conformity, Finding, Requirement, Framework, Organization, Audit, \
-    Indicator
+from .models import Action, Attachment, Control, ControlPoint, Conformity, Finding, Requirement, Framework, Organization, Audit, \
+    Indicator, IndicatorPoint
 
 
 def audit_actor_choices():
@@ -137,6 +137,33 @@ class IndicatorFilter(FilterSet):
     class Meta:
         model = Indicator
         fields = [ 'name', 'goal' ]
+
+
+
+class AttachmentFilter(FilterSet):
+    file = CharFilter(field_name='file', lookup_expr='icontains', label='File name')
+    mime_type = CharFilter(lookup_expr='icontains', label='MIME type')
+    sha256 = CharFilter(lookup_expr='icontains', label='SHA-256')
+    organization = ModelChoiceFilter(field_name='organizations', queryset=Organization.objects.all(), label='Organization', distinct=True)
+    framework = ModelChoiceFilter(field_name='frameworks', queryset=Framework.objects.all(), label='Framework', distinct=True)
+    audit = ModelChoiceFilter(field_name='audits', queryset=Audit.objects.all(), label='Audit', distinct=True)
+    control_point = ModelChoiceFilter(field_name='ControlPoint', queryset=ControlPoint.objects.all(), label='Control Point', distinct=True)
+    indicator_point = ModelChoiceFilter(field_name='IndicatorPoint', queryset=IndicatorPoint.objects.all(), label='Indicator Point', distinct=True)
+    create_date_after = DateFilter(
+        field_name='create_date', lookup_expr='date__gte', label='Created from',
+        input_formats=['%Y-%m-%d'], widget=forms.DateInput(attrs={'type': 'date'}),
+    )
+    create_date_before = DateFilter(
+        field_name='create_date', lookup_expr='date__lte', label='Created to',
+        input_formats=['%Y-%m-%d'], widget=forms.DateInput(attrs={'type': 'date'}),
+    )
+
+    class Meta:
+        model = Attachment
+        fields = [
+            'file', 'mime_type', 'sha256', 'organization', 'framework', 'audit',
+            'control_point', 'indicator_point', 'create_date_after', 'create_date_before',
+        ]
 
 
 class AuditLogFilter(FilterSet):
