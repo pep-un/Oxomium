@@ -33,9 +33,9 @@ def attachment_max_size_help():
 def detect_mime(uploaded_file):
     position = uploaded_file.tell()
     uploaded_file.seek(0)
-    sample = uploaded_file.read(8192)
+    content = uploaded_file.read()
     uploaded_file.seek(position)
-    return Magic(mime=True).from_buffer(sample).split(";", 1)[0].strip().lower()
+    return Magic(mime=True).from_buffer(content).split(";", 1)[0].strip().lower()
 
 
 def validate_attachment(uploaded_file):
