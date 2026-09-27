@@ -692,10 +692,18 @@ class IndicatorUpdateView(LoginRequiredMixin, SaveStayMixin, UpdateView):
     form_class = IndicatorForm
 
 
-class IndicatorPointUpdateView(LoginRequiredMixin, SaveStayMixin, UpdateView):
+class IndicatorPointUpdateView(AttachmentUploadViewMixin, LoginRequiredMixin, SaveStayMixin, UpdateView):
     stay_url_name = "conformity:indicatorpoint_form"
     model = IndicatorPoint
     form_class = IndicatorPointForm
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        attachments = self.request.FILES.getlist('attachments')
+        for file in attachments:
+            attachment = Attachment.get_or_create_for_upload(file)[0]
+            self.object.attachment.add(attachment)
+        return response
 
 class IndicatorExportView(LoginRequiredMixin, FilteredExportMixin, View):
     resource_class = IndicatorResource
