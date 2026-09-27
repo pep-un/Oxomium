@@ -103,6 +103,7 @@ class AttachmentPanelTests(TestCase):
                 self.assertContains(response, "panel.txt")
                 self.assertContains(response, "bi-file-earmark-text")
                 self.assertNotContains(response, "Remove attachment")
+                self.assertNotContains(response, "Add another document")
 
     def test_attachment_forms_use_editable_shared_panel(self):
         owners = (
@@ -110,6 +111,7 @@ class AttachmentPanelTests(TestCase):
                 self.audit,
                 "audit",
                 reverse("conformity:audit_form", args=[self.audit.pk]),
+                'name="type"',
             ),
             (
                 self.organization,
@@ -118,6 +120,7 @@ class AttachmentPanelTests(TestCase):
                     "conformity:organization_form",
                     args=[self.organization.pk],
                 ),
+                'name="applicable_frameworks"',
             ),
             (
                 self.control_point,
@@ -126,6 +129,7 @@ class AttachmentPanelTests(TestCase):
                     "conformity:controlpoint_form",
                     args=[self.control_point.pk],
                 ),
+                "Associated actions",
             ),
             (
                 self.indicator_point,
@@ -134,22 +138,30 @@ class AttachmentPanelTests(TestCase):
                     "conformity:indicatorpoint_form",
                     args=[self.indicator_point.pk],
                 ),
+                'name="comment"',
             ),
         )
 
-        for owner, owner_type, url in owners:
+        for owner, owner_type, url, last_content_marker in owners:
             owner.attachment.add(self.attachment)
             with self.subTest(owner_type=owner_type):
                 response = self.client.get(url)
                 self.assertEqual(response.status_code, 200)
                 self.assertContains(response, "card border-info mb-3")
                 self.assertContains(response, "Remove attachment")
+                self.assertContains(response, "Add another document")
+                self.assertContains(response, "No file selected")
                 self.assertContains(response, 'type="file"')
                 self.assertContains(response, 'name="attachments"')
+                self.assertContains(response, 'form="object-form"')
                 html = response.content.decode()
                 self.assertLess(
+                    html.index(last_content_marker),
                     html.index("card border-info mb-3"),
-                    html.index('name="attachments"'),
+                )
+                self.assertLess(
+                    html.index("card border-info mb-3"),
+                    html.index("form-toolbar"),
                 )
                 self.assertContains(
                     response,
@@ -169,12 +181,15 @@ class AttachmentPanelTests(TestCase):
                 self.assertEqual(response.status_code, 200)
                 self.assertContains(response, "card border-info mb-3")
                 self.assertContains(response, "No attachment")
+                self.assertContains(response, "Add another document")
+                self.assertContains(response, "No file selected")
                 self.assertContains(response, 'type="file"')
                 self.assertContains(response, 'name="attachments"')
+                self.assertContains(response, 'form="object-form"')
                 html = response.content.decode()
                 self.assertLess(
                     html.index("card border-info mb-3"),
-                    html.index('name="attachments"'),
+                    html.index("form-toolbar"),
                 )
 
     def test_indicator_point_upload_creates_attachment_relation(self):
