@@ -46,7 +46,7 @@ class RichTableConfigurationTests(TestCase):
             "file", "mime_type", "sha256", "organization", "framework", "audit",
             "control_point", "indicator_point", "create_date_after", "create_date_before",
         }
-        self.assertTrue(expected.issubset(AttachmentFilter.base_filters))
+        self.assertTrue(expected.issubset(getattr(AttachmentFilter, "base_filters")))
 
     def test_primary_columns_share_name_and_width(self):
         table_classes = (
