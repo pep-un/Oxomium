@@ -185,10 +185,22 @@ attachmentInputs.forEach((input) => {
     let dragFocusActive = false;
     let dragVisibilityObserver = null;
 
+    const scrollToPageBottom = (behavior = 'smooth') => {
+        window.scrollTo({
+            top: document.documentElement.scrollHeight,
+            behavior,
+        });
+    };
+
     const activateDropzone = () => {
-        if (dragFocusActive) {
-            dropzone.classList.add('is-dragging');
+        if (!dragFocusActive || dropzone.classList.contains('is-dragging')) {
+            return;
         }
+
+        dropzone.classList.add('is-dragging');
+        window.requestAnimationFrame(() => {
+            scrollToPageBottom('smooth');
+        });
     };
 
     const resetDragFocus = () => {
@@ -203,7 +215,8 @@ attachmentInputs.forEach((input) => {
     const isDropzoneVisible = () => {
         const rect = dropzone.getBoundingClientRect();
         const visibleHeight = Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0);
-        return visibleHeight > 0 && visibleHeight >= Math.min(rect.height * 0.6, window.innerHeight * 0.5);
+        const requiredHeight = Math.min(rect.height * 0.85, window.innerHeight * 0.7);
+        return visibleHeight > 0 && visibleHeight >= requiredHeight;
     };
 
     const focusDropzoneForDrag = () => {
@@ -212,30 +225,26 @@ attachmentInputs.forEach((input) => {
         }
 
         dragFocusActive = true;
-        if (isDropzoneVisible()) {
-            activateDropzone();
-            return;
-        }
 
         if ('IntersectionObserver' in window) {
             dragVisibilityObserver = new IntersectionObserver((entries) => {
                 const visible = entries.some(
-                    (entry) => entry.isIntersecting && entry.intersectionRatio >= 0.6
+                    (entry) => entry.isIntersecting && entry.intersectionRatio >= 0.85
                 );
                 if (visible) {
                     activateDropzone();
                     dragVisibilityObserver.disconnect();
                     dragVisibilityObserver = null;
                 }
-            }, {threshold: [0.6]});
+            }, {threshold: [0.85]});
             dragVisibilityObserver.observe(dropzone);
         }
 
-        dropzone.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center',
-            inline: 'nearest',
-        });
+        scrollToPageBottom('smooth');
+
+        if (!('IntersectionObserver' in window) && isDropzoneVisible()) {
+            activateDropzone();
+        }
     };
 
     document.addEventListener('dragenter', (event) => {
