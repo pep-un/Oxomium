@@ -41,12 +41,18 @@ from conformity.resources import (
 from conformity.views import (
     ActionExportView,
     AttachmentDownloadView,
+    AttachmentExportView,
     AuditExportView,
+    AuditLogExportView,
     ConformityExportView,
+    ConformityIndexExportView,
     ControlExportView,
+    ControlPointExportView,
     FindingExportView,
+    FrameworkExportView,
     IndicatorDetailView,
     IndicatorExportView,
+    OrganizationExportView,
     FrameworkDetailView,
     ControlIndexView,
     AuditLogDetailView,
@@ -221,6 +227,12 @@ class RemainingCoverageTests(TestCase):
             (ActionExportView, "/actions", "actions"),
             (ControlExportView, "/controls", "controls"),
             (IndicatorExportView, "/indicators", "indicators"),
+            (AttachmentExportView, "/attachments", "attachments"),
+            (AuditLogExportView, "/auditlog", "audit-log"),
+            (FrameworkExportView, "/frameworks", "frameworks"),
+            (OrganizationExportView, "/organizations", "organizations"),
+            (ConformityIndexExportView, "/conformities", "conformities"),
+            (ControlPointExportView, "/controlpoints", "controlpoints"),
         )
         for view, path, filename in cases:
             for fmt, extension in (("csv", "csv"), ("xlsx", "xlsx")):
