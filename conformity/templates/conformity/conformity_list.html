@@ -2,6 +2,7 @@
 {% load ui_tags %}{% load render_table from django_tables2 %}
 {% block header %}<h1 class="h1 bi bi-shield-shaded"> Conformities</h1>{% endblock %}
 {% block content %}
-{% include "includes/list_toolbar.html" with filter=filter total_count=result_total_count visible_count=result_visible_count is_paginated=result_is_paginated %}
+{% route_url 'conformity:conformity_index_export' as export_url %}
+{% include "includes/list_toolbar.html" with export_url=export_url filter=filter total_count=result_total_count visible_count=result_visible_count is_paginated=result_is_paginated %}
 {% if object_list %}{% render_table table %}{% else %}{% include "includes/empty_state.html" with empty_message="No conformity reviews are available." %}{% endif %}
 {% endblock %}
