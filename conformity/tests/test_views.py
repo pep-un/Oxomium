@@ -250,9 +250,10 @@ class SharedUxComponentsTests(BaseDataMixin, TestCase):
         self.assertContains(response, 'btn btn-primary dropdown-toggle')
         self.assertContains(response, 'badge text-bg-light ms-1">1</span>')
         self.assertContains(response, 'class="btn btn-success ms-auto" href="' + reverse("conformity:action_create") + '"')
-        self.assertContains(response, 'class="btn btn-secondary flex-grow-1" href="' + reverse("conformity:action_export") + '"')
+        self.assertContains(response, 'class="btn btn-secondary dropdown-toggle w-100"')
         self.assertContains(response, "2 résultats affichés")
-        self.assertContains(response, 'class="btn btn-secondary dropdown-toggle dropdown-toggle-split"')
+        self.assertContains(response, reverse("conformity:action_export") + "?format=csv")
+        self.assertContains(response, reverse("conformity:action_export") + "?format=xlsx")
         self.assertContains(response, "btn-outline-danger")
 
     def test_pagination_does_not_mark_filters_active(self):
