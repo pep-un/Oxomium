@@ -2,7 +2,6 @@
 {% load ui_tags %}{% load render_table from django_tables2 %}
 {% block header %}<h1 class="h1 bi bi-card-checklist"> Frameworks</h1>{% endblock %}
 {% block content %}
-{% breadcrumb "Frameworks" %}
 {% include "includes/list_toolbar.html" with filter=filter item_count=object_list|length %}
 {% if object_list %}{% render_table table %}{% else %}{% include "includes/empty_state.html" with empty_message="No frameworks are available." %}{% endif %}
 {% endblock %}
