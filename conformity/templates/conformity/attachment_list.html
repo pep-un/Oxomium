@@ -42,7 +42,13 @@
                                     </button>
                                 </div>
                             {% else %}
-                                <span class="text-muted">—</span>
+                                <form method="post" action="{% url 'conformity:attachment_checksum' attachment.id %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary" title="Calculate SHA-256">
+                                        <i class="bi bi-calculator me-1" aria-hidden="true"></i>
+                                        Calculate
+                                    </button>
+                                </form>
                             {% endif %}
                         </td>
                         <td class="text-center text-nowrap">
