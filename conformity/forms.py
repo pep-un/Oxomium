@@ -21,11 +21,10 @@ class MultipleFileField(FileField):
     widget = MultipleFileInput
 
     def clean(self, data, initial=None):
-        single_file_clean = super().clean
         if isinstance(data, (list, tuple)):
-            return [single_file_clean(item, initial) for item in data]
+            return [FileField.clean(self, item, initial) for item in data]
         if data:
-            return [single_file_clean(data, initial)]
+            return [FileField.clean(self, data, initial)]
         return []
 
 
