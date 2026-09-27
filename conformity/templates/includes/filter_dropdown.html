@@ -1,9 +1,9 @@
 {% load ui_tags %}
 {% load django_bootstrap5 %}
 {% active_filter_count as active_filters %}
-<div class="dropdown">
+<div class="dropdown list-toolbar-action">
     <button type="button"
-            class="btn {% if active_filters %}btn-primary{% else %}btn-secondary{% endif %} dropdown-toggle"
+            class="btn {% if active_filters %}btn-primary{% else %}btn-secondary{% endif %} dropdown-toggle w-100"
             data-bs-toggle="dropdown"
             aria-expanded="false">
         <i class="bi bi-funnel"></i> Filter
@@ -25,7 +25,11 @@
             {% endfor %}
 
             <div class="d-flex flex-wrap justify-content-end gap-2 mt-3 pt-3 border-top">
-                <a href="?" class="btn btn-outline-secondary">Reset filters</a>
+                <a href="?"
+                   class="btn btn-outline-danger{% if not active_filters %} disabled{% endif %}"
+                   {% if not active_filters %}aria-disabled="true" tabindex="-1"{% endif %}>
+                    Reset filters
+                </a>
                 <button type="submit" class="btn btn-primary">Apply filters</button>
             </div>
         </form>
