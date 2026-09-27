@@ -127,11 +127,11 @@ class HomeView(LoginRequiredMixin, TemplateView):
         context['conformity_list'] = Conformity.objects.with_related().roots()
         context['audit_list'] = Audit.objects.all()
         context['action_list'] = Action.objects.all()
-        context['my_action'] = Action.objects.filter(owner=user).filter(active=True).order_by('status')[:constance_config.HOME_ITEMS_LIMIT]
+        context['my_action'] = Action.objects.filter(owner=user).filter(active=True).order_by('status', 'pk')[:constance_config.HOME_ITEMS_LIMIT]
         context['my_conformity'] = Conformity.objects.with_related().filter(
             responsible=user
-        ).order_by('status')[:50]
-        context['cp_list'] = ControlPoint.objects.filter(status='TOBE').order_by('period_end_date')[:constance_config.HOME_ITEMS_LIMIT]
+        ).order_by('status', 'pk')[:50]
+        context['cp_list'] = ControlPoint.objects.filter(status='TOBE').order_by('period_end_date', 'pk')[:constance_config.HOME_ITEMS_LIMIT]
 
         return context
 
@@ -291,7 +291,9 @@ class OrganizationIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     template_name = "conformity/organization_list.html"
 
     def get_queryset(self):
-        return Organization.objects.prefetch_related("applicable_frameworks")
+        return Organization.objects.prefetch_related("applicable_frameworks").order_by(
+            "name", "pk"
+        )
 
 
 class OrganizationDetailView(LoginRequiredMixin, DetailView):
@@ -337,7 +339,7 @@ class FrameworkIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     template_name = 'conformity/framework_list.html'
 
     def get_queryset(self):
-        return Framework.objects.prefetch_related("requirements")
+        return Framework.objects.prefetch_related("requirements").order_by("name", "pk")
 
 
 class FrameworkDetailView(LoginRequiredMixin, DetailView):
@@ -361,7 +363,13 @@ class ConformityIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     filterset_class = ConformityFilter
 
     def get_queryset(self, **kwargs):
-        return Conformity.objects.with_related().roots()
+        return Conformity.objects.with_related().roots().order_by(
+            "organization",
+            "requirement__framework",
+            "requirement__tree_id",
+            "requirement__lft",
+            "pk",
+        )
 
 
 class ConformityDetailIndexView(LoginRequiredMixin, ListView):
@@ -580,6 +588,7 @@ class ControlIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
                     to_attr="current_controlpoints",
                 ),
             )
+            .order_by("level", "frequency", "title", "pk")
         )
 
     def get_context_data(self, **kwargs):
@@ -614,7 +623,9 @@ class ControlPointIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     template_name = 'conformity/controlpoint_list.html'
 
     def get_queryset(self):
-        return ControlPoint.objects.select_related("control", "control_user")
+        return ControlPoint.objects.select_related(
+            "control", "control_user"
+        ).order_by("period_end_date", "pk")
 
 
 class ControlPointUpdateView(AttachmentUploadViewMixin, LoginRequiredMixin, SaveStayMixin, UpdateView):
@@ -731,7 +742,7 @@ class AttachmentIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
                 "IndicatorPoint",
                 queryset=IndicatorPoint.objects.select_related("indicator"),
             ),
-        )
+        ).order_by("-create_date", "file", "pk")
 
 
 class AttachmentDownloadView(LoginRequiredMixin, View):
