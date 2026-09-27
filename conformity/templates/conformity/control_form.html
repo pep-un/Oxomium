@@ -3,12 +3,22 @@
 {% load ui_tags %}
 
 {% block header %}
-<h1 class="h1 bi bi-pencil-square" > Edit of a control</h1>
+<h1 class="h1 d-flex align-items-center gap-2">
+    {% if object %}
+        <a href="{% url 'conformity:control_detail' object.pk %}" class="header-back-link" aria-label="Back to control" title="Back to control">
+            <i class="bi bi-chevron-left" aria-hidden="true"></i>
+        </a>
+        {{ object.title }}
+    {% else %}
+        <a href="{% url 'conformity:control_index' %}" class="header-back-link" aria-label="Back to controls" title="Back to controls">
+            <i class="bi bi-chevron-left" aria-hidden="true"></i>
+        </a>
+        Create control
+    {% endif %}
+</h1>
 {% endblock %}
 
 {% block content %}
-{% route_url 'conformity:control_index' as list_url %}
-{% if object %}{% route_url 'conformity:control_detail' object.pk as detail_url %}{% breadcrumb "Controls" list_url object.title detail_url "Edit" %}{% else %}{% breadcrumb "Controls" list_url "Create" %}{% endif %}
 
     <form class="form" method="post" action="">
         {% csrf_token %}
