@@ -133,6 +133,47 @@ class AttachmentValidationTests(TestCase):
         with override_config(ATTACHMENT_ALLOWED_MIME_TYPES="image/png, application/pdf"):
             self.assertEqual(attachment_accept(), "application/pdf,image/png")
 
+    @override_config(ATTACHMENT_ALLOWED_MIME_TYPES="image/*")
+    @patch("conformity.validators.inspect_attachment", return_value=("image/webp", "a" * 64))
+    def test_wildcard_image_prefix_allows_any_detected_image_mime(self, _inspect):
+        upload = self.upload(name="picture.webp")
+        self.assertEqual(validate_attachment(upload), ("image/webp", "a" * 64))
+
+    def test_default_allowlist_includes_structured_and_presentation_formats(self):
+        allowed = {
+            "application/json",
+            "text/json",
+            "application/xml",
+            "text/xml",
+            "text/html",
+            "application/xhtml+xml",
+            "application/vnd.ms-powerpoint",
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            "application/vnd.oasis.opendocument.presentation",
+            "image/*",
+        }
+        from conformity.validators import allowed_mime_types
+        self.assertTrue(allowed.issubset(allowed_mime_types()))
+
+    def test_extension_mapping_for_structured_and_presentation_formats(self):
+        cases = [
+            ("application/json", "data.json"),
+            ("application/xml", "data.xml"),
+            ("text/html", "index.html"),
+            ("application/vnd.ms-powerpoint", "slides.ppt"),
+            ("application/vnd.openxmlformats-officedocument.presentationml.presentation", "slides.pptx"),
+            ("application/vnd.oasis.opendocument.presentation", "slides.odp"),
+        ]
+        for mime_type, filename in cases:
+            with self.subTest(mime_type=mime_type):
+                with override_config(ATTACHMENT_ALLOWED_MIME_TYPES=mime_type):
+                    with patch("conformity.validators.inspect_attachment", return_value=(mime_type, "b" * 64)):
+                        self.assertEqual(
+                            validate_attachment(self.upload(name=filename)),
+                            (mime_type, "b" * 64),
+                        )
+
+
 
 class AttachmentChecksumViewTests(TestCase):
     def setUp(self):
