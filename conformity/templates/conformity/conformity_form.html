@@ -4,14 +4,15 @@
 {% load mptt_tags %}
 
 {% block header %}
-<h1 class="h1 bi bi-shield-shaded" >
-    Conformity for {{ conformity.requirement.full_path }} in {{ conformity.organization.name }}
+<h1 class="h1 d-flex align-items-center gap-2">
+    <a href="{% url 'conformity:conformity_detail_index' conformity.organization.pk conformity.requirement.framework.pk %}" class="header-back-link" aria-label="Back to conformity review" title="Back to conformity review">
+        <i class="bi bi-chevron-left" aria-hidden="true"></i>
+    </a>
+    {{ conformity.requirement.full_path }} — {{ conformity.organization.name }}
 </h1>
 {% endblock %}
 
 {% block content %}
-{% route_url 'conformity:conformity_index' as list_url %}
-{% breadcrumb "Conformities" list_url conformity.organization.name %}
 
     <form class="form" method="post" action="">
         {% csrf_token %}
