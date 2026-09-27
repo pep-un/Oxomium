@@ -248,6 +248,37 @@ class RemainingCoverageTests(TestCase):
             )
             self.assertIn(f'filename="conformity.{extension}"', response["Content-Disposition"])
 
+    def test_selection_export_applies_current_filters(self):
+        matched = Action.objects.create(
+            title="Matched export action",
+            organization=self.organization,
+            owner=self.user,
+        )
+        excluded = Action.objects.create(
+            title="Excluded export action",
+            organization=self.organization,
+            owner=self.user,
+        )
+
+        selection_request = self.factory.get(
+            "/actions",
+            {"format": "csv", "scope": "selection", "title": "Matched export"},
+        )
+        selection_response = ActionExportView().get(selection_request)
+        selection_content = selection_response.content.decode()
+
+        self.assertIn(matched.title, selection_content)
+        self.assertNotIn(excluded.title, selection_content)
+
+        all_request = self.factory.get(
+            "/actions",
+            {"format": "csv", "title": "Matched export"},
+        )
+        all_content = ActionExportView().get(all_request).content.decode()
+
+        self.assertIn(matched.title, all_content)
+        self.assertIn(excluded.title, all_content)
+
     def test_indicator_detail_context(self):
         point = IndicatorPoint.objects.create(
             indicator=self.indicator,
