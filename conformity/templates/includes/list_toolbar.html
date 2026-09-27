@@ -5,17 +5,14 @@
         {% endif %}
 
         {% if export_url %}
-            <div class="btn-group list-toolbar-action">
-                <a class="btn btn-secondary flex-grow-1" href="{{ export_url }}">
-                    <i class="bi bi-download"></i> Export
-                </a>
+            <div class="dropdown list-toolbar-action">
                 <button type="button"
-                        class="btn btn-secondary dropdown-toggle dropdown-toggle-split"
+                        class="btn btn-secondary dropdown-toggle w-100"
                         data-bs-toggle="dropdown"
                         aria-expanded="false">
-                    <span class="visually-hidden">Choose export format</span>
+                    <i class="bi bi-download"></i> Export
                 </button>
-                <ul class="dropdown-menu">
+                <ul class="dropdown-menu w-100">
                     <li><a class="dropdown-item" href="{{ export_url }}?format=csv">CSV</a></li>
                     <li><a class="dropdown-item" href="{{ export_url }}?format=xlsx">XLSX</a></li>
                 </ul>
