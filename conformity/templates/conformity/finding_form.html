@@ -3,12 +3,22 @@
 {% load ui_tags %}
 
 {% block header %}
-<h1 class="h1 bi bi-pencil-square" > Edit of a finding record</h1>
+<h1 class="h1 d-flex align-items-center gap-2">
+    {% if object %}
+        <a href="{% url 'conformity:finding_detail' object.pk %}" class="header-back-link" aria-label="Back to finding" title="Back to finding">
+            <i class="bi bi-chevron-left" aria-hidden="true"></i>
+        </a>
+        {{ object.short_description }}
+    {% else %}
+        <a href="{% url 'conformity:finding_index' %}" class="header-back-link" aria-label="Back to findings" title="Back to findings">
+            <i class="bi bi-chevron-left" aria-hidden="true"></i>
+        </a>
+        Create finding
+    {% endif %}
+</h1>
 {% endblock %}
 
 {% block content %}
-{% route_url 'conformity:finding_index' as list_url %}
-{% if object %}{% route_url 'conformity:finding_detail' object.pk as detail_url %}{% breadcrumb "Findings" list_url object.short_description detail_url "Edit" %}{% else %}{% breadcrumb "Findings" list_url "Create" %}{% endif %}
 
     <form class="form" method="post" action="">
         {% csrf_token %}
