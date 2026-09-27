@@ -1,3 +1,5 @@
+{% load ui_tags %}
+{% active_filter_count as active_filters %}
 <div class="d-flex flex-wrap gap-2 align-items-center mb-3 list-toolbar">
     <div class="d-flex flex-wrap gap-2 align-items-center">
         {% if filter %}
@@ -15,9 +17,24 @@
                         <span>Export</span>
                     </span>
                 </button>
-                <ul class="dropdown-menu w-100">
-                    <li><a class="dropdown-item" href="{{ export_url }}?format=csv">CSV</a></li>
-                    <li><a class="dropdown-item" href="{{ export_url }}?format=xlsx">XLSX</a></li>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{{ export_url }}?format=csv">Export CSV (All)</a></li>
+                    <li><a class="dropdown-item" href="{{ export_url }}?format=xlsx">Export XLSX (All)</a></li>
+                    {% if active_filters %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item"
+                               href="{{ export_url }}{% querystring format='csv' scope='selection' page=None sort=None %}">
+                                Export CSV (Selection)
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item"
+                               href="{{ export_url }}{% querystring format='xlsx' scope='selection' page=None sort=None %}">
+                                Export XLSX (Selection)
+                            </a>
+                        </li>
+                    {% endif %}
                 </ul>
             </div>
         {% endif %}
