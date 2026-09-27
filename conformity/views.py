@@ -32,10 +32,24 @@ from django.shortcuts import get_object_or_404, redirect
 import os
 
 class RichTableMixin(SingleTableMixin):
-    """Common pagination policy for filtered rich tables."""
+    """Common pagination policy and result counts for filtered rich tables."""
 
     def get_paginate_by(self, table_data):
         return constance_config.TABLE_PAGE_SIZE
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        table = context.get("table")
+        if table is not None and getattr(table, "paginator", None) is not None:
+            context["result_total_count"] = table.paginator.count
+            context["result_visible_count"] = len(table.page.object_list)
+            context["result_is_paginated"] = table.paginator.num_pages > 1
+        else:
+            object_list = context.get("object_list", ())
+            context["result_visible_count"] = len(object_list)
+            context["result_total_count"] = len(object_list)
+            context["result_is_paginated"] = False
+        return context
 
 
 #
