@@ -2,14 +2,15 @@
 {% load ui_tags %}
 
 {% block header %}
-    <h1 class="h1 bi bi-speedometer">
-        Indicator "{{ indicator.name }}"
+    <h1 class="h1 d-flex align-items-center gap-2">
+        <a href="{% url 'conformity:indicator_index' %}" class="header-back-link" aria-label="Back to indicators" title="Back to indicators">
+            <i class="bi bi-chevron-left" aria-hidden="true"></i>
+        </a>
+        {{ indicator.name }}
     </h1>
 {% endblock %}
 
 {% block content %}
-{% route_url 'conformity:indicator_index' as list_url %}
-{% breadcrumb "Indicators" list_url indicator.name %}
 
 <h2>Indicator description</h2>
 <div class="row">
