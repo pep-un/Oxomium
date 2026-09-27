@@ -64,7 +64,7 @@ class Framework(models.Model):
     language = models.CharField(max_length=2, choices=language_choices, default='en')
 
     class Meta:
-        ordering = ['name', 'pk']
+        ordering = ['name']
         verbose_name = 'framework'
         verbose_name_plural = 'frameworks'
 
@@ -114,7 +114,7 @@ class Organization(models.Model):
     attachment = models.ManyToManyField('Attachment', blank=True, related_name='organizations')
 
     class Meta:
-        ordering = ['name', 'pk']
+        ordering = ['name']
 
     def __str__(self):
         return str(self.name)
@@ -264,7 +264,7 @@ class Conformity(models.Model):
     )
 
     class Meta:
-        ordering = ['organization', 'requirement__framework', 'requirement__tree_id', 'requirement__lft', 'pk']
+        ordering = ['organization', 'requirement__framework', 'requirement__tree_id', 'requirement__lft']
         verbose_name = 'conformity'
         verbose_name_plural = 'conformities'
         constraints = [
@@ -488,7 +488,7 @@ class Audit(models.Model):
     attachment = models.ManyToManyField('Attachment', blank=True, related_name='audits')
 
     class Meta:
-        ordering = ['-report_date', '-start_date', 'pk']
+        ordering = ['-report_date','-start_date']
 
     def __str__(self):
 
@@ -590,7 +590,7 @@ class Finding(models.Model):
     cvss_descriptor = models.CharField('CVSS Vector',max_length=256, blank=True)
 
     class Meta:
-        ordering = ['severity', 'pk']
+        ordering = ['severity']
 
     def clean(self):
         if self.cvss is not None and (self.cvss < 0.1 or self.cvss > 10.0):
@@ -673,7 +673,7 @@ class Control(models.Model):
     )
 
     class Meta:
-        ordering = ['level', 'frequency', 'title', 'pk']
+        ordering = ['level','frequency','title']
 
     def __str__(self):
         return "[" + str(self.organization) + "] " + str(self.title)
@@ -717,7 +717,7 @@ class ControlPoint(models.Model):
     attachment = models.ManyToManyField('Attachment', blank=True, related_name='ControlPoint')
 
     class Meta:
-        ordering = ['period_end_date', 'pk']
+        ordering = ['period_end_date']
 
     @staticmethod
     def get_absolute_url():
@@ -936,7 +936,7 @@ class Attachment(models.Model):
     create_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ['-create_date', 'file', 'pk']
+        ordering = ['-create_date', 'file']
 
     def __str__(self):
         return self.file.name.split("/")[1]
