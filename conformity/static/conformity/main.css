@@ -149,36 +149,3 @@
     width: 10rem;
     text-align: center;
 }
-
-
-/* Timed Django message feedback. */
-.app-message {
-    padding-bottom: calc(var(--bs-alert-padding-y) + .25rem);
-}
-
-.app-message-timer {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: .3rem;
-    background-color: currentColor;
-    opacity: .55;
-    transform-origin: left center;
-    animation: app-message-countdown var(--app-message-duration, 10s) linear forwards;
-}
-
-@keyframes app-message-countdown {
-    from {
-        transform: scaleX(1);
-    }
-    to {
-        transform: scaleX(0);
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .app-message-timer {
-        animation: none;
-    }
-}
