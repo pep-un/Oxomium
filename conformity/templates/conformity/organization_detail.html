@@ -27,15 +27,6 @@
 
     <br />
 
-    <div class="alert alert-info">
-        <h2 class="h4 bi bi-paperclip"> Attachments </h2>
-        <ul>
-            {% for attachment in organization.attachment.all %}
-            <li><a href="{% url 'conformity:attachment_download' attachment.id %}"> {{ attachment }} </a></li>
-            {% empty %}
-            <i>No attachment</i>
-            {% endfor %}
-        </ul>
-    </div>
+    {% include "includes/attachment_panel.html" with attachments=organization.attachment.all %}
 
 {% endblock %}
