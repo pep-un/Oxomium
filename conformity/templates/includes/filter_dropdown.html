@@ -16,13 +16,6 @@
     </button>
     <div class="dropdown-menu p-3 shadow-sm filter-dropdown">
         <form method="get">
-            <div class="d-flex align-items-center justify-content-between mb-3">
-                <h2 class="h6 mb-0">Filters</h2>
-                {% if active_filters %}
-                    <span class="badge text-bg-primary">{{ active_filters }} active</span>
-                {% endif %}
-            </div>
-
             {% for field in filter.form %}
                 {% bootstrap_field field layout='horizontal' horizontal_label_class='col-sm-4' horizontal_field_class='col-sm-8' %}
             {% endfor %}
