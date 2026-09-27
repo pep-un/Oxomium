@@ -53,7 +53,10 @@ pylint -E --load-plugins pylint_django --django-settings-module=oxomium --ignore
 For Docker-impacting changes, also validate the Compose configuration and container build:
 
 ~~~bash
+cp .env.example .env
 docker compose config --quiet
+docker compose -f deploy/docker/system-nginx.yaml config --quiet
+docker compose -f deploy/docker/integrated-nginx.yaml config --quiet
 docker compose build web
 ~~~
 
