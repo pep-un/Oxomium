@@ -469,7 +469,8 @@ class AttachmentTable(BaseRichTable):
                 {% for point in record.IndicatorPoint.all %}
                     <a href="{% url 'conformity:indicatorpoint_form' point.id %}">
                         <span class="badge text-bg-info px-3">
-                            <i class="bi bi-speedometer pe-2"></i>{{ point }}
+                            <i class="bi bi-speedometer pe-2"></i>
+                            {{ point.indicator.name }} · {{ point.period_start_date|date:"d-M-Y" }} – {{ point.period_end_date|date:"d-M-Y" }}
                         </span>
                     </a>
                 {% endfor %}
