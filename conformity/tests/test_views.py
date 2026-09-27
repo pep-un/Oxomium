@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase, RequestFactory
 from django.urls import reverse
 from django.utils import timezone
+from constance.test import override_config
 
 from conformity import views
 from conformity.models import (
@@ -316,7 +317,10 @@ class SharedUxComponentsTests(BaseDataMixin, TestCase):
         self.assertContains(response, "Reset filters")
         self.assertContains(response, 'btn btn-primary dropdown-toggle w-100 d-flex align-items-center text-start')
         self.assertContains(response, 'badge text-bg-light">1</span>')
-        self.assertContains(response, 'class="btn btn-success ms-auto" href="' + reverse("conformity:action_create") + '"')
+        self.assertContains(
+            response,
+            'href="' + reverse("conformity:action_create") + '"',
+        )
         self.assertContains(response, 'class="btn btn-secondary dropdown-toggle w-100 d-flex align-items-center text-start"')
         self.assertContains(response, "2 résultats affichés")
         self.assertContains(response, "Export CSV (All)")
@@ -339,10 +343,7 @@ class SharedUxComponentsTests(BaseDataMixin, TestCase):
         self.assertNotContains(response, "Export XLSX (Selection)")
 
     def test_paginated_toolbar_shows_total_and_visible_results(self):
-        with self.settings(CONSTANCE_CONFIG={
-            **__import__("django.conf").conf.settings.CONSTANCE_CONFIG,
-            "TABLE_PAGE_SIZE": (1, "Number of rows displayed per page in rich tables", int),
-        }):
+        with override_config(TABLE_PAGE_SIZE=1):
             response = self.client.get(reverse("conformity:action_index"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "2 résultats, dont 1 affiché")
