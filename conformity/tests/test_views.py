@@ -287,15 +287,16 @@ class SharedUxComponentsTests(BaseDataMixin, TestCase):
         self.assertContains(response, "No indicators have been created yet.")
         self.assertContains(response, reverse("conformity:indicator_create"))
 
-    def test_audit_detail_uses_accessible_breadcrumb(self):
+    def test_audit_detail_uses_object_title_and_back_link(self):
         response = self.client.get(reverse("conformity:audit_detail", args=[self.audit.pk]))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'aria-label="Breadcrumb"')
-        self.assertContains(response, 'aria-current="page"')
+        self.assertContains(response, 'class="header-back-link"')
         self.assertContains(response, reverse("conformity:audit_index"))
+        self.assertNotContains(response, 'aria-label="Breadcrumb"')
 
-    def test_control_detail_does_not_duplicate_return_navigation(self):
+    def test_control_detail_uses_title_and_back_link(self):
         response = self.client.get(reverse("conformity:control_detail", args=[self.ctrl_q.pk]))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'aria-label="Breadcrumb"')
-        self.assertNotContains(response, "Return to control")
+        self.assertContains(response, self.ctrl_q.title)
+        self.assertContains(response, 'class="header-back-link"')
+        self.assertContains(response, reverse("conformity:control_index"))
