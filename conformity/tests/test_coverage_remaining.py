@@ -130,8 +130,15 @@ class RemainingCoverageTests(TestCase):
             status=ControlPoint.Status.SCHEDULED,
         )
         display = ControlPointForm(instance=scheduled, user=self.user)
-        self.assertNotIn("attachments", display.fields)
-        self.assertTrue(all(field.disabled for field in display.fields.values()))
+        self.assertIn("attachments", display.fields)
+        self.assertFalse(display.fields["attachments"].disabled)
+        self.assertTrue(
+            all(
+                field.disabled
+                for name, field in display.fields.items()
+                if name != "attachments"
+            )
+        )
 
     def test_resources_export_all_values_and_empty_fallbacks(self):
         self.action.associated_findings.add(self.finding)
