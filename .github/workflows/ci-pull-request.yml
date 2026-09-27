@@ -167,7 +167,7 @@ jobs:
           changed_files="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
           printf '%s\n' "$changed_files"
 
-          if printf '%s\n' "$changed_files" | grep -Eq             '^(Dockerfile|\.dockerignore|docker-compose\.yml|env-exemple|docker/)'; then
+          if printf '%s\n' "$changed_files" | grep -Eq             '^(Dockerfile|\.dockerignore|compose\.ya?ml|\.env\.example|docker/|deploy/)'; then
             echo "docker=true" >> "$GITHUB_OUTPUT"
           else
             echo "docker=false" >> "$GITHUB_OUTPUT"
@@ -187,5 +187,10 @@ jobs:
         with:
           dockerfile: Dockerfile
           failure-threshold: error
-      - name: Validate Compose file
-        run: docker compose config --quiet
+      - name: Prepare Compose environment
+        run: cp .env.example .env
+      - name: Validate Compose files
+        run: |
+          docker compose config --quiet
+          docker compose --project-directory . -f deploy/docker/system-nginx.yaml config --quiet
+          docker compose --project-directory . -f deploy/docker/integrated-nginx.yaml config --quiet

@@ -1,0 +1,15 @@
+[tool.pylint.main]
+load-plugins = ["pylint_django"]
+django-settings-module = "oxomium"
+ignore = ["__init__.py", "manage.py"]
+ignore-paths = [".*/migrations/.*"]
+
+[tool.coverage.run]
+branch = true
+relative_files = true
+source = ["."]
+omit = ["*/migrations/*", "scripts/*"]
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true

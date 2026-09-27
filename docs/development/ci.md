@@ -77,14 +77,17 @@ A lightweight `Detect Docker-file changes` job enables `Docker Lint` only when t
 
 - `Dockerfile`
 - `.dockerignore`
-- `docker-compose.yml`
+- `compose.yaml`
 - `docker/**`
-- `env-exemple`
+- `deploy/**`
+- `.env.example`
 
 The pull-request Docker job runs only:
 
 1. Hadolint on `Dockerfile`;
-2. `docker compose config --quiet`.
+2. copy `.env.example` to the temporary CI `.env`;
+3. validate the root `compose.yaml`;
+4. validate both deployment Compose files under `deploy/docker/`.
 
 The purpose is to catch Dockerfile style/errors and invalid Compose configuration cheaply before merge. Runtime integration, image vulnerability scanning and HTTP smoke testing are deliberately deferred to the canonical `main` commit.
 
@@ -105,8 +108,9 @@ The full Docker job proves that the repository can produce and run a deployable 
 Its stages are:
 
 1. lint `Dockerfile` with Hadolint;
-2. validate `docker-compose.yml`;
-3. build the Compose web image once;
+2. create the temporary CI `.env` from `.env.example`;
+3. validate `compose.yaml` and the deployment Compose files;
+4. build the Compose web image once;
 4. run `python manage.py check` inside that image;
 5. scan the validated image with Trivy;
 6. fail on HIGH or CRITICAL findings;
@@ -177,7 +181,10 @@ pylint -E --load-plugins pylint_django \
 For Docker-file changes:
 
 ~~~bash
+cp .env.example .env
 docker compose config --quiet
+docker compose --project-directory . -f deploy/docker/system-nginx.yaml config --quiet
+docker compose --project-directory . -f deploy/docker/integrated-nginx.yaml config --quiet
 hadolint Dockerfile
 ~~~
 

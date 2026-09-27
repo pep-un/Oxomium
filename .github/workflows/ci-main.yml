@@ -135,8 +135,13 @@ jobs:
         with:
           dockerfile: Dockerfile
           failure-threshold: error
-      - name: Validate Compose file
-        run: docker compose config --quiet
+      - name: Prepare Compose environment
+        run: cp .env.example .env
+      - name: Validate Compose files
+        run: |
+          docker compose config --quiet
+          docker compose --project-directory . -f deploy/docker/system-nginx.yaml config --quiet
+          docker compose --project-directory . -f deploy/docker/integrated-nginx.yaml config --quiet
       - name: Build Compose web image
         run: docker compose --project-name oxomium-ci build web
       - name: Tag validated image
