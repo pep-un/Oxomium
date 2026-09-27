@@ -2,6 +2,7 @@ import hashlib
 from unittest.mock import MagicMock, patch
 
 from django.core.exceptions import ValidationError
+from django.db import models
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
@@ -107,7 +108,12 @@ class AttachmentValidationTests(TestCase):
             mime_type="application/pdf",
             sha256="e" * 64,
         )
-        duplicate = Attachment.objects.create(file=self.upload(name="duplicate.pdf", content=b"%PDF-1.4 duplicate"))
+        duplicate = Attachment(
+            file=self.upload(name="duplicate.pdf", content=b"%PDF-1.4 duplicate"),
+            mime_type="application/pdf",
+            sha256="legacy-placeholder",
+        )
+        models.Model.save(duplicate, force_insert=True)
         Attachment.objects.filter(pk=duplicate.pk).update(sha256=None)
         duplicate.refresh_from_db()
         duplicate_path = duplicate.file.path
