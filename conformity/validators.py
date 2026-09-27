@@ -1,4 +1,7 @@
 """Central attachment upload policy and content-based validation."""
+import hashlib
+import os
+import tempfile
 from pathlib import Path
 
 from constance import config
@@ -30,16 +33,41 @@ def attachment_max_size_help():
     return _("Maximum file size: %(size)s MB.") % {"size": config.ATTACHMENT_MAX_SIZE_MB}
 
 
-def detect_mime(uploaded_file):
+def inspect_attachment(uploaded_file):
+    """Return detected MIME type and SHA-256 using a temporary on-disk copy."""
     position = uploaded_file.tell()
     uploaded_file.seek(0)
-    content = uploaded_file.read()
-    uploaded_file.seek(position)
-    return Magic(mime=True).from_buffer(content).split(";", 1)[0].strip().lower()
+    digest = hashlib.sha256()
+    temp_path = None
+
+    try:
+        with tempfile.NamedTemporaryFile(delete=False) as temporary:
+            temp_path = temporary.name
+            for chunk in uploaded_file.chunks():
+                digest.update(chunk)
+                temporary.write(chunk)
+
+        detected = Magic(mime=True).from_file(temp_path).split(";", 1)[0].strip().lower()
+        return detected, digest.hexdigest()
+    finally:
+        uploaded_file.seek(position)
+        if temp_path:
+            try:
+                os.unlink(temp_path)
+            except FileNotFoundError:
+                pass
+
+
+def detect_mime(uploaded_file):
+    return inspect_attachment(uploaded_file)[0]
+
+
+def calculate_sha256(uploaded_file):
+    return inspect_attachment(uploaded_file)[1]
 
 
 def validate_attachment(uploaded_file):
-    """Validate one upload against the configured allowlist before persistence."""
+    """Validate one upload and return its detected MIME type and SHA-256."""
     max_bytes = config.ATTACHMENT_MAX_SIZE_MB * 1024 * 1024
     if uploaded_file.size > max_bytes:
         raise ValidationError(
@@ -48,7 +76,7 @@ def validate_attachment(uploaded_file):
             params={"size": config.ATTACHMENT_MAX_SIZE_MB},
         )
 
-    detected = detect_mime(uploaded_file)
+    detected, checksum = inspect_attachment(uploaded_file)
     allowed = allowed_mime_types()
     if detected not in allowed:
         raise ValidationError(
@@ -65,4 +93,4 @@ def validate_attachment(uploaded_file):
             code="attachment_extension_mismatch",
             params={"extension": extension or _("(none)"), "mime": detected},
         )
-    return detected
+    return detected, checksum
