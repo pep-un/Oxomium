@@ -19,7 +19,7 @@ def unlink_attachment(owner, attachment):
     if not field.many_to_many or field.remote_field.model is not Attachment:
         raise ValueError("Owner does not expose an Attachment M2M relation.")
 
-    relation = owner.attachment
+    relation = getattr(owner, "attachment")
     if not relation.filter(pk=attachment.pk).exists():
         raise ValueError("Attachment is not linked to this object.")
 
