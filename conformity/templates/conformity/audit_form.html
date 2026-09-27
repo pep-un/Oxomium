@@ -1,15 +1,23 @@
 {% extends "conformity/main.html" %}
-{% load ui_tags %}
 {% load django_bootstrap5 %}
 
 {% block header %}
-<h1 class="h1 bi bi-pencil-square"> Edit of an audit record</h1>
+<h1 class="h1 d-flex align-items-center gap-2">
+    {% if object %}
+        <a href="{% url 'conformity:audit_detail' object.pk %}" class="header-back-link" aria-label="Back to audit" title="Back to audit">
+            <i class="bi bi-chevron-left" aria-hidden="true"></i>
+        </a>
+        {{ object.name|default:"Audit" }}
+    {% else %}
+        <a href="{% url 'conformity:audit_index' %}" class="header-back-link" aria-label="Back to audits" title="Back to audits">
+            <i class="bi bi-chevron-left" aria-hidden="true"></i>
+        </a>
+        Create audit
+    {% endif %}
+</h1>
 {% endblock %}
 
 {% block content %}
-{% route_url 'conformity:audit_index' as list_url %}
-{% if object %}{% route_url 'conformity:audit_detail' object.pk as detail_url %}{% breadcrumb "Audits" list_url object.name detail_url "Edit" %}{% else %}{% breadcrumb "Audits" list_url "Create" %}{% endif %}
-
     <form class="form" method="post" action="" enctype="multipart/form-data">
         {% csrf_token %}
         <div class="row justify-content-center">
