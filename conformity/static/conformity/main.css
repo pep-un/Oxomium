@@ -197,18 +197,44 @@
 
 
 .attachment-dropzone {
+    position: relative;
+    overflow: hidden;
     transition: padding .15s ease, background-color .15s ease, outline-color .15s ease;
 }
 
+.attachment-drop-copy {
+    position: relative;
+    z-index: 1;
+}
+
+.attachment-drop-icon {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 7rem;
+    color: var(--bs-info);
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(.8);
+    transition: opacity .15s ease, transform .15s ease;
+}
+
 .attachment-dropzone.is-dragging {
-    padding-top: 2.25rem;
-    padding-bottom: 2.25rem;
+    padding-top: 4.5rem;
+    padding-bottom: 4.5rem;
     background-color: var(--bs-info-bg-subtle);
     outline: 2px dashed var(--bs-info);
     outline-offset: -.4rem;
 }
 
 .attachment-dropzone.is-dragging .attachment-drop-copy {
-    padding-top: 1.5rem !important;
-    padding-bottom: 1.5rem !important;
+    padding-top: 3rem !important;
+    padding-bottom: 3rem !important;
+}
+
+.attachment-dropzone.is-dragging .attachment-drop-icon {
+    opacity: .3;
+    transform: scale(1);
 }
