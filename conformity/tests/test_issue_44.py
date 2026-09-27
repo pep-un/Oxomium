@@ -6,14 +6,14 @@ from django.urls import reverse
 
 from conformity.models import Action, Audit, Control, ControlPoint, Finding, Organization
 from conformity.tables import (
-    ActionTable, AuditTable, ConformityTable, ControlTable, ControlPointTable,
-    FindingTable, FrameworkTable, OrganizationTable,
+    ActionTable, AttachmentTable, AuditLogTable, AuditTable, ConformityTable,
+    ControlTable, ControlPointTable, FindingTable, FrameworkTable, OrganizationTable,
 )
 from conformity.filterset import ConformityFilter, ControlPointFilter, FindingFilter
 from conformity.views import (
-    ActionIndexView, AuditIndexView, ConformityIndexView, ControlIndexView,
-    ControlPointIndexView, FindingIndexView, FrameworkIndexView,
-    OrganizationIndexView,
+    ActionIndexView, AttachmentIndexView, AuditLogDetailView, AuditIndexView,
+    ConformityIndexView, ControlIndexView, ControlPointIndexView, FindingIndexView,
+    FrameworkIndexView, OrganizationIndexView,
 )
 
 
@@ -21,6 +21,8 @@ class RichTableConfigurationTests(TestCase):
     def test_all_tabular_index_views_have_explicit_table_classes(self):
         expected = {
             ActionIndexView: ActionTable,
+            AttachmentIndexView: AttachmentTable,
+            AuditLogDetailView: AuditLogTable,
             AuditIndexView: AuditTable,
             ConformityIndexView: ConformityTable,
             ControlIndexView: ControlTable,
@@ -256,6 +258,8 @@ class RichTableInteractionTests(TestCase):
     def test_all_rich_table_indexes_render(self):
         view_names = (
             "conformity:action_index",
+            "conformity:attachment_index",
+            "conformity:auditlog_index",
             "conformity:audit_index",
             "conformity:conformity_index",
             "conformity:control_index",

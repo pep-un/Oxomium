@@ -24,7 +24,7 @@ from .forms import ConformityForm, AuditForm, FindingForm, ActionForm, Organizat
 from .models import Organization, Framework, Conformity, Audit, Action, Finding, Control, ControlPoint, Attachment, \
     Requirement, Indicator, IndicatorPoint
 from .resources import ConformityResource, ControlResource, FindingResource, ActionResource, IndicatorResource, AuditResource
-from .tables import ActionTable, AuditTable, ConformityTable, ControlTable, ControlPointTable, FindingTable, FrameworkTable, OrganizationTable
+from .tables import ActionTable, AttachmentTable, AuditLogTable, AuditTable, ConformityTable, ControlTable, ControlPointTable, FindingTable, FrameworkTable, OrganizationTable
 
 from django.views import View
 from django.http import HttpResponse, Http404, HttpResponseRedirect
@@ -667,8 +667,10 @@ class IndicatorExportView(LoginRequiredMixin, View):
 #
 
 
-class AttachmentIndexView(LoginRequiredMixin, ListView):
+class AttachmentIndexView(LoginRequiredMixin, RichTableMixin, ListView):
     model = Attachment
+    table_class = AttachmentTable
+    template_name = "conformity/attachment_list.html"
 
 
 class AttachmentDownloadView(LoginRequiredMixin, View):
@@ -697,20 +699,21 @@ class AttachmentChecksumView(LoginRequiredMixin, View):
 #
 
 
-class AuditLogDetailView(LoginRequiredMixin, FilterView):
+class AuditLogDetailView(LoginRequiredMixin, RichTableMixin, FilterView):
     model = LogEntry
+    table_class = AuditLogTable
     template_name = 'auditlog/logentry_list.html'
     filterset_class = AuditLogFilter
-
-    def get_paginate_by(self, queryset):
-        return constance_config.TABLE_PAGE_SIZE
 
     def get_queryset(self, **kwargs):
         return LogEntry.objects.all().order_by('-timestamp')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        for logentry in context['logentry_list']:
+        table = context.get("table")
+        rows = table.page.object_list if table is not None and getattr(table, "page", None) else ()
+        for row in rows:
+            logentry = row.record
             changes = logentry.changes_dict
             m2m_fields = {
                 field_name: values

@@ -1,8 +1,9 @@
 import django_tables2 as tables
+from auditlog.models import LogEntry
 from django.utils.html import format_html
 from django_tables2.utils import A
 
-from .models import Action, Audit, Conformity, Control, ControlPoint, Finding, Framework, Organization
+from .models import Action, Attachment, Audit, Conformity, Control, ControlPoint, Finding, Framework, Organization
 
 
 CENTER = {"cell": {"class": "text-center"}}
@@ -385,3 +386,185 @@ class ControlPointTable(BaseRichTable):
         model = ControlPoint
         fields = ("period_start_date", "period_end_date", "control_user", "status")
         sequence = ("name", "period_start_date", "period_end_date", "control_user", "status")
+
+
+class AttachmentTable(BaseRichTable):
+    attachment = tables.TemplateColumn(
+        verbose_name="Attachment",
+        accessor="file",
+        template_code="""
+            {% include "includes/attachment_link.html" with attachment=record %}
+        """,
+        order_by=("file",),
+        attrs=PRIMARY_COLUMN,
+    )
+    sha256 = tables.TemplateColumn(
+        verbose_name="SHA-256",
+        template_code="""
+            {% if record.sha256 %}
+                <div class="btn-group btn-group-sm" role="group" aria-label="SHA-256 checksum">
+                    <span class="btn btn-outline-secondary disabled font-monospace"
+                          title="{{ record.sha256 }}"
+                          aria-disabled="true">
+                        {{ record.sha256|slice:":16" }}…
+                    </span>
+                    <button type="button"
+                            class="btn btn-outline-secondary js-copy-sha256"
+                            title="Copy SHA-256"
+                            aria-label="Copy SHA-256"
+                            data-copy-value="{{ record.sha256 }}">
+                        <i class="bi bi-clipboard" aria-hidden="true"></i>
+                    </button>
+                </div>
+            {% else %}
+                <form method="post" action="{% url 'conformity:attachment_checksum' record.id %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-secondary" title="Calculate SHA-256">
+                        <i class="bi bi-calculator me-1" aria-hidden="true"></i>
+                        Calculate
+                    </button>
+                </form>
+            {% endif %}
+        """,
+        order_by=("sha256",),
+    )
+    create_date = tables.DateTimeColumn(
+        verbose_name="Creation date",
+        format="d-M-Y H:i",
+        attrs=CENTER,
+    )
+    references = tables.TemplateColumn(
+        accessor="pk",
+        verbose_name="References",
+        template_code="""
+            <div class="d-flex flex-wrap gap-1 justify-content-center">
+                {% for org in record.organizations.all %}
+                    <a href="{% url 'conformity:organization_detail' org.id %}">
+                        <span class="badge text-bg-dark px-3">
+                            <i class="bi bi-building pe-2"></i>{{ org }}
+                        </span>
+                    </a>
+                {% endfor %}
+                {% for framework in record.frameworks.all %}
+                    <a href="{% url 'conformity:framework_detail' framework.id %}#attachments">
+                        <span class="badge text-bg-primary px-3">
+                            <i class="bi bi-card-checklist pe-2"></i>{{ framework }}
+                        </span>
+                    </a>
+                {% endfor %}
+                {% for cp in record.ControlPoint.all %}
+                    <a href="{% url 'conformity:controlpoint_form' cp.id %}">
+                        <span class="badge text-bg-secondary px-3">
+                            <i class="bi bi-clipboard2-check pe-2"></i>{{ cp }}
+                        </span>
+                    </a>
+                {% endfor %}
+                {% for audit in record.audits.all %}
+                    <a href="{% url 'conformity:audit_detail' audit.id %}">
+                        <span class="badge text-bg-success px-3">
+                            <i class="bi bi-ui-checks-grid pe-2"></i>{{ audit }}
+                        </span>
+                    </a>
+                {% endfor %}
+            </div>
+        """,
+        orderable=False,
+        attrs=CENTER,
+    )
+
+    class Meta(BaseRichTable.Meta):
+        model = Attachment
+        fields = ("sha256", "create_date")
+        sequence = ("attachment", "sha256", "create_date", "references")
+
+
+class AuditLogTable(BaseRichTable):
+    timestamp = tables.DateTimeColumn(
+        verbose_name="Date",
+        format="d-M-Y H:i T",
+        attrs={"cell": {"class": "text-nowrap"}},
+    )
+    actor = tables.TemplateColumn(
+        template_code="""
+            {{ record.actor|default_if_none:"Oxomium" }}
+            <span class="badge rounded-pill text-bg-secondary">
+                {{ record.remote_addr|default_if_none:"" }}
+            </span>
+        """,
+        order_by=("actor",),
+        attrs=CENTER,
+    )
+    action = tables.TemplateColumn(
+        template_code="""
+            {% if record.action is 0 %}
+                <span class="badge rounded-pill text-bg-success">CREATE</span>
+            {% elif record.action is 1 %}
+                <span class="badge rounded-pill text-bg-primary">UPDATE</span>
+            {% elif record.action is 2 %}
+                <span class="badge rounded-pill text-bg-danger">DELETE</span>
+            {% elif record.action is 3 %}
+                <span class="badge rounded-pill text-bg-secondary">ACCESS</span>
+            {% endif %}
+        """,
+        order_by=("action",),
+        attrs=CENTER,
+    )
+    resource = tables.TemplateColumn(
+        accessor="object_repr",
+        verbose_name="Resource",
+        template_code="""
+            {{ record.object_repr|truncatechars:30 }}
+            <span class="badge rounded-pill text-bg-secondary">{{ record.content_type|lower }}</span>
+        """,
+        order_by=("object_repr",),
+    )
+    changes = tables.TemplateColumn(
+        accessor="pk",
+        verbose_name="Change",
+        template_code="""
+            <ul class="mb-0">
+                {% for change in record.m2m_changes %}
+                    <li class="text-wrap">
+                        {{ change.field }}:
+                        <span class="badge rounded-pill text-bg-secondary">
+                            {{ change.operation }}: {{ change.objects|join:", " }}
+                        </span>
+                    </li>
+                {% endfor %}
+                {% for key, value in record.standard_changes.items %}
+                    {% if record.action is 0 %}
+                        <li class="text-wrap">
+                            {{ key }}:
+                            <span class="badge rounded-pill text-bg-success" title="{{ value.1 }}">
+                                {{ value.1|truncatechars:40 }}
+                            </span>
+                        </li>
+                    {% elif record.action is 1 %}
+                        <li class="text-wrap">
+                            {{ key }}:
+                            <span class="badge rounded-pill text-bg-secondary" title="{{ value.0 }}">
+                                {{ value.0|truncatechars:20 }}
+                            </span>
+                            ⇒
+                            <span class="badge rounded-pill text-bg-primary" title="{{ value.1 }}">
+                                {{ value.1|truncatechars:20 }}
+                            </span>
+                        </li>
+                    {% elif record.action is 2 %}
+                        <li class="text-wrap">
+                            {{ key }}:
+                            <span class="badge rounded-pill text-bg-danger" title="{{ value.0 }}">
+                                {{ value.0|truncatechars:40 }}
+                            </span>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        """,
+        orderable=False,
+    )
+
+    class Meta(BaseRichTable.Meta):
+        model = LogEntry
+        fields = ("timestamp", "actor", "action")
+        sequence = ("timestamp", "actor", "action", "resource", "changes")
