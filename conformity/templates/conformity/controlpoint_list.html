@@ -10,7 +10,6 @@
 
 {% block content %}
 {% route_url 'conformity:control_index' as controls_url %}
-{% breadcrumb "Controls" controls_url "Control points" %}
 
 <div class="row">
     {% if filter.form.data.control and object_list %}
