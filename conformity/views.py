@@ -25,6 +25,7 @@ from .models import Organization, Framework, Conformity, Audit, Action, Finding,
     Requirement, Indicator, IndicatorPoint
 from .resources import ActionResource, AttachmentResource, AuditLogResource, AuditResource, ConformityResource, ControlPointResource, ControlResource, FindingResource, FrameworkResource, IndicatorResource, OrganizationResource
 from .tables import ActionTable, AttachmentTable, AuditLogTable, AuditTable, ConformityTable, ControlTable, ControlPointTable, FindingTable, FrameworkTable, OrganizationTable
+from .services.attachments import unlink_attachment
 
 from django.views import View
 from django.http import HttpResponse, Http404, HttpResponseRedirect
@@ -733,6 +734,38 @@ class AttachmentChecksumView(LoginRequiredMixin, View):
         attachment = get_object_or_404(Attachment, id=pk)
         attachment.calculate_checksum_and_merge()
         return redirect('conformity:attachment_index')
+
+
+class AttachmentUnlinkView(LoginRequiredMixin, View):
+    """Remove an attachment from one allowed owner and clean up orphans."""
+
+    owner_models = {
+        "framework": (Framework, "conformity:framework_detail"),
+        "organization": (Organization, "conformity:organization_form"),
+        "audit": (Audit, "conformity:audit_form"),
+        "controlpoint": (ControlPoint, "conformity:controlpoint_form"),
+        "indicatorpoint": (IndicatorPoint, "conformity:indicatorpoint_form"),
+    }
+
+    def post(self, request, owner_type, owner_pk, attachment_pk):
+        owner_config = self.owner_models.get(owner_type)
+        if owner_config is None:
+            raise Http404("Unsupported attachment owner.")
+
+        owner_model, return_route = owner_config
+        owner = get_object_or_404(owner_model, pk=owner_pk)
+        attachment = get_object_or_404(
+            owner.attachment.all(),
+            pk=attachment_pk,
+        )
+        orphan_deleted = unlink_attachment(owner, attachment)
+
+        if orphan_deleted:
+            messages.success(request, "Attachment removed and orphaned document deleted.")
+        else:
+            messages.success(request, "Attachment removed from this object.")
+
+        return redirect(return_route, owner.pk)
 
 
 
