@@ -150,7 +150,7 @@
     text-align: center;
 }
 
-/* Shared list controls and breadcrumbs */
+/* Shared list controls */
 .list-toolbar {
     min-width: 0;
 }
@@ -161,32 +161,21 @@
     overflow-y: auto;
 }
 
-.app-breadcrumb {
-    padding: .45rem .75rem;
-    background: var(--bs-tertiary-bg);
-    border: 1px solid var(--bs-border-color);
-    border-radius: var(--bs-border-radius);
-}
-
-.app-breadcrumb .breadcrumb {
-    margin-bottom: 0;
-    scrollbar-width: thin;
-    font-size: .9rem;
-}
-
-.app-breadcrumb-link {
+.header-back-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     color: var(--bs-secondary-color);
-    text-decoration: underline;
-    text-underline-offset: .16em;
+    text-decoration: none;
+    border-radius: var(--bs-border-radius-sm);
 }
 
-.app-breadcrumb-link:hover,
-.app-breadcrumb-link:focus-visible {
+.header-back-link:hover,
+.header-back-link:focus-visible {
     color: var(--bs-body-color);
-    text-decoration-thickness: .12em;
 }
 
-.app-breadcrumb .breadcrumb-item.active {
-    color: var(--bs-body-color);
-    font-weight: 500;
+.header-back-link:focus-visible {
+    outline: 2px solid var(--bs-secondary-color);
+    outline-offset: 2px;
 }
