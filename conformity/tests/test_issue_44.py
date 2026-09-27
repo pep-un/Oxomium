@@ -9,7 +9,7 @@ from conformity.tables import (
     ActionTable, AttachmentTable, AuditLogTable, AuditTable, ConformityTable,
     ControlTable, ControlPointTable, FindingTable, FrameworkTable, OrganizationTable,
 )
-from conformity.filterset import ConformityFilter, ControlPointFilter, FindingFilter
+from conformity.filterset import AttachmentFilter, ConformityFilter, ControlPointFilter, FindingFilter
 from conformity.views import (
     ActionIndexView, AttachmentIndexView, AuditLogDetailView, AuditIndexView,
     ConformityIndexView, ControlIndexView, ControlPointIndexView, FindingIndexView,
@@ -40,6 +40,13 @@ class RichTableConfigurationTests(TestCase):
         self.assertIn("action", getattr(FindingFilter, "base_filters"))
         self.assertIn("action", getattr(ConformityFilter, "base_filters"))
         self.assertIn("action", getattr(ControlPointFilter, "base_filters"))
+
+    def test_attachment_filters_cover_metadata_relations_and_dates(self):
+        expected = {
+            "file", "mime_type", "sha256", "organization", "framework", "audit",
+            "control_point", "indicator_point", "create_date_after", "create_date_before",
+        }
+        self.assertTrue(expected.issubset(AttachmentFilter.base_filters))
 
     def test_primary_columns_share_name_and_width(self):
         table_classes = (
@@ -272,6 +279,25 @@ class RichTableInteractionTests(TestCase):
             with self.subTest(view_name=view_name):
                 response = self.client.get(reverse(view_name))
                 self.assertEqual(response.status_code, 200)
+
+    def test_missing_list_actions_are_now_exposed(self):
+        export_routes = {
+            "conformity:attachment_index": "conformity:attachment_export",
+            "conformity:auditlog_index": "conformity:auditlog_export",
+            "conformity:framework_index": "conformity:framework_export",
+            "conformity:organization_index": "conformity:organization_export",
+            "conformity:conformity_index": "conformity:conformity_index_export",
+            "conformity:controlpoint_index": "conformity:controlpoint_export",
+        }
+        for view_name, export_name in export_routes.items():
+            with self.subTest(view_name=view_name):
+                response = self.client.get(reverse(view_name))
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, reverse(export_name))
+
+        finding_response = self.client.get(reverse("conformity:finding_index"))
+        self.assertEqual(finding_response.status_code, 200)
+        self.assertContains(finding_response, reverse("conformity:finding_create"))
 
     def test_relation_filtered_findings_include_items_hidden_from_general_list(self):
         general = self.client.get(reverse("conformity:finding_index"))
