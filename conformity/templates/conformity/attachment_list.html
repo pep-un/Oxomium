@@ -12,7 +12,6 @@
             <thead>
                 <tr>
                     <th scope="col">Attachment</th>
-                    <th scope="col">MIME type</th>
                     <th scope="col">SHA-256</th>
                     <th scope="col" class="text-center text-nowrap">Creation date</th>
                     <th scope="col" class="text-center">References</th>
@@ -24,13 +23,10 @@
                         <td class="text-break">
                             {% include "includes/attachment_link.html" with attachment=attachment %}
                         </td>
-                        <td class="text-break">
-                            <code>{{ attachment.mime_type|default:"—" }}</code>
-                        </td>
                         <td class="text-nowrap">
                             {% if attachment.sha256 %}
                                 <div class="d-inline-flex align-items-center gap-1">
-                                    <code title="{{ attachment.sha256 }}">{{ attachment.sha256|slice:":16" }}…</code>
+                                    <span class="font-monospace" title="{{ attachment.sha256 }}">{{ attachment.sha256|slice:":16" }}…</span>
                                     <button
                                         type="button"
                                         class="btn btn-sm btn-outline-secondary py-0 px-1 js-copy-sha256"
@@ -66,7 +62,7 @@
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="5">
+                        <td colspan="4">
                             <div class="alert alert-info mb-0" role="alert">
                                 No attachment in the library.
                             </div>
