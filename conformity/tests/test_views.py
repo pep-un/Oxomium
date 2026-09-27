@@ -250,16 +250,18 @@ class SharedUxComponentsTests(BaseDataMixin, TestCase):
         self.assertContains(response, 'btn btn-primary dropdown-toggle')
         self.assertContains(response, 'badge text-bg-light ms-1">1</span>')
         self.assertContains(response, 'class="btn btn-success ms-auto" href="' + reverse("conformity:action_create") + '"')
-        self.assertContains(response, 'class="btn btn-secondary" href="' + reverse("conformity:action_export") + '"')
+        self.assertContains(response, 'class="btn btn-secondary flex-grow-1" href="' + reverse("conformity:action_export") + '"')
         self.assertContains(response, "2 résultats affichés")
         self.assertContains(response, 'class="btn btn-secondary dropdown-toggle dropdown-toggle-split"')
-        self.assertNotContains(response, "btn-danger")
+        self.assertContains(response, "btn-outline-danger")
 
     def test_pagination_does_not_mark_filters_active(self):
         response = self.client.get(reverse("conformity:action_index"), {"page": "1"})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'btn btn-secondary dropdown-toggle')
         self.assertNotContains(response, 'badge text-bg-light ms-1">')
+        self.assertContains(response, 'btn btn-outline-danger disabled')
+        self.assertContains(response, 'aria-disabled="true" tabindex="-1"')
 
     def test_paginated_toolbar_shows_total_and_visible_results(self):
         with self.settings(CONSTANCE_CONFIG={
