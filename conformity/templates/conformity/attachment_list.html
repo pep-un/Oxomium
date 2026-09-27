@@ -1,86 +1,17 @@
 {% extends "conformity/main.html" %}
+{% load render_table from django_tables2 %}
+{% load ui_tags %}
 
 {% block header %}
     <h1 class="h1 bi bi-paperclip"> Attachment library</h1>
-    <span class="badge rounded-pill text-bg-primary fs-4"> {{ object_list | length }} Attachments</span>
 {% endblock %}
 
 {% block content %}
-    <div class="table-responsive">
-        <table class="table table-striped align-middle">
-            <caption class="d-none">Attachment library</caption>
-            <thead>
-                <tr>
-                    <th scope="col">Attachment</th>
-                    <th scope="col">SHA-256</th>
-                    <th scope="col" class="text-center text-nowrap">Creation date</th>
-                    <th scope="col" class="text-center">References</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for attachment in attachment_list %}
-                    <tr>
-                        <td class="text-break">
-                            {% include "includes/attachment_link.html" with attachment=attachment %}
-                        </td>
-                        <td class="text-nowrap">
-                            {% if attachment.sha256 %}
-                                <div class="btn-group btn-group-sm" role="group" aria-label="SHA-256 checksum">
-                                    <span
-                                        class="btn btn-outline-secondary disabled font-monospace"
-                                        title="{{ attachment.sha256 }}"
-                                        aria-disabled="true">
-                                        {{ attachment.sha256|slice:":16" }}…
-                                    </span>
-                                    <button
-                                        type="button"
-                                        class="btn btn-outline-secondary js-copy-sha256"
-                                        title="Copy SHA-256"
-                                        aria-label="Copy SHA-256"
-                                        data-copy-value="{{ attachment.sha256 }}">
-                                        <i class="bi bi-clipboard" aria-hidden="true"></i>
-                                    </button>
-                                </div>
-                            {% else %}
-                                <form method="post" action="{% url 'conformity:attachment_checksum' attachment.id %}" class="d-inline">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-outline-secondary" title="Calculate SHA-256">
-                                        <i class="bi bi-calculator me-1" aria-hidden="true"></i>
-                                        Calculate
-                                    </button>
-                                </form>
-                            {% endif %}
-                        </td>
-                        <td class="text-center text-nowrap">
-                            {{ attachment.create_date }}
-                        </td>
-                        <td>
-                            <div class="d-flex flex-wrap gap-1 justify-content-center">
-                                {% for org in attachment.organizations.all %}
-                                    <a href="{% url 'conformity:organization_detail' org.id %}"><span class="badge text-bg-dark px-3"><i class="bi bi-building pe-2"></i>{{ org }}</span></a>
-                                {% endfor %}
-                                {% for framework in attachment.frameworks.all %}
-                                    <a href="{% url 'conformity:framework_detail' framework.id %}#attachments"><span class="badge text-bg-primary px-3"><i class="bi bi-card-checklist pe-2"></i>{{ framework }}</span></a>
-                                {% endfor %}
-                                {% for cp in attachment.ControlPoint.all %}
-                                    <a href="{% url 'conformity:controlpoint_form' cp.id %}"><span class="badge text-bg-secondary px-3"><i class="bi bi-clipboard2-check pe-2"></i>{{ cp }}</span></a>
-                                {% endfor %}
-                                {% for audit in attachment.audits.all %}
-                                    <a href="{% url 'conformity:audit_detail' audit.id %}"><span class="badge text-bg-success px-3"><i class="bi bi-ui-checks-grid pe-2"></i>{{ audit }}</span></a>
-                                {% endfor %}
-                            </div>
-                        </td>
-                    </tr>
-                {% empty %}
-                    <tr>
-                        <td colspan="4">
-                            <div class="alert alert-info mb-0" role="alert">
-                                No attachment in the library.
-                            </div>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+    {% route_url 'conformity:attachment_export' as export_url %}
+    {% include "includes/list_toolbar.html" with export_url=export_url filter=filter total_count=result_total_count visible_count=result_visible_count is_paginated=result_is_paginated %}
+    {% if object_list %}
+        {% render_table table %}
+    {% else %}
+        {% include "includes/empty_state.html" with empty_message="No attachments are available." %}
+    {% endif %}
 {% endblock %}

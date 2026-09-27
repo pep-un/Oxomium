@@ -17,6 +17,7 @@ urlpatterns = [
     path('audit/export/', views.AuditExportView.as_view(), name='audit_export'),
 
     path('conformity/', views.ConformityIndexView.as_view(), name='conformity_index'),
+    path('conformity/export', views.ConformityIndexExportView.as_view(), name='conformity_index_export'),
     path('conformity/update/<int:pk>', views.ConformityUpdateView.as_view(), name='conformity_form'),
     path('conformity/organization/<int:org>/framework/<int:pol>/', views.ConformityDetailIndexView.as_view(),
          name='conformity_detail_index'),
@@ -30,11 +31,13 @@ urlpatterns = [
     path('finding/export', views.FindingExportView.as_view(), name='finding_export'),
 
     path('organization/', views.OrganizationIndexView.as_view(), name='organization_index'),
+    path('organization/export', views.OrganizationExportView.as_view(), name='organization_export'),
     path('organization/<int:pk>', views.OrganizationDetailView.as_view(), name='organization_detail'),
     path('organization/create', views.OrganizationCreateView.as_view(), name='organization_create'),
     path('organization/update/<int:pk>', views.OrganizationUpdateView.as_view(), name='organization_form'),
 
     path('framework/', views.FrameworkIndexView.as_view(), name='framework_index'),
+    path('framework/export', views.FrameworkExportView.as_view(), name='framework_export'),
     path('framework/<int:pk>/', views.FrameworkDetailView.as_view(), name='framework_detail'),
 
     path('action/', views.ActionIndexView.as_view(), name='action_index'),
@@ -49,6 +52,7 @@ urlpatterns = [
     path('control/export', views.ControlExportView.as_view(), name='control_export'),
 
     path('controlpoint/', views.ControlPointIndexView.as_view(), name='controlpoint_index'),
+    path('controlpoint/export', views.ControlPointExportView.as_view(), name='controlpoint_export'),
     path('controlpoint/update/<int:pk>', views.ControlPointUpdateView.as_view(), name='controlpoint_form'),
 
     path('indicator/', views.IndicatorIndexView.as_view(), name='indicator_index'),
@@ -59,9 +63,13 @@ urlpatterns = [
     path('indicatorpoint/<int:pk>/', views.IndicatorPointUpdateView.as_view(), name='indicatorpoint_form'),
 
     path('attachment/', views.AttachmentIndexView.as_view(), name='attachment_index'),
+    path('attachment/export', views.AttachmentExportView.as_view(), name='attachment_export'),
     path('attachment/<int:pk>/', views.AttachmentDownloadView.as_view(), name='attachment_download'),
     path('attachment/<int:pk>/checksum/', views.AttachmentChecksumView.as_view(), name='attachment_checksum'),
+    path('attachment/<str:owner_type>/<int:owner_pk>/<int:attachment_pk>/unlink/',
+         views.AttachmentUnlinkView.as_view(), name='attachment_unlink'),
 
     path('help/', TemplateView.as_view(template_name='help.html'), name='help'),
     path('auditlog/', views.AuditLogDetailView.as_view(), name='auditlog_index'),
+    path('auditlog/export', views.AuditLogExportView.as_view(), name='auditlog_export'),
 ]

@@ -1,17 +1,36 @@
 {% extends "conformity/main.html" %}
 {% load django_bootstrap5 %}
+{% load ui_tags %}
 
 {% block header %}
-<h1 class="h1 bi bi-pencil-square" > Edit of a finding record</h1>
+<h1 class="h1 d-flex align-items-center gap-2">
+    {% if object %}
+        <a href="{% url 'conformity:finding_detail' object.pk %}" class="header-back-link" aria-label="Back to finding" title="Back to finding">
+            <i class="bi bi-chevron-left" aria-hidden="true"></i>
+        </a>
+        {{ object.short_description }}
+    {% else %}
+        <a href="{% url 'conformity:finding_index' %}" class="header-back-link" aria-label="Back to findings" title="Back to findings">
+            <i class="bi bi-chevron-left" aria-hidden="true"></i>
+        </a>
+        Create finding
+    {% endif %}
+</h1>
 {% endblock %}
 
 {% block content %}
+
     <form class="form" method="post" action="">
         {% csrf_token %}
         <div class="row justify-content-center">
             <div class="col col-6">
                 {% bootstrap_form form %}
-                {% bootstrap_button button_type="submit" content="Save" %}
+                {% if object %}
+                    {% url 'conformity:finding_detail' object.pk as cancel_url %}
+                {% else %}
+                    {% url 'conformity:finding_index' as cancel_url %}
+                {% endif %}
+                {% include "includes/form_toolbar.html" with cancel_url=cancel_url %}
             </div>
         </div>
     </form>

@@ -1,10 +1,17 @@
 {% extends "conformity/main.html" %}
+{% load ui_tags %}
 
 {% block header %}
-    <h1 class="h2 bi bi-ui-checks-grid"> Audit {{ audit.name }}</h1>
+    <h1 class="h2 d-flex align-items-center gap-2">
+        <a href="{% url 'conformity:audit_index' %}" class="header-back-link" aria-label="Back to audits" title="Back to audits">
+            <i class="bi bi-chevron-left" aria-hidden="true"></i>
+        </a>
+        {{ audit.name|default:"Audit" }}
+    </h1>
 {% endblock %}
 
 {% block content %}
+
     <h2 class="h4">Information</h2>
     <p>
         Audit of {{ audit.organization }} realised by {{ audit.auditor }} ({{ audit.get_type }}). <br />
@@ -140,16 +147,7 @@
 
     <br />
 
-    <div class="alert alert-info">
-        <h2 class="h4 bi bi-paperclip"> Attachment </h2>
-        <ul>
-            {% for attachment in audit.attachment.all %}
-            <li>{% include "includes/attachment_link.html" with attachment=attachment %}</li>
-            {% empty %}
-            <i>No attachment</i>
-            {% endfor %}
-        </ul>
-    </div>
+    {% include "includes/attachment_panel.html" with attachments=audit.attachment.all %}
 
     <br />
 

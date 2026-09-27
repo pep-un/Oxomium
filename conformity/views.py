@@ -4,38 +4,111 @@ View of the Conformity Module
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Count, F, Prefetch
 from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import UpdateView, CreateView
+from django_filters import FilterSet
 from django_filters.views import FilterView
 from constance import config as constance_config
 from django_tables2.views import SingleTableMixin
 from django.utils import timezone
 from auditlog.models import LogEntry
 from import_export.formats import base_formats
+from import_export.resources import ModelResource
 from mptt.templatetags.mptt_tags import cache_tree_children
 
 from .filterset import ActionFilter, ControlFilter, ControlPointFilter, FrameworkFilter, OrganizationFilter, \
-    ConformityFilter, AuditFilter, FindingFilter, IndicatorFilter, AuditLogFilter
+    ConformityFilter, AuditFilter, FindingFilter, IndicatorFilter, AttachmentFilter, AuditLogFilter
 from .forms import ConformityForm, AuditForm, FindingForm, ActionForm, OrganizationForm, ControlForm, ControlPointForm, \
     IndicatorForm, IndicatorPointForm
 from .models import Organization, Framework, Conformity, Audit, Action, Finding, Control, ControlPoint, Attachment, \
     Requirement, Indicator, IndicatorPoint
-from .resources import ConformityResource, ControlResource, FindingResource, ActionResource, IndicatorResource, AuditResource
-from .tables import ActionTable, AuditTable, ConformityTable, ControlTable, ControlPointTable, FindingTable, FrameworkTable, OrganizationTable
+from .resources import ActionResource, AttachmentResource, AuditLogResource, AuditResource, ConformityResource, ControlPointResource, ControlResource, FindingResource, FrameworkResource, IndicatorResource, OrganizationResource
+from .tables import ActionTable, AttachmentTable, AuditLogTable, AuditTable, ConformityTable, ControlTable, ControlPointTable, FindingTable, FrameworkTable, OrganizationTable
+from .services.attachments import unlink_attachment
 
 from django.views import View
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 import os
 
+class SaveStayMixin:
+    """Redirect back to the edit form when Save & Stay is requested."""
+
+    stay_url_name = None
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        if self.request.POST.get("action") == "save_stay":
+            return redirect(self.stay_url_name, self.object.pk)
+        return response
+
+
 class RichTableMixin(SingleTableMixin):
-    """Common pagination policy for filtered rich tables."""
+    """Common pagination policy and result counts for filtered rich tables."""
 
     def get_paginate_by(self, table_data):
         return constance_config.TABLE_PAGE_SIZE
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        table = context.get("table")
+        if table is not None and getattr(table, "paginator", None) is not None:
+            context["result_total_count"] = table.paginator.count
+            context["result_visible_count"] = len(table.page.object_list)
+            context["result_is_paginated"] = table.paginator.num_pages > 1
+        else:
+            object_list = context.get("object_list", ())
+            context["result_visible_count"] = len(object_list)
+            context["result_total_count"] = len(object_list)
+            context["result_is_paginated"] = False
+        return context
+
+
+class FilteredExportMixin:
+    """Export all rows or the current filtered selection."""
+
+    resource_class = ModelResource
+    filterset_class = FilterSet
+    filename = "export"
+
+    def get_export_queryset(self, request):
+        raise NotImplementedError
+
+    def get_selection_queryset(self, request):
+        return self.get_export_queryset(request)
+
+    def get_queryset_for_export(self, request):
+        if request.GET.get("scope") != "selection":
+            return self.get_export_queryset(request)
+
+        data = request.GET.copy()
+        for key in ("format", "scope", "page", "sort"):
+            data.pop(key, None)
+        filterset_class = getattr(self, "filterset_class")
+        return filterset_class(
+            data=data,
+            queryset=self.get_selection_queryset(request),
+            request=request,
+        ).qs
+
+    def get(self, request, *args, **kwargs):
+        resource_class = getattr(self, "resource_class")
+        dataset = resource_class().export(self.get_queryset_for_export(request))
+        export_format = (
+            base_formats.CSV()
+            if request.GET.get("format") == "csv"
+            else base_formats.XLSX()
+        )
+        response = HttpResponse(
+            export_format.export_data(dataset),
+            content_type=export_format.get_content_type(),
+        )
+        response["Content-Disposition"] = (
+            f'attachment; filename="{self.filename}.{export_format.get_extension()}"'
+        )
+        return response
 
 
 #
@@ -54,11 +127,11 @@ class HomeView(LoginRequiredMixin, TemplateView):
         context['conformity_list'] = Conformity.objects.with_related().roots()
         context['audit_list'] = Audit.objects.all()
         context['action_list'] = Action.objects.all()
-        context['my_action'] = Action.objects.filter(owner=user).filter(active=True).order_by('status')[:constance_config.HOME_ITEMS_LIMIT]
+        context['my_action'] = Action.objects.filter(owner=user).filter(active=True).order_by('status', 'pk')[:constance_config.HOME_ITEMS_LIMIT]
         context['my_conformity'] = Conformity.objects.with_related().filter(
             responsible=user
-        ).order_by('status')[:50]
-        context['cp_list'] = ControlPoint.objects.filter(status='TOBE').order_by('period_end_date')[:constance_config.HOME_ITEMS_LIMIT]
+        ).order_by('status', 'pk')[:50]
+        context['cp_list'] = ControlPoint.objects.filter(status='TOBE').order_by('period_end_date', 'pk')[:constance_config.HOME_ITEMS_LIMIT]
 
         return context
 
@@ -75,7 +148,7 @@ class AuditIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     def get_queryset(self):
         return Audit.objects.annotate(
             findings_count=Count("finding", distinct=True),
-        )
+        ).order_by("-report_date", "-start_date", "pk")
 
 
 class AuditDetailView(LoginRequiredMixin, DetailView):
@@ -83,7 +156,7 @@ class AuditDetailView(LoginRequiredMixin, DetailView):
 
 
 class AttachmentUploadViewMixin:
-    """Validate uploads before persistence and surface attachment errors clearly."""
+    """Surface attachment validation errors from the shared upload forms."""
 
     def form_invalid(self, form):
         for error in form.errors.get('attachments', ()):
@@ -94,19 +167,9 @@ class AttachmentUploadViewMixin:
             )
         return super().form_invalid(form)
 
-    def form_valid(self, form):
-        attachments = self.request.FILES.getlist('attachments')
-        try:
-            from .validators import validate_attachment
-            for uploaded_file in attachments:
-                validate_attachment(uploaded_file)
-        except ValidationError as exc:
-            form.add_error('attachments', exc)
-            return self.form_invalid(form)
-        return super().form_valid(form)
 
-
-class AuditUpdateView(AttachmentUploadViewMixin, LoginRequiredMixin, UpdateView):
+class AuditUpdateView(AttachmentUploadViewMixin, LoginRequiredMixin, SaveStayMixin, UpdateView):
+    stay_url_name = "conformity:audit_form"
     model = Audit
     form_class = AuditForm
 
@@ -120,7 +183,8 @@ class AuditUpdateView(AttachmentUploadViewMixin, LoginRequiredMixin, UpdateView)
 
 
 
-class AuditCreateView(AttachmentUploadViewMixin, LoginRequiredMixin, CreateView):
+class AuditCreateView(AttachmentUploadViewMixin, LoginRequiredMixin, SaveStayMixin, CreateView):
+    stay_url_name = "conformity:audit_form"
     model = Audit
     form_class = AuditForm
 
@@ -133,23 +197,14 @@ class AuditCreateView(AttachmentUploadViewMixin, LoginRequiredMixin, CreateView)
         return response
 
 
-class AuditExportView(LoginRequiredMixin, View):
-    def get(self, request, *args, **kwargs):
-        qs = (Audit.objects.all())
-        dataset = AuditResource().export(qs)
+class AuditExportView(LoginRequiredMixin, FilteredExportMixin, View):
+    resource_class = AuditResource
+    filterset_class = AuditFilter
+    filename = "audits"
 
-        if request.GET.get("format") == "csv":
-            export_format = base_formats.CSV()
-        else:
-            export_format = base_formats.XLSX()
+    def get_export_queryset(self, request):
+        return Audit.objects.all()
 
-        data = export_format.export_data(dataset)
-        content_type = export_format.get_content_type()
-        filename = f"audits.{export_format.get_extension()}"
-
-        response = HttpResponse(data, content_type=content_type)
-        response["Content-Disposition"] = f'attachment; filename="{filename}"'
-        return response
 
 
 #
@@ -168,15 +223,16 @@ class FindingIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
             .select_related("audit")
             .annotate(actions_count=Count("actions", distinct=True))
         )
-        if self.request.GET.get("audit") or self.request.GET.get("action"):
-            return queryset
-        return queryset.filter(
-            severity__in=["CRT", "MAJ", "MIN", "OBS"],
-            archived=False,
-        )
+        if not (self.request.GET.get("audit") or self.request.GET.get("action")):
+            queryset = queryset.filter(
+                severity__in=["CRT", "MAJ", "MIN", "OBS"],
+                archived=False,
+            )
+        return queryset.order_by("severity", "pk")
 
 
-class FindingCreateView(LoginRequiredMixin, CreateView):
+class FindingCreateView(LoginRequiredMixin, SaveStayMixin, CreateView):
+    stay_url_name = "conformity:finding_form"
     model = Finding
     form_class = FindingForm
 
@@ -198,28 +254,30 @@ class FindingDetailView(LoginRequiredMixin, DetailView):
     model = Finding
 
 
-class FindingUpdateView(LoginRequiredMixin, UpdateView):
+class FindingUpdateView(LoginRequiredMixin, SaveStayMixin, UpdateView):
+    stay_url_name = "conformity:finding_form"
     model = Finding
     form_class = FindingForm
 
 
-class FindingExportView(LoginRequiredMixin, View):
-    def get(self, request, *args, **kwargs):
-        qs = (Finding.objects.all())
-        dataset = FindingResource().export(qs)
+class FindingExportView(LoginRequiredMixin, FilteredExportMixin, View):
+    resource_class = FindingResource
+    filterset_class = FindingFilter
+    filename = "findings"
 
-        if request.GET.get("format") == "csv":
-            export_format = base_formats.CSV()
-        else:
-            export_format = base_formats.XLSX()
+    def get_export_queryset(self, request):
+        return Finding.objects.all()
 
-        data = export_format.export_data(dataset)
-        content_type = export_format.get_content_type()
-        filename = f"findings.{export_format.get_extension()}"
+    def get_selection_queryset(self, request):
+        queryset = Finding.objects.all()
+        if request.GET.get("audit") or request.GET.get("action"):
+            return queryset
+        return queryset.filter(
+            severity__in=["CRT", "MAJ", "MIN", "OBS"],
+            archived=False,
+        )
 
-        response = HttpResponse(data, content_type=content_type)
-        response["Content-Disposition"] = f'attachment; filename="{filename}"'
-        return response
+
 
 #
 # Organizations
@@ -233,7 +291,9 @@ class OrganizationIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     template_name = "conformity/organization_list.html"
 
     def get_queryset(self):
-        return Organization.objects.prefetch_related("applicable_frameworks")
+        return Organization.objects.prefetch_related("applicable_frameworks").order_by(
+            "name", "pk"
+        )
 
 
 class OrganizationDetailView(LoginRequiredMixin, DetailView):
@@ -256,12 +316,14 @@ class OrganizationFrameworkFormMixin(AttachmentUploadViewMixin):
         return HttpResponseRedirect(self.get_success_url())
 
 
-class OrganizationUpdateView(LoginRequiredMixin, OrganizationFrameworkFormMixin, UpdateView):
+class OrganizationUpdateView(LoginRequiredMixin, SaveStayMixin, OrganizationFrameworkFormMixin, UpdateView):
+    stay_url_name = "conformity:organization_form"
     model = Organization
     form_class = OrganizationForm
 
 
-class OrganizationCreateView(LoginRequiredMixin, OrganizationFrameworkFormMixin, CreateView):
+class OrganizationCreateView(LoginRequiredMixin, SaveStayMixin, OrganizationFrameworkFormMixin, CreateView):
+    stay_url_name = "conformity:organization_form"
     model = Organization
     form_class = OrganizationForm
 
@@ -277,7 +339,7 @@ class FrameworkIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     template_name = 'conformity/framework_list.html'
 
     def get_queryset(self):
-        return Framework.objects.prefetch_related("requirements")
+        return Framework.objects.prefetch_related("requirements").order_by("name", "pk")
 
 
 class FrameworkDetailView(LoginRequiredMixin, DetailView):
@@ -301,7 +363,13 @@ class ConformityIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     filterset_class = ConformityFilter
 
     def get_queryset(self, **kwargs):
-        return Conformity.objects.with_related().roots()
+        return Conformity.objects.with_related().roots().order_by(
+            "organization",
+            "requirement__framework",
+            "requirement__tree_id",
+            "requirement__lft",
+            "pk",
+        )
 
 
 class ConformityDetailIndexView(LoginRequiredMixin, ListView):
@@ -392,7 +460,8 @@ class ConformityExportView(LoginRequiredMixin, View):
 #
 
 
-class ActionCreateView(LoginRequiredMixin, CreateView):
+class ActionCreateView(LoginRequiredMixin, SaveStayMixin, CreateView):
+    stay_url_name = "conformity:action_form"
     model = Action
     form_class = ActionForm
 
@@ -444,38 +513,41 @@ class ActionIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
             F('priority').asc(nulls_last=True),
             'status',
             '-update_date',
+            'pk',
         )
 
 
-class ActionUpdateView(LoginRequiredMixin, UpdateView):
+class ActionUpdateView(LoginRequiredMixin, SaveStayMixin, UpdateView):
+    stay_url_name = "conformity:action_form"
     model = Action
     form_class = ActionForm
 
 
-class ActionExportView(LoginRequiredMixin, View):
-    def get(self, request, *args, **kwargs):
-        qs = (Action.objects.all())
-        dataset = ActionResource().export(qs)
+class ActionExportView(LoginRequiredMixin, FilteredExportMixin, View):
+    resource_class = ActionResource
+    filterset_class = ActionFilter
+    filename = "actions"
 
-        if request.GET.get("format") == "csv":
-            export_format = base_formats.CSV()
-        else:
-            export_format = base_formats.XLSX()
+    def get_export_queryset(self, request):
+        return Action.objects.all()
 
-        data = export_format.export_data(dataset)
-        content_type = export_format.get_content_type()
-        filename = f"actions.{export_format.get_extension()}"
+    def get_selection_queryset(self, request):
+        queryset = Action.objects.all()
+        if not request.GET.get("status"):
+            queryset = queryset.exclude(
+                status__in=[Action.Status.ENDED, Action.Status.CANCELED]
+            )
+        return queryset
 
-        response = HttpResponse(data, content_type=content_type)
-        response["Content-Disposition"] = f'attachment; filename="{filename}"'
-        return response
+
 
 #
 # Control
 #
 
 
-class ControlCreateView(LoginRequiredMixin, CreateView):
+class ControlCreateView(LoginRequiredMixin, SaveStayMixin, CreateView):
+    stay_url_name = "conformity:control_form"
     model = Control
     form_class = ControlForm
 
@@ -504,7 +576,7 @@ class ControlIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
         current_points = ControlPoint.objects.filter(
             period_start_date__lte=today,
             period_end_date__gte=today,
-        ).order_by("period_start_date")
+        ).order_by("period_start_date", "pk")
         return (
             Control.objects
             .select_related("organization")
@@ -516,6 +588,7 @@ class ControlIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
                     to_attr="current_controlpoints",
                 ),
             )
+            .order_by("level", "frequency", "title", "pk")
         )
 
     def get_context_data(self, **kwargs):
@@ -529,11 +602,11 @@ class ControlIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
         context['cp4x'] = ControlPoint.objects.filter(control__frequency="4").filter(status="TOBE").count()
         context['cp6x'] = ControlPoint.objects.filter(control__frequency="6").filter(status="TOBE").count()
         context['cp12x'] = ControlPoint.objects.filter(control__frequency="12").filter(status="TOBE").count()
-
         return context
 
 
-class ControlUpdateView(LoginRequiredMixin, UpdateView):
+class ControlUpdateView(LoginRequiredMixin, SaveStayMixin, UpdateView):
+    stay_url_name = "conformity:control_form"
     model = Control
     form_class = ControlForm
 
@@ -550,10 +623,13 @@ class ControlPointIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     template_name = 'conformity/controlpoint_list.html'
 
     def get_queryset(self):
-        return ControlPoint.objects.select_related("control", "control_user")
+        return ControlPoint.objects.select_related(
+            "control", "control_user"
+        ).order_by("period_end_date", "pk")
 
 
-class ControlPointUpdateView(AttachmentUploadViewMixin, LoginRequiredMixin, UpdateView):
+class ControlPointUpdateView(AttachmentUploadViewMixin, LoginRequiredMixin, SaveStayMixin, UpdateView):
+    stay_url_name = "conformity:controlpoint_form"
     model = ControlPoint
     form_class = ControlPointForm
 
@@ -571,26 +647,14 @@ class ControlPointUpdateView(AttachmentUploadViewMixin, LoginRequiredMixin, Upda
         return response
 
 
-class ControlExportView(LoginRequiredMixin, View):
-    def get(self, request, *args, **kwargs):
-        qs = (
-            Control.objects.all()
-#            .select_related("requirement__framework", "organization")
-        )
-        dataset = ControlResource().export(qs)
+class ControlExportView(LoginRequiredMixin, FilteredExportMixin, View):
+    resource_class = ControlResource
+    filterset_class = ControlFilter
+    filename = "controls"
 
-        if request.GET.get("format") == "csv":
-            export_format = base_formats.CSV()
-        else:
-            export_format = base_formats.XLSX()
+    def get_export_queryset(self, request):
+        return Control.objects.all()
 
-        data = export_format.export_data(dataset)
-        content_type = export_format.get_content_type()
-        filename = f"controls.{export_format.get_extension()}"
-
-        response = HttpResponse(data, content_type=content_type)
-        response["Content-Disposition"] = f'attachment; filename="{filename}"'
-        return response
 
 
 #
@@ -598,7 +662,8 @@ class ControlExportView(LoginRequiredMixin, View):
 #
 
 
-class IndicatorCreateView(LoginRequiredMixin, CreateView):
+class IndicatorCreateView(LoginRequiredMixin, SaveStayMixin, CreateView):
+    stay_url_name = "conformity:indicator_form"
     model = Indicator
     form_class = IndicatorForm
 
@@ -621,32 +686,33 @@ class IndicatorIndexView(LoginRequiredMixin, FilterView):
     template_name = 'conformity/indicator_list.html'
 
 
-class IndicatorUpdateView(LoginRequiredMixin, UpdateView):
+class IndicatorUpdateView(LoginRequiredMixin, SaveStayMixin, UpdateView):
+    stay_url_name = "conformity:indicator_form"
     model = Indicator
     form_class = IndicatorForm
 
 
-class IndicatorPointUpdateView(LoginRequiredMixin, UpdateView):
+class IndicatorPointUpdateView(AttachmentUploadViewMixin, LoginRequiredMixin, SaveStayMixin, UpdateView):
+    stay_url_name = "conformity:indicatorpoint_form"
     model = IndicatorPoint
     form_class = IndicatorPointForm
 
-class IndicatorExportView(LoginRequiredMixin, View):
-    def get(self, request, *args, **kwargs):
-        qs = (Indicator.objects.all())
-        dataset = IndicatorResource().export(qs)
-
-        if request.GET.get("format") == "csv":
-            export_format = base_formats.CSV()
-        else:
-            export_format = base_formats.XLSX()
-
-        data = export_format.export_data(dataset)
-        content_type = export_format.get_content_type()
-        filename = f"indicators.{export_format.get_extension()}"
-
-        response = HttpResponse(data, content_type=content_type)
-        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        attachments = self.request.FILES.getlist('attachments')
+        for file in attachments:
+            attachment = Attachment.get_or_create_for_upload(file)[0]
+            self.object.attachment.add(attachment)
         return response
+
+class IndicatorExportView(LoginRequiredMixin, FilteredExportMixin, View):
+    resource_class = IndicatorResource
+    filterset_class = IndicatorFilter
+    filename = "indicators"
+
+    def get_export_queryset(self, request):
+        return Indicator.objects.all()
+
 
 
 #
@@ -654,8 +720,29 @@ class IndicatorExportView(LoginRequiredMixin, View):
 #
 
 
-class AttachmentIndexView(LoginRequiredMixin, ListView):
+class AttachmentIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     model = Attachment
+    table_class = AttachmentTable
+    filterset_class = AttachmentFilter
+    template_name = "conformity/attachment_list.html"
+
+    def get_queryset(self):
+        return Attachment.objects.prefetch_related(
+            "organizations",
+            "frameworks",
+            Prefetch(
+                "audits",
+                queryset=Audit.objects.select_related("organization"),
+            ),
+            Prefetch(
+                "ControlPoint",
+                queryset=ControlPoint.objects.select_related("control__organization"),
+            ),
+            Prefetch(
+                "IndicatorPoint",
+                queryset=IndicatorPoint.objects.select_related("indicator"),
+            ),
+        ).order_by("-create_date", "file", "pk")
 
 
 class AttachmentDownloadView(LoginRequiredMixin, View):
@@ -677,6 +764,38 @@ class AttachmentChecksumView(LoginRequiredMixin, View):
         return redirect('conformity:attachment_index')
 
 
+class AttachmentUnlinkView(LoginRequiredMixin, View):
+    """Remove an attachment from one allowed owner and clean up orphans."""
+
+    owner_models = {
+        "framework": (Framework, "conformity:framework_detail"),
+        "organization": (Organization, "conformity:organization_form"),
+        "audit": (Audit, "conformity:audit_form"),
+        "controlpoint": (ControlPoint, "conformity:controlpoint_form"),
+        "indicatorpoint": (IndicatorPoint, "conformity:indicatorpoint_form"),
+    }
+
+    def post(self, request, owner_type, owner_pk, attachment_pk):
+        owner_config = self.owner_models.get(owner_type)
+        if owner_config is None:
+            raise Http404("Unsupported attachment owner.")
+
+        owner_model, return_route = owner_config
+        owner = get_object_or_404(owner_model, pk=owner_pk)
+        attachment = get_object_or_404(
+            getattr(owner, "attachment").all(),
+            pk=attachment_pk,
+        )
+        orphan_deleted = unlink_attachment(owner, attachment)
+
+        if orphan_deleted:
+            messages.success(request, "Attachment removed and orphaned document deleted.")
+        else:
+            messages.success(request, "Attachment removed from this object.")
+
+        return redirect(return_route, owner.pk)
+
+
 
 
 #
@@ -684,20 +803,21 @@ class AttachmentChecksumView(LoginRequiredMixin, View):
 #
 
 
-class AuditLogDetailView(LoginRequiredMixin, FilterView):
+class AuditLogDetailView(LoginRequiredMixin, RichTableMixin, FilterView):
     model = LogEntry
+    table_class = AuditLogTable
     template_name = 'auditlog/logentry_list.html'
     filterset_class = AuditLogFilter
 
-    def get_paginate_by(self, queryset):
-        return constance_config.TABLE_PAGE_SIZE
-
     def get_queryset(self, **kwargs):
-        return LogEntry.objects.all().order_by('-timestamp')
+        return LogEntry.objects.all().order_by('-timestamp', '-pk')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        for logentry in context['logentry_list']:
+        table = context.get("table")
+        rows = table.page.object_list if table is not None and getattr(table, "page", None) else ()
+        for row in rows:
+            logentry = row.record
             changes = logentry.changes_dict
             m2m_fields = {
                 field_name: values
@@ -722,3 +842,61 @@ class AuditLogDetailView(LoginRequiredMixin, FilterView):
             else:
                 logentry.standard_changes = standard_changes
         return context
+
+
+
+class FrameworkExportView(LoginRequiredMixin, FilteredExportMixin, View):
+    resource_class = FrameworkResource
+    filterset_class = FrameworkFilter
+    filename = "frameworks"
+
+    def get_export_queryset(self, request):
+        return Framework.objects.all()
+
+
+class OrganizationExportView(LoginRequiredMixin, FilteredExportMixin, View):
+    resource_class = OrganizationResource
+    filterset_class = OrganizationFilter
+    filename = "organizations"
+
+    def get_export_queryset(self, request):
+        return Organization.objects.all()
+
+
+class ConformityIndexExportView(LoginRequiredMixin, FilteredExportMixin, View):
+    resource_class = ConformityResource
+    filterset_class = ConformityFilter
+    filename = "conformities"
+
+    def get_export_queryset(self, request):
+        return Conformity.objects.all()
+
+    def get_selection_queryset(self, request):
+        return Conformity.objects.with_related().roots()
+
+
+class ControlPointExportView(LoginRequiredMixin, FilteredExportMixin, View):
+    resource_class = ControlPointResource
+    filterset_class = ControlPointFilter
+    filename = "controlpoints"
+
+    def get_export_queryset(self, request):
+        return ControlPoint.objects.all()
+
+
+class AttachmentExportView(LoginRequiredMixin, FilteredExportMixin, View):
+    resource_class = AttachmentResource
+    filterset_class = AttachmentFilter
+    filename = "attachments"
+
+    def get_export_queryset(self, request):
+        return Attachment.objects.all()
+
+
+class AuditLogExportView(LoginRequiredMixin, FilteredExportMixin, View):
+    resource_class = AuditLogResource
+    filterset_class = AuditLogFilter
+    filename = "audit-log"
+
+    def get_export_queryset(self, request):
+        return LogEntry.objects.all().order_by("-timestamp")

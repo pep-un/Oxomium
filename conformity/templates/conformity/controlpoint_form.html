@@ -1,52 +1,58 @@
 {% extends "conformity/main.html" %}
+{% load ui_tags %}
 {% load django_bootstrap5 %}
 
 {% block header %}
-<h1 class="h1 bi bi-pencil-square" > Edit of a control point</h1>
+<h1 class="h1 d-flex align-items-center gap-2">
+    <a href="{% url 'conformity:control_detail' controlpoint.control.pk %}" class="header-back-link" aria-label="Back to control" title="Back to control">
+        <i class="bi bi-chevron-left" aria-hidden="true"></i>
+    </a>
+    {{ controlpoint.control.title }}
+</h1>
 {% endblock %}
 
 {% block content %}
-    <form class="form" method="post" action="" enctype="multipart/form-data">
+
+    <form id="object-form" class="form" method="post" action="" enctype="multipart/form-data">
         {% csrf_token %}
         <div class="row justify-content-center">
             <div class="col col-6">
                 <h2>{{ controlpoint.control.title }}</h2>
                 <p>{{ controlpoint.control.description }}</p>
                 <ul>
-                <li>Organization: {{ controlpoint.control.organization }}</li>
-                <li>Control frequency: {{ controlpoint.control.get_frequency_display }}</li>
-                <li>Control period: From {{controlpoint.period_start_date}} to {{controlpoint.period_end_date}}</li>
+                    <li>Organization: {{ controlpoint.control.organization }}</li>
+                    <li>Control frequency: {{ controlpoint.control.get_frequency_display }}</li>
+                    <li>Control period: From {{ controlpoint.period_start_date }} to {{ controlpoint.period_end_date }}</li>
                 </ul>
-                <div class="alert alert-info p-1">
-                    <b class="bi bi-paperclip"> Attachments </b>
-                    <ul class="m-0">
-                        {% for attachment in controlpoint.attachment.all %}
-                        <li>{% include "includes/attachment_link.html" with attachment=attachment %}</li>
-                        {% empty %}
-                        <i>No attachment</i>
-                        {% endfor %}
-                    </ul>
-                </div>
-                <hr />
-                {% bootstrap_form form %}
+
+                {% for field in form %}
+                    {% if field.name != "attachments" %}
+                        {% bootstrap_field field %}
+                    {% endif %}
+                {% endfor %}
 
                 <h2 class="h4">Associated actions</h2>
                 <div class="col list-group mb-3">
                     {% for action in controlpoint.get_action %}
                         <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-start" href="{% url 'conformity:action_form' action.id %}">
-                            {{action}} <span class="badge bg-primary rounded-pill"> {{ action.get_status_display }} </span>
+                            {{ action }} <span class="badge bg-primary rounded-pill">{{ action.get_status_display }}</span>
                         </a>
                     {% empty %}
                         <p class="list-group-item list-group-item-warning text-center my-0">No action associated</p>
                     {% endfor %}
-                        <a class="list-group-item list-group-item-action list-group-item-success text-center text-success"  href="{% url 'conformity:action_create' %}">
-                            <i class="bi bi-plus-circle"></i> Register a corrective action
-                        </a>
+                    <a class="list-group-item list-group-item-action list-group-item-success text-center text-success" href="{% url 'conformity:action_create' %}">
+                        <i class="bi bi-plus-circle"></i> Register a corrective action
+                    </a>
                 </div>
-                <br />
-                <br />
-                {% bootstrap_button button_type="submit" content="Save" %}
             </div>
         </div>
     </form>
+
+    <div class="row justify-content-center">
+        <div class="col col-6">
+            {% include "includes/attachment_panel.html" with attachments=controlpoint.attachment.all owner=controlpoint owner_type="controlpoint" editable=True attachment_field=form.attachments %}
+            {% url 'conformity:control_detail' controlpoint.control.pk as cancel_url %}
+            {% include "includes/form_toolbar.html" with cancel_url=cancel_url form_id="object-form" %}
+        </div>
+    </div>
 {% endblock %}

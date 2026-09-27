@@ -4,11 +4,12 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase, RequestFactory
 from django.urls import reverse
 from django.utils import timezone
+from constance.test import override_config
 
 from conformity import views
 from conformity.models import (
     Organization, Framework, Requirement, Conformity,
-    Audit, Action, Finding, Control, ControlPoint, Attachment
+    Audit, Action, Finding, Control, ControlPoint, Attachment, Indicator, IndicatorPoint
 )
 from conformity.views import ConformityUpdateView
 
@@ -234,3 +235,200 @@ class ConformitySaveNextTests(TestCase):
 
         resp = ConformityUpdateView.as_view()(request, pk=self.ca.pk)
         self.assertIn(resp.status_code, (301, 302), "Should still redirect (normal success flow)")
+
+class SharedUxComponentsTests(BaseDataMixin, TestCase):
+    FRAMEWORK_NAME = "FW-SharedUx"
+
+    def setUp(self):
+        super().setUp()
+        self.client.force_login(self.user)
+
+    def test_crud_forms_use_shared_footer_toolbar(self):
+        indicator = Indicator.objects.create(
+            name="Toolbar indicator",
+            responsible=self.user,
+            organization=self.org,
+        )
+        indicator_point = IndicatorPoint.objects.create(
+            indicator=indicator,
+            period_start_date=timezone.localdate(),
+            period_end_date=timezone.localdate(),
+        )
+        form_urls = (
+            reverse("conformity:audit_form", args=[self.audit.pk]),
+            reverse("conformity:finding_form", args=[self.find_obs.pk]),
+            reverse("conformity:organization_form", args=[self.org.pk]),
+            reverse("conformity:action_form", args=[self.act1.pk]),
+            reverse("conformity:control_form", args=[self.ctrl_q.pk]),
+            reverse("conformity:controlpoint_form", args=[self.cp.pk]),
+            reverse("conformity:conformity_form", args=[self.c_a.pk]),
+            reverse("conformity:indicator_form", args=[indicator.pk]),
+            reverse("conformity:indicatorpoint_form", args=[indicator_point.pk]),
+        )
+
+        for url in form_urls:
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, "form-toolbar")
+                self.assertContains(response, 'name="action" value="save"')
+                self.assertContains(response, 'name="action" value="save_stay"')
+                self.assertContains(response, "btn btn-outline-danger w-100")
+
+    def test_save_next_only_appears_on_conformity_form(self):
+        conformity_response = self.client.get(
+            reverse("conformity:conformity_form", args=[self.c_a.pk])
+        )
+        self.assertContains(conformity_response, "Save &amp; Next")
+
+        for url in (
+            reverse("conformity:audit_form", args=[self.audit.pk]),
+            reverse("conformity:finding_form", args=[self.find_obs.pk]),
+            reverse("conformity:organization_form", args=[self.org.pk]),
+            reverse("conformity:action_form", args=[self.act1.pk]),
+            reverse("conformity:control_form", args=[self.ctrl_q.pk]),
+            reverse("conformity:controlpoint_form", args=[self.cp.pk]),
+        ):
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertNotContains(response, "Save &amp; Next")
+
+    def test_organization_create_save_stay_redirects_to_edit_form(self):
+        response = self.client.post(
+            reverse("conformity:organization_create"),
+            {
+                "name": "Save Stay Organization",
+                "administrative_id": "",
+                "description": "",
+                "action": "save_stay",
+            },
+        )
+        organization = Organization.objects.get(name="Save Stay Organization")
+        self.assertRedirects(
+            response,
+            reverse("conformity:organization_form", args=[organization.pk]),
+            fetch_redirect_response=False,
+        )
+
+    def test_action_list_uses_shared_toolbar_and_active_filter_state(self):
+        response = self.client.get(reverse("conformity:action_index"), {"title": "Act"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'class="d-flex flex-wrap gap-2 align-items-center mb-3 list-toolbar"')
+        self.assertContains(response, "Reset filters")
+        self.assertContains(response, 'btn btn-primary dropdown-toggle w-100 d-flex align-items-center text-start')
+        self.assertContains(response, 'badge text-bg-light">1</span>')
+        self.assertContains(
+            response,
+            'href="' + reverse("conformity:action_create") + '"',
+        )
+        self.assertContains(response, 'class="btn btn-secondary dropdown-toggle w-100 d-flex align-items-center text-start"')
+        self.assertContains(response, "2 résultats affichés")
+        self.assertContains(response, "Export CSV (All)")
+        self.assertContains(response, "Export XLSX (All)")
+        self.assertContains(response, "Export CSV (Selection)")
+        self.assertContains(response, "Export XLSX (Selection)")
+        self.assertNotContains(response, '<h2 class="h6 mb-0">Filters</h2>')
+        self.assertContains(response, "btn-outline-danger")
+
+    def test_pagination_does_not_mark_filters_active(self):
+        response = self.client.get(reverse("conformity:action_index"), {"page": "1"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'btn btn-secondary dropdown-toggle')
+        self.assertNotContains(response, 'badge text-bg-light ms-1">')
+        self.assertContains(response, 'btn btn-outline-danger disabled')
+        self.assertContains(response, 'aria-disabled="true" tabindex="-1"')
+        self.assertContains(response, "Export CSV (All)")
+        self.assertContains(response, "Export XLSX (All)")
+        self.assertNotContains(response, "Export CSV (Selection)")
+        self.assertNotContains(response, "Export XLSX (Selection)")
+
+    def test_rich_table_sorting_uses_pk_tie_breaker(self):
+        table = views.ActionTable(
+            Action.objects.all(),
+            order_by=("title",),
+        )
+
+        self.assertEqual(
+            tuple(str(item) for item in table.columns["title"].order_by),
+            ("title", "pk"),
+        )
+
+        table.order_by = ("-title",)
+        self.assertEqual(
+            tuple(str(item) for item in table.columns["title"].order_by),
+            ("-title", "-pk"),
+        )
+
+    def test_paginated_list_querysets_end_with_pk_tie_breaker(self):
+        request = self.factory.get("/list")
+        request.user = self.user
+
+        view_classes = (
+            views.AuditIndexView,
+            views.FindingIndexView,
+            views.OrganizationIndexView,
+            views.FrameworkIndexView,
+            views.ConformityIndexView,
+            views.ActionIndexView,
+            views.ControlIndexView,
+            views.ControlPointIndexView,
+            views.AttachmentIndexView,
+            views.AuditLogDetailView,
+        )
+
+        for view_class in view_classes:
+            with self.subTest(view=view_class.__name__):
+                view = view_class()
+                view.request = request
+                queryset = view.get_queryset()
+                self.assertTrue(queryset.query.order_by)
+                self.assertEqual(str(queryset.query.order_by[-1]).lstrip("-"), "pk")
+
+    def test_paginated_toolbar_shows_total_and_visible_results(self):
+        with override_config(TABLE_PAGE_SIZE=1):
+            response = self.client.get(reverse("conformity:action_index"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "2 résultats, dont 1 affiché")
+
+    def test_empty_dataset_offers_create_action(self):
+        Action.objects.all().delete()
+        response = self.client.get(reverse("conformity:action_index"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "No actions have been created yet.")
+        self.assertContains(response, 'href="' + reverse("conformity:action_create") + '"', count=2)
+        self.assertNotContains(response, "No results match the active filters.")
+
+    def test_filtered_empty_result_offers_reset_instead_of_create(self):
+        response = self.client.get(reverse("conformity:action_index"), {"title": "missing-action"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "No results match the active filters.")
+        self.assertContains(response, "Reset filters", count=2)
+        self.assertContains(response, 'href="?" class="btn btn-outline-danger"')
+        self.assertContains(response, 'href="' + reverse("conformity:action_create") + '"', count=1)
+
+    def test_empty_state_without_create_url_does_not_offer_create(self):
+        Finding.objects.all().delete()
+        response = self.client.get(reverse("conformity:finding_index"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "No active findings are available.")
+        self.assertNotContains(response, "> Create</a>")
+
+    def test_indicator_cards_use_shared_empty_state(self):
+        response = self.client.get(reverse("conformity:indicator_index"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "No indicators have been created yet.")
+        self.assertContains(response, reverse("conformity:indicator_create"))
+
+    def test_audit_detail_uses_object_title_and_back_link(self):
+        response = self.client.get(reverse("conformity:audit_detail", args=[self.audit.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'class="header-back-link"')
+        self.assertContains(response, reverse("conformity:audit_index"))
+        self.assertNotContains(response, 'aria-label="Breadcrumb"')
+
+    def test_control_detail_uses_title_and_back_link(self):
+        response = self.client.get(reverse("conformity:control_detail", args=[self.ctrl_q.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.ctrl_q.title)
+        self.assertContains(response, 'class="header-back-link"')
+        self.assertContains(response, reverse("conformity:control_index"))

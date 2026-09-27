@@ -1,3 +1,4 @@
+from datetime import date
 import hashlib
 from unittest.mock import MagicMock, patch
 
@@ -6,16 +7,18 @@ from django.db import models
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
+from django.utils.datastructures import MultiValueDict
 from constance.test import override_config
 
-from conformity.forms import AuditForm, OrganizationForm
-from conformity.models import Attachment, Audit, Framework, Organization
+from conformity.forms import AuditForm, ControlPointForm, IndicatorPointForm, OrganizationForm
+from conformity.models import Attachment, Audit, Framework, Indicator, IndicatorPoint, Organization
 from conformity.validators import (
     attachment_accept,
     configured_mime_policy,
     inspect_attachment,
     mime_category_details,
     validate_attachment,
+    validate_attachment_once,
 )
 
 
@@ -137,9 +140,51 @@ class AttachmentValidationTests(TestCase):
         self.assertFalse(existing.file.storage.exists(duplicate_path))
 
     def test_upload_forms_expose_configured_accept_and_size_hint(self):
-        for form in (AuditForm(), OrganizationForm()):
-            self.assertEqual(form.fields["attachments"].widget.attrs["accept"], attachment_accept())
-            self.assertIn("Maximum file size", str(form.fields["attachments"].help_text))
+        for form in (
+            AuditForm(),
+            OrganizationForm(),
+            ControlPointForm(),
+            IndicatorPointForm(),
+        ):
+            field = form.fields["attachments"]
+            self.assertEqual(
+                field.widget.attrs["accept"],
+                attachment_accept(),
+            )
+            self.assertTrue(field.widget.allow_multiple_selected)
+            self.assertIn("multiple", field.widget.render("attachments", None))
+            self.assertIn(
+                "Maximum file size",
+                str(field.help_text),
+            )
+
+    @patch("conformity.forms.validate_attachment_once")
+    def test_multiple_upload_field_validates_every_selected_file(self, validate):
+        first = self.upload(name="first.pdf")
+        second = self.upload(name="second.pdf")
+        form = OrganizationForm(
+            data={
+                "name": "Multiple upload organization",
+                "administrative_id": "",
+                "description": "",
+            },
+            files=MultiValueDict({"attachments": [first, second]}),
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(len(form.cleaned_data["attachments"]), 2)
+        self.assertEqual(validate.call_count, 2)
+
+    @patch("conformity.validators.validate_attachment", return_value=("application/pdf", "f" * 64))
+    def test_validate_attachment_once_reuses_cached_result(self, validate):
+        upload = self.upload()
+
+        first = validate_attachment_once(upload)
+        second = validate_attachment_once(upload)
+
+        self.assertEqual(first, ("application/pdf", "f" * 64))
+        self.assertEqual(second, first)
+        validate.assert_called_once_with(upload)
 
     def test_accept_hint_comes_from_configured_mime_types(self):
         with override_config(
@@ -295,6 +340,33 @@ class AttachmentChecksumViewTests(TestCase):
             response,
             reverse("conformity:attachment_checksum", args=[attachment.pk]),
         )
+
+    def test_attachment_library_renders_indicator_point_reference(self):
+        organization = Organization.objects.create(name="Indicator attachment org")
+        indicator = Indicator.objects.create(
+            name="Indicator attachment reference",
+            responsible=self.user,
+            organization=organization,
+        )
+        point = IndicatorPoint.objects.create(
+            indicator=indicator,
+            period_start_date=date.today(),
+            period_end_date=date.today(),
+        )
+        attachment = Attachment.objects.create(
+            file=self.upload(name="indicator-reference.pdf"),
+            mime_type="application/pdf",
+            sha256="3" * 64,
+        )
+        point.attachment.add(attachment)
+
+        response = self.client.get(reverse("conformity:attachment_index"))
+
+        self.assertContains(
+            response,
+            reverse("conformity:indicatorpoint_form", args=[point.pk]),
+        )
+        self.assertContains(response, "bi bi-speedometer")
 
     def test_attachment_library_renders_calculate_button_for_missing_checksum(self):
         attachment = Attachment.objects.create(

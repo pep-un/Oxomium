@@ -1,0 +1,33 @@
+{% load ui_tags %}
+{% load django_bootstrap5 %}
+{% active_filter_count as active_filters %}
+<div class="dropdown list-toolbar-action">
+    <button type="button"
+            class="btn {% if active_filters %}btn-primary{% else %}btn-secondary{% endif %} dropdown-toggle w-100 d-flex align-items-center text-start"
+            data-bs-toggle="dropdown"
+            aria-expanded="false">
+        <span class="d-flex align-items-center gap-2">
+            <i class="bi bi-funnel"></i>
+            <span>Filter</span>
+            {% if active_filters %}
+                <span class="badge text-bg-light">{{ active_filters }}</span>
+            {% endif %}
+        </span>
+    </button>
+    <div class="dropdown-menu p-3 shadow-sm filter-dropdown">
+        <form method="get">
+            {% for field in filter.form %}
+                {% bootstrap_field field layout='horizontal' horizontal_label_class='col-sm-4' horizontal_field_class='col-sm-8' %}
+            {% endfor %}
+
+            <div class="d-flex flex-wrap justify-content-end gap-2 mt-3 pt-3 border-top">
+                <a href="?"
+                   class="btn btn-outline-danger{% if not active_filters %} disabled{% endif %}"
+                   {% if not active_filters %}aria-disabled="true" tabindex="-1"{% endif %}>
+                    Reset filters
+                </a>
+                <button type="submit" class="btn btn-primary">Apply filters</button>
+            </div>
+        </form>
+    </div>
+</div>

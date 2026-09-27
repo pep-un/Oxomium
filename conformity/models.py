@@ -944,8 +944,8 @@ class Attachment(models.Model):
     def clean(self):
         super().clean()
         if self.file and not self.sha256:
-            from .validators import validate_attachment
-            self.mime_type, self.sha256 = validate_attachment(self.file)
+            from .validators import validate_attachment_once
+            self.mime_type, self.sha256 = validate_attachment_once(self.file)
 
     def save(self, *args, **kwargs):
         # Enforce the upload policy for every Attachment persistence path,
@@ -956,9 +956,9 @@ class Attachment(models.Model):
     @classmethod
     def get_or_create_for_upload(cls, uploaded_file):
         """Validate an upload and reuse an existing identical attachment when possible."""
-        from .validators import validate_attachment
+        from .validators import validate_attachment_once
 
-        mime_type, checksum = validate_attachment(uploaded_file)
+        mime_type, checksum = validate_attachment_once(uploaded_file)
         existing = cls.objects.filter(sha256=checksum).first()
         if existing:
             return existing, False
@@ -972,9 +972,9 @@ class Attachment(models.Model):
         if self.sha256:
             return self, False
 
-        from .validators import validate_attachment
+        from .validators import validate_attachment_once
 
-        mime_type, checksum = validate_attachment(self.file)
+        mime_type, checksum = validate_attachment_once(self.file)
         existing = type(self).objects.filter(sha256=checksum).exclude(pk=self.pk).first()
         if not existing:
             self.mime_type = mime_type

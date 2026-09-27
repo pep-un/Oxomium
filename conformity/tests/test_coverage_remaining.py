@@ -41,12 +41,18 @@ from conformity.resources import (
 from conformity.views import (
     ActionExportView,
     AttachmentDownloadView,
+    AttachmentExportView,
     AuditExportView,
+    AuditLogExportView,
     ConformityExportView,
+    ConformityIndexExportView,
     ControlExportView,
+    ControlPointExportView,
     FindingExportView,
+    FrameworkExportView,
     IndicatorDetailView,
     IndicatorExportView,
+    OrganizationExportView,
     FrameworkDetailView,
     ControlIndexView,
     AuditLogDetailView,
@@ -124,8 +130,15 @@ class RemainingCoverageTests(TestCase):
             status=ControlPoint.Status.SCHEDULED,
         )
         display = ControlPointForm(instance=scheduled, user=self.user)
-        self.assertNotIn("attachments", display.fields)
-        self.assertTrue(all(field.disabled for field in display.fields.values()))
+        self.assertIn("attachments", display.fields)
+        self.assertFalse(display.fields["attachments"].disabled)
+        self.assertTrue(
+            all(
+                field.disabled
+                for name, field in display.fields.items()
+                if name != "attachments"
+            )
+        )
 
     def test_resources_export_all_values_and_empty_fallbacks(self):
         self.action.associated_findings.add(self.finding)
@@ -221,6 +234,12 @@ class RemainingCoverageTests(TestCase):
             (ActionExportView, "/actions", "actions"),
             (ControlExportView, "/controls", "controls"),
             (IndicatorExportView, "/indicators", "indicators"),
+            (AttachmentExportView, "/attachments", "attachments"),
+            (AuditLogExportView, "/auditlog", "audit-log"),
+            (FrameworkExportView, "/frameworks", "frameworks"),
+            (OrganizationExportView, "/organizations", "organizations"),
+            (ConformityIndexExportView, "/conformities", "conformities"),
+            (ControlPointExportView, "/controlpoints", "controlpoints"),
         )
         for view, path, filename in cases:
             for fmt, extension in (("csv", "csv"), ("xlsx", "xlsx")):
@@ -235,6 +254,37 @@ class RemainingCoverageTests(TestCase):
                 request, org=self.organization.pk, pol=self.framework.pk
             )
             self.assertIn(f'filename="conformity.{extension}"', response["Content-Disposition"])
+
+    def test_selection_export_applies_current_filters(self):
+        matched = Action.objects.create(
+            title="Matched export action",
+            organization=self.organization,
+            owner=self.user,
+        )
+        excluded = Action.objects.create(
+            title="Excluded export action",
+            organization=self.organization,
+            owner=self.user,
+        )
+
+        selection_request = self.factory.get(
+            "/actions",
+            {"format": "csv", "scope": "selection", "title": "Matched export"},
+        )
+        selection_response = ActionExportView().get(selection_request)
+        selection_content = selection_response.content.decode()
+
+        self.assertIn(matched.title, selection_content)
+        self.assertNotIn(excluded.title, selection_content)
+
+        all_request = self.factory.get(
+            "/actions",
+            {"format": "csv", "title": "Matched export"},
+        )
+        all_content = ActionExportView().get(all_request).content.decode()
+
+        self.assertIn(matched.title, all_content)
+        self.assertIn(excluded.title, all_content)
 
     def test_indicator_detail_context(self):
         point = IndicatorPoint.objects.create(
@@ -318,4 +368,4 @@ class RemainingCoverageTests(TestCase):
         self.assertIn("controlpoint_list", context)
 
         log_view = AuditLogDetailView()
-        self.assertEqual(log_view.get_queryset().query.order_by, ("-timestamp",))
+        self.assertEqual(log_view.get_queryset().query.order_by, ("-timestamp", "-pk"))

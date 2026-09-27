@@ -1,0 +1,66 @@
+<div class="card border-info mb-3 js-attachment-panel" id="{{ panel_id|default:'attachments' }}">
+    <div class="card-header bg-info-subtle d-flex align-items-center justify-content-between gap-2">
+        <span class="fw-semibold">
+            <i class="bi bi-paperclip me-1" aria-hidden="true"></i>
+            Attachments
+        </span>
+        <span class="badge text-bg-info">{{ attachments|length }}</span>
+    </div>
+    <ul class="list-group list-group-flush">
+        {% for attachment in attachments %}
+            <li class="list-group-item d-flex align-items-center justify-content-between gap-3">
+                <div class="text-truncate">
+                    {% include "includes/attachment_link.html" with attachment=attachment %}
+                </div>
+                {% if editable %}
+                    <form method="post"
+                          action="{% url 'conformity:attachment_unlink' owner_type owner.pk attachment.pk %}"
+                          class="flex-shrink-0">
+                        {% csrf_token %}
+                        <button type="submit"
+                                class="btn btn-sm btn-outline-danger"
+                                title="Remove attachment"
+                                aria-label="Remove {{ attachment }}">
+                            <i class="bi bi-trash" aria-hidden="true"></i>
+                        </button>
+                    </form>
+                {% endif %}
+            </li>
+        {% empty %}
+            <li class="list-group-item text-body-secondary">
+                <i class="bi bi-file-earmark me-1" aria-hidden="true"></i>
+                No attachment
+            </li>
+        {% endfor %}
+        {% if attachment_field %}
+            <li class="list-group-item attachment-dropzone js-attachment-dropzone"
+                data-attachment-input-id="{{ attachment_field.id_for_label }}">
+                <div class="attachment-drop-icon" aria-hidden="true">
+                    <i class="bi bi-download"></i>
+                </div>
+                <div class="attachment-drop-copy d-flex align-items-center justify-content-between gap-3 py-2">
+                    <div class="small text-body-secondary">
+                        Select one or more files, drag &amp; drop, or paste a screenshot.
+                    </div>
+                    <label for="{{ attachment_field.id_for_label }}"
+                           class="btn btn-sm btn-outline-primary flex-shrink-0 mb-0">
+                        <i class="bi bi-plus-circle me-1" aria-hidden="true"></i>
+                        Add another document
+                    </label>
+                </div>
+
+                {{ attachment_field }}
+
+                <div class="js-attachment-pending d-none border-top mt-2 pt-2"
+                     aria-live="polite"></div>
+
+                {% if attachment_field.help_text %}
+                    <div class="form-text">{{ attachment_field.help_text }}</div>
+                {% endif %}
+                {% for error in attachment_field.errors %}
+                    <div class="text-danger small">{{ error }}</div>
+                {% endfor %}
+            </li>
+        {% endif %}
+    </ul>
+</div>

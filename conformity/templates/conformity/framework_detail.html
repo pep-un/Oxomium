@@ -1,7 +1,13 @@
 {% extends "conformity/main.html" %}
+{% load ui_tags %}
 
 {% block header %}
-<h1 class="h2 bi bi-card-checklist"> Framework: {{ framework.name }}</h1>
+<h1 class="h2 d-flex align-items-center gap-2">
+    <a href="{% url 'conformity:framework_index' %}" class="header-back-link" aria-label="Back to frameworks" title="Back to frameworks">
+        <i class="bi bi-chevron-left" aria-hidden="true"></i>
+    </a>
+    {{ framework.name }}
+</h1>
 <h4>
     <span class="badge text-bg-secondary"> Version : {{ framework.version | default:'-' }} </span>
     <span class="badge text-bg-secondary"> Language : {{ framework.get_language_display | default:'-' }} </span>
@@ -11,6 +17,7 @@
 {% endblock %}
 
 {% block content %}
+
     {% for requirement in framework.get_requirements %}
             {% if requirement.level == 1 %}
                 <h2><button class="btn btn-sm rounded-pill border border-0 text-bg-primary" disabled>{{ requirement.full_path }}</button> {{ requirement.title }}</h2>
@@ -31,15 +38,6 @@
 
     <br />
 
-    <div class="alert alert-info">
-        <h3 class="h3 bi bi-paperclip" id="attachments"> Attachments </h3>
-        <ul>
-            {% for attachment in framework.attachment.all %}
-            <li>{% include "includes/attachment_link.html" with attachment=attachment %}</li>
-            {% empty %}
-            <i>No attachment</i>
-            {% endfor %}
-        </ul>
-    </div>
+    {% include "includes/attachment_panel.html" with attachments=framework.attachment.all %}
 
 {% endblock %}

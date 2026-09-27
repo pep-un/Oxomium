@@ -1,0 +1,58 @@
+{% load ui_tags %}
+{% active_filter_count as active_filters %}
+<div class="d-flex flex-wrap gap-2 align-items-center mb-3 list-toolbar">
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+        {% if filter %}
+            {% include "includes/filter_dropdown.html" %}
+        {% endif %}
+
+        {% if export_url %}
+            <div class="dropdown list-toolbar-action">
+                <button type="button"
+                        class="btn btn-secondary dropdown-toggle w-100 d-flex align-items-center text-start"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false">
+                    <span class="d-flex align-items-center gap-2">
+                        <i class="bi bi-download"></i>
+                        <span>Export</span>
+                    </span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{{ export_url }}?format=csv">Export CSV (All)</a></li>
+                    <li><a class="dropdown-item" href="{{ export_url }}?format=xlsx">Export XLSX (All)</a></li>
+                    {% if active_filters %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item"
+                               href="{{ export_url }}{% querystring format='csv' scope='selection' page=None sort=None %}">
+                                Export CSV (Selection)
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item"
+                               href="{{ export_url }}{% querystring format='xlsx' scope='selection' page=None sort=None %}">
+                                Export XLSX (Selection)
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        {% endif %}
+
+        {% if total_count != None and visible_count != None %}
+            <span class="text-body-secondary small">
+                {% if is_paginated %}
+                    {{ total_count }} résultat{% if total_count != 1 %}s{% endif %}, dont {{ visible_count }} affiché{% if visible_count != 1 %}s{% endif %}
+                {% else %}
+                    {{ visible_count }} résultat{% if visible_count != 1 %}s{% endif %} affiché{% if visible_count != 1 %}s{% endif %}
+                {% endif %}
+            </span>
+        {% endif %}
+    </div>
+
+    {% if create_url %}
+        <a href="{{ create_url }}" class="btn btn-success ms-auto">
+            <i class="bi bi-plus-circle"></i> Create
+        </a>
+    {% endif %}
+</div>

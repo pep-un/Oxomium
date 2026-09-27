@@ -1,0 +1,29 @@
+<div class="row g-2 justify-content-center mt-4 mb-5 pt-3 border-top form-toolbar">
+    <div class="col-12 col-sm-3">
+        <button type="submit" name="action" value="save" class="btn btn-primary w-100"{% if form_id %} form="{{ form_id }}"{% endif %}>
+            <i class="bi bi-check-circle me-1" aria-hidden="true"></i> Save
+        </button>
+    </div>
+    <div class="col-12 col-sm-3">
+        <button type="submit" name="action" value="save_stay" class="btn btn-secondary w-100"{% if form_id %} form="{{ form_id }}"{% endif %}>
+            <i class="bi bi-arrow-repeat me-1" aria-hidden="true"></i> Save &amp; Stay
+        </button>
+    </div>
+    {% if show_save_next %}
+        <div class="col-12 col-sm-3">
+            <button type="submit"
+                    name="action"
+                    value="save_next"
+                    class="btn btn-secondary w-100"
+                    {% if form_id %}form="{{ form_id }}"{% endif %}
+                    {% if not save_next_enabled %}disabled{% endif %}>
+                <i class="bi bi-arrow-right-circle me-1" aria-hidden="true"></i> Save &amp; Next
+            </button>
+        </div>
+    {% endif %}
+    <div class="col-12 col-sm-3">
+        <a href="{{ cancel_url }}" class="btn btn-outline-danger w-100">
+            <i class="bi bi-x-circle me-1" aria-hidden="true"></i> Cancel
+        </a>
+    </div>
+</div>

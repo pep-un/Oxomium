@@ -6,7 +6,26 @@ from django.forms import ModelForm, FileField, ClearableFileInput, BooleanField,
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from .models import Conformity, Organization, Audit, Finding, Action, Control, ControlPoint, Indicator, IndicatorPoint
-from .validators import attachment_accept, attachment_max_size_help, validate_attachment
+from .validators import attachment_accept, attachment_max_size_help, validate_attachment_once
+
+
+class MultipleFileInput(ClearableFileInput):
+    """Native file input supporting several selected files."""
+
+    allow_multiple_selected = True
+
+
+class MultipleFileField(FileField):
+    """Validate every file submitted through a multiple file input."""
+
+    widget = MultipleFileInput
+
+    def clean(self, data, initial=None):
+        if isinstance(data, (list, tuple)):
+            return [FileField.clean(self, item, initial) for item in data]
+        if data:
+            return [FileField.clean(self, data, initial)]
+        return []
 
 
 class AttachmentUploadFormMixin:
@@ -17,13 +36,15 @@ class AttachmentUploadFormMixin:
         field = self.fields.get('attachments')
         if field:
             field.widget.attrs['accept'] = attachment_accept()
+            field.widget.attrs['form'] = 'object-form'
+            field.widget.attrs['class'] = 'visually-hidden js-attachment-input'
             field.help_text = attachment_max_size_help()
 
     def clean_attachments(self):
-        uploaded_file = self.cleaned_data.get('attachments')
-        if uploaded_file:
-            validate_attachment(uploaded_file)
-        return uploaded_file
+        uploaded_files = self.cleaned_data.get('attachments') or []
+        for uploaded_file in uploaded_files:
+            validate_attachment_once(uploaded_file)
+        return uploaded_files
 
 
 class ConformityForm(ModelForm):
@@ -42,14 +63,14 @@ class ConformityForm(ModelForm):
 
 
 class OrganizationForm(AttachmentUploadFormMixin, ModelForm):
-    attachments = FileField(required=False, widget=ClearableFileInput())
+    attachments = MultipleFileField(required=False)
     class Meta:
         model = Organization
         fields = ['name', 'administrative_id', 'description', 'applicable_frameworks']
 
 
 class AuditForm(AttachmentUploadFormMixin, ModelForm):
-    attachments = FileField(required=False, widget=ClearableFileInput())
+    attachments = MultipleFileField(required=False)
     class Meta:
         model = Audit
         fields = ['name', 'organization', 'description', 'conclusion', 'auditor', 'audited_frameworks', 'start_date',
@@ -178,7 +199,7 @@ class ControlForm(ModelForm):
 
 
 class ControlPointForm(AttachmentUploadFormMixin, ModelForm):
-    attachments = FileField(required=False, widget=ClearableFileInput())
+    attachments = MultipleFileField(required=False)
     class Meta:
         model = ControlPoint
         fields = ['control_date', 'control_user', 'status', 'comment', 'attachments']
@@ -199,11 +220,11 @@ class ControlPointForm(AttachmentUploadFormMixin, ModelForm):
                 (ControlPoint.Status.COMPLIANT, ControlPoint.Status.COMPLIANT.label),
                 (ControlPoint.Status.NONCOMPLIANT, ControlPoint.Status.NONCOMPLIANT.label),
             ]
-        # Switch to display mode if ControlPoint is not to be evaluated
+        # Keep attachment uploads available even when the control result is read-only.
         else:
-            del self.fields['attachments']
-            for field in self.fields:
-                self.fields[field].disabled = True
+            for field_name, field in self.fields.items():
+                if field_name != 'attachments':
+                    field.disabled = True
 
 
 class IndicatorForm(ModelForm):
@@ -215,10 +236,12 @@ class IndicatorForm(ModelForm):
         ]
 
 
-class IndicatorPointForm(ModelForm):
+class IndicatorPointForm(AttachmentUploadFormMixin, ModelForm):
+    attachments = MultipleFileField(required=False)
+
     class Meta:
         model = IndicatorPoint
-        fields = ['value', 'comment', 'attachment']
+        fields = ['value', 'comment', 'attachments']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

@@ -1,7 +1,8 @@
+from auditlog.models import LogEntry
 from django.utils.autoreload import logger
 from import_export import fields, resources
 from import_export.widgets import ManyToManyWidget, ForeignKeyWidget
-from .models import Conformity, Control, Finding, Action, Indicator, Audit
+from .models import Attachment, Conformity, Control, ControlPoint, Finding, Action, Framework, Indicator, Organization, Audit
 
 
 class ConformityResource(resources.ModelResource):
@@ -169,3 +170,54 @@ class AuditResource(resources.ModelResource):
         if not finding_list.exists():
             return "None"
         return ", ".join(f"[{finding.severity}] {finding.name}" for finding in finding_list)
+
+
+class AttachmentResource(resources.ModelResource):
+    class Meta:
+        model = Attachment
+        fields = ("file", "comment", "mime_type", "sha256", "create_date")
+
+    def dehydrate_file(self, obj):
+        return obj.file.name if obj.file else ""
+
+
+class FrameworkResource(resources.ModelResource):
+    class Meta:
+        model = Framework
+        fields = ("name", "version", "language", "publish_by", "type")
+
+    def dehydrate_language(self, obj):
+        return obj.get_language_display()
+
+    def dehydrate_type(self, obj):
+        return obj.get_type_display()
+
+
+class OrganizationResource(resources.ModelResource):
+    class Meta:
+        model = Organization
+        fields = ("name", "administrative_id", "description")
+
+
+class ControlPointResource(resources.ModelResource):
+    class Meta:
+        model = ControlPoint
+        fields = (
+            "control__title", "control__organization__name", "period_start_date",
+            "period_end_date", "status", "control_user__username", "control_date", "comment",
+        )
+
+    def dehydrate_status(self, obj):
+        return obj.get_status_display()
+
+
+class AuditLogResource(resources.ModelResource):
+    class Meta:
+        model = LogEntry
+        fields = (
+            "timestamp", "actor__username", "actor_email", "remote_addr", "action",
+            "content_type__app_label", "content_type__model", "object_repr", "object_pk",
+        )
+
+    def dehydrate_action(self, obj):
+        return obj.get_action_display()

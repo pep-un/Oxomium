@@ -1,14 +1,18 @@
 {% extends "conformity/main.html" %}
+{% load ui_tags %}
 
 {% block header %}
-    <h1 class="h2 bi bi-exclamation-diamond">
-        Finding "{{ finding.short_description }}"
+    <h1 class="h2 d-flex align-items-center gap-2">
+        <a href="{% url 'conformity:finding_index' %}" class="header-back-link" aria-label="Back to findings" title="Back to findings">
+            <i class="bi bi-chevron-left" aria-hidden="true"></i>
+        </a>
+        {{ finding.short_description }}
         {% include 'conformity/includes/finding_cvss_badge.html' with finding=finding %}
-
     </h1>
 {% endblock %}
 
 {% block content %}
+
     {% if finding.archived %}
     <p class="alert alert-dark" role="alert">
         <i class="bi bi-archive"></i> This finding is archived.

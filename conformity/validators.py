@@ -216,3 +216,14 @@ def validate_attachment(uploaded_file):
             params={"extension": extension or _("(none)"), "mime": detected},
         )
     return detected, checksum
+
+
+def validate_attachment_once(uploaded_file):
+    """Validate once per uploaded-file object and reuse MIME/checksum metadata."""
+    cached = getattr(uploaded_file, "_oxomium_attachment_validation", None)
+    if cached is not None:
+        return cached
+
+    result = validate_attachment(uploaded_file)
+    uploaded_file._oxomium_attachment_validation = result
+    return result

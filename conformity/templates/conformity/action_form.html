@@ -1,11 +1,18 @@
 {% extends "conformity/main.html" %}
 {% load django_bootstrap5 %}
+{% load ui_tags %}
 
 {% block header %}
-<h1 class="h1 bi bi-pencil-square" > Edit of an action record</h1>
+<h1 class="h1 d-flex align-items-center gap-2">
+    <a href="{% url 'conformity:action_index' %}" class="header-back-link" aria-label="Back to actions" title="Back to actions">
+        <i class="bi bi-chevron-left" aria-hidden="true"></i>
+    </a>
+    {% if object %}{{ object.title }}{% else %}Create action{% endif %}
+</h1>
 {% endblock %}
 
 {% block content %}
+
     <form class="form" method="post" action="">
         {% csrf_token %}
         <div class="row justify-content-center">
@@ -86,8 +93,8 @@
                         </div>
                     </div>
                 </div>
-                <br />
-                {% bootstrap_button button_type="submit" content="Save" %}
+                {% url 'conformity:action_index' as cancel_url %}
+                {% include "includes/form_toolbar.html" with cancel_url=cancel_url %}
             </div>
         </div>
     </form>
