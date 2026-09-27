@@ -15,6 +15,7 @@ def attachment_has_relations(attachment):
 @transaction.atomic
 def unlink_attachment(owner, attachment):
     """Remove one owner relation and delete the attachment if it becomes orphaned."""
+    attachment = Attachment.objects.select_for_update().get(pk=attachment.pk)
     field = owner._meta.get_field("attachment")
     if not field.many_to_many or field.remote_field.model is not Attachment:
         raise ValueError("Owner does not expose an Attachment M2M relation.")
