@@ -1,4 +1,5 @@
 {% extends "conformity/main.html" %}
+{% load ui_tags %}
 {% load render_table from django_tables2 %}
 
 {% block header %}
@@ -15,6 +16,9 @@
 {% endblock %}
 
 {% block content %}
+{% route_url 'conformity:control_index' as list_url %}
+{% breadcrumb "Controls" list_url control.title %}
+
 <p><strong>Titre : </strong> {{ control.title }} </p>
 <p><strong>Description : </strong> {{ control.description }} </p>
 <p><strong>Control history : </strong> </p>
@@ -64,12 +68,6 @@
         </div>
         <tr><td colspan="9">No data to display</td></tr>
     {% endfor %}
-        <tr><td colspan="9" class="text-center">
-            <br />
-            <a href="{% url 'conformity:control_index' %}">
-                <button type="button" class="btn btn-secondary bi bi-caret-left-square"> Return to control</button>
-            </a>
-        </td></tr>
 </table>
     </div>
   </div>

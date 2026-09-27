@@ -2,7 +2,6 @@
 View of the Conformity Module
 """
 
-from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -83,16 +82,7 @@ class AuditDetailView(LoginRequiredMixin, DetailView):
 
 
 class AttachmentUploadViewMixin:
-    """Validate uploads before persistence and surface attachment errors clearly."""
-
-    def form_invalid(self, form):
-        for error in form.errors.get('attachments', ()):
-            messages.error(
-                self.request,
-                f"Attachment upload failed: {error}",
-                fail_silently=True,
-            )
-        return super().form_invalid(form)
+    """Validate all files before saving the parent object or any Attachment."""
 
     def form_valid(self, form):
         attachments = self.request.FILES.getlist('attachments')
@@ -529,7 +519,6 @@ class ControlIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
         context['cp4x'] = ControlPoint.objects.filter(control__frequency="4").filter(status="TOBE").count()
         context['cp6x'] = ControlPoint.objects.filter(control__frequency="6").filter(status="TOBE").count()
         context['cp12x'] = ControlPoint.objects.filter(control__frequency="12").filter(status="TOBE").count()
-
         return context
 
 

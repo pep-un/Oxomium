@@ -1,11 +1,15 @@
 {% extends "conformity/main.html" %}
 {% load django_bootstrap5 %}
+{% load ui_tags %}
 
 {% block header %}
 <h1 class="h1 bi bi-pencil-square" > Edit of an action record</h1>
 {% endblock %}
 
 {% block content %}
+{% route_url 'conformity:action_index' as list_url %}
+{% if object %}{% breadcrumb "Actions" list_url object.title %}{% else %}{% breadcrumb "Actions" list_url "Create" %}{% endif %}
+
     <form class="form" method="post" action="">
         {% csrf_token %}
         <div class="row justify-content-center">

@@ -1,10 +1,14 @@
 {% extends "conformity/main.html" %}
+{% load ui_tags %}
 
 {% block header %}
     <h1 class="h2 bi bi-ui-checks-grid"> Audit {{ audit.name }}</h1>
 {% endblock %}
 
 {% block content %}
+{% route_url 'conformity:audit_index' as list_url %}
+{% breadcrumb "Audits" list_url audit.name %}
+
     <h2 class="h4">Information</h2>
     <p>
         Audit of {{ audit.organization }} realised by {{ audit.auditor }} ({{ audit.get_type }}). <br />
@@ -144,7 +148,7 @@
         <h2 class="h4 bi bi-paperclip"> Attachment </h2>
         <ul>
             {% for attachment in audit.attachment.all %}
-            <li>{% include "includes/attachment_link.html" with attachment=attachment %}</li>
+            <li><a href="{% url 'conformity:attachment_download' attachment.id %}"> {{ attachment }} </a></li>
             {% empty %}
             <i>No attachment</i>
             {% endfor %}

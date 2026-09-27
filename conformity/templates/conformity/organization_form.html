@@ -1,4 +1,5 @@
 {% extends "conformity/main.html" %}
+{% load ui_tags %}
 {% load django_bootstrap5 %}
 
 {% block header %}
@@ -6,6 +7,9 @@
 {% endblock %}
 
 {% block content %}
+{% route_url 'conformity:organization_index' as list_url %}
+{% if object %}{% route_url 'conformity:organization_detail' object.pk as detail_url %}{% breadcrumb "Organizations" list_url object.name detail_url "Edit" %}{% else %}{% breadcrumb "Organizations" list_url "Create" %}{% endif %}
+
     <form class="form" method="post" action="" enctype="multipart/form-data">
         {% csrf_token %}
         <div class="row justify-content-center">

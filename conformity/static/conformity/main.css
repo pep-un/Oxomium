@@ -149,3 +149,19 @@
     width: 10rem;
     text-align: center;
 }
+
+/* Shared list controls and breadcrumbs */
+.list-toolbar {
+    min-width: 0;
+}
+
+.filter-dropdown {
+    min-width: min(28rem, calc(100vw - 2rem));
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.breadcrumb {
+    margin-bottom: 0;
+    scrollbar-width: thin;
+}

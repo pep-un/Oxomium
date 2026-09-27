@@ -1,4 +1,5 @@
 {% extends "conformity/main.html" %}
+{% load ui_tags %}
 
 {% block header %}
     <h1 class="h1 bi bi-building"> Organizations {{ organization }}</h1>
@@ -6,6 +7,9 @@
 {% endblock %}
 
 {% block content %}
+{% route_url 'conformity:organization_index' as list_url %}
+{% breadcrumb "Organizations" list_url organization.name %}
+
     <p> {{ organization.description  | linebreaksbr }}</p>
 
     <h2 class="h4">Applicable policy : </h2>
@@ -24,7 +28,7 @@
         <h2 class="h4 bi bi-paperclip"> Attachments </h2>
         <ul>
             {% for attachment in organization.attachment.all %}
-            <li>{% include "includes/attachment_link.html" with attachment=attachment %}</li>
+            <li><a href="{% url 'conformity:attachment_download' attachment.id %}"> {{ attachment }} </a></li>
             {% empty %}
             <i>No attachment</i>
             {% endfor %}
