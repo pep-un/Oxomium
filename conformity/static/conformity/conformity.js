@@ -79,3 +79,17 @@ document.querySelectorAll('.js-copy-sha256').forEach((button) => {
         }
     });
 });
+
+
+document.querySelectorAll('.js-attachment-input').forEach((input) => {
+    input.addEventListener('change', () => {
+        const item = input.closest('.list-group-item');
+        const filename = item ? item.querySelector('.js-attachment-filename') : null;
+        if (!filename) {
+            return;
+        }
+        filename.textContent = input.files.length
+            ? Array.from(input.files).map((file) => file.name).join(', ')
+            : 'No file selected';
+    });
+});
