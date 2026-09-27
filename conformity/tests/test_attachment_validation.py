@@ -6,6 +6,7 @@ from django.db import models
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
+from django.utils.datastructures import MultiValueDict
 from constance.test import override_config
 
 from conformity.forms import AuditForm, ControlPointForm, IndicatorPointForm, OrganizationForm
@@ -143,14 +144,34 @@ class AttachmentValidationTests(TestCase):
             ControlPointForm(),
             IndicatorPointForm(),
         ):
+            field = form.fields["attachments"]
             self.assertEqual(
-                form.fields["attachments"].widget.attrs["accept"],
+                field.widget.attrs["accept"],
                 attachment_accept(),
             )
+            self.assertTrue(field.widget.allow_multiple_selected)
+            self.assertIn("multiple", field.widget.render("attachments", None))
             self.assertIn(
                 "Maximum file size",
-                str(form.fields["attachments"].help_text),
+                str(field.help_text),
             )
+
+    @patch("conformity.forms.validate_attachment")
+    def test_multiple_upload_field_validates_every_selected_file(self, validate):
+        first = self.upload(name="first.pdf")
+        second = self.upload(name="second.pdf")
+        form = OrganizationForm(
+            data={
+                "name": "Multiple upload organization",
+                "administrative_id": "",
+                "description": "",
+            },
+            files=MultiValueDict({"attachments": [first, second]}),
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(len(form.cleaned_data["attachments"]), 2)
+        self.assertEqual(validate.call_count, 2)
 
     def test_accept_hint_comes_from_configured_mime_types(self):
         with override_config(
