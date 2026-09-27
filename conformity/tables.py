@@ -48,12 +48,15 @@ class BaseRichTable(tables.Table):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        active_order = self.order_by
         for bound_column in self.columns.iterorderable():
             order_by = bound_column.column.order_by or OrderByTuple(
                 (bound_column.accessor,)
             )
             if not any(str(item).lstrip("-") == "pk" for item in order_by):
                 bound_column.column.order_by = OrderByTuple((*order_by, "pk"))
+        if active_order:
+            self.order_by = active_order
 
     class Meta:
         attrs = {
