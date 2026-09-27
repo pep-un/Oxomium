@@ -155,6 +155,10 @@
     min-width: 0;
 }
 
+.list-toolbar-action {
+    width: 9.5rem;
+}
+
 .filter-dropdown {
     width: 36vw;
     min-width: 30rem;
