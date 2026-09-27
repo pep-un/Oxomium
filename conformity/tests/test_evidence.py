@@ -68,6 +68,7 @@ class EvidenceTests(TestCase):
         negative = self.evidence(Evidence.Result.NEGATIVE)
         self.conformity.refresh_from_db()
         self.assertEqual(self.conformity.evidence_state, Conformity.EvidenceState.INCONCLUSIVE)
+        self.assertIsNone(self.conformity.status)
 
         positive.valid_to = self.now
         positive.save(update_fields=['valid_to'])
@@ -85,6 +86,7 @@ class EvidenceTests(TestCase):
         self.assertEqual(
             self.conformity.evidence_state, Conformity.EvidenceState.NOT_EVALUATED
         )
+        self.assertIsNone(self.conformity.status)
 
     def test_removing_evidence_recalculates_previous_conformity(self):
         item = self.evidence(Evidence.Result.POSITIVE)
@@ -137,6 +139,55 @@ class EvidenceTests(TestCase):
         later_negative.conformities.add(self.conformity)
         human.refresh_from_db()
         self.assertIsNotNone(human.valid_to)
+
+    def test_later_control_result_invalidates_human_arbitration(self):
+        control = Control.objects.create(
+            title='Human-arbitrated control', organization=self.organization
+        )
+        control.conformity.add(self.conformity)
+        point = ControlPoint.objects.create(
+            control=control,
+            period_start_date=date.today() - timedelta(days=1),
+            period_end_date=date.today() + timedelta(days=1),
+            status=ControlPoint.Status.COMPLIANT,
+        )
+        human = HumanEvidence.objects.create(
+            decision=HumanEvidence.Decision.COMPLIANT,
+            valid_from=self.now,
+            evaluator=self.user,
+        )
+        human.conformities.add(self.conformity)
+
+        point.status = ControlPoint.Status.NONCOMPLIANT
+        point.save(update_fields=['status'])
+        human.refresh_from_db()
+        point.refresh_from_db()
+        self.assertIsNotNone(human.valid_to)
+        self.assertEqual(point.evidence.result, Evidence.Result.NEGATIVE)
+
+    def test_non_result_control_update_keeps_human_arbitration(self):
+        control = Control.objects.create(
+            title='Documented control', organization=self.organization
+        )
+        control.conformity.add(self.conformity)
+        point = ControlPoint.objects.create(
+            control=control,
+            period_start_date=date.today() - timedelta(days=1),
+            period_end_date=date.today() + timedelta(days=1),
+            status=ControlPoint.Status.NONCOMPLIANT,
+        )
+        self.evidence(Evidence.Result.POSITIVE)
+        human = HumanEvidence.objects.create(
+            decision=HumanEvidence.Decision.COMPLIANT,
+            valid_from=self.now,
+            evaluator=self.user,
+        )
+        human.conformities.add(self.conformity)
+
+        point.comment = 'More context, but no new result.'
+        point.save(update_fields=['comment'])
+        human.refresh_from_db()
+        self.assertIsNone(human.valid_to)
 
     def test_control_point_is_projected_without_losing_legacy_fields(self):
         control = Control.objects.create(

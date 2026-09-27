@@ -21,6 +21,13 @@ def _evaluate(conformities, at=None):
         conformity.evaluate_evidence(at=at)
 
 
+def _update_evidence(evidence, values):
+    """Update through Model.save so auto timestamps and evaluation signals run."""
+    for field, value in values.items():
+        setattr(evidence, field, value)
+    evidence.save(update_fields=[*values, 'updated_at'])
+
+
 @transaction.atomic
 def sync_control_point(point):
     """Create/update the common Evidence projection of a ControlPoint."""
@@ -40,8 +47,8 @@ def sync_control_point(point):
         'comment': point.comment,
     }
     if point.evidence_id:
-        Evidence.objects.filter(pk=point.evidence_id).update(**values)
         evidence = Evidence.objects.get(pk=point.evidence_id)
+        _update_evidence(evidence, values)
     else:
         evidence = Evidence.objects.create(**values)
         type(point).objects.filter(pk=point.pk).update(evidence=evidence)
@@ -71,8 +78,8 @@ def sync_indicator_point(point):
         'comment': point.comment,
     }
     if point.evidence_id:
-        Evidence.objects.filter(pk=point.evidence_id).update(**values)
         evidence = Evidence.objects.get(pk=point.evidence_id)
+        _update_evidence(evidence, values)
     else:
         evidence = Evidence.objects.create(**values)
         type(point).objects.filter(pk=point.pk).update(evidence=evidence)
@@ -94,7 +101,9 @@ def invalidate_human_arbitration(conformity, at=None):
     negative = Evidence.Result.NEGATIVE in results
     humans = conformity.evidence.valid_at(at).filter(source_type=Evidence.SourceType.HUMAN)
     for human in humans:
-        changed_after_arbitration = operational.filter(updated_at__gt=human.created_at)
+        changed_after_arbitration = operational.filter(
+            result_updated_at__gt=human.created_at
+        )
         contradicted = (
             (
                 human.result == Evidence.Result.POSITIVE

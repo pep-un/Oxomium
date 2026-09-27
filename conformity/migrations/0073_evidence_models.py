@@ -109,6 +109,7 @@ class Migration(migrations.Migration):
                 ('comment', models.TextField(blank=True, max_length=4096)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
+                ('result_updated_at', models.DateTimeField(default=timezone.now)),
                 ('attachments', models.ManyToManyField(blank=True, related_name='evidence', to='conformity.attachment')),
             ],
             options={

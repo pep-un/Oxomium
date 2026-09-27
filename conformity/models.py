@@ -287,6 +287,7 @@ class Evidence(models.Model):
     attachments = models.ManyToManyField('Attachment', blank=True, related_name='evidence')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    result_updated_at = models.DateTimeField(default=timezone.now)
 
     objects = EvidenceQuerySet.as_manager()
 
@@ -303,6 +304,18 @@ class Evidence(models.Model):
         super().clean()
         if self.valid_to is not None and self.valid_to <= self.valid_from:
             raise ValidationError({'valid_to': _('Validity end must be after validity start.')})
+
+    def save(self, *args, **kwargs):
+        update_fields = kwargs.get('update_fields')
+        if self.pk:
+            previous_result = type(self).objects.filter(pk=self.pk).values_list(
+                'result', flat=True
+            ).first()
+            if previous_result is not None and previous_result != self.result:
+                self.result_updated_at = timezone.now()
+                if update_fields is not None:
+                    kwargs['update_fields'] = [*update_fields, 'result_updated_at']
+        return super().save(*args, **kwargs)
 
     def is_valid_at(self, at=None):
         at = at or timezone.now()
@@ -596,6 +609,14 @@ class Conformity(models.Model):
                 self.status_justification = self.StatusJustification.EVIDENCE
                 self.status_last_update = at
                 updates.extend(['status', 'status_justification', 'status_last_update'])
+        elif (
+            self.requirement.is_leaf_node()
+            and self.status_justification == self.StatusJustification.EVIDENCE
+            and self.status is not None
+        ):
+            self.status = None
+            self.status_last_update = at
+            updates.extend(['status', 'status_last_update'])
         if updates:
             self.save(update_fields=list(dict.fromkeys(updates)))
 
