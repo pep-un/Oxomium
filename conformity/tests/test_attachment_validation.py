@@ -107,7 +107,7 @@ class AttachmentValidationTests(TestCase):
             mime_type="application/pdf",
             sha256="e" * 64,
         )
-        duplicate = Attachment.objects.create(file=self.upload(name="duplicate.pdf"))
+        duplicate = Attachment.objects.create(file=self.upload(name="duplicate.pdf", content=b"%PDF-1.4 duplicate"))
         Attachment.objects.filter(pk=duplicate.pk).update(sha256=None)
         duplicate.refresh_from_db()
         duplicate_path = duplicate.file.path
@@ -136,10 +136,18 @@ class AttachmentValidationTests(TestCase):
             self.assertIn("Maximum file size", str(form.fields["attachments"].help_text))
 
     def test_accept_hint_comes_from_configured_mime_types(self):
-        with override_config(ATTACHMENT_ALLOWED_MIME_TYPES="image/png, application/pdf"):
+        with override_config(
+            ATTACHMENT_ALLOWED_CATEGORIES=[],
+            ATTACHMENT_ALLOWED_MIME_TYPES="image/png, application/pdf",
+            ATTACHMENT_DENIED_MIME_TYPES="",
+        ):
             self.assertEqual(attachment_accept(), "application/pdf,image/png")
 
-    @override_config(ATTACHMENT_ALLOWED_MIME_TYPES="image/*")
+    @override_config(
+        ATTACHMENT_ALLOWED_CATEGORIES=[],
+        ATTACHMENT_ALLOWED_MIME_TYPES="image/*",
+        ATTACHMENT_DENIED_MIME_TYPES="",
+    )
     @patch("conformity.validators.inspect_attachment", return_value=("image/webp", "a" * 64))
     def test_wildcard_image_prefix_allows_any_detected_image_mime(self, _inspect):
         upload = self.upload(name="picture.webp")
@@ -222,7 +230,11 @@ class AttachmentValidationTests(TestCase):
         ]
         for mime_type, filename in cases:
             with self.subTest(mime_type=mime_type):
-                with override_config(ATTACHMENT_ALLOWED_MIME_TYPES=mime_type):
+                with override_config(
+                    ATTACHMENT_ALLOWED_CATEGORIES=[],
+                    ATTACHMENT_ALLOWED_MIME_TYPES=mime_type,
+                    ATTACHMENT_DENIED_MIME_TYPES="",
+                ):
                     with patch("conformity.validators.inspect_attachment", return_value=(mime_type, "b" * 64)):
                         self.assertEqual(
                             validate_attachment(self.upload(name=filename)),
