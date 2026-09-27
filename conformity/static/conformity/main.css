@@ -222,16 +222,17 @@
 }
 
 .attachment-dropzone.is-dragging {
-    padding-top: 4.5rem;
-    padding-bottom: 4.5rem;
+    min-height: 30rem;
+    padding-top: 0;
+    padding-bottom: 0;
     background-color: var(--bs-info-bg-subtle);
     outline: 2px dashed var(--bs-info);
     outline-offset: -.4rem;
 }
 
 .attachment-dropzone.is-dragging .attachment-drop-copy {
-    padding-top: 3rem !important;
-    padding-bottom: 3rem !important;
+    padding-top: .5rem !important;
+    padding-bottom: .5rem !important;
 }
 
 .attachment-dropzone.is-dragging .attachment-drop-icon {
