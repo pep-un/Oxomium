@@ -6,7 +6,7 @@ from django.forms import ModelForm, FileField, ClearableFileInput, BooleanField,
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from .models import Conformity, Organization, Audit, Finding, Action, Control, ControlPoint, Indicator, IndicatorPoint
-from .validators import attachment_accept, attachment_max_size_help, validate_attachment
+from .validators import attachment_accept, attachment_max_size_help, validate_attachment_once
 
 
 class MultipleFileInput(ClearableFileInput):
@@ -43,7 +43,7 @@ class AttachmentUploadFormMixin:
     def clean_attachments(self):
         uploaded_files = self.cleaned_data.get('attachments') or []
         for uploaded_file in uploaded_files:
-            validate_attachment(uploaded_file)
+            validate_attachment_once(uploaded_file)
         return uploaded_files
 
 
