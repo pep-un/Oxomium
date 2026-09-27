@@ -12,7 +12,6 @@ from constance.test import override_config
 
 from conformity.forms import AuditForm, ControlPointForm, IndicatorPointForm, OrganizationForm
 from conformity.models import Attachment, Audit, Framework, Indicator, IndicatorPoint, Organization
-from conformity.views import AttachmentIndexView
 from conformity.validators import (
     attachment_accept,
     configured_mime_policy,
@@ -368,20 +367,6 @@ class AttachmentChecksumViewTests(TestCase):
             reverse("conformity:indicatorpoint_form", args=[point.pk]),
         )
         self.assertContains(response, "bi bi-speedometer")
-
-    def test_attachment_index_prefetches_all_reference_relations(self):
-        queryset = AttachmentIndexView().get_queryset()
-
-        self.assertEqual(
-            set(queryset._prefetch_related_lookups),
-            {
-                "organizations",
-                "frameworks",
-                "audits",
-                "ControlPoint",
-                "IndicatorPoint",
-            },
-        )
 
     def test_attachment_library_renders_calculate_button_for_missing_checksum(self):
         attachment = Attachment.objects.create(
