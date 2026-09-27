@@ -1,7 +1,7 @@
 import django_tables2 as tables
 from auditlog.models import LogEntry
 from django.utils.html import format_html
-from django_tables2.utils import A
+from django_tables2.utils import A, OrderByTuple
 
 from .models import Action, Attachment, Audit, Conformity, Control, ControlPoint, Finding, Framework, Organization
 
@@ -45,6 +45,15 @@ class EditColumn(tables.Column):
 
 class BaseRichTable(tables.Table):
     """Shared presentation defaults for sortable, paginated list tables."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for bound_column in self.columns.iterorderable():
+            order_by = bound_column.column.order_by or OrderByTuple(
+                (bound_column.accessor,)
+            )
+            if not any(str(item).lstrip("-") == "pk" for item in order_by):
+                bound_column.column.order_by = OrderByTuple((*order_by, "pk"))
 
     class Meta:
         attrs = {
