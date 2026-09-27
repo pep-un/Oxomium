@@ -194,3 +194,21 @@
     outline: 2px solid var(--bs-secondary-color);
     outline-offset: 2px;
 }
+
+
+.attachment-dropzone {
+    transition: padding .15s ease, background-color .15s ease, outline-color .15s ease;
+}
+
+.attachment-dropzone.is-dragging {
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+    background-color: var(--bs-info-bg-subtle);
+    outline: 2px dashed var(--bs-info);
+    outline-offset: -.4rem;
+}
+
+.attachment-dropzone.is-dragging .attachment-drop-copy {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+}
