@@ -93,8 +93,8 @@
                         </div>
                     </div>
                 </div>
-                <br />
-                {% bootstrap_button button_type="submit" content="Save" %}
+                {% url 'conformity:action_index' as cancel_url %}
+                {% include "includes/form_toolbar.html" with cancel_url=cancel_url %}
             </div>
         </div>
     </form>
