@@ -35,7 +35,7 @@ class AttachmentValidationTests(TestCase):
         with self.assertRaisesMessage(ValidationError, "maximum allowed size"):
             validate_attachment(upload)
 
-    @patch("conformity.validators.config.ATTACHMENT_MAX_SIZE_MB", 1)
+    @override_config(ATTACHMENT_MAX_SIZE_MB=1)
     @patch("conformity.validators.detect_mime", return_value="application/pdf")
     def test_boundary_size_is_allowed(self, _detect):
         upload = self.upload(content=b"x" * (1024 * 1024))
