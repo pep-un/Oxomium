@@ -180,8 +180,12 @@ CONSTANCE_CONFIG = {
     'ATTACHMENT_ALLOWED_MIME_TYPES': (
         "application/pdf,image/*,text/plain,text/csv,application/zip,"
         "application/json,text/json,application/xml,text/xml,text/html,application/xhtml+xml,"
+        "application/msword,"
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document,"
+        "application/vnd.oasis.opendocument.text,"
+        "application/vnd.ms-excel,"
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,"
+        "application/vnd.oasis.opendocument.spreadsheet,"
         "application/vnd.ms-powerpoint,"
         "application/vnd.openxmlformats-officedocument.presentationml.presentation,"
         "application/vnd.oasis.opendocument.presentation",
