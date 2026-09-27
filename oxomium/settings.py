@@ -165,6 +165,13 @@ AUDITLOG_EXCLUDE_TRACKING_FIELDS = (
 
 CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
 
+FEEDBACK_ALERT_LEVEL_CHOICES = (
+    ('success', 'Success'),
+    ('info', 'Info'),
+    ('warning', 'Warning'),
+    ('error', 'Error'),
+)
+
 ATTACHMENT_MIME_CATEGORY_CHOICES = (
     ('images', 'Images'),
     ('pdf', 'PDF'),
@@ -179,6 +186,14 @@ ATTACHMENT_MIME_CATEGORY_CHOICES = (
 )
 
 CONSTANCE_ADDITIONAL_FIELDS = {
+    'feedback_alert_levels': [
+        'django.forms.fields.MultipleChoiceField',
+        {
+            'widget': 'django.forms.CheckboxSelectMultiple',
+            'choices': FEEDBACK_ALERT_LEVEL_CHOICES,
+            'required': False,
+        },
+    ],
     'attachment_mime_categories': [
         'django.forms.fields.MultipleChoiceField',
         {
@@ -202,6 +217,10 @@ CONSTANCE_CONFIG = {
         50,
         "Maximum number of items displayed in each home dashboard list",
         int),
+    'FEEDBACK_ALERT_LEVELS': (
+        ['info', 'warning', 'error'],
+        "Global feedback alert levels displayed in the application.",
+        'feedback_alert_levels'),
     'ATTACHMENT_ALLOWED_CATEGORIES': (
         [
             'images', 'pdf', 'text_documents', 'spreadsheets', 'presentations',
