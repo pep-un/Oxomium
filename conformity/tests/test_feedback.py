@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.messages.storage.fallback import FallbackStorage
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import RequestFactory, TestCase
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -72,4 +73,20 @@ class FormFeedbackTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "This field is required.")
         self.assertNotContains(response, "alert-danger")
+        self.assertNotContains(response, "created successfully")
+
+
+    def test_attachment_validation_error_is_also_shown_as_global_feedback(self):
+        upload = SimpleUploadedFile(
+            "report.exe",
+            b"MZ" + b"\x00" * 128,
+            content_type="application/octet-stream",
+        )
+        response = self.client.post(
+            reverse("conformity:organization_create"),
+            {"name": "Upload failure", "attachments": upload},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Attachment upload failed:")
+        self.assertContains(response, "alert-danger")
         self.assertNotContains(response, "created successfully")
