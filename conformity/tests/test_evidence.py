@@ -293,6 +293,120 @@ class EvidenceTests(TestCase):
             [shared.evidence_ptr],
         )
 
+    def test_manual_evidence_editor_shows_all_requirement_context_cards(self):
+        second_leaf = Requirement.objects.create(
+            framework=self.framework,
+            parent=self.root,
+            code='E2',
+            title='Second Evidence leaf',
+        )
+        second = Conformity.objects.create(
+            organization=self.organization,
+            requirement=second_leaf,
+        )
+        manual = ManualEvidence.objects.create(
+            title='Shared manual evidence',
+            result=Evidence.Result.POSITIVE,
+            valid_from=self.now - timedelta(hours=1),
+        )
+        manual.conformities.add(self.conformity, second)
+
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse('conformity:evidence_form', args=[manual.pk])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.framework.name, count=2)
+        self.assertContains(response, self.leaf.title)
+        self.assertContains(response, second_leaf.title)
+        self.assertContains(response, self.leaf.full_path)
+        self.assertContains(response, second_leaf.full_path)
+        self.assertContains(response, 'col-12 col-lg-6', count=2)
+        self.assertContains(response, 'name="attachments"')
+        self.assertContains(response, 'Add another document')
+
+    def test_control_point_editor_shows_requirement_and_control_context(self):
+        control = Control.objects.create(
+            title='Context control',
+            description='Control context description',
+            organization=self.organization,
+            frequency=Control.Frequency.QUARTERLY,
+            level=Control.Level.SECOND,
+        )
+        control.requirements.add(self.leaf)
+        point = next(
+            item for item in control.get_controlpoint()
+            if item.is_current_period()
+        )
+
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse('conformity:controlpoint_form', args=[point.pk])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.framework.name)
+        self.assertContains(response, self.leaf.title)
+        self.assertContains(response, '<span class="h4 mb-0">Control</span>', html=True)
+        self.assertContains(response, 'Context control')
+        self.assertContains(response, 'Quarterly')
+        self.assertContains(response, '2nd level')
+        self.assertContains(response, 'Control result')
+        self.assertContains(response, 'Attachments')
+
+    def test_indicator_point_editor_shows_requirement_and_indicator_context(self):
+        indicator = Indicator.objects.create(
+            name='Context indicator',
+            goal='Measure the control objective',
+            responsible=self.user,
+            organization=self.organization,
+            frequency=Indicator.Frequency.MONTHLY,
+            worst=0,
+            critical=20,
+            warning=80,
+            best=100,
+        )
+        indicator.requirements.add(self.leaf)
+        point = indicator.get_current_point()
+
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse('conformity:indicatorpoint_form', args=[point.pk])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.framework.name)
+        self.assertContains(response, self.leaf.title)
+        self.assertContains(response, '<span class="h4 mb-0">Indicator</span>', html=True)
+        self.assertContains(response, 'Context indicator')
+        self.assertContains(response, 'Monthly')
+        self.assertContains(response, 'Indicator result')
+        self.assertContains(response, 'name="value"')
+        self.assertContains(response, 'Attachments')
+
+    def test_human_evidence_editor_has_no_periodic_source_card(self):
+        human = HumanEvidence.objects.create(
+            decision=HumanEvidence.Decision.PARTIAL,
+            valid_from=self.now - timedelta(hours=1),
+            evaluator=self.user,
+        )
+        human.conformities.add(self.conformity)
+
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse('conformity:evidence_form', args=[human.pk])
+        )
+        html = response.content.decode()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(self.framework.name, html)
+        self.assertIn(self.leaf.title, html)
+        self.assertNotIn('<span class="h4 mb-0">Control</span>', html)
+        self.assertNotIn('<span class="h4 mb-0">Indicator</span>', html)
+        self.assertIn('name="decision"', html)
+        self.assertIn('name="attachments"', html)
+
     def test_framework_review_header_uses_status_pill_and_stacked_bar(self):
         manual = ManualEvidence.objects.create(
             title='Framework summary evidence',
