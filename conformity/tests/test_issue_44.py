@@ -646,6 +646,15 @@ class RichTableInteractionTests(TestCase):
         self.assertIn(point.pk, records)
         self.assertNotContains(response, 'btn btn-primary dropdown-toggle')
 
+    def test_periodic_controls_name_uses_shared_primary_column_style(self):
+        table = PeriodicEvidenceTable([])
+        column = table.columns["name"]
+
+        self.assertFalse(hasattr(column.column, "template_code"))
+        self.assertIn("col-2", column.attrs["th"]["class"])
+        self.assertIn("text-start", column.attrs["th"]["class"])
+        self.assertIn("table-primary-link", column.attrs["a"]["class"])
+
     def test_periodic_control_name_links_to_result_editor(self):
         organization = Organization.objects.create(name="Periodic title link org")
         control = Control.objects.create(

@@ -1,5 +1,6 @@
 import django_tables2 as tables
 from auditlog.models import LogEntry
+from django.urls import reverse
 from django.utils.html import format_html
 from django_tables2.utils import A, OrderByTuple
 
@@ -338,22 +339,20 @@ class ConformityTable(BaseRichTable):
         sequence = ("conformity", "requirements", "evidence_status")
 
 
+def periodic_evidence_result_url(record):
+    """Return the evaluation screen for a periodic Evidence row."""
+    if record.source_type == Evidence.SourceType.CONTROL:
+        return reverse("conformity:controlpoint_form", args=[record.pk])
+    if record.source_type == Evidence.SourceType.INDICATOR:
+        return reverse("conformity:indicatorpoint_form", args=[record.pk])
+    return None
+
+
 class PeriodicEvidenceTable(BaseRichTable):
-    name = tables.TemplateColumn(
+    name = tables.Column(
+        accessor="periodic_name",
         verbose_name="Name",
-        template_code="""
-            {% if record.source_type == 'CTRL' %}
-                <a href="{% url 'conformity:controlpoint_form' record.controlpoint.pk %}">
-                    {{ record.periodic_name }}
-                </a>
-            {% elif record.source_type == 'IND' %}
-                <a href="{% url 'conformity:indicatorpoint_form' record.indicatorpoint.pk %}">
-                    {{ record.periodic_name }}
-                </a>
-            {% else %}
-                {{ record.periodic_name }}
-            {% endif %}
-        """,
+        linkify=periodic_evidence_result_url,
         orderable=False,
         attrs=PRIMARY_COLUMN,
     )
