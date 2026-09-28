@@ -3,8 +3,13 @@
 
 {% block header %}
 <h1 class="h1 d-flex align-items-center gap-2">
-    <i class="bi bi-pencil-square" aria-hidden="true"></i>
-    Edit evidence
+    {% if creating_evidence %}
+        <i class="bi bi-plus-circle" aria-hidden="true"></i>
+        Create {{ evidence_label|default:"evidence" }}
+    {% else %}
+        <i class="bi bi-pencil-square" aria-hidden="true"></i>
+        Edit evidence
+    {% endif %}
 </h1>
 {% endblock %}
 
@@ -13,7 +18,13 @@
     {% csrf_token %}
     <div class="card">
         <div class="card-header">
-            <strong>{{ object.get_source_type_display }}</strong>
+            <strong>
+                {% if creating_evidence %}
+                    {{ evidence_label|default:"Evidence" }}
+                {% else %}
+                    {{ object.get_source_type_display }}
+                {% endif %}
+            </strong>
         </div>
         <div class="card-body">
             {% bootstrap_form form %}
@@ -22,11 +33,21 @@
 
     <div class="mt-3 d-flex gap-2">
         <button type="submit" class="btn btn-primary">
-            <i class="bi bi-save" aria-hidden="true"></i> Save
+            <i class="bi bi-save" aria-hidden="true"></i>
+            {% if creating_evidence %}Create{% else %}Save{% endif %}
         </button>
-        <a class="btn btn-outline-secondary" href="{% url 'conformity:evidence_detail' object.pk %}">
-            Cancel
-        </a>
+
+        {% if creating_evidence %}
+            <a class="btn btn-outline-secondary"
+               href="{% url 'conformity:conformity_form' conformity.pk %}">
+                Cancel
+            </a>
+        {% else %}
+            <a class="btn btn-outline-secondary"
+               href="{% url 'conformity:evidence_detail' object.pk %}">
+                Cancel
+            </a>
+        {% endif %}
     </div>
 </form>
 {% endblock %}
