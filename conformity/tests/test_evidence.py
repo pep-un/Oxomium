@@ -276,6 +276,14 @@ class EvidenceTests(TestCase):
         self.assertEqual(point.result, Evidence.Result.NEGATIVE)
 
     def test_human_evidence_view_requires_login_and_records_author(self):
+        self.evidence(Evidence.Result.POSITIVE)
+        self.evidence(Evidence.Result.NEGATIVE)
+        self.conformity.refresh_from_db()
+        self.assertEqual(
+            self.conformity.evidence_state,
+            Conformity.EvidenceState.INCONCLUSIVE,
+        )
+
         url = reverse('conformity:human_evidence_create', args=[self.conformity.pk])
         self.assertEqual(self.client.get(url).status_code, 302)
         self.client.force_login(self.user)
@@ -291,6 +299,19 @@ class EvidenceTests(TestCase):
         human = HumanEvidence.objects.get()
         self.assertEqual(human.evaluator, self.user)
         self.assertIn(self.conformity, human.conformities.all())
+
+        # The M2M association is the creation trigger: the HumanEvidence must
+        # arbitrate the mixed situation immediately.
+        self.conformity.refresh_from_db()
+        self.assertEqual(
+            self.conformity.evidence_state,
+            Conformity.EvidenceState.COMPLIANT,
+        )
+        self.assertEqual(self.conformity.status, 100)
+        self.assertEqual(
+            self.conformity.status_justification,
+            Conformity.StatusJustification.EVIDENCE,
+        )
 
     def test_conformity_update_shows_only_current_evidence(self):
         current = ManualEvidence.objects.create(
