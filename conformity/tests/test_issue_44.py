@@ -4,7 +4,10 @@ from django.template.loader import render_to_string
 from constance.test import override_config
 from django.urls import reverse
 
-from conformity.models import Action, Audit, Control, ControlPoint, Finding, Organization
+from conformity.models import (
+    Action, Audit, Conformity, Control, ControlPoint, Finding, Framework,
+    Organization, Requirement,
+)
 from conformity.tables import (
     ActionTable, AttachmentTable, AuditLogTable, AuditTable, ConformityTable,
     ControlTable, ControlPointTable, FindingTable, FrameworkTable, OrganizationTable,
@@ -68,6 +71,52 @@ class RichTableConfigurationTests(TestCase):
                 self.assertIn("text-start", first_column.attrs["th"]["class"])
                 self.assertIn("col-2", first_column.attrs["td"]["class"])
                 self.assertIn("text-start", first_column.attrs["td"]["class"])
+
+    def test_conformity_table_uses_stacked_evidence_status_column(self):
+        table = ConformityTable([])
+        self.assertIn("evidence_status", table.columns)
+        self.assertNotIn("completeness", table.columns)
+        self.assertNotIn("status", table.columns)
+        self.assertEqual(
+            table.columns["evidence_status"].verbose_name,
+            "Evidence status",
+        )
+
+    def test_conformity_evidence_distribution_counts_leaf_states(self):
+        organization = Organization.objects.create(name="Evidence summary org")
+        framework = Framework.objects.create(name="Evidence summary framework")
+        root_req = Requirement.objects.create(
+            framework=framework, code="SUM", title="Summary root"
+        )
+        root = Conformity.objects.create(
+            organization=organization,
+            requirement=root_req,
+        )
+        states = (
+            Conformity.EvidenceState.COMPLIANT,
+            Conformity.EvidenceState.PARTIAL,
+            Conformity.EvidenceState.NON_COMPLIANT,
+            Conformity.EvidenceState.INCONCLUSIVE,
+        )
+        for index, state in enumerate(states, start=1):
+            requirement = Requirement.objects.create(
+                framework=framework,
+                parent=root_req,
+                code=f"SUM{index}",
+                title=f"Leaf {index}",
+            )
+            Conformity.objects.create(
+                organization=organization,
+                requirement=requirement,
+                evidence_state=state,
+            )
+
+        distribution = root.get_evidence_state_distribution()
+        self.assertEqual(distribution["total"], 4)
+        self.assertEqual(distribution["compliant_pct"], 25)
+        self.assertEqual(distribution["partial_pct"], 25)
+        self.assertEqual(distribution["non_compliant_pct"], 25)
+        self.assertEqual(distribution["inconclusive_pct"], 25)
 
     def test_control_table_exposes_organization_and_last_result(self):
         table = ControlTable([])
