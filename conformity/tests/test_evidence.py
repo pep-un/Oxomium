@@ -42,6 +42,79 @@ class EvidenceTests(TestCase):
         item.conformities.add(self.conformity)
         return item
 
+    def test_evidence_cannot_be_associated_with_parent_conformity(self):
+        item = Evidence.objects.create(
+            source_type=Evidence.SourceType.MANUAL,
+            result=Evidence.Result.POSITIVE,
+            valid_from=self.now - timedelta(hours=1),
+        )
+
+        with self.assertRaises(ValidationError):
+            item.conformities.add(self.parent)
+
+        with self.assertRaises(ValidationError):
+            self.parent.evidence.add(item)
+
+        self.assertFalse(item.conformities.exists())
+
+    def test_evidence_create_url_rejects_parent_conformity(self):
+        self.client.force_login(self.user)
+
+        for route_name in (
+            'human_evidence_create',
+            'manual_evidence_create',
+            'document_evidence_create',
+            'finding_evidence_create',
+        ):
+            with self.subTest(route=route_name):
+                response = self.client.get(
+                    reverse(route_name, args=[self.parent.pk])
+                )
+                self.assertEqual(response.status_code, 404)
+
+    def test_control_point_only_targets_leaf_conformities(self):
+        control = Control.objects.create(
+            title='Leaf-only control',
+            organization=self.organization,
+        )
+        control.requirements.add(self.root, self.leaf)
+
+        point = ControlPoint.objects.create(
+            control=control,
+            period_start_date=date.today() - timedelta(days=1),
+            period_end_date=date.today() + timedelta(days=1),
+            status=ControlPoint.Status.COMPLIANT,
+        )
+
+        self.assertEqual(
+            list(point.conformities.order_by('pk')),
+            [self.conformity],
+        )
+
+    def test_indicator_point_only_targets_leaf_conformities(self):
+        indicator = Indicator.objects.create(
+            name='Leaf-only indicator',
+            responsible=self.user,
+            organization=self.organization,
+            worst=0,
+            critical=20,
+            warning=80,
+            best=100,
+        )
+        indicator.requirements.add(self.root, self.leaf)
+
+        point = IndicatorPoint.objects.create(
+            indicator=indicator,
+            period_start_date=date.today() - timedelta(days=1),
+            period_end_date=date.today() + timedelta(days=1),
+            value=90,
+        )
+
+        self.assertEqual(
+            list(point.conformities.order_by('pk')),
+            [self.conformity],
+        )
+
     def test_half_open_validity_and_validation(self):
         item = self.evidence(
             Evidence.Result.POSITIVE,
