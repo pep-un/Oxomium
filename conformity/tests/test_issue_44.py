@@ -6,13 +6,17 @@ from django.urls import reverse
 
 from conformity.models import (
     Action, Audit, Conformity, Control, ControlPoint, Finding, Framework,
-    Organization, Requirement,
+    Indicator, IndicatorPoint, Organization, Requirement,
 )
 from conformity.tables import (
     ActionTable, AttachmentTable, AuditLogTable, AuditTable, ConformityTable,
     ControlTable, ControlPointTable, FindingTable, FrameworkTable, OrganizationTable,
+    PeriodicEvidenceTable,
 )
-from conformity.filterset import AttachmentFilter, ConformityFilter, ControlPointFilter, FindingFilter
+from conformity.filterset import (
+    AttachmentFilter, ConformityFilter, ControlPointFilter, FindingFilter,
+    PeriodicEvidenceFilter,
+)
 from conformity.views import (
     ActionIndexView, AttachmentIndexView, AuditLogDetailView, AuditIndexView,
     ConformityIndexView, ControlIndexView, ControlPointIndexView, FindingIndexView,
@@ -28,7 +32,7 @@ class RichTableConfigurationTests(TestCase):
             AuditLogDetailView: AuditLogTable,
             AuditIndexView: AuditTable,
             ConformityIndexView: ConformityTable,
-            ControlIndexView: ControlTable,
+            ControlIndexView: PeriodicEvidenceTable,
             ControlPointIndexView: ControlPointTable,
             FindingIndexView: FindingTable,
             FrameworkIndexView: FrameworkTable,
@@ -138,6 +142,30 @@ class RichTableConfigurationTests(TestCase):
         self.assertEqual(distribution["partial_pct"], 25)
         self.assertEqual(distribution["non_compliant_pct"], 25)
         self.assertEqual(distribution["inconclusive_pct"], 25)
+
+    def test_periodic_controls_table_has_operational_columns_only(self):
+        table = PeriodicEvidenceTable([])
+        self.assertEqual(
+            list(table.columns.names()),
+            [
+                "name",
+                "organization",
+                "type",
+                "level",
+                "frequency",
+                "last_result",
+                "requirements",
+            ],
+        )
+        self.assertNotIn("actions", table.columns)
+
+    def test_periodic_controls_filter_defaults_can_expose_all_results(self):
+        self.assertIn("evaluation", getattr(PeriodicEvidenceFilter, "base_filters"))
+        choices = dict(
+            PeriodicEvidenceFilter.base_filters["evaluation"].extra["choices"]
+        )
+        self.assertEqual(choices["pending"], "To be evaluated")
+        self.assertEqual(choices["all"], "All results")
 
     def test_control_table_exposes_organization_and_last_result(self):
         table = ControlTable([])
@@ -425,11 +453,76 @@ class RichTableInteractionTests(TestCase):
         current_point.status = ControlPoint.Status.COMPLIANT
         current_point.save(update_fields=["status"])
 
-        response = self.client.get(reverse("conformity:control_index"))
+        response = self.client.get(
+            reverse("conformity:control_index"),
+            {"evaluation": "all"},
+        )
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "bi-hexagon-fill text-success")
         self.assertContains(response, "Compliant")
+
+    def test_periodic_controls_default_to_items_to_evaluate(self):
+        organization = Organization.objects.create(name="Periodic default org")
+        pending_control = Control.objects.create(
+            title="Pending control",
+            organization=organization,
+            frequency=Control.Frequency.YEARLY,
+        )
+        pending_point = next(
+            point for point in pending_control.get_controlpoint()
+            if point.is_current_period()
+        )
+
+        completed_control = Control.objects.create(
+            title="Completed hidden control",
+            organization=organization,
+            frequency=Control.Frequency.YEARLY,
+        )
+        completed_point = next(
+            point for point in completed_control.get_controlpoint()
+            if point.is_current_period()
+        )
+        completed_point.status = ControlPoint.Status.COMPLIANT
+        completed_point.save(update_fields=["status"])
+
+        response = self.client.get(reverse("conformity:control_index"))
+
+        self.assertEqual(response.status_code, 200)
+        records = [row.record.pk for row in response.context["table"].page.object_list]
+        self.assertIn(pending_point.pk, records)
+        self.assertNotIn(completed_point.pk, records)
+        self.assertEqual(response.context["filter"].form["evaluation"].value(), "pending")
+        self.assertNotContains(response, reverse("conformity:control_create"))
+        self.assertNotContains(response, reverse("conformity:indicator_create"))
+
+    def test_periodic_controls_include_indicator_evidence(self):
+        organization = Organization.objects.create(name="Indicator queue org")
+        indicator = Indicator.objects.create(
+            name="MFA coverage",
+            responsible=self.user,
+            organization=organization,
+            frequency=Indicator.Frequency.YEARLY,
+            worst=0,
+            critical=20,
+            warning=80,
+            best=100,
+        )
+        point = indicator.get_current_point()
+
+        self.assertIsNotNone(point)
+        self.assertEqual(point.status, IndicatorPoint.Status.TOBEEVALUATED)
+
+        response = self.client.get(reverse("conformity:control_index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "MFA coverage")
+        self.assertContains(response, "Indicator")
+        self.assertContains(
+            response,
+            reverse("conformity:indicatorpoint_form", args=[point.pk]),
+        )
+        self.assertContains(response, "Enter value")
 
     def test_control_detail_renders_generated_control_points(self):
         control = Control.objects.create(
