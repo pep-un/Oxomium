@@ -23,8 +23,9 @@ from .filterset import ActionFilter, ControlFilter, ControlPointFilter, Framewor
     ConformityFilter, AuditFilter, FindingFilter, IndicatorFilter, AttachmentFilter, AuditLogFilter
 from .forms import (
     ActionForm, AuditForm, ConformityForm, ControlForm, ControlPointForm,
-    DocumentEvidenceForm, FindingEvidenceForm, FindingForm, HumanEvidenceForm,
-    IndicatorForm, IndicatorPointForm, ManualEvidenceForm, OrganizationForm,
+    DocumentEvidenceForm, EvidenceForm, FindingEvidenceForm, FindingForm,
+    HumanEvidenceForm, IndicatorForm, IndicatorPointForm, ManualEvidenceForm,
+    OrganizationForm,
 )
 from .models import (
     Action, Attachment, Audit, Conformity, Control, ControlPoint,
@@ -490,6 +491,8 @@ class EvidenceUpdateView(LoginRequiredMixin, UpdateView):
         return evidence
 
     def get_form_class(self):
+        if type(self.object) is Evidence:
+            return EvidenceForm
         try:
             return self.form_classes[self.object.source_type]
         except KeyError as exc:
