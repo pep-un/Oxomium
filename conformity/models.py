@@ -473,6 +473,39 @@ class Conformity(models.Model):
         complete = sum(1 for conformity in leaves if conformity.status is not None)
         return round((complete / total) * 100)
 
+    def get_evidence_state_distribution(self):
+        """Return categorical leaf status counts and percentages for summary bars."""
+        leaves = [item for item in self.get_leaf() if item.applicable]
+        total = len(leaves)
+
+        counts = {
+            self.EvidenceState.COMPLIANT: 0,
+            self.EvidenceState.PARTIAL: 0,
+            self.EvidenceState.NON_COMPLIANT: 0,
+            self.EvidenceState.INCONCLUSIVE: 0,
+            self.EvidenceState.NOT_EVALUATED: 0,
+        }
+        for item in leaves:
+            counts[item.evidence_state] = counts.get(item.evidence_state, 0) + 1
+
+        def percentage(state):
+            if total == 0:
+                return 0
+            return round((counts[state] / total) * 100, 2)
+
+        return {
+            'total': total,
+            'compliant_count': counts[self.EvidenceState.COMPLIANT],
+            'partial_count': counts[self.EvidenceState.PARTIAL],
+            'non_compliant_count': counts[self.EvidenceState.NON_COMPLIANT],
+            'inconclusive_count': counts[self.EvidenceState.INCONCLUSIVE],
+            'not_evaluated_count': counts[self.EvidenceState.NOT_EVALUATED],
+            'compliant_pct': percentage(self.EvidenceState.COMPLIANT),
+            'partial_pct': percentage(self.EvidenceState.PARTIAL),
+            'non_compliant_pct': percentage(self.EvidenceState.NON_COMPLIANT),
+            'inconclusive_pct': percentage(self.EvidenceState.INCONCLUSIVE),
+        }
+
     def get_absolute_url(self):
         """Return the absolute URL of the class for Form, probably not the best way to do it"""
         return reverse('conformity:conformity_detail_index',
