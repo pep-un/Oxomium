@@ -4,7 +4,7 @@ It's Organized around Organization, Framework, Requirement and Conformity classe
 """
 # Standard library
 from calendar import monthrange
-from datetime import date, timedelta
+from datetime import date, datetime, time, timedelta
 from typing import List, Literal, Tuple
 
 # Django (third-party)
@@ -428,8 +428,11 @@ class Conformity(models.Model):
         return Action.objects.filter(associated_conformity=self.id).filter(active=True)
 
     def get_control(self):
-        """Return the list of Control associated with this Conformity"""
-        return Control.objects.filter(conformity=self.id)
+        """Return controls configured to target this requirement."""
+        return Control.objects.filter(
+            organization=self.organization,
+            requirements=self.requirement,
+        )
 
     def get_related(self,*,include_actions: bool = True,include_controls: bool = True,
             only_active: bool = False,negative_only: bool = False,
@@ -481,9 +484,9 @@ class Conformity(models.Model):
                 ControlPoint.Status.SCHEDULED, ControlPoint.Status.TOBEEVALUATED,
             ]
             points = ControlPoint.objects.filter(
-                control__conformity=self,
-                period_start_date__lte=today,
-                period_end_date__gte=today,
+                conformities=self,
+                valid_from__date__lte=today,
+                valid_to__date__gt=today,
                 status__in=statuses,
             )
             items.extend(("controlpoint", point) for point in points)
@@ -804,6 +807,36 @@ class Finding(models.Model):
             self.save(update_fields=["archived"])
 
 
+class _ConformityTargetAdapter:
+    """Compatibility facade backed by Requirement targets, not a Conformity M2M."""
+
+    def __init__(self, owner):
+        self.owner = owner
+
+    def all(self):
+        if not self.owner.organization_id:
+            return Conformity.objects.none()
+        return Conformity.objects.filter(
+            organization_id=self.owner.organization_id,
+            requirement__in=self.owner.requirements.all(),
+        )
+
+    def add(self, *conformities):
+        self.owner.requirements.add(*(c.requirement_id for c in conformities))
+
+    def set(self, conformities):
+        self.owner.requirements.set(c.requirement_id for c in conformities)
+
+    def remove(self, *conformities):
+        self.owner.requirements.remove(*(c.requirement_id for c in conformities))
+
+    def clear(self):
+        self.owner.requirements.clear()
+
+    def exists(self):
+        return self.all().exists()
+
+
 class Control(models.Model):
     """
     Control class represent the periodic control needed to verify the security and the effectiveness of the security requirement.
@@ -825,7 +858,10 @@ class Control(models.Model):
     title = models.CharField(max_length=256)
     description = models.TextField(max_length=4096, blank=True)
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, blank=True, null=True)
-    conformity = models.ManyToManyField(Conformity, blank=True, related_name="controls")
+    requirements = models.ManyToManyField(
+        Requirement, blank=True, related_name="controls",
+        help_text=_("Requirements targeted by this control. Concrete Conformity links live on Evidence."),
+    )
     control = models.ManyToManyField('self', blank=True)
     frequency = models.IntegerField(
         choices=Frequency.choices,
@@ -842,6 +878,11 @@ class Control(models.Model):
     def __str__(self):
         return "[" + str(self.organization) + "] " + str(self.title)
 
+    @property
+    def conformity(self):
+        """Deprecated compatibility accessor backed by requirements."""
+        return _ConformityTargetAdapter(self)
+
     @staticmethod
     def get_absolute_url():
         """return the absolute URL for Forms, could probably do better"""
@@ -855,16 +896,13 @@ class Control(models.Model):
 
     def get_controlpoint(self):
         """Return all control point based on this control"""
-        return ControlPoint.objects.filter(control=self).order_by('period_start_date')
+        return ControlPoint.objects.filter(control=self).order_by('valid_from')
 
 
-class ControlPoint(models.Model):
-    """
-    A control point is a specific point of verification of a periodic Control.
-    """
+class ControlPoint(Evidence):
+    """A periodic control result represented directly as Evidence."""
 
     class Status(models.TextChoices):
-        """ List of status possible for a ControlPoint"""
         SCHEDULED = 'SCHD', _('Scheduled')
         TOBEEVALUATED = 'TOBE', _('To evaluate')
         COMPLIANT = 'OK', _('Compliant')
@@ -872,49 +910,110 @@ class ControlPoint(models.Model):
         MISSED = 'MISS', _('Missed')
 
     control = models.ForeignKey(Control, on_delete=models.CASCADE, null=True, blank=True)
-    control_date = models.DateTimeField(blank=True, null=True)
-    control_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
-    period_start_date = models.DateField()
-    period_end_date = models.DateField()
     status = models.CharField(choices=Status.choices, max_length=4, default=Status.SCHEDULED)
-    comment = models.TextField(max_length=4096, blank=True)
-    attachment = models.ManyToManyField('Attachment', blank=True, related_name='ControlPoint')
-    evidence = models.OneToOneField(
-        Evidence, on_delete=models.PROTECT, null=True, blank=True,
-        related_name='control_point',
-    )
 
     class Meta:
-        ordering = ['period_end_date']
+        ordering = ['valid_to']
 
     @staticmethod
     def get_absolute_url():
-        """return the absolute URL for Forms, could probably do better"""
         return reverse('conformity:control_index')
 
     @staticmethod
+    def _day_start(value):
+        naive = datetime.combine(value, time.min)
+        return timezone.make_aware(naive, timezone.get_current_timezone())
+
+    @property
+    def period_start_date(self):
+        return timezone.localtime(self.valid_from).date() if self.valid_from else None
+
+    @period_start_date.setter
+    def period_start_date(self, value):
+        if value is not None:
+            self.valid_from = self._day_start(value)
+
+    @property
+    def period_end_date(self):
+        if not self.valid_to:
+            return None
+        return (timezone.localtime(self.valid_to) - timedelta(microseconds=1)).date()
+
+    @period_end_date.setter
+    def period_end_date(self, value):
+        if value is not None:
+            self.valid_to = self._day_start(value + timedelta(days=1))
+
+    @property
+    def control_date(self):
+        return self.evaluated_at
+
+    @control_date.setter
+    def control_date(self, value):
+        self.evaluated_at = value
+
+    @property
+    def control_user(self):
+        return self.evaluator
+
+    @control_user.setter
+    def control_user(self, value):
+        self.evaluator = value
+
+    @property
+    def attachment(self):
+        """Compatibility alias; attachments are stored once on Evidence."""
+        return self.attachments
+
+    @staticmethod
     def update_status(instance):
-        if instance.status != ControlPoint.Status.COMPLIANT and instance.status != ControlPoint.Status.NONCOMPLIANT:
+        if instance.status not in (ControlPoint.Status.COMPLIANT, ControlPoint.Status.NONCOMPLIANT):
             today = date.today()
-            if instance.period_end_date < today:
+            if instance.period_end_date and instance.period_end_date < today:
                 instance.status = ControlPoint.Status.MISSED
-            elif instance.period_start_date <= today <= instance.period_end_date:
+            elif (
+                instance.period_start_date
+                and instance.period_end_date
+                and instance.period_start_date <= today <= instance.period_end_date
+            ):
                 instance.status = ControlPoint.Status.TOBEEVALUATED
             else:
                 instance.status = ControlPoint.Status.SCHEDULED
 
+    def save(self, *args, **kwargs):
+        self.source_type = Evidence.SourceType.CONTROL
+        self.result = {
+            self.Status.COMPLIANT: Evidence.Result.POSITIVE,
+            self.Status.NONCOMPLIANT: Evidence.Result.NEGATIVE,
+        }.get(self.status, Evidence.Result.NEUTRAL)
+        update_fields = kwargs.get('update_fields')
+        if update_fields is not None:
+            update_fields = set(update_fields)
+            if 'status' in update_fields:
+                update_fields.update({'result', 'source_type'})
+            kwargs['update_fields'] = update_fields
+        return super().save(*args, **kwargs)
+
     def __str__(self):
-        return "[" + str(self.control.organization) + "] " + self.control.title + " (" \
-            + self.period_start_date.strftime('%b-%Y') + "⇒" \
-            + self.period_end_date.strftime('%b-%Y') + ")"
+        if not self.control:
+            return super().__str__()
+        start = self.period_start_date
+        end = self.period_end_date
+        return (
+            f"[{self.control.organization}] {self.control.title} "
+            f"({start.strftime('%b-%Y') if start else '?'}⇒{end.strftime('%b-%Y') if end else '?'})"
+        )
 
     def get_action(self):
-        """Return the list of Action associated with this Findings"""
         return Action.objects.filter(associated_controlPoints=self)
 
     def is_current_period(self, when: date | None = None) -> bool:
         when = when or date.today()
-        return self.period_start_date <= when <= self.period_end_date
+        return bool(
+            self.period_start_date
+            and self.period_end_date
+            and self.period_start_date <= when <= self.period_end_date
+        )
 
     def is_final_status(self) -> bool:
         return self.status in (ControlPoint.Status.COMPLIANT, ControlPoint.Status.NONCOMPLIANT)
@@ -1185,11 +1284,19 @@ class Indicator (models.Model):
     critical = models.IntegerField(default=20)
     responsible = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, blank=True, null=True)
-    conformity = models.ManyToManyField(Conformity, blank=True)
+    requirements = models.ManyToManyField(
+        Requirement, blank=True, related_name="indicators",
+        help_text=_("Requirements targeted by this indicator. Concrete Conformity links live on Evidence."),
+    )
     frequency = models.IntegerField(
         choices=Frequency.choices,
         default=Frequency.QUARTERLY,
     )
+
+    @property
+    def conformity(self):
+        """Deprecated compatibility accessor backed by requirements."""
+        return _ConformityTargetAdapter(self)
 
     @staticmethod
     def get_absolute_url():
@@ -1315,16 +1422,15 @@ class Indicator (models.Model):
         today = timezone.now().date()
         return (
             IndicatorPoint.objects
-            .filter(indicator=self, period_start_date__lte=today, period_end_date__gte=today)
+            .filter(indicator=self, valid_from__date__lte=today, valid_to__date__gt=today)
             .first()
         )
 
 
-class IndicatorPoint(models.Model):
-    """ Measurement point of an Indicator """
+class IndicatorPoint(Evidence):
+    """An Indicator measurement represented directly as Evidence."""
 
     class Status(models.TextChoices):
-        """ List of status possible for a IndicatorPoint"""
         SCHEDULED = 'SCHD', _('Scheduled')
         TOBEEVALUATED = 'TOBE', _('To evaluate')
         COMPLIANT = 'OK', _('Compliant')
@@ -1333,27 +1439,60 @@ class IndicatorPoint(models.Model):
         MISSED = 'MISS', _('Missed')
 
     indicator = models.ForeignKey(Indicator, on_delete=models.CASCADE, null=True, blank=True)
-    control_date = models.DateTimeField(blank=True, null=True)
-    control_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
-    period_start_date = models.DateField()
-    period_end_date = models.DateField()
     status = models.CharField(choices=Status.choices, max_length=4, default=Status.SCHEDULED)
-    comment = models.TextField(max_length=4096, blank=True)
     value = models.IntegerField(null=True)
-    attachment = models.ManyToManyField('Attachment', blank=True, related_name='IndicatorPoint')
-    evidence = models.OneToOneField(
-        Evidence, on_delete=models.PROTECT, null=True, blank=True,
-        related_name='indicator_point',
-    )
 
     @staticmethod
     def get_absolute_url():
-        """return the absolute URL for Forms, could probably do better"""
         return reverse('conformity:indicator_index')
+
+    @staticmethod
+    def _day_start(value):
+        naive = datetime.combine(value, time.min)
+        return timezone.make_aware(naive, timezone.get_current_timezone())
+
+    @property
+    def period_start_date(self):
+        return timezone.localtime(self.valid_from).date() if self.valid_from else None
+
+    @period_start_date.setter
+    def period_start_date(self, value):
+        if value is not None:
+            self.valid_from = self._day_start(value)
+
+    @property
+    def period_end_date(self):
+        if not self.valid_to:
+            return None
+        return (timezone.localtime(self.valid_to) - timedelta(microseconds=1)).date()
+
+    @period_end_date.setter
+    def period_end_date(self, value):
+        if value is not None:
+            self.valid_to = self._day_start(value + timedelta(days=1))
+
+    @property
+    def control_date(self):
+        return self.evaluated_at
+
+    @control_date.setter
+    def control_date(self, value):
+        self.evaluated_at = value
+
+    @property
+    def control_user(self):
+        return self.evaluator
+
+    @control_user.setter
+    def control_user(self, value):
+        self.evaluator = value
+
+    @property
+    def attachment(self):
+        return self.attachments
 
     def validate_value_bounds(self):
         if self.value is None:
-            # Automatically generated periods have no measurement yet.
             return
         try:
             self.value = self._meta.get_field('value').clean(self.value, self)
@@ -1373,43 +1512,46 @@ class IndicatorPoint(models.Model):
         self.validate_value_bounds()
 
     def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
-        # Validate and derive status before auditlog's pre_save receiver.
         self.validate_value_bounds()
         self.status_update()
+        self.source_type = Evidence.SourceType.INDICATOR
+        self.result = {
+            self.Status.COMPLIANT: Evidence.Result.POSITIVE,
+            self.Status.CRITICAL: Evidence.Result.NEGATIVE,
+        }.get(self.status, Evidence.Result.NEUTRAL)
         if update_fields is not None:
             update_fields = set(update_fields)
             if update_fields & {'value', 'indicator', 'indicator_id'}:
                 update_fields.add('status')
+            if 'status' in update_fields:
+                update_fields.update({'result', 'source_type'})
         return super().save(
             force_insert=force_insert, force_update=force_update,
             using=using, update_fields=update_fields,
         )
 
     def status_update(self):
-        """Update the status according to the indicator thresholds."""
         if self.value is None or self.indicator_id is None:
             return
 
-        if self.indicator.best > self.indicator.worst :
-            if self.indicator.best >= self.value > self.indicator.warning :
+        if self.indicator.best > self.indicator.worst:
+            if self.indicator.best >= self.value > self.indicator.warning:
                 self.status = IndicatorPoint.Status.COMPLIANT
-            elif self.indicator.warning >= self.value > self.indicator.critical :
+            elif self.indicator.warning >= self.value > self.indicator.critical:
                 self.status = IndicatorPoint.Status.WARNING
-            elif self.indicator.critical >= self.value >= self.indicator.worst :
+            elif self.indicator.critical >= self.value >= self.indicator.worst:
                 self.status = IndicatorPoint.Status.CRITICAL
             else:
                 self.status = IndicatorPoint.Status.MISSED
-
-        elif self.indicator.best < self.indicator.worst :
-            if self.indicator.best <= self.value < self.indicator.warning :
+        elif self.indicator.best < self.indicator.worst:
+            if self.indicator.best <= self.value < self.indicator.warning:
                 self.status = IndicatorPoint.Status.COMPLIANT
-            elif self.indicator.warning <= self.value < self.indicator.critical :
+            elif self.indicator.warning <= self.value < self.indicator.critical:
                 self.status = IndicatorPoint.Status.WARNING
-            elif self.indicator.critical <= self.value <= self.indicator.worst :
+            elif self.indicator.critical <= self.value <= self.indicator.worst:
                 self.status = IndicatorPoint.Status.CRITICAL
             else:
                 self.status = IndicatorPoint.Status.MISSED
-
         else:
             self.status = IndicatorPoint.Status.MISSED
 
