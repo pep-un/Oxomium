@@ -2,7 +2,10 @@ from auditlog.models import LogEntry
 from django.utils.autoreload import logger
 from import_export import fields, resources
 from import_export.widgets import ManyToManyWidget, ForeignKeyWidget
-from .models import Attachment, Conformity, Control, ControlPoint, Finding, Action, Framework, Indicator, Organization, Audit
+from .models import (
+    Action, Attachment, Audit, Conformity, Control, ControlPoint, Evidence,
+    Finding, Framework, Indicator, IndicatorPoint, Organization,
+)
 
 
 class ConformityResource(resources.ModelResource):
@@ -56,6 +59,63 @@ class ConformityResource(resources.ModelResource):
         if not controls.exists():
             return ""
         return ", ".join(f"{control.title}" for control in controls)
+
+
+class PeriodicEvidenceResource(resources.ModelResource):
+    name = fields.Field(column_name="Name")
+    organization = fields.Field(column_name="Organization")
+    type = fields.Field(column_name="Type")
+    level = fields.Field(column_name="Level")
+    frequency = fields.Field(column_name="Frequency")
+    last_result = fields.Field(column_name="Last result")
+    requirements = fields.Field(column_name="Associated requirements")
+    references = fields.Field(column_name="Associated references")
+
+    class Meta:
+        model = Evidence
+        fields = (
+            "name", "organization", "type", "level", "frequency",
+            "last_result", "requirements", "references",
+        )
+        export_order = fields
+
+    def dehydrate_name(self, obj):
+        return obj.periodic_name
+
+    def dehydrate_organization(self, obj):
+        organization = obj.periodic_organization
+        return str(organization) if organization else ""
+
+    def dehydrate_type(self, obj):
+        return obj.get_source_type_display()
+
+    def dehydrate_level(self, obj):
+        return obj.periodic_level
+
+    def dehydrate_frequency(self, obj):
+        return obj.periodic_frequency
+
+    def dehydrate_last_result(self, obj):
+        point = obj.periodic_point
+        if point is None:
+            return ""
+        if isinstance(point, IndicatorPoint):
+            if point.value is None:
+                return point.get_status_display()
+            return f"{point.value} · {point.get_status_display()}"
+        return point.get_status_display()
+
+    def dehydrate_requirements(self, obj):
+        return ", ".join(
+            conformity.requirement.full_path
+            for conformity in obj.conformities.all()
+        )
+
+    def dehydrate_references(self, obj):
+        return ", ".join(sorted({
+            conformity.requirement.framework.name
+            for conformity in obj.conformities.all()
+        }))
 
 
 class ControlResource(resources.ModelResource):
