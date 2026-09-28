@@ -68,7 +68,7 @@ class EvidenceTests(TestCase):
         ):
             with self.subTest(route=route_name):
                 response = self.client.get(
-                    reverse(route_name, args=[self.parent.pk])
+                    reverse(f'conformity:{route_name}', args=[self.parent.pk])
                 )
                 self.assertEqual(response.status_code, 404)
 
