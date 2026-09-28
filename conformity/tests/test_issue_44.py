@@ -171,6 +171,63 @@ class RichTableConfigurationTests(TestCase):
         self.assertEqual(filters["requirement"].label, "Associated requirement")
         self.assertEqual(filters["reference"].label, "Associated reference")
 
+    def test_periodic_controls_show_export_and_result_count(self):
+        organization = Organization.objects.create(name="Periodic toolbar org")
+        control = Control.objects.create(
+            title="Toolbar control",
+            organization=organization,
+            frequency=Control.Frequency.YEARLY,
+        )
+        point = next(
+            item for item in control.get_controlpoint()
+            if item.is_current_period()
+        )
+
+        response = self.client.get(
+            reverse("conformity:control_index"),
+            {"status": "TOBE"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse("conformity:control_export"))
+        self.assertContains(response, "Export CSV (All)")
+        self.assertContains(response, "Export XLSX (All)")
+        self.assertEqual(response.context["result_total_count"], 1)
+        self.assertEqual(response.context["result_visible_count"], 1)
+        self.assertEqual(
+            [row.record.pk for row in response.context["table"].page.object_list],
+            [point.pk],
+        )
+
+    def test_periodic_controls_selection_export_uses_current_filters(self):
+        organization = Organization.objects.create(name="Periodic export org")
+        pending = Control.objects.create(
+            title="Pending export control",
+            organization=organization,
+            frequency=Control.Frequency.YEARLY,
+        )
+        completed = Control.objects.create(
+            title="Completed export control",
+            organization=organization,
+            frequency=Control.Frequency.YEARLY,
+        )
+        completed_point = next(
+            item for item in completed.get_controlpoint()
+            if item.is_current_period()
+        )
+        completed_point.status = ControlPoint.Status.COMPLIANT
+        completed_point.save(update_fields=["status"])
+
+        response = self.client.get(
+            reverse("conformity:control_export"),
+            {"format": "csv", "scope": "selection", "status": "TOBE"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn("Pending export control", content)
+        self.assertNotIn("Completed export control", content)
+
     def test_periodic_controls_filters_name_requirement_and_reference(self):
         organization = Organization.objects.create(name="Filter org")
         framework = Framework.objects.create(name="Filter reference")
