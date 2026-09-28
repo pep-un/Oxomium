@@ -3,6 +3,7 @@ View of the Conformity Module
 """
 
 from django.contrib import messages
+from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
 from django.db.models import Count, F, Prefetch
@@ -20,10 +21,17 @@ from mptt.templatetags.mptt_tags import cache_tree_children
 
 from .filterset import ActionFilter, ControlFilter, ControlPointFilter, FrameworkFilter, OrganizationFilter, \
     ConformityFilter, AuditFilter, FindingFilter, IndicatorFilter, AttachmentFilter, AuditLogFilter
-from .forms import ConformityForm, AuditForm, FindingForm, ActionForm, OrganizationForm, ControlForm, ControlPointForm, \
-    HumanEvidenceForm, IndicatorForm, IndicatorPointForm
-from .models import Organization, Framework, Conformity, Audit, Action, Finding, Control, ControlPoint, Attachment, \
-    HumanEvidence, Requirement, Indicator, IndicatorPoint
+from .forms import (
+    ActionForm, AuditForm, ConformityForm, ControlForm, ControlPointForm,
+    DocumentEvidenceForm, FindingEvidenceForm, FindingForm, HumanEvidenceForm,
+    IndicatorForm, IndicatorPointForm, ManualEvidenceForm, OrganizationForm,
+)
+from .models import (
+    Action, Attachment, Audit, Conformity, Control, ControlPoint,
+    DocumentEvidence, Evidence, Finding, FindingEvidence, Framework,
+    HumanEvidence, Indicator, IndicatorPoint, ManualEvidence, Organization,
+    Requirement,
+)
 from .resources import ActionResource, AttachmentResource, AuditLogResource, AuditResource, ConformityResource, ControlPointResource, ControlResource, FindingResource, FrameworkResource, IndicatorResource, OrganizationResource
 from .tables import ActionTable, AttachmentTable, AuditLogTable, AuditTable, ConformityTable, ControlTable, ControlPointTable, FindingTable, FrameworkTable, OrganizationTable
 from .services.attachments import unlink_attachment
@@ -31,6 +39,7 @@ from .services.attachments import unlink_attachment
 from django.views import View
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse
 import os
 
 class SaveStayMixin:
@@ -396,6 +405,14 @@ class ConformityUpdateView(LoginRequiredMixin, UpdateView):
     model = Conformity
     form_class = ConformityForm
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['active_evidence'] = (
+            self.object.evidence.valid_at(timezone.now())
+            .order_by('-valid_from', '-pk')
+        )
+        return context
+
     def form_valid(self, form):
         # starting point of the set_status and status tree update logic
         self.object = form.save()
@@ -428,6 +445,58 @@ class ConformityUpdateView(LoginRequiredMixin, UpdateView):
             return redirect("conformity:conformity_form", self.object.pk)
 
         return super().form_valid(form)
+
+
+def _resolve_evidence_subtype(evidence):
+    """Return the concrete Evidence instance when one exists."""
+    for accessor in (
+        'controlpoint', 'indicatorpoint', 'humanevidence',
+        'manualevidence', 'documentevidence', 'findingevidence',
+    ):
+        try:
+            return getattr(evidence, accessor)
+        except (AttributeError, ObjectDoesNotExist):
+            continue
+    return evidence
+
+
+class EvidenceDetailView(LoginRequiredMixin, DetailView):
+    model = Evidence
+    template_name = 'conformity/evidence_detail.html'
+    context_object_name = 'evidence'
+
+    def get_object(self, queryset=None):
+        return _resolve_evidence_subtype(super().get_object(queryset))
+
+
+class EvidenceUpdateView(LoginRequiredMixin, UpdateView):
+    model = Evidence
+    template_name = 'conformity/evidence_form.html'
+
+    form_classes = {
+        Evidence.SourceType.HUMAN: HumanEvidenceForm,
+        Evidence.SourceType.MANUAL: ManualEvidenceForm,
+        Evidence.SourceType.DOCUMENT: DocumentEvidenceForm,
+        Evidence.SourceType.FINDING: FindingEvidenceForm,
+    }
+
+    def get_object(self, queryset=None):
+        evidence = _resolve_evidence_subtype(super().get_object(queryset))
+        if evidence.source_type in {
+            Evidence.SourceType.CONTROL,
+            Evidence.SourceType.INDICATOR,
+        }:
+            raise Http404('Control and Indicator evidence are immutable here.')
+        return evidence
+
+    def get_form_class(self):
+        try:
+            return self.form_classes[self.object.source_type]
+        except KeyError as exc:
+            raise Http404('Unsupported Evidence type.') from exc
+
+    def get_success_url(self):
+        return reverse('conformity:evidence_detail', args=[self.object.pk])
 
 
 class HumanEvidenceCreateView(LoginRequiredMixin, CreateView):
