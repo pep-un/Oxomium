@@ -277,28 +277,58 @@ class ConformityTable(BaseRichTable):
         orderable=False,
         attrs=CENTER,
     )
-    completeness = tables.TemplateColumn(
-        template_code="{{ record.get_completeness }} %",
-        orderable=False,
-        attrs=CENTER,
-    )
-    status = tables.TemplateColumn(
-        verbose_name="Status",
+    evidence_status = tables.TemplateColumn(
+        verbose_name="Evidence status",
         template_code="""
-            <div class="progress" role="progressbar" aria-valuenow="{{ record.status|default_if_none:'0' }}"
-                 aria-valuemin="0" aria-valuemax="100">
-                <div class="progress-bar" style="width: {{ record.status|default_if_none:'0' }}%">
-                    {{ record.status|default_if_none:"0" }}%
+            {% with distribution=record.get_evidence_state_distribution %}
+                <div class="progress"
+                     role="img"
+                     aria-label="Evidence status: {{ distribution.compliant_count }} compliant, {{ distribution.partial_count }} partially compliant, {{ distribution.non_compliant_count }} non-compliant, {{ distribution.inconclusive_count }} inconclusive, {{ distribution.not_evaluated_count }} not evaluated"
+                     style="height: 1.5rem;">
+                    {% if distribution.compliant_pct %}
+                        <div class="progress-bar bg-success"
+                             style="width: {{ distribution.compliant_pct }}%"
+                             title="Compliant: {{ distribution.compliant_count }}">
+                            {% if distribution.compliant_pct >= 12 %}{{ distribution.compliant_count }}{% endif %}
+                        </div>
+                    {% endif %}
+                    {% if distribution.partial_pct %}
+                        <div class="progress-bar bg-warning text-dark"
+                             style="width: {{ distribution.partial_pct }}%"
+                             title="Partially compliant: {{ distribution.partial_count }}">
+                            {% if distribution.partial_pct >= 12 %}{{ distribution.partial_count }}{% endif %}
+                        </div>
+                    {% endif %}
+                    {% if distribution.non_compliant_pct %}
+                        <div class="progress-bar bg-danger"
+                             style="width: {{ distribution.non_compliant_pct }}%"
+                             title="Non-compliant: {{ distribution.non_compliant_count }}">
+                            {% if distribution.non_compliant_pct >= 12 %}{{ distribution.non_compliant_count }}{% endif %}
+                        </div>
+                    {% endif %}
+                    {% if distribution.inconclusive_pct %}
+                        <div class="progress-bar progress-bar-striped bg-secondary"
+                             style="width: {{ distribution.inconclusive_pct }}%"
+                             title="Inconclusive: {{ distribution.inconclusive_count }}">
+                            {% if distribution.inconclusive_pct >= 12 %}{{ distribution.inconclusive_count }}{% endif %}
+                        </div>
+                    {% endif %}
                 </div>
-            </div>
+                <div class="small text-body-secondary mt-1 text-nowrap">
+                    <span class="text-success">■</span> {{ distribution.compliant_count }}
+                    <span class="text-warning ms-2">■</span> {{ distribution.partial_count }}
+                    <span class="text-danger ms-2">■</span> {{ distribution.non_compliant_count }}
+                    <span class="text-secondary ms-2">▧</span> {{ distribution.inconclusive_count }}
+                </div>
+            {% endwith %}
         """,
-        order_by=("status",),
+        orderable=False,
         attrs=CENTER,
     )
     class Meta(BaseRichTable.Meta):
         model = Conformity
-        fields = ("status",)
-        sequence = ("conformity", "requirements", "completeness", "status")
+        fields = ()
+        sequence = ("conformity", "requirements", "evidence_status")
 
 
 class ControlTable(BaseRichTable):
