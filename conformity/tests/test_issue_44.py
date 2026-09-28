@@ -79,8 +79,15 @@ class RichTableConfigurationTests(TestCase):
         self.assertNotIn("status", table.columns)
         self.assertEqual(
             table.columns["evidence_status"].verbose_name,
-            "Evidence status",
+            "Status",
         )
+
+    def test_conformity_status_bar_uses_secondary_stripes_without_legend(self):
+        column = ConformityTable.base_columns["evidence_status"]
+        template = column.template_code
+        self.assertIn("bg-secondary progress-bar-striped", template)
+        self.assertIn("repeating-linear-gradient", template)
+        self.assertNotIn("text-body-secondary mt-1 text-nowrap", template)
 
     def test_conformity_evidence_distribution_counts_leaf_states(self):
         organization = Organization.objects.create(name="Evidence summary org")
