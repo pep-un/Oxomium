@@ -77,8 +77,11 @@ class HumanEvidenceForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if not self.is_bound and not self.initial.get('valid_from'):
-            self.initial['valid_from'] = timezone.now()
+        if not self.is_bound and self.instance.pk is None:
+            valid_from = self.initial.get('valid_from') or timezone.now()
+            self.initial['valid_from'] = valid_from
+            if not self.initial.get('valid_to'):
+                self.initial['valid_to'] = valid_from + timedelta(days=365)
 
 
 class EvidenceForm(ModelForm):
