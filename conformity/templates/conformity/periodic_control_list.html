@@ -7,30 +7,7 @@
 {% endblock %}
 
 {% block content %}
-    <div class="d-flex align-items-center gap-2 mb-3">
-        <div class="form-check form-switch mb-0">
-            <input class="form-check-input"
-                   type="checkbox"
-                   role="switch"
-                   id="pending-only"
-                   {% if not request.GET.show_all %}checked{% endif %}
-                   data-checked-url="{% querystring show_all=None page=None %}"
-                   data-unchecked-url="{% querystring show_all='1' page=None %}">
-            <label class="form-check-label" for="pending-only">
-                To be evaluated only
-            </label>
-        </div>
-    </div>
-
     {% include "includes/list_toolbar.html" with filter=filter total_count=result_total_count visible_count=result_visible_count is_paginated=result_is_paginated %}
-
-    <script>
-        document.getElementById("pending-only")?.addEventListener("change", function () {
-            window.location.href = this.checked
-                ? this.dataset.checkedUrl
-                : this.dataset.uncheckedUrl;
-        });
-    </script>
 
     {% if object_list %}
         {% render_table table %}
