@@ -407,6 +407,85 @@ class EvidenceTests(TestCase):
         self.assertIn('name="decision"', html)
         self.assertIn('name="attachments"', html)
 
+    def test_orphan_evidence_editor_offers_requirement_association(self):
+        orphan = ManualEvidence.objects.create(
+            title='Orphan evidence',
+            result=Evidence.Result.POSITIVE,
+            valid_from=self.now - timedelta(hours=1),
+        )
+
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse('conformity:evidence_form', args=[orphan.pk])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'No associated requirement.')
+        self.assertContains(response, 'Add requirement')
+        self.assertContains(
+            response,
+            reverse('conformity:evidence_requirement_add', args=[orphan.pk]),
+        )
+
+        response = self.client.post(
+            reverse('conformity:evidence_requirement_add', args=[orphan.pk]),
+            {'conformity': self.conformity.pk},
+        )
+
+        self.assertRedirects(
+            response,
+            reverse('conformity:evidence_form', args=[orphan.pk]),
+            fetch_redirect_response=False,
+        )
+        self.assertEqual(list(orphan.conformities.all()), [self.conformity])
+
+    def test_conformity_evidence_rows_show_source_names_semantic_actions_and_fixed_result_width(self):
+        indicator = Indicator.objects.create(
+            name='Named indicator',
+            responsible=self.user,
+            organization=self.organization,
+            frequency=Indicator.Frequency.YEARLY,
+            worst=0,
+            critical=20,
+            warning=80,
+            best=100,
+        )
+        indicator.requirements.add(self.leaf)
+        indicator_point = indicator.get_current_point()
+
+        manual = ManualEvidence.objects.create(
+            title='Named manual evidence',
+            result=Evidence.Result.POSITIVE,
+            valid_from=self.now - timedelta(hours=1),
+        )
+        manual.conformities.add(self.conformity)
+
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse('conformity:conformity_form', args=[self.conformity.pk])
+        )
+        html = response.content.decode()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('bi bi-speedometer', html)
+        self.assertIn('Named indicator', html)
+        self.assertIn('Named manual evidence', html)
+        self.assertIn('Valid from', html)
+        self.assertIn('style="min-width: 10rem;"', html)
+        self.assertIn('class="btn btn-primary"', html)
+        self.assertIn('class="btn btn-warning"', html)
+        self.assertIn('class="btn btn-warning disabled"', html)
+        self.assertIn('bi bi-eye', html)
+        self.assertIn('bi bi-pencil-square', html)
+        self.assertIn(
+            reverse('conformity:evidence_detail', args=[indicator_point.pk]),
+            html,
+        )
+        self.assertIn(
+            reverse('conformity:evidence_form', args=[manual.pk]),
+            html,
+        )
+
     def test_framework_review_header_uses_status_pill_and_stacked_bar(self):
         manual = ManualEvidence.objects.create(
             title='Framework summary evidence',
