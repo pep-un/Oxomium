@@ -384,9 +384,9 @@ class ControlPointTable(BaseRichTable):
         order_by=("control__title",),
         attrs=PRIMARY_COLUMN,
     )
-    period_start_date = tables.DateColumn(verbose_name="Start date", format="d-M-Y")
-    period_end_date = tables.DateColumn(verbose_name="End date", format="d-M-Y")
-    control_user = tables.Column(verbose_name="Owner", default="")
+    valid_from = tables.DateTimeColumn(verbose_name="Start date", format="d-M-Y")
+    valid_to = tables.DateTimeColumn(verbose_name="End date", format="d-M-Y")
+    evaluator = tables.Column(verbose_name="Owner", default="")
     status = tables.TemplateColumn(
         template_code="""
             {% include 'conformity/includes/controlpoint_status.html' with controlpoint=record %}
@@ -396,8 +396,8 @@ class ControlPointTable(BaseRichTable):
 
     class Meta(BaseRichTable.Meta):
         model = ControlPoint
-        fields = ("period_start_date", "period_end_date", "control_user", "status")
-        sequence = ("name", "period_start_date", "period_end_date", "control_user", "status")
+        fields = ("valid_from", "valid_to", "evaluator", "status")
+        sequence = ("name", "valid_from", "valid_to", "evaluator", "status")
 
 
 class AttachmentTable(BaseRichTable):
