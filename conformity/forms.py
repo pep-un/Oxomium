@@ -72,10 +72,11 @@ class ConformityForm(ModelForm):
         fields = ['applicable', 'responsible', 'comment']
 
 
-class HumanEvidenceForm(ModelForm):
+class HumanEvidenceForm(AttachmentUploadFormMixin, ModelForm):
+    attachments = MultipleFileField(required=False)
     class Meta:
         model = HumanEvidence
-        fields = ['decision', 'valid_from', 'valid_to', 'comment']
+        fields = ['decision', 'valid_from', 'valid_to', 'comment', 'attachments']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -86,28 +87,32 @@ class HumanEvidenceForm(ModelForm):
                 self.initial['valid_to'] = valid_from + timedelta(days=365)
 
 
-class EvidenceForm(ModelForm):
+class EvidenceForm(AttachmentUploadFormMixin, ModelForm):
+    attachments = MultipleFileField(required=False)
     class Meta:
         model = Evidence
-        fields = ['result', 'valid_from', 'valid_to', 'evaluator', 'comment']
+        fields = ['result', 'valid_from', 'valid_to', 'evaluator', 'comment', 'attachments']
 
 
-class ManualEvidenceForm(ModelForm):
+class ManualEvidenceForm(AttachmentUploadFormMixin, ModelForm):
+    attachments = MultipleFileField(required=False)
     class Meta:
         model = ManualEvidence
-        fields = ['title', 'result', 'valid_from', 'valid_to', 'comment']
+        fields = ['title', 'result', 'valid_from', 'valid_to', 'comment', 'attachments']
 
 
-class DocumentEvidenceForm(ModelForm):
+class DocumentEvidenceForm(AttachmentUploadFormMixin, ModelForm):
+    attachments = MultipleFileField(required=False)
     class Meta:
         model = DocumentEvidence
-        fields = ['title', 'document', 'result', 'valid_from', 'valid_to', 'comment']
+        fields = ['title', 'document', 'result', 'valid_from', 'valid_to', 'comment', 'attachments']
 
 
-class FindingEvidenceForm(ModelForm):
+class FindingEvidenceForm(AttachmentUploadFormMixin, ModelForm):
+    attachments = MultipleFileField(required=False)
     class Meta:
         model = FindingEvidence
-        fields = ['finding', 'result', 'valid_from', 'valid_to', 'comment']
+        fields = ['finding', 'result', 'valid_from', 'valid_to', 'comment', 'attachments']
 
 
 class OrganizationForm(AttachmentUploadFormMixin, ModelForm):
