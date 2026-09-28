@@ -508,7 +508,7 @@ class EvidenceDetailView(LoginRequiredMixin, DetailView):
         return _resolve_evidence_subtype(super().get_object(queryset))
 
 
-class EvidenceUpdateView(LoginRequiredMixin, UpdateView):
+class EvidenceUpdateView(AttachmentUploadViewMixin, LoginRequiredMixin, UpdateView):
     model = Evidence
     template_name = 'conformity/evidence_form.html'
 
@@ -544,7 +544,19 @@ class EvidenceUpdateView(LoginRequiredMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['return_conformity'] = self.get_return_conformity()
+        context['evidence_conformities'] = (
+            self.object.conformities
+            .select_related('organization', 'requirement__framework')
+            .order_by('requirement__tree_id', 'requirement__lft', 'pk')
+        )
         return context
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        for file in self.request.FILES.getlist('attachments'):
+            attachment = Attachment.get_or_create_for_upload(file)[0]
+            self.object.attachments.add(attachment)
+        return response
 
     def get_success_url(self):
         conformity = self.get_return_conformity()
@@ -572,6 +584,7 @@ class ConformityEvidenceCreateMixin:
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['conformity'] = self.conformity
+        context['evidence_conformities'] = [self.conformity]
         context['creating_evidence'] = True
         context['evidence_label'] = self.evidence_label
         return context
@@ -585,6 +598,9 @@ class ConformityEvidenceCreateMixin:
                 self.object.evaluated_at = timezone.now()
             self.object.save()
             self.object.conformities.add(self.conformity)
+            for file in self.request.FILES.getlist('attachments'):
+                attachment = Attachment.get_or_create_for_upload(file)[0]
+                self.object.attachments.add(attachment)
         messages.success(self.request, self.success_message)
         return redirect('conformity:conformity_form', self.conformity.pk)
 
@@ -842,6 +858,15 @@ class ControlPointUpdateView(AttachmentUploadViewMixin, LoginRequiredMixin, Save
         kwargs['user'] = self.request.user
         return kwargs
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['evidence_conformities'] = (
+            self.object.conformities
+            .select_related('organization', 'requirement__framework')
+            .order_by('requirement__tree_id', 'requirement__lft', 'pk')
+        )
+        return context
+
     def form_valid(self, form):
         response = super().form_valid(form)
         attachments = self.request.FILES.getlist('attachments')
@@ -923,6 +948,15 @@ class IndicatorPointUpdateView(AttachmentUploadViewMixin, LoginRequiredMixin, Sa
     stay_url_name = "conformity:indicatorpoint_form"
     model = IndicatorPoint
     form_class = IndicatorPointForm
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['evidence_conformities'] = (
+            self.object.conformities
+            .select_related('organization', 'requirement__framework')
+            .order_by('requirement__tree_id', 'requirement__lft', 'pk')
+        )
+        return context
 
     def form_valid(self, form):
         response = super().form_valid(form)
