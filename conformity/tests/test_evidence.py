@@ -407,6 +407,58 @@ class EvidenceTests(TestCase):
         self.assertIn('name="decision"', html)
         self.assertIn('name="attachments"', html)
 
+    def test_evidence_editor_always_offers_add_requirement_and_excludes_existing(self):
+        second_leaf = Requirement.objects.create(
+            framework=self.framework,
+            parent=self.root,
+            code='E2',
+            title='Second Evidence leaf',
+        )
+        second = Conformity.objects.create(
+            organization=self.organization,
+            requirement=second_leaf,
+        )
+        manual = ManualEvidence.objects.create(
+            title='Multi requirement evidence',
+            result=Evidence.Result.POSITIVE,
+            valid_from=self.now - timedelta(hours=1),
+        )
+        manual.conformities.add(self.conformity)
+
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse('conformity:evidence_form', args=[manual.pk])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Add requirement')
+        self.assertContains(
+            response,
+            reverse('conformity:evidence_requirement_add', args=[manual.pk]),
+        )
+
+        response = self.client.get(
+            reverse('conformity:evidence_requirement_add', args=[manual.pk])
+        )
+        queryset = response.context['form'].fields['conformity'].queryset
+        self.assertNotIn(self.conformity, queryset)
+        self.assertIn(second, queryset)
+
+        response = self.client.post(
+            reverse('conformity:evidence_requirement_add', args=[manual.pk]),
+            {'conformity': second.pk},
+        )
+
+        self.assertRedirects(
+            response,
+            reverse('conformity:evidence_form', args=[manual.pk]),
+            fetch_redirect_response=False,
+        )
+        self.assertEqual(
+            list(manual.conformities.order_by('pk')),
+            [self.conformity, second],
+        )
+
     def test_orphan_evidence_editor_offers_requirement_association(self):
         orphan = ManualEvidence.objects.create(
             title='Orphan evidence',
