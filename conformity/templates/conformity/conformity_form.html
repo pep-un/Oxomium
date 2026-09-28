@@ -56,35 +56,41 @@
             </div>
 
             <div class="card">
-                <div class="card-header">
+                <div class="card-header d-flex align-items-center gap-2">
+                    <i class="bi bi-person-check text-primary" aria-hidden="true"></i>
                     <span class="h4 mb-0">Assessment</span>
                 </div>
                 <div class="card-body">
-                    <div class="mb-3">
-                        {{ form.responsible.label_tag }}
+                    <div class="mb-4">
+                        <div class="fw-semibold mb-1">{{ form.responsible.label }}</div>
+                        <div class="text-body-secondary small mb-2">
+                            Person responsible for reviewing this requirement.
+                        </div>
                         {{ form.responsible }}
                         {% for error in form.responsible.errors %}
                             <div class="invalid-feedback d-block">{{ error }}</div>
                         {% endfor %}
                     </div>
 
-                    <div class="form-check form-switch mb-3">
-                        <label class="form-check-label" for="id_applicable">
-                            Requirement is applicable
-                        </label>
-                        <input
-                            class="form-check-input"
-                            type="checkbox"
-                            role="switch"
-                            id="id_applicable"
-                            name="applicable"
-                            {% if form.applicable.value %}
-                                checked
-                                aria-checked="true"
-                            {% else %}
-                                aria-checked="false"
-                            {% endif %}
-                        >
+                    <div class="border rounded bg-body-tertiary p-3 mb-3">
+                        <div class="form-check form-switch mb-0">
+                            <label class="form-check-label fw-semibold" for="id_applicable">
+                                Requirement is applicable
+                            </label>
+                            <input
+                                class="form-check-input"
+                                type="checkbox"
+                                role="switch"
+                                id="id_applicable"
+                                name="applicable"
+                                {% if form.applicable.value %}
+                                    checked
+                                    aria-checked="true"
+                                {% else %}
+                                    aria-checked="false"
+                                {% endif %}
+                            >
+                        </div>
                     </div>
 
                     <div id="conformity-comment"
@@ -99,19 +105,26 @@
                         {% endfor %}
                     </div>
 
-                    <div class="form-check mb-3">
-                        {{ form.propagate_to_children }}
-                        {{ form.propagate_to_children.label_tag }}
-                        {% for error in form.propagate_to_children.errors %}
-                            <div class="invalid-feedback d-block">{{ error }}</div>
-                        {% endfor %}
+                    <div class="border-top pt-3 mt-3">
+                        <div class="form-check mb-0">
+                            {{ form.propagate_to_children }}
+                            {{ form.propagate_to_children.label_tag }}
+                            {% for error in form.propagate_to_children.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
                     </div>
                 </div>
             </div>
 
             <div class="card mt-4">
-                <div class="card-header text-center h4">
-                    Associated action
+                <div class="card-header d-flex justify-content-between align-items-center gap-2">
+                    <span class="h4 mb-0">Associated action</span>
+                    <a class="btn btn-sm btn-success"
+                       href="{% url 'conformity:action_create' %}?conformity={{ conformity.id }}">
+                        <i class="bi bi-plus-circle me-1" aria-hidden="true"></i>
+                        Register corrective action
+                    </a>
                 </div>
                 <div class="list-group list-group-flush">
                     {% for action in conformity.get_action %}
@@ -127,11 +140,6 @@
                             No action associated
                         </p>
                     {% endfor %}
-                    <a class="list-group-item list-group-item-action list-group-item-success text-center text-success"
-                       href="{% url 'conformity:action_create' %}?conformity={{ conformity.id }}">
-                        <i class="bi bi-plus-circle" aria-hidden="true"></i>
-                        Register a corrective action
-                    </a>
                 </div>
             </div>
         </div>
@@ -139,11 +147,30 @@
         <div class="col-12 col-lg-6">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center gap-2">
-                    <span class="h4 mb-0">Evidence</span>
-                    {% if show_evidence_conformities %}
-                        <span class="small text-body-secondary">
-                            Evidence from descendant requirements
-                        </span>
+                    <div>
+                        <span class="h4 mb-0">Evidence</span>
+                        {% if show_evidence_conformities %}
+                            <div class="small text-body-secondary">
+                                Evidence from descendant requirements
+                            </div>
+                        {% endif %}
+                    </div>
+                    {% if conformity.requirement.is_leaf_node %}
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-success dropdown-toggle"
+                                    type="button"
+                                    data-bs-toggle="dropdown"
+                                    aria-expanded="false">
+                                <i class="bi bi-plus-circle me-1" aria-hidden="true"></i>
+                                Create evidence
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="{% url 'conformity:human_evidence_create' conformity.pk %}"><i class="bi bi-person-check me-2"></i>Human assessment</a></li>
+                                <li><a class="dropdown-item" href="{% url 'conformity:manual_evidence_create' conformity.pk %}"><i class="bi bi-pencil-square me-2"></i>Manual evidence</a></li>
+                                <li><a class="dropdown-item" href="{% url 'conformity:document_evidence_create' conformity.pk %}"><i class="bi bi-file-earmark-check me-2"></i>Document evidence</a></li>
+                                <li><a class="dropdown-item" href="{% url 'conformity:finding_evidence_create' conformity.pk %}"><i class="bi bi-exclamation-diamond me-2"></i>Finding evidence</a></li>
+                            </ul>
+                        </div>
                     {% endif %}
                 </div>
 
@@ -244,49 +271,6 @@
                         </div>
                     {% endfor %}
 
-                    {% if conformity.requirement.is_leaf_node %}
-                        <div class="list-group-item d-flex justify-content-center">
-                            <div class="dropdown">
-                                <button class="btn btn-success dropdown-toggle"
-                                        type="button"
-                                        data-bs-toggle="dropdown"
-                                        aria-expanded="false">
-                                    <i class="bi bi-plus-circle me-1" aria-hidden="true"></i>
-                                    Create evidence
-                                </button>
-                                <ul class="dropdown-menu">
-                                    <li>
-                                        <a class="dropdown-item"
-                                           href="{% url 'conformity:human_evidence_create' conformity.pk %}">
-                                            <i class="bi bi-person-check me-2" aria-hidden="true"></i>
-                                            Human assessment
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item"
-                                           href="{% url 'conformity:manual_evidence_create' conformity.pk %}">
-                                            <i class="bi bi-pencil-square me-2" aria-hidden="true"></i>
-                                            Manual evidence
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item"
-                                           href="{% url 'conformity:document_evidence_create' conformity.pk %}">
-                                            <i class="bi bi-file-earmark-check me-2" aria-hidden="true"></i>
-                                            Document evidence
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item"
-                                           href="{% url 'conformity:finding_evidence_create' conformity.pk %}">
-                                            <i class="bi bi-exclamation-diamond me-2" aria-hidden="true"></i>
-                                            Finding evidence
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                    {% endif %}
                 </div>
             </div>
 
