@@ -292,6 +292,89 @@ class EvidenceTests(TestCase):
         self.assertEqual(human.evaluator, self.user)
         self.assertIn(self.conformity, human.conformities.all())
 
+    def test_conformity_update_shows_only_current_evidence(self):
+        current = ManualEvidence.objects.create(
+            title='Current evidence',
+            result=Evidence.Result.POSITIVE,
+            valid_from=self.now - timedelta(hours=1),
+            valid_to=self.now + timedelta(hours=1),
+        )
+        current.conformities.add(self.conformity)
+
+        expired = ManualEvidence.objects.create(
+            title='Expired evidence',
+            result=Evidence.Result.NEGATIVE,
+            valid_from=self.now - timedelta(days=2),
+            valid_to=self.now - timedelta(days=1),
+        )
+        expired.conformities.add(self.conformity)
+
+        future = ManualEvidence.objects.create(
+            title='Future evidence',
+            result=Evidence.Result.POSITIVE,
+            valid_from=self.now + timedelta(days=1),
+        )
+        future.conformities.add(self.conformity)
+
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse('conformity:conformity_form', args=[self.conformity.pk])
+        )
+
+        self.assertContains(response, reverse('conformity:evidence_detail', args=[current.pk]))
+        self.assertContains(response, reverse('conformity:evidence_form', args=[current.pk]))
+        self.assertNotContains(response, reverse('conformity:evidence_detail', args=[expired.pk]))
+        self.assertNotContains(response, reverse('conformity:evidence_detail', args=[future.pk]))
+
+    def test_evidence_detail_is_available_for_control_but_edit_is_not(self):
+        control = Control.objects.create(
+            title='Immutable control evidence',
+            organization=self.organization,
+        )
+        control.conformity.add(self.conformity)
+        point = ControlPoint.objects.create(
+            control=control,
+            period_start_date=date.today() - timedelta(days=1),
+            period_end_date=date.today() + timedelta(days=1),
+            status=ControlPoint.Status.COMPLIANT,
+        )
+
+        self.client.force_login(self.user)
+        detail_url = reverse('conformity:evidence_detail', args=[point.pk])
+        edit_url = reverse('conformity:evidence_form', args=[point.pk])
+
+        self.assertEqual(self.client.get(detail_url).status_code, 200)
+        self.assertEqual(self.client.get(edit_url).status_code, 404)
+
+    def test_manual_evidence_can_be_edited(self):
+        manual = ManualEvidence.objects.create(
+            title='Editable evidence',
+            result=Evidence.Result.POSITIVE,
+            valid_from=self.now - timedelta(hours=1),
+        )
+        manual.conformities.add(self.conformity)
+
+        self.client.force_login(self.user)
+        response = self.client.post(
+            reverse('conformity:evidence_form', args=[manual.pk]),
+            {
+                'title': 'Edited evidence',
+                'result': Evidence.Result.NEGATIVE,
+                'valid_from': manual.valid_from.strftime('%Y-%m-%d %H:%M:%S'),
+                'valid_to': '',
+                'comment': 'Updated manually',
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            reverse('conformity:evidence_detail', args=[manual.pk]),
+        )
+        manual.refresh_from_db()
+        self.assertEqual(manual.title, 'Edited evidence')
+        self.assertEqual(manual.result, Evidence.Result.NEGATIVE)
+        self.assertEqual(manual.comment, 'Updated manually')
+
     def test_additional_evidence_types_share_common_engine(self):
         manual = ManualEvidence.objects.create(
             title='Supplier attestation', result=Evidence.Result.POSITIVE,
