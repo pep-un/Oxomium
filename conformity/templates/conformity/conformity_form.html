@@ -199,8 +199,7 @@
                                                 <a href="{% url 'conformity:conformity_form' target.pk %}"
                                                    class="badge rounded-pill text-bg-light text-dark border text-decoration-none"
                                                    title="{{ target.requirement.title }}">
-                                                    <i class="bi bi-diagram-3 me-1" aria-hidden="true"></i>
-                                                    {{ target.requirement.full_path }} · {{ target.requirement.title|truncatechars:48 }}
+                                                                                {{ target.requirement.full_path }} · {{ target.requirement.title|truncatechars:48 }}
                                                 </a>
                                             {% endfor %}
                                         </div>
