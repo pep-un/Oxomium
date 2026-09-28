@@ -372,7 +372,8 @@ class RichTableInteractionTests(TestCase):
         )
         for view_name in view_names:
             with self.subTest(view_name=view_name):
-                response = self.client.get(reverse(view_name))
+                params = {"status": "TOBE"} if view_name == "conformity:control_index" else {}
+                response = self.client.get(reverse(view_name), params)
                 self.assertEqual(response.status_code, 200)
 
     def test_missing_list_actions_are_now_exposed(self):
@@ -423,7 +424,10 @@ class RichTableInteractionTests(TestCase):
             if point.is_current_period()
         )
 
-        response = self.client.get(reverse("conformity:control_index"))
+        response = self.client.get(
+            reverse("conformity:control_index"),
+            {"status": "TOBE"},
+        )
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(
