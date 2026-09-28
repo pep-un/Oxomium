@@ -339,9 +339,21 @@ class ConformityTable(BaseRichTable):
 
 
 class PeriodicEvidenceTable(BaseRichTable):
-    name = tables.Column(
-        accessor="periodic_name",
+    name = tables.TemplateColumn(
         verbose_name="Name",
+        template_code="""
+            {% if record.source_type == 'CTRL' %}
+                <a href="{% url 'conformity:controlpoint_form' record.controlpoint.pk %}">
+                    {{ record.periodic_name }}
+                </a>
+            {% elif record.source_type == 'IND' %}
+                <a href="{% url 'conformity:indicatorpoint_form' record.indicatorpoint.pk %}">
+                    {{ record.periodic_name }}
+                </a>
+            {% else %}
+                {{ record.periodic_name }}
+            {% endif %}
+        """,
         orderable=False,
         attrs=PRIMARY_COLUMN,
     )
