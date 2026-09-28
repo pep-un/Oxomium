@@ -24,7 +24,6 @@
             {% ifchanged conformity.requirement.framework.pk conformity.requirement.parent_id %}
                 {% if conformity.requirement.parent %}
                     <div class="list-group-item py-1 px-3 small text-body-secondary bg-body-tertiary">
-                        <i class="bi bi-diagram-3 me-1" aria-hidden="true"></i>
                         {{ conformity.requirement.parent.full_path }}
                         · {{ conformity.requirement.parent.title }}
                     </div>
