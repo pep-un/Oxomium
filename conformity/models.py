@@ -372,6 +372,55 @@ class Evidence(models.Model):
         if self.valid_to is not None and self.valid_to <= self.valid_from:
             raise ValidationError({'valid_to': _('Validity end must be after validity start.')})
 
+    @property
+    def periodic_point(self):
+        """Return the concrete periodic Evidence subtype, when applicable."""
+        if self.source_type == self.SourceType.CONTROL:
+            try:
+                return self.controlpoint
+            except ControlPoint.DoesNotExist:
+                return None
+        if self.source_type == self.SourceType.INDICATOR:
+            try:
+                return self.indicatorpoint
+            except IndicatorPoint.DoesNotExist:
+                return None
+        return None
+
+    @property
+    def periodic_name(self):
+        point = self.periodic_point
+        if isinstance(point, ControlPoint) and point.control_id:
+            return point.control.title
+        if isinstance(point, IndicatorPoint) and point.indicator_id:
+            return point.indicator.name
+        return ''
+
+    @property
+    def periodic_organization(self):
+        point = self.periodic_point
+        if isinstance(point, ControlPoint) and point.control_id:
+            return point.control.organization
+        if isinstance(point, IndicatorPoint) and point.indicator_id:
+            return point.indicator.organization
+        return None
+
+    @property
+    def periodic_level(self):
+        point = self.periodic_point
+        if isinstance(point, ControlPoint) and point.control_id:
+            return point.control.get_level_display()
+        return '—'
+
+    @property
+    def periodic_frequency(self):
+        point = self.periodic_point
+        if isinstance(point, ControlPoint) and point.control_id:
+            return point.control.get_frequency_display()
+        if isinstance(point, IndicatorPoint) and point.indicator_id:
+            return point.indicator.get_frequency_display()
+        return '—'
+
     def save(self, *args, **kwargs):
         update_fields = kwargs.get('update_fields')
         previous = None
