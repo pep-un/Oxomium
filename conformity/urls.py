@@ -21,6 +21,8 @@ urlpatterns = [
     path('conformity/update/<int:pk>', views.ConformityUpdateView.as_view(), name='conformity_form'),
     path('conformity/<int:conformity_pk>/evidence/human/create',
          views.HumanEvidenceCreateView.as_view(), name='human_evidence_create'),
+    path('evidence/<int:pk>/', views.EvidenceDetailView.as_view(), name='evidence_detail'),
+    path('evidence/update/<int:pk>/', views.EvidenceUpdateView.as_view(), name='evidence_form'),
     path('conformity/organization/<int:org>/framework/<int:pol>/', views.ConformityDetailIndexView.as_view(),
          name='conformity_detail_index'),
     path('conformity/organization/<int:org>/framework/<int:pol>/export/', views.ConformityExportView.as_view(),
