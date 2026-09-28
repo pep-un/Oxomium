@@ -16,7 +16,17 @@
     <div class="d-flex">
         <span class="badge rounded-pill bg-secondary me-4"> {{ conformity_list.0.get_leaf | length }} Requirements</span>
         <span class="badge rounded-pill bg-secondary me-4"> Completeness: {{ conformity_list.0.get_completeness }} % </span>
-        <span class="badge rounded-pill bg-secondary me-4"> Conformity: {{ conformity_list.0.status }} %</span>
+        {% if conformity_list.0.evidence_state == 'COMP' %}
+            <span class="badge rounded-pill text-bg-success me-4">Conforme</span>
+        {% elif conformity_list.0.evidence_state == 'NONC' %}
+            <span class="badge rounded-pill text-bg-danger me-4">Non-conforme</span>
+        {% elif conformity_list.0.evidence_state == 'PART' %}
+            <span class="badge rounded-pill text-bg-warning me-4">Partiellement conforme</span>
+        {% elif conformity_list.0.evidence_state == 'INCO' %}
+            <span class="badge rounded-pill text-bg-secondary me-4">Inconclusif</span>
+        {% else %}
+            <span class="badge rounded-pill text-bg-secondary me-4">Non évalué</span>
+        {% endif %}
 
         <div class="btn-group ms-auto">
             <a type="button" class="btn btn btn-secondary bi bi-file-earmark-arrow-down-fill"
@@ -39,7 +49,7 @@
             <th class="text-start col">Requirement</th>
             <th class="text-center col-2">Status</th>
             <th class="text-center col-1">Owner</th>
-            <th class="text-center col-1">Control</th>
+            <th class="text-center col-1">Evidence</th>
             <th class="text-center col-1">Action</th>
             <th class="text-center col-1">Comment</th>
             <th class="text-center col-1">Edit</th>
