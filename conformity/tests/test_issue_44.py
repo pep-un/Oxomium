@@ -15,7 +15,7 @@ from conformity.tables import (
 )
 from conformity.filterset import (
     AttachmentFilter, ConformityFilter, ControlPointFilter, FindingFilter,
-    PeriodicControlFilter, PeriodicEvidenceFilter,
+    PeriodicControlFilter, PeriodicControlFilterForm, PeriodicEvidenceFilter,
 )
 from conformity.views import (
     ActionIndexView, AttachmentIndexView, AuditLogDetailView, AuditIndexView,
