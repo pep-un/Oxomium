@@ -99,24 +99,46 @@ def indicator_requirement_targets_changed(instance, action, **kwargs):
 
 @receiver(m2m_changed, sender=Evidence.conformities.through)
 def evidence_conformity_changed(instance, action, reverse, pk_set, **kwargs):
-    if action == 'pre_clear' and not reverse:
-        instance._cleared_conformity_ids = list(
-            instance.conformities.values_list('pk', flat=True)
-        )
+    """Recompute both newly-associated and detached Conformities."""
+    from .services.evidence import evaluate_conformity, evaluate_evidence
+
+    if action == 'pre_clear':
+        if reverse:
+            instance._cleared_evidence_ids = list(
+                instance.evidence.values_list('pk', flat=True)
+            )
+        else:
+            instance._cleared_conformity_ids = list(
+                instance.conformities.values_list('pk', flat=True)
+            )
         return
+
     if action not in {'post_add', 'post_remove', 'post_clear'}:
         return
-    from .services.evidence import evaluate_evidence
+
     if reverse:
-        instance.evaluate_evidence()
-    else:
+        evidence_ids = pk_set or getattr(instance, '_cleared_evidence_ids', [])
+        if action == 'post_add':
+            # Every added Evidence is a real trigger, including an old Evidence
+            # attached to this Conformity only now.
+            for evidence in Evidence.objects.filter(pk__in=evidence_ids):
+                evaluate_conformity(instance, trigger=evidence)
+        else:
+            evaluate_conformity(instance)
+        if hasattr(instance, '_cleared_evidence_ids'):
+            del instance._cleared_evidence_ids
+        return
+
+    if action == 'post_add':
         evaluate_evidence(instance)
+    else:
         removed_ids = pk_set or getattr(instance, '_cleared_conformity_ids', [])
-        if action in {'post_remove', 'post_clear'} and removed_ids:
-            for conformity in Conformity.objects.filter(pk__in=removed_ids):
-                conformity.evaluate_evidence()
-        if hasattr(instance, '_cleared_conformity_ids'):
-            del instance._cleared_conformity_ids
+        evaluate_evidence(instance)
+        for conformity in Conformity.objects.filter(pk__in=removed_ids):
+            evaluate_conformity(conformity)
+
+    if hasattr(instance, '_cleared_conformity_ids'):
+        del instance._cleared_conformity_ids
 
 
 @receiver(post_save, sender=HumanEvidence)
