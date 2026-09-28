@@ -92,7 +92,7 @@ class PeriodicEvidenceFilter(FilterSet):
     reference = ModelChoiceFilter(
         queryset=Framework.objects.all(),
         field_name='conformities__requirement__framework',
-        label='Associated reference',
+        label='Associated Framework',
         distinct=True,
     )
 
