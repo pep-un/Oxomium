@@ -349,14 +349,22 @@ class Evidence(models.Model):
 
     def save(self, *args, **kwargs):
         update_fields = kwargs.get('update_fields')
+        previous = None
         if self.pk:
-            previous_result = type(self).objects.filter(pk=self.pk).values_list(
-                'result', flat=True
+            previous = Evidence.objects.filter(pk=self.pk).values(
+                'result', 'valid_from', 'valid_to'
             ).first()
-            if previous_result is not None and previous_result != self.result:
-                self.result_updated_at = timezone.now()
-                if update_fields is not None:
-                    kwargs['update_fields'] = [*update_fields, 'result_updated_at']
+
+        self._evidence_semantic_change = previous is None or (
+            previous['result'] != self.result
+            or previous['valid_from'] != self.valid_from
+            or previous['valid_to'] != self.valid_to
+        )
+
+        if previous is not None and previous['result'] != self.result:
+            self.result_updated_at = timezone.now()
+            if update_fields is not None:
+                kwargs['update_fields'] = [*update_fields, 'result_updated_at']
         return super().save(*args, **kwargs)
 
     def is_valid_at(self, at=None):
