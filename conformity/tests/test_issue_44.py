@@ -55,7 +55,6 @@ class RichTableConfigurationTests(TestCase):
         table_classes = (
             ActionTable,
             AuditTable,
-            ConformityTable,
             ControlTable,
             ControlPointTable,
             FindingTable,
@@ -98,8 +97,8 @@ class RichTableConfigurationTests(TestCase):
         )
 
     def test_conformity_status_bar_uses_secondary_stripes_without_legend(self):
-        column = ConformityTable.base_columns["evidence_status"]
-        template = column.template_code
+        table = ConformityTable([])
+        template = table.columns["evidence_status"].column.template_code
         self.assertIn("bg-secondary progress-bar-striped", template)
         self.assertIn("repeating-linear-gradient", template)
         self.assertNotIn("text-body-secondary mt-1 text-nowrap", template)
