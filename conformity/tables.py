@@ -3,7 +3,10 @@ from auditlog.models import LogEntry
 from django.utils.html import format_html
 from django_tables2.utils import A, OrderByTuple
 
-from .models import Action, Attachment, Audit, Conformity, Control, ControlPoint, Finding, Framework, Organization
+from .models import (
+    Action, Attachment, Audit, Conformity, Control, ControlPoint, Evidence,
+    Finding, Framework, Organization,
+)
 
 
 CENTER = {"cell": {"class": "text-center"}}
@@ -333,6 +336,122 @@ class ConformityTable(BaseRichTable):
         model = Conformity
         fields = ()
         sequence = ("conformity", "requirements", "evidence_status")
+
+
+class PeriodicEvidenceTable(BaseRichTable):
+    name = tables.Column(
+        accessor="periodic_name",
+        verbose_name="Name",
+        orderable=False,
+        attrs=PRIMARY_COLUMN,
+    )
+    organization = tables.TemplateColumn(
+        verbose_name="Organization",
+        template_code="""
+            {% if record.periodic_organization %}
+                <a href="{% url 'conformity:organization_detail' record.periodic_organization.pk %}"
+                   class="btn btn-sm btn-outline-secondary w-75 mx-auto">
+                    {{ record.periodic_organization }}
+                </a>
+            {% else %}
+                <span class="text-body-secondary">—</span>
+            {% endif %}
+        """,
+        orderable=False,
+        attrs=CENTER,
+    )
+    type = tables.Column(
+        accessor="get_source_type_display",
+        verbose_name="Type",
+        order_by=("source_type",),
+        attrs=CENTER,
+    )
+    level = tables.Column(
+        accessor="periodic_level",
+        verbose_name="Level",
+        orderable=False,
+        attrs=CENTER,
+    )
+    frequency = tables.Column(
+        accessor="periodic_frequency",
+        verbose_name="Frequency",
+        orderable=False,
+        attrs=CENTER,
+    )
+    last_result = tables.TemplateColumn(
+        verbose_name="Last result",
+        template_code="""
+            {% if record.source_type == 'CTRL' %}
+                {% with point=record.controlpoint %}
+                    {% if point.status == 'TOBE' %}
+                        <a href="{% url 'conformity:controlpoint_form' point.pk %}"
+                           class="btn btn-sm btn-outline-primary w-75 mx-auto bi bi-pencil-square">
+                            Evaluate
+                        </a>
+                    {% else %}
+                        {% include 'conformity/includes/controlpoint_status.html' with controlpoint=point %}
+                    {% endif %}
+                {% endwith %}
+            {% elif record.source_type == 'IND' %}
+                {% with point=record.indicatorpoint %}
+                    {% if point.status == 'TOBE' %}
+                        <a href="{% url 'conformity:indicatorpoint_form' point.pk %}"
+                           class="btn btn-sm btn-outline-primary w-75 mx-auto bi bi-pencil-square">
+                            Enter value
+                        </a>
+                    {% elif point.status == 'OK' %}
+                        <span class="badge rounded-pill text-bg-success">
+                            {{ point.value }} · {{ point.get_status_display }}
+                        </span>
+                    {% elif point.status == 'WARN' %}
+                        <span class="badge rounded-pill text-bg-warning">
+                            {{ point.value }} · {{ point.get_status_display }}
+                        </span>
+                    {% elif point.status == 'CRIT' %}
+                        <span class="badge rounded-pill text-bg-danger">
+                            {{ point.value }} · {{ point.get_status_display }}
+                        </span>
+                    {% else %}
+                        <span class="badge rounded-pill text-bg-secondary">
+                            {{ point.get_status_display }}
+                        </span>
+                    {% endif %}
+                {% endwith %}
+            {% endif %}
+        """,
+        orderable=False,
+        attrs=CENTER,
+    )
+    requirements = tables.TemplateColumn(
+        verbose_name="Associated requirements",
+        template_code="""
+            <div class="d-grid gap-1">
+                {% for conformity in record.conformities.all %}
+                    <a href="{% url 'conformity:conformity_detail_index' conformity.organization.id conformity.requirement.framework.id %}#requirement-{{ conformity.requirement.id }}"
+                       class="btn btn-sm btn-outline-secondary w-75 mx-auto"
+                       title="{{ conformity.requirement.title }}">
+                        {{ conformity.requirement.full_path }}
+                    </a>
+                {% empty %}
+                    <span class="text-body-secondary">—</span>
+                {% endfor %}
+            </div>
+        """,
+        orderable=False,
+    )
+
+    class Meta(BaseRichTable.Meta):
+        model = Evidence
+        fields = ()
+        sequence = (
+            "name",
+            "organization",
+            "type",
+            "level",
+            "frequency",
+            "last_result",
+            "requirements",
+        )
 
 
 class ControlTable(BaseRichTable):
