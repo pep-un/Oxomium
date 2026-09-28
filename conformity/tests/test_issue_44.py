@@ -169,7 +169,7 @@ class RichTableConfigurationTests(TestCase):
         self.assertIn("reference", filters)
         self.assertEqual(filters["status"].label, "Last result")
         self.assertEqual(filters["requirement"].label, "Associated requirement")
-        self.assertEqual(filters["reference"].label, "Associated reference")
+        self.assertEqual(filters["reference"].label, "Associated Framework")
 
     def test_periodic_controls_show_export_and_result_count(self):
         organization = Organization.objects.create(name="Periodic toolbar org")
