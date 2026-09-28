@@ -8,53 +8,73 @@
         Create {{ evidence_label|default:"evidence" }}
     {% else %}
         <i class="bi bi-pencil-square" aria-hidden="true"></i>
-        Edit evidence
+        Edit {{ object.get_source_type_display|default:"evidence" }}
     {% endif %}
 </h1>
 {% endblock %}
 
 {% block content %}
-<form method="post" class="form">
+<form method="post" enctype="multipart/form-data" class="form" id="object-form">
     {% csrf_token %}
-    <div class="card">
-        <div class="card-header">
-            <strong>
-                {% if creating_evidence %}
-                    {{ evidence_label|default:"Evidence" }}
+    <div class="row g-4 align-items-start">
+        <div class="col-12 col-lg-6">
+            {% include "conformity/includes/evidence_requirement_cards.html" %}
+        </div>
+
+        <div class="col-12 col-lg-6">
+            {% include "conformity/includes/evidence_source_card.html" %}
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <span class="h4 mb-0">
+                        {% if creating_evidence %}
+                            {{ evidence_label|default:"Evidence" }}
+                        {% else %}
+                            {{ object.get_source_type_display }}
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="card-body">
+                    {% for field in form %}
+                        {% if field.name != "attachments" %}
+                            {% bootstrap_field field %}
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+
+            {% if form.attachments %}
+                {% if object %}
+                    {% include "includes/attachment_panel.html" with attachments=object.attachments.all owner=object owner_type="evidence" editable=True attachment_field=form.attachments %}
                 {% else %}
-                    {{ object.get_source_type_display }}
+                    {% include "includes/attachment_panel.html" with attachments=None owner=None owner_type="evidence" editable=False attachment_field=form.attachments %}
                 {% endif %}
-            </strong>
-        </div>
-        <div class="card-body">
-            {% bootstrap_form form %}
-        </div>
-    </div>
-
-    <div class="mt-3 d-flex gap-2">
-        <button type="submit" class="btn btn-primary">
-            <i class="bi bi-save" aria-hidden="true"></i>
-            {% if creating_evidence %}Create{% else %}Save{% endif %}
-        </button>
-
-        {% if creating_evidence %}
-            <a class="btn btn-outline-secondary"
-               href="{% url 'conformity:conformity_form' conformity.pk %}">
-                Cancel
-            </a>
-        {% else %}
-            {% if return_conformity %}
-                <a class="btn btn-outline-secondary"
-                   href="{% url 'conformity:conformity_form' return_conformity.pk %}">
-                    Cancel
-                </a>
-            {% else %}
-                <a class="btn btn-outline-secondary"
-                   href="{% url 'conformity:evidence_detail' object.pk %}">
-                    Cancel
-                </a>
             {% endif %}
-        {% endif %}
+
+            <div class="mt-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save" aria-hidden="true"></i>
+                    {% if creating_evidence %}Create{% else %}Save{% endif %}
+                </button>
+
+                {% if creating_evidence %}
+                    <a class="btn btn-outline-secondary"
+                       href="{% url 'conformity:conformity_form' conformity.pk %}">
+                        Cancel
+                    </a>
+                {% elif return_conformity %}
+                    <a class="btn btn-outline-secondary"
+                       href="{% url 'conformity:conformity_form' return_conformity.pk %}">
+                        Cancel
+                    </a>
+                {% else %}
+                    <a class="btn btn-outline-secondary"
+                       href="{% url 'conformity:evidence_detail' object.pk %}">
+                        Cancel
+                    </a>
+                {% endif %}
+            </div>
+        </div>
     </div>
 </form>
 {% endblock %}
