@@ -8,7 +8,7 @@ from django.utils import timezone
 
 class EvidenceMigrationTests(TransactionTestCase):
     migrate_from = [('conformity', '0072_attachment_sha256')]
-    migrate_to = [('conformity', '0074_evidence_point_inheritance')]
+    migrate_to = [('conformity', '0075_backfill_evidence_state')]
 
     def setUp(self):
         super().setUp()
@@ -99,6 +99,7 @@ class EvidenceMigrationTests(TransactionTestCase):
         HumanEvidence = apps.get_model('conformity', 'HumanEvidence')
         FindingEvidence = apps.get_model('conformity', 'FindingEvidence')
         DocumentEvidence = apps.get_model('conformity', 'DocumentEvidence')
+        Conformity = apps.get_model('conformity', 'Conformity')
 
         control_point = ControlPoint.objects.get()
         indicator_point = IndicatorPoint.objects.get()
@@ -120,6 +121,10 @@ class EvidenceMigrationTests(TransactionTestCase):
         self.assertTrue(FindingEvidence.objects.filter(finding_id=self.ids['finding']).exists())
         self.assertTrue(
             DocumentEvidence.objects.filter(document_id=self.ids['attachment']).exists()
+        )
+        self.assertEqual(
+            Conformity.objects.get(pk=self.ids['conformity']).evidence_state,
+            'PART',
         )
 
         self.executor = MigrationExecutor(connection)
