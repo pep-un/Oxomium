@@ -1,6 +1,6 @@
 {% extends "conformity/main.html" %}
 {% load ui_tags %}{% load render_table from django_tables2 %}
-{% block header %}<h1 class="h1 bi bi-card-checklist"> Frameworks</h1>{% endblock %}
+{% block header %}<h1 class="h1 bi bi-journal-bookmark"> Frameworks</h1>{% endblock %}
 {% block content %}
 {% route_url 'conformity:framework_export' as export_url %}
 {% include "includes/list_toolbar.html" with export_url=export_url filter=filter total_count=result_total_count visible_count=result_visible_count is_paginated=result_is_paginated %}
