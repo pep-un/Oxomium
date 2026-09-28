@@ -608,6 +608,27 @@ class EvidenceTests(TestCase):
         self.assertIn('bi bi-person-check text-primary', html)
         self.assertIn('bg-body-tertiary p-3', html)
 
+    def test_conformity_assessment_admin_comment_and_empty_states(self):
+        self.user.is_staff = True
+        self.user.save(update_fields=['is_staff'])
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse('conformity:conformity_form', args=[self.conformity.pk])
+        )
+        html = response.content.decode()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('/django-backend/auth/user/', html)
+        self.assertIn('bi bi-gear-fill', html)
+        self.assertIn('placeholder="Comment required"', html)
+        self.assertNotIn('for="id_comment"', html)
+        self.assertIn('id="conformity-comment"', html)
+        self.assertIn('bg-body-tertiary p-3', html)
+        self.assertGreaterEqual(html.count('empty-state'), 2)
+        self.assertIn('No action associated.', html)
+        self.assertIn('No currently valid evidence associated.', html)
+
     def test_framework_review_header_uses_status_pill_and_stacked_bar(self):
         manual = ManualEvidence.objects.create(
             title='Framework summary evidence',

@@ -66,7 +66,34 @@
                         <div class="text-body-secondary small mb-2">
                             Person responsible for reviewing this requirement.
                         </div>
-                        {{ form.responsible }}
+                        <div class="d-flex align-items-stretch gap-2">
+                            <div class="flex-grow-1">
+                                {{ form.responsible }}
+                            </div>
+                            {% if request.user.is_staff %}
+                                <div class="dropdown flex-shrink-0">
+                                    <button class="btn btn-outline-secondary dropdown-toggle h-100"
+                                            type="button"
+                                            data-bs-toggle="dropdown"
+                                            aria-expanded="false"
+                                            title="Administration">
+                                        <i class="bi bi-gear-fill" aria-hidden="true"></i>
+                                        <span class="visually-hidden">Administration</span>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li>
+                                            <a class="dropdown-item"
+                                               href="/django-backend/auth/user/"
+                                               target="_blank"
+                                               rel="noopener">
+                                                <i class="bi bi-people me-2" aria-hidden="true"></i>
+                                                Manage users
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            {% endif %}
+                        </div>
                         {% for error in form.responsible.errors %}
                             <div class="invalid-feedback d-block">{{ error }}</div>
                         {% endfor %}
@@ -91,18 +118,17 @@
                                 {% endif %}
                             >
                         </div>
-                    </div>
 
-                    <div id="conformity-comment"
-                         class="{% if form.applicable.value %}d-none{% endif %}">
-                        {{ form.comment.label_tag }}
-                        {{ form.comment }}
-                        {% if form.comment.help_text %}
-                            <div class="form-text">{{ form.comment.help_text }}</div>
-                        {% endif %}
-                        {% for error in form.comment.errors %}
-                            <div class="invalid-feedback d-block">{{ error }}</div>
-                        {% endfor %}
+                        <div id="conformity-comment"
+                             class="mt-3 {% if form.applicable.value %}d-none{% endif %}">
+                            {{ form.comment }}
+                            {% if form.comment.help_text %}
+                                <div class="form-text">{{ form.comment.help_text }}</div>
+                            {% endif %}
+                            {% for error in form.comment.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
                     </div>
 
                     <div class="border-top pt-3 mt-3">
@@ -136,9 +162,9 @@
                             </span>
                         </a>
                     {% empty %}
-                        <p class="list-group-item list-group-item-warning text-center my-0">
-                            No action associated
-                        </p>
+                        <div class="list-group-item border-0 p-0">
+                            {% include "includes/empty_state.html" with empty_message="No action associated." compact=True %}
+                        </div>
                     {% endfor %}
                 </div>
             </div>
@@ -261,11 +287,11 @@
                             </div>
                         </div>
                     {% empty %}
-                        <div class="list-group-item text-body-secondary text-center py-4">
+                        <div class="list-group-item border-0 p-0">
                             {% if show_evidence_conformities %}
-                                No currently valid evidence in descendant requirements.
+                                {% include "includes/empty_state.html" with empty_message="No currently valid evidence in descendant requirements." compact=True %}
                             {% else %}
-                                No currently valid evidence associated.
+                                {% include "includes/empty_state.html" with empty_message="No currently valid evidence associated." compact=True %}
                             {% endif %}
                         </div>
                     {% endfor %}
