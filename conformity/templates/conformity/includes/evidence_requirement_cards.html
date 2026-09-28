@@ -25,14 +25,17 @@
 {% empty %}
     <div class="card border-info mb-4">
         <div class="card-body bg-info bg-opacity-10 text-center py-4">
-            <p class="text-body-secondary mb-3">No associated requirement.</p>
-            {% if object and object.pk %}
-                <a class="btn btn-primary"
-                   href="{% url 'conformity:evidence_requirement_add' object.pk %}">
-                    <i class="bi bi-plus-circle me-1" aria-hidden="true"></i>
-                    Add requirement
-                </a>
-            {% endif %}
+            <p class="text-body-secondary mb-0">No associated requirement.</p>
         </div>
     </div>
 {% endfor %}
+
+{% if object and object.pk %}
+    <div class="d-flex justify-content-center mb-4">
+        <a class="btn btn-primary"
+           href="{% url 'conformity:evidence_requirement_add' object.pk %}">
+            <i class="bi bi-plus-circle me-1" aria-hidden="true"></i>
+            Add requirement
+        </a>
+    </div>
+{% endif %}
