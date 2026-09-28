@@ -61,42 +61,19 @@
                     <span class="h4 mb-0">Assessment</span>
                 </div>
                 <div class="card-body">
-                    <div class="mb-4">
-                        <div class="fw-semibold mb-1">{{ form.responsible.label }}</div>
-                        <div class="text-body-secondary small mb-2">
-                            Person responsible for reviewing this requirement.
-                        </div>
-                        <div class="d-flex align-items-stretch gap-2">
-                            <div class="flex-grow-1">
-                                {{ form.responsible }}
+                    <div class="row g-3 align-items-center mb-4">
+                        <div class="col-12 col-md-6">
+                            <div class="fw-semibold mb-1">{{ form.responsible.label }}</div>
+                            <div class="text-body-secondary small">
+                                Person responsible for reviewing this requirement.
                             </div>
-                            {% if request.user.is_staff %}
-                                <div class="dropdown flex-shrink-0">
-                                    <button class="btn btn-outline-secondary dropdown-toggle h-100"
-                                            type="button"
-                                            data-bs-toggle="dropdown"
-                                            aria-expanded="false"
-                                            title="Administration">
-                                        <i class="bi bi-gear-fill" aria-hidden="true"></i>
-                                        <span class="visually-hidden">Administration</span>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end">
-                                        <li>
-                                            <a class="dropdown-item"
-                                               href="/django-backend/auth/user/"
-                                               target="_blank"
-                                               rel="noopener">
-                                                <i class="bi bi-people me-2" aria-hidden="true"></i>
-                                                Manage users
-                                            </a>
-                                        </li>
-                                    </ul>
-                                </div>
-                            {% endif %}
                         </div>
-                        {% for error in form.responsible.errors %}
-                            <div class="invalid-feedback d-block">{{ error }}</div>
-                        {% endfor %}
+                        <div class="col-12 col-md-6">
+                            {{ form.responsible }}
+                            {% for error in form.responsible.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
                     </div>
 
                     <div class="border rounded bg-body-tertiary p-3 mb-3">

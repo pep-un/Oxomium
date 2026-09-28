@@ -608,9 +608,7 @@ class EvidenceTests(TestCase):
         self.assertIn('bi bi-person-check text-primary', html)
         self.assertIn('bg-body-tertiary p-3', html)
 
-    def test_conformity_assessment_admin_comment_and_empty_states(self):
-        self.user.is_staff = True
-        self.user.save(update_fields=['is_staff'])
+    def test_conformity_assessment_layout_comment_and_empty_states(self):
         self.client.force_login(self.user)
 
         response = self.client.get(
@@ -619,9 +617,13 @@ class EvidenceTests(TestCase):
         html = response.content.decode()
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn('/django-backend/auth/user/', html)
-        self.assertIn('bi bi-gear-fill', html)
+        self.assertIn('Person responsible for reviewing this requirement.', html)
+        self.assertIn('col-12 col-md-6', html)
+        self.assertIn('name="responsible"', html)
+        self.assertNotIn('/django-backend/auth/user/', html)
+        self.assertNotIn('bi bi-gear-fill', html)
         self.assertIn('placeholder="Comment required"', html)
+        self.assertIn('class="form-control w-100"', html)
         self.assertNotIn('for="id_comment"', html)
         self.assertIn('id="conformity-comment"', html)
         self.assertIn('bg-body-tertiary p-3', html)

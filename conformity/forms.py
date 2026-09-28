@@ -73,7 +73,10 @@ class ConformityForm(ModelForm):
         model = Conformity
         fields = ['applicable', 'responsible', 'comment']
         widgets = {
-            'comment': forms.Textarea(attrs={'placeholder': 'Comment required'}),
+            'comment': forms.Textarea(attrs={
+                'placeholder': 'Comment required',
+                'class': 'form-control w-100',
+            }),
         }
 
 
