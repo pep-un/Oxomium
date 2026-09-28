@@ -625,7 +625,7 @@ class AttachmentTable(BaseRichTable):
                 {% for framework in record.frameworks.all %}
                     <a href="{% url 'conformity:framework_detail' framework.id %}#attachments">
                         <span class="badge text-bg-primary px-3">
-                            <i class="bi bi-card-checklist pe-2"></i>{{ framework }}
+                            <i class="bi bi-journal-bookmark pe-2"></i>{{ framework }}
                         </span>
                     </a>
                 {% endfor %}
