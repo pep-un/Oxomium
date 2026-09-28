@@ -163,3 +163,16 @@ def evaluate_conformities(conformities, *, at=None):
     at = at or timezone.now()
     for conformity in conformities:
         evaluate_conformity(conformity, at=at)
+
+def refresh_time_bound_conformities(*, at=None):
+    """Refresh persisted states whose truth may have changed only with time."""
+    from conformity.models import Conformity
+
+    at = at or timezone.now()
+    conformities = (
+        Conformity.objects
+        .filter(evidence__isnull=False)
+        .select_related('requirement')
+        .distinct()
+    )
+    evaluate_conformities(conformities, at=at)
