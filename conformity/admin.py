@@ -102,7 +102,7 @@ class ControlPointResources(resources.ModelResource):
 
 class ControlPointAdmin(ImportExportModelAdmin):
     ressource_class = ControlPoint
-    list_select_related = ['control', 'control_user']
+    list_select_related = ['control', 'evaluator']
 
 
 class FindingResources(resources.ModelResource):
