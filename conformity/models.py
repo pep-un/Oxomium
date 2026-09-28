@@ -604,38 +604,9 @@ class Conformity(models.Model):
         return True
 
     def evaluate_evidence(self, at=None, *, persist=True):
-        """Evaluate current operational evidence and any valid human arbitration."""
-        at = at or timezone.now()
-        current = Evidence.objects.filter(conformities=self).valid_at(at)
-        operational = current.exclude(source_type=Evidence.SourceType.HUMAN)
-        results = set(operational.values_list('result', flat=True))
-        positive = Evidence.Result.POSITIVE in results
-        negative = Evidence.Result.NEGATIVE in results
-
-        if positive and negative:
-            human = current.filter(source_type=Evidence.SourceType.HUMAN).order_by(
-                '-valid_from', '-pk'
-            ).first()
-            if human is None:
-                state = self.EvidenceState.INCONCLUSIVE
-            elif human.result == Evidence.Result.POSITIVE:
-                state = self.EvidenceState.COMPLIANT
-            elif human.result == Evidence.Result.NEGATIVE:
-                state = self.EvidenceState.NON_COMPLIANT
-            elif human.result == Evidence.Result.PARTIAL:
-                state = self.EvidenceState.PARTIAL
-            else:
-                state = self.EvidenceState.INCONCLUSIVE
-        elif positive:
-            state = self.EvidenceState.COMPLIANT
-        elif negative:
-            state = self.EvidenceState.NON_COMPLIANT
-        else:
-            state = self.EvidenceState.NOT_EVALUATED
-
-        if persist:
-            self._persist_evidence_state(state, at)
-        return state
+        """Evaluate this Conformity through the shared Evidence engine."""
+        from .services.evidence import evaluate_conformity
+        return evaluate_conformity(self, at=at, persist=persist)
 
     def _persist_evidence_state(self, state, at):
         state_to_status = {
