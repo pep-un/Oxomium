@@ -74,9 +74,12 @@ def controlpoint_post_save_evidence(instance: ControlPoint, **kwargs):
     """A ControlPoint is itself Evidence; attach configured targets and evaluate them."""
     if instance.control_id and not instance.conformities.exists():
         conformities = Conformity.objects.filter(
-            organization=instance.control.organization,
             requirement__in=instance.control.requirements.all(),
         )
+        if instance.control.organization_id:
+            conformities = conformities.filter(
+                organization_id=instance.control.organization_id
+            )
         instance.conformities.set(conformities)
     from .services.evidence import evaluate_evidence
     evaluate_evidence(instance)
@@ -87,9 +90,12 @@ def indicatorpoint_post_save_evidence(instance: IndicatorPoint, **kwargs):
     """An IndicatorPoint is itself Evidence; attach configured targets and evaluate them."""
     if instance.indicator_id and not instance.conformities.exists():
         conformities = Conformity.objects.filter(
-            organization=instance.indicator.organization,
             requirement__in=instance.indicator.requirements.all(),
         )
+        if instance.indicator.organization_id:
+            conformities = conformities.filter(
+                organization_id=instance.indicator.organization_id
+            )
         instance.conformities.set(conformities)
     from .services.evidence import evaluate_evidence
     evaluate_evidence(instance)
@@ -99,9 +105,12 @@ def indicatorpoint_post_save_evidence(instance: IndicatorPoint, **kwargs):
 def control_requirement_targets_changed(instance, action, **kwargs):
     if action in {'post_add', 'post_remove', 'post_clear'}:
         conformities = Conformity.objects.filter(
-            organization=instance.organization,
             requirement__in=instance.requirements.all(),
         )
+        if instance.organization_id:
+            conformities = conformities.filter(
+                organization_id=instance.organization_id
+            )
         for point in instance.get_controlpoint():
             point.conformities.set(conformities)
 
@@ -110,9 +119,12 @@ def control_requirement_targets_changed(instance, action, **kwargs):
 def indicator_requirement_targets_changed(instance, action, **kwargs):
     if action in {'post_add', 'post_remove', 'post_clear'}:
         conformities = Conformity.objects.filter(
-            organization=instance.organization,
             requirement__in=instance.requirements.all(),
         )
+        if instance.organization_id:
+            conformities = conformities.filter(
+                organization_id=instance.organization_id
+            )
         for point in IndicatorPoint.objects.filter(indicator=instance):
             point.conformities.set(conformities)
 
