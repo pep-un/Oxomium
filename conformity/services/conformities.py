@@ -94,14 +94,26 @@ def recompute_parent_chain(conformity):
             ).aggregate(mean=models.Avg('status'))['mean']
             if mean is not None:
                 current.status = mean
+                if mean >= 100:
+                    current.evidence_state = Conformity.EvidenceState.COMPLIANT
+                elif mean <= 0:
+                    current.evidence_state = Conformity.EvidenceState.NON_COMPLIANT
+                else:
+                    current.evidence_state = Conformity.EvidenceState.PARTIAL
                 current.status_justification = Conformity.StatusJustification.CONFORMITY
                 current.status_last_update = timezone.now()
-                current.save(update_fields=['status', 'status_justification', 'status_last_update'])
+                current.save(update_fields=[
+                    'status', 'evidence_state', 'status_justification',
+                    'status_last_update',
+                ])
             elif current.status_justification == Conformity.StatusJustification.CONFORMITY:
                 # Do not retain a stale aggregate when no child is evaluated.
                 current.status = None
+                current.evidence_state = Conformity.EvidenceState.NOT_EVALUATED
                 current.status_last_update = timezone.now()
-                current.save(update_fields=['status', 'status_last_update'])
+                current.save(update_fields=[
+                    'status', 'evidence_state', 'status_last_update',
+                ])
             current = current.get_parent()
 
 
