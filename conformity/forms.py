@@ -4,6 +4,7 @@ Forms for front-end editing of Models instance
 
 from datetime import timedelta
 
+from django import forms
 from django.forms import Form, ModelForm, FileField, ClearableFileInput, BooleanField, ModelChoiceField, ModelMultipleChoiceField
 from django.db import models
 from django.utils import timezone
@@ -71,6 +72,9 @@ class ConformityForm(ModelForm):
     class Meta:
         model = Conformity
         fields = ['applicable', 'responsible', 'comment']
+        widgets = {
+            'comment': forms.Textarea(attrs={'placeholder': 'Comment required'}),
+        }
 
 
 class EvidenceRequirementForm(Form):
