@@ -4,7 +4,8 @@ Forms for front-end editing of Models instance
 
 from datetime import timedelta
 
-from django.forms import ModelForm, FileField, ClearableFileInput, BooleanField, ModelChoiceField, ModelMultipleChoiceField
+from django.forms import Form, ModelForm, FileField, ClearableFileInput, BooleanField, ModelChoiceField, ModelMultipleChoiceField
+from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from .models import (
@@ -70,6 +71,32 @@ class ConformityForm(ModelForm):
     class Meta:
         model = Conformity
         fields = ['applicable', 'responsible', 'comment']
+
+
+class EvidenceRequirementForm(Form):
+    conformity = ModelChoiceField(
+        queryset=Conformity.objects.none(),
+        label='Requirement',
+    )
+
+    def __init__(self, *args, evidence=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        queryset = (
+            Conformity.objects
+            .filter(requirement__rght=models.F('requirement__lft') + 1)
+            .select_related('organization', 'requirement__framework')
+            .order_by(
+                'organization__name',
+                'requirement__framework__name',
+                'requirement__tree_id',
+                'requirement__lft',
+            )
+        )
+        if evidence is not None and evidence.periodic_organization is not None:
+            queryset = queryset.filter(
+                organization=evidence.periodic_organization,
+            )
+        self.fields['conformity'].queryset = queryset
 
 
 class HumanEvidenceForm(AttachmentUploadFormMixin, ModelForm):
