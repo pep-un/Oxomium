@@ -2,6 +2,8 @@
 Forms for front-end editing of Models instance
 """
 
+from datetime import timedelta
+
 from django.forms import ModelForm, FileField, ClearableFileInput, BooleanField, ModelChoiceField, ModelMultipleChoiceField
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
