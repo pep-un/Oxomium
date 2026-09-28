@@ -6,7 +6,7 @@ from django_tables2.utils import A, OrderByTuple
 
 from .models import (
     Action, Attachment, Audit, Conformity, Control, ControlPoint, Evidence,
-    Finding, Framework, Organization,
+    Finding, Framework, Indicator, Organization,
 )
 
 
@@ -348,30 +348,29 @@ class ConformityTable(BaseRichTable):
         sequence = ("conformity", "requirements", "evidence_status")
 
 
-def periodic_evidence_result_url(record):
-    """Return the evaluation screen for a periodic Evidence row."""
-    if record.source_type == Evidence.SourceType.CONTROL:
-        return reverse("conformity:controlpoint_form", args=[record.pk])
-    if record.source_type == Evidence.SourceType.INDICATOR:
-        return reverse("conformity:indicatorpoint_form", args=[record.pk])
+def periodic_source_url(record):
+    if isinstance(record, Control):
+        return reverse("conformity:control_detail", args=[record.pk])
+    if isinstance(record, Indicator):
+        return reverse("conformity:indicator_detail", args=[record.pk])
     return None
 
 
-class PeriodicEvidenceTable(BaseRichTable):
+class PeriodicControlTable(BaseRichTable):
     name = tables.Column(
         accessor="periodic_name",
         verbose_name="Name",
-        linkify=periodic_evidence_result_url,
+        linkify=periodic_source_url,
         orderable=False,
         attrs=PRIMARY_COLUMN,
     )
     organization = tables.TemplateColumn(
         verbose_name="Organization",
         template_code="""
-            {% if record.periodic_organization %}
-                <a href="{% url 'conformity:organization_detail' record.periodic_organization.pk %}"
+            {% if record.organization %}
+                <a href="{% url 'conformity:organization_detail' record.organization.pk %}"
                    class="btn btn-sm btn-outline-secondary w-75 mx-auto">
-                    {{ record.periodic_organization }}
+                    {{ record.organization }}
                 </a>
             {% else %}
                 <span class="text-body-secondary">—</span>
@@ -381,9 +380,9 @@ class PeriodicEvidenceTable(BaseRichTable):
         attrs=CENTER,
     )
     type = tables.Column(
-        accessor="get_source_type_display",
+        accessor="periodic_type",
         verbose_name="Type",
-        order_by=("source_type",),
+        orderable=False,
         attrs=CENTER,
     )
     level = tables.Column(
@@ -401,8 +400,10 @@ class PeriodicEvidenceTable(BaseRichTable):
     last_result = tables.TemplateColumn(
         verbose_name="Last result",
         template_code="""
-            {% if record.source_type == 'CTRL' %}
-                {% with point=record.controlpoint %}
+            {% with point=record.periodic_point %}
+                {% if not point %}
+                    <span class="text-body-secondary">—</span>
+                {% elif record.periodic_kind == 'CTRL' %}
                     {% if point.status == 'TOBE' %}
                         <a href="{% url 'conformity:controlpoint_form' point.pk %}"
                            class="btn btn-sm btn-outline-primary w-75 mx-auto bi bi-pencil-square">
@@ -411,9 +412,7 @@ class PeriodicEvidenceTable(BaseRichTable):
                     {% else %}
                         {% include 'conformity/includes/controlpoint_status.html' with controlpoint=point %}
                     {% endif %}
-                {% endwith %}
-            {% elif record.source_type == 'IND' %}
-                {% with point=record.indicatorpoint %}
+                {% else %}
                     {% if point.status == 'TOBE' %}
                         <a href="{% url 'conformity:indicatorpoint_form' point.pk %}"
                            class="btn btn-sm btn-outline-primary w-75 mx-auto bi bi-pencil-square">
@@ -436,8 +435,8 @@ class PeriodicEvidenceTable(BaseRichTable):
                             {{ point.get_status_display }}
                         </span>
                     {% endif %}
-                {% endwith %}
-            {% endif %}
+                {% endif %}
+            {% endwith %}
         """,
         orderable=False,
         attrs=CENTER,
@@ -446,12 +445,18 @@ class PeriodicEvidenceTable(BaseRichTable):
         verbose_name="Associated requirements",
         template_code="""
             <div class="d-grid gap-1">
-                {% for conformity in record.conformities.all %}
-                    <a href="{% url 'conformity:conformity_detail_index' conformity.organization.id conformity.requirement.framework.id %}#requirement-{{ conformity.requirement.id }}"
-                       class="btn btn-sm btn-outline-secondary w-75 mx-auto"
-                       title="{{ conformity.requirement.title }}">
-                        {{ conformity.requirement.full_path }}
-                    </a>
+                {% for requirement in record.requirements.all %}
+                    {% if record.organization %}
+                        <a href="{% url 'conformity:conformity_detail_index' record.organization.id requirement.framework.id %}#requirement-{{ requirement.id }}"
+                           class="btn btn-sm btn-outline-secondary w-75 mx-auto"
+                           title="{{ requirement.title }}">
+                            {{ requirement.full_path }}
+                        </a>
+                    {% else %}
+                        <span class="badge text-bg-light text-dark border">
+                            {{ requirement.full_path }}
+                        </span>
+                    {% endif %}
                 {% empty %}
                     <span class="text-body-secondary">—</span>
                 {% endfor %}
@@ -461,7 +466,6 @@ class PeriodicEvidenceTable(BaseRichTable):
     )
 
     class Meta(BaseRichTable.Meta):
-        model = Evidence
         fields = ()
         sequence = (
             "name",
@@ -472,6 +476,9 @@ class PeriodicEvidenceTable(BaseRichTable):
             "last_result",
             "requirements",
         )
+
+
+PeriodicEvidenceTable = PeriodicControlTable
 
 
 class ControlTable(BaseRichTable):

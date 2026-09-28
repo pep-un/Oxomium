@@ -11,11 +11,11 @@ from conformity.models import (
 from conformity.tables import (
     ActionTable, AttachmentTable, AuditLogTable, AuditTable, ConformityTable,
     ControlTable, ControlPointTable, FindingTable, FrameworkTable, OrganizationTable,
-    PeriodicEvidenceTable,
+    PeriodicControlTable, PeriodicEvidenceTable,
 )
 from conformity.filterset import (
     AttachmentFilter, ConformityFilter, ControlPointFilter, FindingFilter,
-    PeriodicEvidenceFilter,
+    PeriodicControlFilter, PeriodicEvidenceFilter,
 )
 from conformity.views import (
     ActionIndexView, AttachmentIndexView, AuditLogDetailView, AuditIndexView,
@@ -36,7 +36,7 @@ class RichTableConfigurationTests(TestCase):
             AuditLogDetailView: AuditLogTable,
             AuditIndexView: AuditTable,
             ConformityIndexView: ConformityTable,
-            ControlIndexView: PeriodicEvidenceTable,
+            ControlIndexView: PeriodicControlTable,
             ControlPointIndexView: ControlPointTable,
             FindingIndexView: FindingTable,
             FrameworkIndexView: FrameworkTable,
@@ -155,7 +155,7 @@ class RichTableConfigurationTests(TestCase):
         self.assertEqual(distribution["inconclusive_pct"], 25)
 
     def test_periodic_controls_table_has_operational_columns_only(self):
-        table = PeriodicEvidenceTable([])
+        table = PeriodicControlTable([])
         self.assertEqual(
             list(table.columns.names()),
             [
@@ -674,9 +674,9 @@ class RichTableInteractionTests(TestCase):
 
         response = self.client.get(response.url)
         self.assertEqual(response.status_code, 200)
-        records = [row.record.pk for row in response.context["table"].page.object_list]
-        self.assertIn(pending_point.pk, records)
-        self.assertNotIn(completed_point.pk, records)
+        records = list(response.context["table"].page.object_list)
+        self.assertIn(pending_control, records)
+        self.assertNotIn(completed_control, records)
         self.assertEqual(response.context["filter"].form["status"].value(), "TOBE")
         self.assertContains(response, 'btn btn-primary dropdown-toggle')
         self.assertNotContains(response, reverse("conformity:control_create"))
@@ -702,8 +702,8 @@ class RichTableInteractionTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        records = [row.record.pk for row in response.context["table"].page.object_list]
-        self.assertIn(point.pk, records)
+        records = list(response.context["table"].page.object_list)
+        self.assertIn(control, records)
         self.assertNotContains(response, 'btn btn-primary dropdown-toggle')
 
     def test_periodic_controls_name_uses_shared_primary_column_style(self):
@@ -735,10 +735,34 @@ class RichTableInteractionTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(
             response,
+            f'href="{reverse("conformity:control_detail", args=[control.pk])}"',
+        )
+        self.assertContains(
+            response,
             f'href="{reverse("conformity:controlpoint_form", args=[point.pk])}"',
-            count=2,
         )
         self.assertContains(response, "Linked periodic control")
+
+    def test_periodic_controls_have_one_row_per_source_not_per_point(self):
+        organization = Organization.objects.create(name="Source identity org")
+        control = Control.objects.create(
+            title="Source identity control",
+            organization=organization,
+            frequency=Control.Frequency.QUARTERLY,
+        )
+        points = list(control.get_controlpoint())
+        self.assertGreater(len(points), 1)
+
+        response = self.client.get(
+            reverse("conformity:control_index"),
+            {"status": ""},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        rows = list(response.context["table"].page.object_list)
+        self.assertEqual(sum(item == control for item in rows), 1)
+        self.assertFalse(any(isinstance(item, ControlPoint) for item in rows))
+        self.assertFalse(any(isinstance(item, IndicatorPoint) for item in rows))
 
     def test_periodic_controls_include_indicator_evidence(self):
         organization = Organization.objects.create(name="Indicator queue org")

@@ -1068,6 +1068,39 @@ class Control(models.Model):
         return ControlPoint.objects.filter(control=self).order_by('valid_from')
 
 
+    @property
+    def periodic_kind(self):
+        return Evidence.SourceType.CONTROL
+
+    @property
+    def periodic_name(self):
+        return self.title
+
+    @property
+    def periodic_type(self):
+        return _('Control')
+
+    @property
+    def periodic_level(self):
+        return self.get_level_display()
+
+    @property
+    def periodic_frequency(self):
+        return self.get_frequency_display()
+
+    @property
+    def periodic_point(self):
+        points = getattr(self, 'periodic_points', None)
+        if points is None:
+            points = list(
+                self.get_controlpoint().order_by('-valid_from', '-pk')
+            )
+        today = timezone.localdate()
+        return next(
+            (point for point in points if point.period_start_date <= today <= point.period_end_date),
+            points[0] if points else None,
+        )
+
 class ControlPoint(Evidence):
     """A periodic control result represented directly as Evidence."""
 
@@ -1597,6 +1630,42 @@ class Indicator (models.Model):
             IndicatorPoint.objects
             .filter(indicator=self, valid_from__date__lte=today, valid_to__date__gt=today)
             .first()
+        )
+
+
+    @property
+    def periodic_kind(self):
+        return Evidence.SourceType.INDICATOR
+
+    @property
+    def periodic_name(self):
+        return self.name
+
+    @property
+    def periodic_type(self):
+        return _('Indicator')
+
+    @property
+    def periodic_level(self):
+        return '—'
+
+    @property
+    def periodic_frequency(self):
+        return self.get_frequency_display()
+
+    @property
+    def periodic_point(self):
+        points = getattr(self, 'periodic_points', None)
+        if points is None:
+            points = list(
+                IndicatorPoint.objects
+                .filter(indicator=self)
+                .order_by('-valid_from', '-pk')
+            )
+        today = timezone.localdate()
+        return next(
+            (point for point in points if point.period_start_date <= today <= point.period_end_date),
+            points[0] if points else None,
         )
 
 

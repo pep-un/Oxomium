@@ -46,13 +46,12 @@ class ControlFilter(FilterSet):
                   'conformity']
 
 
-class PeriodicEvidenceFilter(FilterSet):
-    name = CharFilter(
-        method='filter_name',
-        label='Name',
-    )
-    status = ChoiceFilter(
+class PeriodicControlFilterForm(forms.Form):
+    name = forms.CharField(required=False, label='Name')
+    status = forms.ChoiceField(
+        required=False,
         choices=(
+            ('', '---------'),
             (ControlPoint.Status.TOBEEVALUATED, 'To evaluate'),
             (ControlPoint.Status.SCHEDULED, 'Scheduled'),
             (ControlPoint.Status.COMPLIANT, 'Compliant'),
@@ -61,87 +60,114 @@ class PeriodicEvidenceFilter(FilterSet):
             (IndicatorPoint.Status.CRITICAL, 'Critical'),
             (ControlPoint.Status.MISSED, 'Missed'),
         ),
-        method='filter_status',
         label='Last result',
     )
-    organization = ModelChoiceFilter(
+    organization = forms.ModelChoiceField(
+        required=False,
         queryset=Organization.objects.all(),
-        method='filter_organization',
         label='Organization',
     )
-    source_type = ChoiceFilter(
+    source_type = forms.ChoiceField(
+        required=False,
         choices=(
+            ('', '---------'),
             (Evidence.SourceType.CONTROL, 'Control'),
             (Evidence.SourceType.INDICATOR, 'Indicator'),
         ),
         label='Type',
     )
-    level = ChoiceFilter(
-        choices=Control.Level.choices,
-        method='filter_level',
+    level = forms.ChoiceField(
+        required=False,
+        choices=(('', '---------'), *Control.Level.choices),
         label='Level',
     )
-    frequency = ChoiceFilter(
-        choices=Control.Frequency.choices,
-        method='filter_frequency',
+    frequency = forms.ChoiceField(
+        required=False,
+        choices=(('', '---------'), *Control.Frequency.choices),
         label='Frequency',
     )
-    requirement = ModelChoiceFilter(
+    requirement = forms.ModelChoiceField(
+        required=False,
         queryset=Requirement.objects.all(),
-        field_name='conformities__requirement',
         label='Associated requirement',
-        distinct=True,
     )
-    reference = ModelChoiceFilter(
+    reference = forms.ModelChoiceField(
+        required=False,
         queryset=Framework.objects.all(),
-        field_name='conformities__requirement__framework',
         label='Associated Framework',
-        distinct=True,
     )
 
-    class Meta:
-        model = Evidence
-        fields = [
-            'name', 'status', 'organization', 'source_type', 'level',
-            'frequency', 'requirement', 'reference',
-        ]
 
-    def filter_name(self, queryset, name, value):
-        if not value:
-            return queryset
-        return queryset.filter(
-            Q(controlpoint__control__title__icontains=value)
-            | Q(indicatorpoint__indicator__name__icontains=value)
-        )
+class PeriodicControlFilter:
+    """Filter a mixed list of Control and Indicator source objects."""
 
-    def filter_status(self, queryset, name, value):
-        if not value:
-            return queryset
-        return queryset.filter(
-            Q(controlpoint__status=value)
-            | Q(indicatorpoint__status=value)
-        )
+    def __init__(self, data=None, queryset=None, request=None):
+        self.data = data
+        self.request = request
+        self.form = PeriodicControlFilterForm(data=data or None)
+        self.queryset = list(queryset or ())
+        self.qs = self._filtered_items()
 
-    def filter_organization(self, queryset, name, value):
-        if not value:
-            return queryset
-        return queryset.filter(
-            Q(controlpoint__control__organization=value)
-            | Q(indicatorpoint__indicator__organization=value)
-        )
+    def _filtered_items(self):
+        if not self.form.is_valid():
+            return self.queryset
 
-    def filter_level(self, queryset, name, value):
-        if not value:
-            return queryset
-        return queryset.filter(controlpoint__control__level=value)
+        values = self.form.cleaned_data
+        items = self.queryset
 
-    def filter_frequency(self, queryset, name, value):
-        if not value:
-            return queryset
-        return queryset.filter(
-            Q(controlpoint__control__frequency=value)
-            | Q(indicatorpoint__indicator__frequency=value)
-        )
+        if values['name']:
+            needle = values['name'].casefold()
+            items = [item for item in items if needle in item.periodic_name.casefold()]
+
+        if values['status']:
+            items = [
+                item for item in items
+                if item.periodic_point is not None
+                and item.periodic_point.status == values['status']
+            ]
+
+        if values['organization']:
+            items = [
+                item for item in items
+                if item.organization_id == values['organization'].pk
+            ]
+
+        if values['source_type']:
+            items = [
+                item for item in items
+                if item.periodic_kind == values['source_type']
+            ]
+
+        if values['level']:
+            level = int(values['level'])
+            items = [
+                item for item in items
+                if isinstance(item, Control) and item.level == level
+            ]
+
+        if values['frequency']:
+            frequency = int(values['frequency'])
+            items = [item for item in items if item.frequency == frequency]
+
+        if values['requirement']:
+            requirement_id = values['requirement'].pk
+            items = [
+                item for item in items
+                if any(req.pk == requirement_id for req in item.requirements.all())
+            ]
+
+        if values['reference']:
+            framework_id = values['reference'].pk
+            items = [
+                item for item in items
+                if any(req.framework_id == framework_id for req in item.requirements.all())
+            ]
+
+        return items
+
+
+# Backward-compatible import name while the periodic page now lists source objects.
+PeriodicEvidenceFilter = PeriodicControlFilter
 
 
 class ControlPointFilter(FilterSet):

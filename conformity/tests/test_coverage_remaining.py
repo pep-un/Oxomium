@@ -362,11 +362,10 @@ class RemainingCoverageTests(TestCase):
         control_view = ControlIndexView()
         control_view.request = self.factory.get("/", {"status": "TOBE"})
         control_view.request.user = self.user
-        control_view.object_list = Evidence.objects.none()
         control_view.kwargs = {}
-        with patch.object(FilterView, "get_context_data", return_value={}):
-            context = control_view.get_context_data()
+        context = control_view.get_context_data()
         self.assertNotIn("controlpoint_list", context)
+        self.assertIn("filter", context)
 
         log_view = AuditLogDetailView()
         self.assertEqual(log_view.get_queryset().query.order_by, ("-timestamp", "-pk"))

@@ -21,7 +21,7 @@ from mptt.templatetags.mptt_tags import cache_tree_children
 
 from .filterset import ActionFilter, ControlFilter, ControlPointFilter, FrameworkFilter, OrganizationFilter, \
     ConformityFilter, AuditFilter, FindingFilter, IndicatorFilter, AttachmentFilter, AuditLogFilter, \
-    PeriodicEvidenceFilter
+    PeriodicControlFilter
 from .forms import (
     ActionForm, AuditForm, ConformityForm, ControlForm, ControlPointForm,
     DocumentEvidenceForm, EvidenceForm, FindingEvidenceForm, FindingForm,
@@ -38,12 +38,12 @@ from .resources import (
     ActionResource, AttachmentResource, AuditLogResource, AuditResource,
     ConformityResource, ControlPointResource, ControlResource, FindingResource,
     FrameworkResource, IndicatorResource, OrganizationResource,
-    PeriodicEvidenceResource,
+    PeriodicControlResource,
 )
 from .tables import (
     ActionTable, AttachmentTable, AuditLogTable, AuditTable, ConformityTable,
     ControlTable, ControlPointTable, FindingTable, FrameworkTable,
-    OrganizationTable, PeriodicEvidenceTable,
+    OrganizationTable, PeriodicControlTable,
 )
 from .services.attachments import unlink_attachment
 
@@ -814,12 +814,40 @@ class ControlCreateView(LoginRequiredMixin, SaveStayMixin, CreateView):
         return initial
 
 
-class ControlIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
-    """Operational queue for periodic Control and Indicator Evidence."""
+def _periodic_sources():
+    control_points = ControlPoint.objects.order_by('-valid_from', '-pk')
+    indicator_points = IndicatorPoint.objects.order_by('-valid_from', '-pk')
+    controls = (
+        Control.objects
+        .select_related('organization')
+        .prefetch_related(
+            'requirements__framework',
+            Prefetch('controlpoint_set', queryset=control_points, to_attr='periodic_points'),
+        )
+    )
+    indicators = (
+        Indicator.objects
+        .select_related('organization')
+        .prefetch_related(
+            'requirements__framework',
+            Prefetch('indicatorpoint_set', queryset=indicator_points, to_attr='periodic_points'),
+        )
+    )
+    return sorted(
+        [*controls, *indicators],
+        key=lambda item: (
+            str(item.organization or '').casefold(),
+            item.periodic_name.casefold(),
+            item.periodic_kind,
+            item.pk,
+        ),
+    )
 
-    model = Evidence
-    table_class = PeriodicEvidenceTable
-    filterset_class = PeriodicEvidenceFilter
+
+class ControlIndexView(LoginRequiredMixin, RichTableMixin, TemplateView):
+    """Unified periodic source list: Controls and Indicators."""
+
+    table_class = PeriodicControlTable
     template_name = 'conformity/periodic_control_list.html'
 
     def get(self, request, *args, **kwargs):
@@ -830,30 +858,25 @@ class ControlIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
             return redirect(f"{url}?{params.urlencode()}")
         return super().get(request, *args, **kwargs)
 
-    def get_queryset(self):
-        return (
-            Evidence.objects
-            .filter(
-                source_type__in=[
-                    Evidence.SourceType.CONTROL,
-                    Evidence.SourceType.INDICATOR,
-                ]
+    def get_periodic_items(self):
+        if not hasattr(self, '_periodic_items'):
+            self.periodic_filter = PeriodicControlFilter(
+                data=self.request.GET,
+                queryset=_periodic_sources(),
+                request=self.request,
             )
-            .select_related(
-                'controlpoint__control__organization',
-                'indicatorpoint__indicator__organization',
-            )
-            .prefetch_related(
-                Prefetch(
-                    'conformities',
-                    queryset=Conformity.objects.select_related(
-                        'organization',
-                        'requirement__framework',
-                    ),
-                ),
-            )
-            .order_by('valid_to', 'valid_from', 'pk')
-        )
+            self._periodic_items = self.periodic_filter.qs
+        return self._periodic_items
+
+    def get_table_data(self):
+        return self.get_periodic_items()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        items = self.get_periodic_items()
+        context['object_list'] = items
+        context['filter'] = self.periodic_filter
+        return context
 
 
 class ControlUpdateView(LoginRequiredMixin, SaveStayMixin, UpdateView):
@@ -908,35 +931,27 @@ class ControlPointUpdateView(AttachmentUploadViewMixin, LoginRequiredMixin, Save
 
 
 class ControlExportView(LoginRequiredMixin, FilteredExportMixin, View):
-    """Export the operational Periodic controls Evidence queue."""
+    """Export periodic Control and Indicator source objects."""
 
-    resource_class = PeriodicEvidenceResource
-    filterset_class = PeriodicEvidenceFilter
+    resource_class = PeriodicControlResource
     filename = "periodic-controls"
 
     def get_export_queryset(self, request):
-        return (
-            Evidence.objects
-            .filter(
-                source_type__in=[
-                    Evidence.SourceType.CONTROL,
-                    Evidence.SourceType.INDICATOR,
-                ]
-            )
-            .select_related(
-                'controlpoint__control__organization',
-                'indicatorpoint__indicator__organization',
-            )
-            .prefetch_related(
-                Prefetch(
-                    'conformities',
-                    queryset=Conformity.objects.select_related(
-                        'requirement__framework',
-                    ),
-                ),
-            )
-            .order_by('valid_to', 'valid_from', 'pk')
-        )
+        return _periodic_sources()
+
+    def get_queryset_for_export(self, request):
+        items = self.get_export_queryset(request)
+        if request.GET.get("scope") != "selection":
+            return items
+
+        data = request.GET.copy()
+        for key in ("format", "scope", "page", "sort"):
+            data.pop(key, None)
+        return PeriodicControlFilter(
+            data=data,
+            queryset=items,
+            request=request,
+        ).qs
 
 
 

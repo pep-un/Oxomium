@@ -61,7 +61,7 @@ class ConformityResource(resources.ModelResource):
         return ", ".join(f"{control.title}" for control in controls)
 
 
-class PeriodicEvidenceResource(resources.ModelResource):
+class PeriodicControlResource(resources.Resource):
     name = fields.Field(column_name="Name")
     organization = fields.Field(column_name="Organization")
     type = fields.Field(column_name="Type")
@@ -69,25 +69,16 @@ class PeriodicEvidenceResource(resources.ModelResource):
     frequency = fields.Field(column_name="Frequency")
     last_result = fields.Field(column_name="Last result")
     requirements = fields.Field(column_name="Associated requirements")
-    references = fields.Field(column_name="Associated references")
-
-    class Meta:
-        model = Evidence
-        fields = (
-            "name", "organization", "type", "level", "frequency",
-            "last_result", "requirements", "references",
-        )
-        export_order = fields
+    references = fields.Field(column_name="Associated Frameworks")
 
     def dehydrate_name(self, obj):
         return obj.periodic_name
 
     def dehydrate_organization(self, obj):
-        organization = obj.periodic_organization
-        return str(organization) if organization else ""
+        return str(obj.organization) if obj.organization else ""
 
     def dehydrate_type(self, obj):
-        return obj.get_source_type_display()
+        return obj.periodic_type
 
     def dehydrate_level(self, obj):
         return obj.periodic_level
@@ -99,23 +90,21 @@ class PeriodicEvidenceResource(resources.ModelResource):
         point = obj.periodic_point
         if point is None:
             return ""
-        if isinstance(point, IndicatorPoint):
-            if point.value is None:
-                return point.get_status_display()
+        if isinstance(point, IndicatorPoint) and point.value is not None:
             return f"{point.value} · {point.get_status_display()}"
         return point.get_status_display()
 
     def dehydrate_requirements(self, obj):
-        return ", ".join(
-            conformity.requirement.full_path
-            for conformity in obj.conformities.all()
-        )
+        return ", ".join(requirement.full_path for requirement in obj.requirements.all())
 
     def dehydrate_references(self, obj):
         return ", ".join(sorted({
-            conformity.requirement.framework.name
-            for conformity in obj.conformities.all()
+            requirement.framework.name
+            for requirement in obj.requirements.all()
         }))
+
+
+PeriodicEvidenceResource = PeriodicControlResource
 
 
 class ControlResource(resources.ModelResource):
