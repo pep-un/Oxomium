@@ -102,16 +102,16 @@ class EvidenceMigrationTests(TransactionTestCase):
 
         control_point = ControlPoint.objects.get(pk=self.ids['control_point'])
         indicator_point = IndicatorPoint.objects.get(pk=self.ids['indicator_point'])
-        self.assertEqual(control_point.evidence.result, 'NEG')
-        self.assertEqual(indicator_point.evidence.result, 'POS')
-        self.assertEqual(control_point.evidence.comment, 'Legacy control result')
-        self.assertEqual(indicator_point.evidence.comment, 'Legacy indicator result')
+        self.assertEqual(control_point.result, 'NEG')
+        self.assertEqual(indicator_point.result, 'POS')
+        self.assertEqual(control_point.comment, 'Legacy control result')
+        self.assertEqual(indicator_point.comment, 'Legacy indicator result')
         self.assertEqual(
-            list(control_point.evidence.conformities.values_list('pk', flat=True)),
+            list(control_point.conformities.values_list('pk', flat=True)),
             [self.ids['conformity']],
         )
         self.assertEqual(
-            list(control_point.evidence.attachments.values_list('pk', flat=True)),
+            list(control_point.attachments.values_list('pk', flat=True)),
             [self.ids['attachment']],
         )
         human = HumanEvidence.objects.get()
