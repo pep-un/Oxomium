@@ -472,8 +472,9 @@ class Conformity(models.Model):
     def get_control(self):
         """Return controls configured to target this requirement."""
         return Control.objects.filter(
-            organization=self.organization,
             requirements=self.requirement,
+        ).filter(
+            Q(organization=self.organization) | Q(organization__isnull=True)
         )
 
     def get_related(self,*,include_actions: bool = True,include_controls: bool = True,
@@ -827,12 +828,12 @@ class _ConformityTargetAdapter:
         self.owner = owner
 
     def all(self):
-        if not self.owner.organization_id:
-            return Conformity.objects.none()
-        return Conformity.objects.filter(
-            organization_id=self.owner.organization_id,
+        queryset = Conformity.objects.filter(
             requirement__in=self.owner.requirements.all(),
         )
+        if self.owner.organization_id:
+            queryset = queryset.filter(organization_id=self.owner.organization_id)
+        return queryset
 
     def add(self, *conformities):
         self.owner.requirements.add(*(c.requirement_id for c in conformities))
