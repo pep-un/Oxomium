@@ -168,6 +168,15 @@ class FindingTable(BaseRichTable):
         linkify=("conformity:finding_detail", [A("pk")]),
         attrs=PRIMARY_COLUMN,
     )
+    def render_name(self, value, record):
+        if record.archived:
+            return format_html(
+                '{} <i class="bi bi-archive-fill text-body-secondary ms-1" '
+                'title="Archived" aria-label="Archived"></i>',
+                value,
+            )
+        return value
+
     short_description = tables.Column(verbose_name="Description")
     cvss = tables.TemplateColumn(
         verbose_name="CVSS",

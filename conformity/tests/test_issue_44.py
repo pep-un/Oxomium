@@ -380,6 +380,31 @@ class FindingActionStatusTests(TestCase):
         self.assertContains(response, "Planning")
 
 
+class FindingTableArchiveStateTests(TestCase):
+    def test_archived_finding_name_shows_archive_icon(self):
+        organization = Organization.objects.create(name="Archived finding org")
+        audit = Audit.objects.create(
+            name="Archived finding audit",
+            organization=organization,
+            auditor="Auditor",
+        )
+        finding = Finding.objects.create(
+            name="Archived finding",
+            short_description="Archived finding",
+            audit=audit,
+            severity=Finding.Severity.MAJOR,
+            archived=True,
+        )
+
+        table = FindingTable([finding])
+        html = table.as_html(
+            __import__("django.test").test.RequestFactory().get("/")
+        )
+
+        self.assertIn("bi bi-archive-fill", html)
+        self.assertIn('title="Archived"', html)
+
+
 class FindingCvssBadgeTests(TestCase):
     def test_critical_badge_includes_severity_and_score(self):
         finding = Finding(severity=Finding.Severity.CRITICAL, cvss=9.9)
@@ -497,7 +522,11 @@ class RichTableInteractionTests(TestCase):
         for view_name in view_names:
             with self.subTest(view_name=view_name):
                 params = {"status": "TOBE"} if view_name == "conformity:control_index" else {}
-                response = self.client.get(reverse(view_name), params)
+                response = self.client.get(
+                    reverse(view_name),
+                    params,
+                    follow=view_name == "conformity:finding_index",
+                )
                 self.assertEqual(response.status_code, 200)
 
     def test_missing_list_actions_are_now_exposed(self):

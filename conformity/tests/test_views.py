@@ -160,7 +160,7 @@ class FindingIndexView(BaseDataMixin, TestCase):
     def test_finding_queryset_can_be_broadened_to_archived_items(self):
         request = self.factory.get(
             "/findings",
-            {"nature": "", "status": "archived"},
+            {"status": "archived"},
         )
         request.user = self.user
         resp = views.FindingIndexView.as_view()(request)
@@ -437,7 +437,7 @@ class SharedUxComponentsTests(BaseDataMixin, TestCase):
             follow=True,
         )
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "No findings match the current filters.")
+        self.assertContains(response, "No results match the active filters.")
         self.assertNotContains(response, "> Create</a>")
 
     def test_indicator_cards_use_shared_empty_state(self):

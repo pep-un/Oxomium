@@ -243,19 +243,12 @@ class FindingIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     )
 
     def get(self, request, *args, **kwargs):
-        relation_navigation = 'audit' in request.GET or 'action' in request.GET
-        if not relation_navigation:
+        if not request.GET:
             params = request.GET.copy()
-            changed = False
-            if 'nature' not in request.GET:
-                params.setlist('nature', self.default_natures)
-                changed = True
-            if 'status' not in request.GET:
-                params['status'] = 'active'
-                changed = True
-            if changed:
-                url = reverse('conformity:finding_index')
-                return redirect(f"{url}?{params.urlencode()}")
+            params.setlist('nature', self.default_natures)
+            params['status'] = 'active'
+            url = reverse('conformity:finding_index')
+            return redirect(f"{url}?{params.urlencode()}")
         return super().get(request, *args, **kwargs)
 
     def get_queryset(self, **kwargs):
