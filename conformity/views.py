@@ -34,7 +34,12 @@ from .models import (
     HumanEvidence, Indicator, IndicatorPoint, ManualEvidence, Organization,
     Requirement,
 )
-from .resources import ActionResource, AttachmentResource, AuditLogResource, AuditResource, ConformityResource, ControlPointResource, ControlResource, FindingResource, FrameworkResource, IndicatorResource, OrganizationResource
+from .resources import (
+    ActionResource, AttachmentResource, AuditLogResource, AuditResource,
+    ConformityResource, ControlPointResource, ControlResource, FindingResource,
+    FrameworkResource, IndicatorResource, OrganizationResource,
+    PeriodicEvidenceResource,
+)
 from .tables import (
     ActionTable, AttachmentTable, AuditLogTable, AuditTable, ConformityTable,
     ControlTable, ControlPointTable, FindingTable, FrameworkTable,
@@ -847,12 +852,35 @@ class ControlPointUpdateView(AttachmentUploadViewMixin, LoginRequiredMixin, Save
 
 
 class ControlExportView(LoginRequiredMixin, FilteredExportMixin, View):
-    resource_class = ControlResource
-    filterset_class = ControlFilter
-    filename = "controls"
+    """Export the operational Periodic controls Evidence queue."""
+
+    resource_class = PeriodicEvidenceResource
+    filterset_class = PeriodicEvidenceFilter
+    filename = "periodic-controls"
 
     def get_export_queryset(self, request):
-        return Control.objects.all()
+        return (
+            Evidence.objects
+            .filter(
+                source_type__in=[
+                    Evidence.SourceType.CONTROL,
+                    Evidence.SourceType.INDICATOR,
+                ]
+            )
+            .select_related(
+                'controlpoint__control__organization',
+                'indicatorpoint__indicator__organization',
+            )
+            .prefetch_related(
+                Prefetch(
+                    'conformities',
+                    queryset=Conformity.objects.select_related(
+                        'requirement__framework',
+                    ),
+                ),
+            )
+            .order_by('valid_to', 'valid_from', 'pk')
+        )
 
 
 
