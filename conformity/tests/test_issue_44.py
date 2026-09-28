@@ -515,7 +515,10 @@ class RichTableInteractionTests(TestCase):
                 self.assertEqual(response.status_code, 200)
                 self.assertContains(response, reverse(export_name))
 
-        finding_response = self.client.get(reverse("conformity:finding_index"))
+        finding_response = self.client.get(
+            reverse("conformity:finding_index"),
+            follow=True,
+        )
         self.assertEqual(finding_response.status_code, 200)
         self.assertContains(finding_response, reverse("conformity:finding_create"))
 
@@ -538,7 +541,10 @@ class RichTableInteractionTests(TestCase):
         )
 
     def test_relation_filtered_findings_include_items_hidden_from_general_list(self):
-        general = self.client.get(reverse("conformity:finding_index"))
+        general = self.client.get(
+            reverse("conformity:finding_index"),
+            follow=True,
+        )
         general_ids = [
             row.record.pk for row in general.context["table"].page.object_list
         ]

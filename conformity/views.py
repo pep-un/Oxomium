@@ -304,16 +304,6 @@ class FindingExportView(LoginRequiredMixin, FilteredExportMixin, View):
     def get_export_queryset(self, request):
         return Finding.objects.all()
 
-    def get_selection_queryset(self, request):
-        queryset = Finding.objects.all()
-        if request.GET.get("audit") or request.GET.get("action"):
-            return queryset
-        return queryset.filter(
-            severity__in=["CRT", "MAJ", "MIN", "OBS"],
-            archived=False,
-        )
-
-
 
 #
 # Organizations

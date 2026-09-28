@@ -432,7 +432,10 @@ class SharedUxComponentsTests(BaseDataMixin, TestCase):
 
     def test_empty_state_without_create_url_does_not_offer_create(self):
         Finding.objects.all().delete()
-        response = self.client.get(reverse("conformity:finding_index"))
+        response = self.client.get(
+            reverse("conformity:finding_index"),
+            follow=True,
+        )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "No findings match the current filters.")
         self.assertNotContains(response, "> Create</a>")
