@@ -52,6 +52,13 @@ class RichTableConfigurationTests(TestCase):
         self.assertIn("action", getattr(ConformityFilter, "base_filters"))
         self.assertIn("action", getattr(ControlPointFilter, "base_filters"))
 
+    def test_finding_filters_expose_nature_and_lifecycle_status(self):
+        filters = getattr(FindingFilter, "base_filters")
+        self.assertIn("nature", filters)
+        self.assertIn("status", filters)
+        self.assertEqual(filters["nature"].label, "Nature")
+        self.assertEqual(filters["status"].label, "Status")
+
     def test_attachment_filters_cover_metadata_relations_and_dates(self):
         expected = {
             "file", "mime_type", "sha256", "organization", "framework", "audit",
@@ -511,6 +518,24 @@ class RichTableInteractionTests(TestCase):
         finding_response = self.client.get(reverse("conformity:finding_index"))
         self.assertEqual(finding_response.status_code, 200)
         self.assertContains(finding_response, reverse("conformity:finding_create"))
+
+    def test_finding_index_defaults_are_visible_filters(self):
+        response = self.client.get(reverse("conformity:finding_index"))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("status=active", response.url)
+        self.assertIn("nature=CRT", response.url)
+        self.assertIn("nature=MAJ", response.url)
+        self.assertIn("nature=MIN", response.url)
+        self.assertIn("nature=OBS", response.url)
+
+        response = self.client.get(response.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["filter"].form["status"].value(), "active")
+        self.assertEqual(
+            set(response.context["filter"].form["nature"].value()),
+            {"CRT", "MAJ", "MIN", "OBS"},
+        )
 
     def test_relation_filtered_findings_include_items_hidden_from_general_list(self):
         general = self.client.get(reverse("conformity:finding_index"))

@@ -6,7 +6,10 @@ from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from django import forms
-from django_filters import FilterSet, CharFilter, DateFilter, ModelChoiceFilter, ChoiceFilter
+from django_filters import (
+    FilterSet, CharFilter, DateFilter, ModelChoiceFilter, ChoiceFilter,
+    MultipleChoiceFilter,
+)
 from .models import Action, Attachment, Control, ControlPoint, Conformity, Finding, Requirement, Framework, Organization, Audit, \
     Evidence, Indicator, IndicatorPoint
 
@@ -216,6 +219,16 @@ class FindingFilter(FilterSet):
     name = CharFilter(lookup_expr='icontains', label='Name')
     short_description = CharFilter(lookup_expr='icontains', label='Short Description')
     cvss = CharFilter(lookup_expr='icontains', label='CVSS')
+    nature = MultipleChoiceFilter(
+        field_name='severity',
+        choices=Finding.Severity.choices,
+        label='Nature',
+    )
+    status = ChoiceFilter(
+        choices=(('active', 'Active'), ('archived', 'Archived')),
+        method='filter_status',
+        label='Status',
+    )
     audit = ModelChoiceFilter(queryset=Audit.objects.all(), label='Audit')
     action = ModelChoiceFilter(
         field_name='actions',
@@ -226,7 +239,17 @@ class FindingFilter(FilterSet):
 
     class Meta:
         model = Finding
-        fields = ['name', 'short_description', 'cvss', 'audit', 'action']
+        fields = [
+            'name', 'short_description', 'cvss', 'nature', 'status',
+            'audit', 'action',
+        ]
+
+    def filter_status(self, queryset, name, value):
+        if value == 'active':
+            return queryset.filter(archived=False)
+        if value == 'archived':
+            return queryset.filter(archived=True)
+        return queryset
 
 class IndicatorFilter(FilterSet):
     name = CharFilter(lookup_expr='icontains', label='Name')

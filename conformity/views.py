@@ -235,20 +235,36 @@ class FindingIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     table_class = FindingTable
     filterset_class = FindingFilter
     template_name = "conformity/finding_list.html"
+    default_natures = (
+        Finding.Severity.CRITICAL,
+        Finding.Severity.MAJOR,
+        Finding.Severity.MINOR,
+        Finding.Severity.OBSERVATION,
+    )
 
+    def get(self, request, *args, **kwargs):
+        relation_navigation = 'audit' in request.GET or 'action' in request.GET
+        if not relation_navigation:
+            params = request.GET.copy()
+            changed = False
+            if 'nature' not in request.GET:
+                params.setlist('nature', self.default_natures)
+                changed = True
+            if 'status' not in request.GET:
+                params['status'] = 'active'
+                changed = True
+            if changed:
+                url = reverse('conformity:finding_index')
+                return redirect(f"{url}?{params.urlencode()}")
+        return super().get(request, *args, **kwargs)
 
     def get_queryset(self, **kwargs):
-        queryset = (
+        return (
             Finding.objects
             .select_related("audit")
             .annotate(actions_count=Count("actions", distinct=True))
+            .order_by("severity", "pk")
         )
-        if not (self.request.GET.get("audit") or self.request.GET.get("action")):
-            queryset = queryset.filter(
-                severity__in=["CRT", "MAJ", "MIN", "OBS"],
-                archived=False,
-            )
-        return queryset.order_by("severity", "pk")
 
 
 class FindingCreateView(LoginRequiredMixin, SaveStayMixin, CreateView):
@@ -827,7 +843,8 @@ class ControlIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
         if 'status' not in request.GET:
             params = request.GET.copy()
             params['status'] = ControlPoint.Status.TOBEEVALUATED
-            return redirect(f"{request.path}?{params.urlencode()}")
+            url = reverse('conformity:control_index')
+            return redirect(f"{url}?{params.urlencode()}")
         return super().get(request, *args, **kwargs)
 
     def get_queryset(self):

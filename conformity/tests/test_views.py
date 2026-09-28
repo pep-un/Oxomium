@@ -140,9 +140,15 @@ class HomeViewContext(BaseDataMixin, TestCase):
 class FindingIndexView(BaseDataMixin, TestCase):
     FRAMEWORK_NAME = "FW-FindingIndex"
 
-    def test_queryset_filters_severity_and_archived(self):
-        """FindingIndexView should exclude archived findings."""
-        request = self.factory.get("/findings")
+    def test_default_filters_preserve_active_findings_view(self):
+        """Default URL filters preserve the former Active findings result."""
+        request = self.factory.get(
+            "/findings",
+            {
+                "nature": ["CRT", "MAJ", "MIN", "OBS"],
+                "status": "active",
+            },
+        )
         request.user = self.user
         resp = views.FindingIndexView.as_view()(request)
         self.assertEqual(resp.status_code, 200)
@@ -150,6 +156,19 @@ class FindingIndexView(BaseDataMixin, TestCase):
         qs = list(resp.context_data["object_list"])
         self.assertIn(self.find_obs, qs)
         self.assertNotIn(self.find_maj_arch, qs)
+
+    def test_finding_queryset_can_be_broadened_to_archived_items(self):
+        request = self.factory.get(
+            "/findings",
+            {"nature": "", "status": "archived"},
+        )
+        request.user = self.user
+        resp = views.FindingIndexView.as_view()(request)
+        self.assertEqual(resp.status_code, 200)
+
+        qs = list(resp.context_data["object_list"])
+        self.assertIn(self.find_maj_arch, qs)
+        self.assertNotIn(self.find_obs, qs)
 
 
 class ConformityIndexViews(BaseDataMixin, TestCase):
@@ -415,7 +434,7 @@ class SharedUxComponentsTests(BaseDataMixin, TestCase):
         Finding.objects.all().delete()
         response = self.client.get(reverse("conformity:finding_index"))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "No active findings are available.")
+        self.assertContains(response, "No findings match the current filters.")
         self.assertNotContains(response, "> Create</a>")
 
     def test_indicator_cards_use_shared_empty_state(self):
