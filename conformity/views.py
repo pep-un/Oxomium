@@ -599,8 +599,8 @@ class ControlIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     def get_queryset(self):
         today = timezone.localdate()
         current_points = ControlPoint.objects.filter(
-            period_start_date__lte=today,
-            period_end_date__gte=today,
+            valid_from__date__lte=today,
+            valid_to__date__gt=today,
         ).order_by("valid_from", "pk")
         return (
             Control.objects
