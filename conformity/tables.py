@@ -278,7 +278,7 @@ class ConformityTable(BaseRichTable):
         attrs=CENTER,
     )
     evidence_status = tables.TemplateColumn(
-        verbose_name="Evidence status",
+        verbose_name="Status",
         template_code="""
             {% with distribution=record.get_evidence_state_distribution %}
                 <div class="progress"
@@ -289,36 +289,30 @@ class ConformityTable(BaseRichTable):
                         <div class="progress-bar bg-success"
                              style="width: {{ distribution.compliant_pct }}%"
                              title="Compliant: {{ distribution.compliant_count }}">
-                            {% if distribution.compliant_pct >= 12 %}{{ distribution.compliant_count }}{% endif %}
+                            {{ distribution.compliant_count }}
                         </div>
                     {% endif %}
                     {% if distribution.partial_pct %}
                         <div class="progress-bar bg-warning text-dark"
                              style="width: {{ distribution.partial_pct }}%"
                              title="Partially compliant: {{ distribution.partial_count }}">
-                            {% if distribution.partial_pct >= 12 %}{{ distribution.partial_count }}{% endif %}
+                            {{ distribution.partial_count }}
                         </div>
                     {% endif %}
                     {% if distribution.non_compliant_pct %}
                         <div class="progress-bar bg-danger"
                              style="width: {{ distribution.non_compliant_pct }}%"
                              title="Non-compliant: {{ distribution.non_compliant_count }}">
-                            {% if distribution.non_compliant_pct >= 12 %}{{ distribution.non_compliant_count }}{% endif %}
+                            {{ distribution.non_compliant_count }}
                         </div>
                     {% endif %}
                     {% if distribution.inconclusive_pct %}
-                        <div class="progress-bar progress-bar-striped bg-secondary"
-                             style="width: {{ distribution.inconclusive_pct }}%"
+                        <div class="progress-bar bg-secondary progress-bar-striped text-white"
+                             style="width: {{ distribution.inconclusive_pct }}%; background-image: repeating-linear-gradient(45deg, rgba(255,255,255,.18) 0, rgba(255,255,255,.18) .55rem, transparent .55rem, transparent 1.1rem);"
                              title="Inconclusive: {{ distribution.inconclusive_count }}">
-                            {% if distribution.inconclusive_pct >= 12 %}{{ distribution.inconclusive_count }}{% endif %}
+                            {{ distribution.inconclusive_count }}
                         </div>
                     {% endif %}
-                </div>
-                <div class="small text-body-secondary mt-1 text-nowrap">
-                    <span class="text-success">■</span> {{ distribution.compliant_count }}
-                    <span class="text-warning ms-2">■</span> {{ distribution.partial_count }}
-                    <span class="text-danger ms-2">■</span> {{ distribution.non_compliant_count }}
-                    <span class="text-secondary ms-2">▧</span> {{ distribution.inconclusive_count }}
                 </div>
             {% endwith %}
         """,
