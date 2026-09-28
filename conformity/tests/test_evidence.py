@@ -176,6 +176,28 @@ class EvidenceTests(TestCase):
             Conformity.EvidenceState.PARTIAL,
         )
 
+    def test_framework_review_header_uses_status_pill_and_stacked_bar(self):
+        manual = ManualEvidence.objects.create(
+            title='Framework summary evidence',
+            result=Evidence.Result.POSITIVE,
+            valid_from=self.now - timedelta(hours=1),
+        )
+        manual.conformities.add(self.conformity)
+
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse(
+                'conformity:conformity_detail_index',
+                args=[self.organization.pk, self.framework.pk],
+            )
+        )
+        html = response.content.decode()
+
+        self.assertIn('badge rounded-pill text-bg-success fs-5 px-3 py-2 ms-auto', html)
+        self.assertIn('progress-bar bg-success', html)
+        self.assertIn('progress-bar bg-secondary progress-bar-striped text-white', html)
+        self.assertNotIn('Completeness:', html)
+
     def test_framework_review_uses_evidence_column_and_categorical_status(self):
         manual = ManualEvidence.objects.create(
             title='Framework review evidence',
