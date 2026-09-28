@@ -464,12 +464,14 @@ class AttachmentTable(BaseRichTable):
                         </span>
                     </a>
                 {% endfor %}
-                {% for cp in record.ControlPoint.all %}
-                    <a href="{% url 'conformity:controlpoint_form' cp.id %}">
-                        <span class="badge text-bg-secondary px-3">
-                            <i class="bi bi-clipboard2-check pe-2"></i>{{ cp }}
-                        </span>
-                    </a>
+                {% for evidence in record.evidence.all %}
+                    {% if evidence.controlpoint %}
+                        <a href="{% url 'conformity:controlpoint_form' evidence.controlpoint.id %}">
+                            <span class="badge text-bg-secondary px-3">
+                                <i class="bi bi-clipboard2-check pe-2"></i>{{ evidence.controlpoint }}
+                            </span>
+                        </a>
+                    {% endif %}
                 {% endfor %}
                 {% for audit in record.audits.all %}
                     <a href="{% url 'conformity:audit_detail' audit.id %}">
@@ -478,13 +480,15 @@ class AttachmentTable(BaseRichTable):
                         </span>
                     </a>
                 {% endfor %}
-                {% for point in record.IndicatorPoint.all %}
-                    <a href="{% url 'conformity:indicatorpoint_form' point.id %}">
-                        <span class="badge text-bg-info px-3">
-                            <i class="bi bi-speedometer pe-2"></i>
-                            {{ point.indicator.name }} · {{ point.period_start_date|date:"d-M-Y" }} – {{ point.period_end_date|date:"d-M-Y" }}
-                        </span>
-                    </a>
+                {% for evidence in record.evidence.all %}
+                    {% if evidence.indicatorpoint %}
+                        <a href="{% url 'conformity:indicatorpoint_form' evidence.indicatorpoint.id %}">
+                            <span class="badge text-bg-info px-3">
+                                <i class="bi bi-speedometer pe-2"></i>
+                                {{ evidence.indicatorpoint.indicator.name }} · {{ evidence.indicatorpoint.period_start_date|date:"d-M-Y" }} – {{ evidence.indicatorpoint.period_end_date|date:"d-M-Y" }}
+                            </span>
+                        </a>
+                    {% endif %}
                 {% endfor %}
             </div>
         """,
