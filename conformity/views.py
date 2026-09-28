@@ -20,7 +20,8 @@ from import_export.resources import ModelResource
 from mptt.templatetags.mptt_tags import cache_tree_children
 
 from .filterset import ActionFilter, ControlFilter, ControlPointFilter, FrameworkFilter, OrganizationFilter, \
-    ConformityFilter, AuditFilter, FindingFilter, IndicatorFilter, AttachmentFilter, AuditLogFilter
+    ConformityFilter, AuditFilter, FindingFilter, IndicatorFilter, AttachmentFilter, AuditLogFilter, \
+    PeriodicEvidenceFilter
 from .forms import (
     ActionForm, AuditForm, ConformityForm, ControlForm, ControlPointForm,
     DocumentEvidenceForm, EvidenceForm, FindingEvidenceForm, FindingForm,
@@ -34,7 +35,11 @@ from .models import (
     Requirement,
 )
 from .resources import ActionResource, AttachmentResource, AuditLogResource, AuditResource, ConformityResource, ControlPointResource, ControlResource, FindingResource, FrameworkResource, IndicatorResource, OrganizationResource
-from .tables import ActionTable, AttachmentTable, AuditLogTable, AuditTable, ConformityTable, ControlTable, ControlPointTable, FindingTable, FrameworkTable, OrganizationTable
+from .tables import (
+    ActionTable, AttachmentTable, AuditLogTable, AuditTable, ConformityTable,
+    ControlTable, ControlPointTable, FindingTable, FrameworkTable,
+    OrganizationTable, PeriodicEvidenceTable,
+)
 from .services.attachments import unlink_attachment
 
 from django.views import View
@@ -759,43 +764,45 @@ class ControlCreateView(LoginRequiredMixin, SaveStayMixin, CreateView):
 
 
 class ControlIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
-    model = Control
-    table_class = ControlTable
-    filterset_class = ControlFilter
-    template_name = 'conformity/control_list.html'
+    """Operational queue for periodic Control and Indicator Evidence."""
+
+    model = Evidence
+    table_class = PeriodicEvidenceTable
+    filterset_class = PeriodicEvidenceFilter
+    template_name = 'conformity/periodic_control_list.html'
+
+    def get_filterset_kwargs(self, filterset_class):
+        kwargs = super().get_filterset_kwargs(filterset_class)
+        data = self.request.GET.copy()
+        if 'evaluation' not in data:
+            data['evaluation'] = 'pending'
+        kwargs['data'] = data
+        return kwargs
 
     def get_queryset(self):
-        today = timezone.localdate()
-        current_points = ControlPoint.objects.filter(
-            valid_from__date__lte=today,
-            valid_to__date__gt=today,
-        ).order_by("valid_from", "pk")
         return (
-            Control.objects
-            .select_related("organization")
+            Evidence.objects
+            .filter(
+                source_type__in=[
+                    Evidence.SourceType.CONTROL,
+                    Evidence.SourceType.INDICATOR,
+                ]
+            )
+            .select_related(
+                'controlpoint__control__organization',
+                'indicatorpoint__indicator__organization',
+            )
             .prefetch_related(
-                "requirements",
                 Prefetch(
-                    "controlpoint_set",
-                    queryset=current_points,
-                    to_attr="current_controlpoints",
+                    'conformities',
+                    queryset=Conformity.objects.select_related(
+                        'organization',
+                        'requirement__framework',
+                    ),
                 ),
             )
-            .order_by("level", "frequency", "title", "pk")
+            .order_by('valid_to', 'valid_from', 'pk')
         )
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['controlpoint_list'] = ControlPoint.objects.all()
-        context['c1st'] = Control.objects.filter(level="1").count()
-        context['c2nd'] = Control.objects.filter(level="2").count()
-        context['cp0x'] = ControlPoint.objects.filter(status="TOBE").count()
-        context['cp1x'] = ControlPoint.objects.filter(control__frequency="1").filter(status="TOBE").count()
-        context['cp2x'] = ControlPoint.objects.filter(control__frequency="2").filter(status="TOBE").count()
-        context['cp4x'] = ControlPoint.objects.filter(control__frequency="4").filter(status="TOBE").count()
-        context['cp6x'] = ControlPoint.objects.filter(control__frequency="6").filter(status="TOBE").count()
-        context['cp12x'] = ControlPoint.objects.filter(control__frequency="12").filter(status="TOBE").count()
-        return context
 
 
 class ControlUpdateView(LoginRequiredMixin, SaveStayMixin, UpdateView):
