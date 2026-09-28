@@ -105,7 +105,7 @@ class RemainingCoverageTests(TestCase):
 
     def test_forms_cover_stateful_initialization(self):
         parent_form = ConformityForm(instance=self.root_conformity)
-        self.assertTrue(parent_form.fields["status"].disabled)
+        self.assertNotIn("status", parent_form.fields)
 
         archived = Finding.objects.create(
             audit=self.audit, short_description="Archived", archived=True
