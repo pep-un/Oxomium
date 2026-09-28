@@ -92,9 +92,13 @@ class EvidenceRequirementForm(Form):
                 'requirement__lft',
             )
         )
-        if evidence is not None and evidence.periodic_organization is not None:
-            queryset = queryset.filter(
-                organization=evidence.periodic_organization,
+        if evidence is not None:
+            if evidence.periodic_organization is not None:
+                queryset = queryset.filter(
+                    organization=evidence.periodic_organization,
+                )
+            queryset = queryset.exclude(
+                pk__in=evidence.conformities.values_list('pk', flat=True),
             )
         self.fields['conformity'].queryset = queryset
 
