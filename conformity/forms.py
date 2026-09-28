@@ -49,6 +49,15 @@ class AttachmentUploadFormMixin:
             validate_attachment_once(uploaded_file)
         return uploaded_files
 
+    def _save_m2m(self):
+        """Do not feed uploaded file objects into a model Attachment M2M."""
+        uploads = self.cleaned_data.pop('attachments', None)
+        try:
+            super()._save_m2m()
+        finally:
+            if uploads is not None:
+                self.cleaned_data['attachments'] = uploads
+
 
 class ConformityForm(ModelForm):
     propagate_to_children = BooleanField(
