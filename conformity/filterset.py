@@ -147,8 +147,8 @@ class AttachmentFilter(FilterSet):
     organization = ModelChoiceFilter(field_name='organizations', queryset=Organization.objects.all(), label='Organization', distinct=True)
     framework = ModelChoiceFilter(field_name='frameworks', queryset=Framework.objects.all(), label='Framework', distinct=True)
     audit = ModelChoiceFilter(field_name='audits', queryset=Audit.objects.all(), label='Audit', distinct=True)
-    control_point = ModelChoiceFilter(field_name='ControlPoint', queryset=ControlPoint.objects.all(), label='Control Point', distinct=True)
-    indicator_point = ModelChoiceFilter(field_name='IndicatorPoint', queryset=IndicatorPoint.objects.all(), label='Indicator Point', distinct=True)
+    control_point = ModelChoiceFilter(field_name='evidence__controlpoint', queryset=ControlPoint.objects.all(), label='Control Point', distinct=True)
+    indicator_point = ModelChoiceFilter(field_name='evidence__indicatorpoint', queryset=IndicatorPoint.objects.all(), label='Indicator Point', distinct=True)
     create_date_after = DateFilter(
         field_name='create_date', lookup_expr='date__gte', label='Created from',
         input_formats=['%Y-%m-%d'], widget=forms.DateInput(attrs={'type': 'date'}),
