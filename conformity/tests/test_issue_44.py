@@ -159,13 +159,10 @@ class RichTableConfigurationTests(TestCase):
         )
         self.assertNotIn("actions", table.columns)
 
-    def test_periodic_controls_filter_defaults_can_expose_all_results(self):
-        self.assertIn("evaluation", getattr(PeriodicEvidenceFilter, "base_filters"))
-        choices = dict(
-            PeriodicEvidenceFilter.base_filters["evaluation"].extra["choices"]
-        )
-        self.assertEqual(choices["pending"], "To be evaluated")
-        self.assertEqual(choices["all"], "All results")
+    def test_periodic_controls_filter_dropdown_excludes_pending_mode(self):
+        self.assertNotIn("evaluation", getattr(PeriodicEvidenceFilter, "base_filters"))
+        self.assertIn("organization", getattr(PeriodicEvidenceFilter, "base_filters"))
+        self.assertIn("source_type", getattr(PeriodicEvidenceFilter, "base_filters"))
 
     def test_control_table_exposes_organization_and_last_result(self):
         table = ControlTable([])
@@ -492,9 +489,35 @@ class RichTableInteractionTests(TestCase):
         records = [row.record.pk for row in response.context["table"].page.object_list]
         self.assertIn(pending_point.pk, records)
         self.assertNotIn(completed_point.pk, records)
-        self.assertEqual(response.context["filter"].form["evaluation"].value(), "pending")
+        self.assertContains(response, 'id="pending-only"')
+        self.assertContains(response, 'checked')
         self.assertNotContains(response, reverse("conformity:control_create"))
         self.assertNotContains(response, reverse("conformity:indicator_create"))
+
+    def test_periodic_controls_switch_can_show_completed_results(self):
+        organization = Organization.objects.create(name="Periodic all org")
+        control = Control.objects.create(
+            title="Completed visible control",
+            organization=organization,
+            frequency=Control.Frequency.YEARLY,
+        )
+        point = next(
+            item for item in control.get_controlpoint()
+            if item.is_current_period()
+        )
+        point.status = ControlPoint.Status.COMPLIANT
+        point.save(update_fields=["status"])
+
+        response = self.client.get(
+            reverse("conformity:control_index"),
+            {"show_all": "1"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        records = [row.record.pk for row in response.context["table"].page.object_list]
+        self.assertIn(point.pk, records)
+        self.assertContains(response, 'id="pending-only"')
+        self.assertNotContains(response, 'id="pending-only" checked')
 
     def test_periodic_controls_include_indicator_evidence(self):
         organization = Organization.objects.create(name="Indicator queue org")
