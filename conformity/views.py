@@ -502,29 +502,76 @@ class EvidenceUpdateView(LoginRequiredMixin, UpdateView):
         return reverse('conformity:evidence_detail', args=[self.object.pk])
 
 
-class HumanEvidenceCreateView(LoginRequiredMixin, CreateView):
-    model = HumanEvidence
-    form_class = HumanEvidenceForm
-    template_name = 'conformity/humanevidence_form.html'
+class ConformityEvidenceCreateMixin:
+    """Create an Evidence subtype already attached to one Conformity."""
+
+    template_name = 'conformity/evidence_form.html'
+    success_message = 'Evidence recorded.'
 
     def dispatch(self, request, *args, **kwargs):
-        self.conformity = get_object_or_404(Conformity, pk=kwargs['conformity_pk'])
+        self.conformity = get_object_or_404(
+            Conformity,
+            pk=kwargs['conformity_pk'],
+        )
         return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['conformity'] = self.conformity
+        context['creating_evidence'] = True
         return context
 
     def form_valid(self, form):
         with transaction.atomic():
             self.object = form.save(commit=False)
-            self.object.evaluator = self.request.user
-            self.object.evaluated_at = timezone.now()
+            if not self.object.evaluator_id:
+                self.object.evaluator = self.request.user
+            if not self.object.evaluated_at:
+                self.object.evaluated_at = timezone.now()
             self.object.save()
             self.object.conformities.add(self.conformity)
-        messages.success(self.request, 'Human evidence recorded.')
+        messages.success(self.request, self.success_message)
         return redirect('conformity:conformity_form', self.conformity.pk)
+
+
+class HumanEvidenceCreateView(
+    LoginRequiredMixin,
+    ConformityEvidenceCreateMixin,
+    CreateView,
+):
+    model = HumanEvidence
+    form_class = HumanEvidenceForm
+    success_message = 'Human evidence recorded.'
+
+
+class ManualEvidenceCreateView(
+    LoginRequiredMixin,
+    ConformityEvidenceCreateMixin,
+    CreateView,
+):
+    model = ManualEvidence
+    form_class = ManualEvidenceForm
+    success_message = 'Manual evidence recorded.'
+
+
+class DocumentEvidenceCreateView(
+    LoginRequiredMixin,
+    ConformityEvidenceCreateMixin,
+    CreateView,
+):
+    model = DocumentEvidence
+    form_class = DocumentEvidenceForm
+    success_message = 'Document evidence recorded.'
+
+
+class FindingEvidenceCreateView(
+    LoginRequiredMixin,
+    ConformityEvidenceCreateMixin,
+    CreateView,
+):
+    model = FindingEvidence
+    form_class = FindingEvidenceForm
+    success_message = 'Finding evidence recorded.'
 
 
 class ConformityExportView(LoginRequiredMixin, View):
