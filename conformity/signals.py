@@ -1,7 +1,8 @@
 from django.db.models.signals import m2m_changed, pre_save, post_save
 from django.dispatch import receiver
 from .models import Requirement, Control, ControlPoint, Action, Finding, Conformity, \
-    Indicator, IndicatorPoint, Evidence, HumanEvidence
+    Indicator, IndicatorPoint, Evidence, HumanEvidence, ManualEvidence,
+    DocumentEvidence, FindingEvidence
 
 
 @receiver(post_save, sender=Control)
@@ -47,67 +48,51 @@ def action_finding_sync_on_m2m(instance, action, reverse, pk_set, **kwargs):
         f.update_archived()
 
 @receiver(post_save, sender=ControlPoint)
-def controlpoint_post_save_sync(instance: ControlPoint, **kwargs):
-    """
-    Transactional rule:
-      - NONCOMPLIANT (current period) -> conformity = 0 (CTRL)
-      - COMPLIANT    (current period) -> try conformity = 100 (CTRL) if no negatives remain
-    """
-    if instance.is_current_period() and instance.is_final_status():
-        for conf in instance.control.conformity.all():
-            if instance.status == ControlPoint.Status.NONCOMPLIANT:
-                conf.set_status_from(0, Conformity.StatusJustification.CONTROL)
-            elif instance.status == ControlPoint.Status.COMPLIANT:
-                conf.set_status_from(100, Conformity.StatusJustification.CONTROL)
-
-@receiver(post_save, sender=Action)
-def action_post_save_sync(instance: Action, **kwargs):
-    """
-    Transactional rule:
-      - in progress -> conformity = 0 (ACT)
-      - ended       -> try conformity = 100 (ACT) if no negatives remain
-    """
-    for conf in instance.associated_conformity.all():
-        if instance.is_in_progress():
-            conf.set_status_from(0, Conformity.StatusJustification.ACTION)
-        elif instance.is_completed():
-            conf.set_status_from(100, Conformity.StatusJustification.ACTION)
-
-@receiver(post_save, sender=Indicator)
-def indicator_post_save_bootstrap(instance: Indicator, **kwargs):
-    instance.indicator_point_init()
-
-@receiver(pre_save, sender=IndicatorPoint)
-def indicatorpoint_pre_save_ctrl(instance: IndicatorPoint, **kwargs):
-    instance.status_update()
-
-
-@receiver(post_save, sender=ControlPoint)
 def controlpoint_post_save_evidence(instance: ControlPoint, **kwargs):
-    from .services.evidence import sync_control_point
-    sync_control_point(instance)
+    """A ControlPoint is itself Evidence; attach configured targets and evaluate them."""
+    if instance.control_id and not instance.conformities.exists():
+        conformities = Conformity.objects.filter(
+            organization=instance.control.organization,
+            requirement__in=instance.control.requirements.all(),
+        )
+        instance.conformities.set(conformities)
+    from .services.evidence import evaluate_evidence
+    evaluate_evidence(instance)
 
 
 @receiver(post_save, sender=IndicatorPoint)
 def indicatorpoint_post_save_evidence(instance: IndicatorPoint, **kwargs):
-    from .services.evidence import sync_indicator_point
-    sync_indicator_point(instance)
+    """An IndicatorPoint is itself Evidence; attach configured targets and evaluate them."""
+    if instance.indicator_id and not instance.conformities.exists():
+        conformities = Conformity.objects.filter(
+            organization=instance.indicator.organization,
+            requirement__in=instance.indicator.requirements.all(),
+        )
+        instance.conformities.set(conformities)
+    from .services.evidence import evaluate_evidence
+    evaluate_evidence(instance)
 
 
-@receiver(m2m_changed, sender=Control.conformity.through)
-def control_conformity_evidence_sync(instance, action, **kwargs):
+@receiver(m2m_changed, sender=Control.requirements.through)
+def control_requirement_targets_changed(instance, action, **kwargs):
     if action in {'post_add', 'post_remove', 'post_clear'}:
-        from .services.evidence import sync_control_point
+        conformities = Conformity.objects.filter(
+            organization=instance.organization,
+            requirement__in=instance.requirements.all(),
+        )
         for point in instance.get_controlpoint():
-            sync_control_point(point)
+            point.conformities.set(conformities)
 
 
-@receiver(m2m_changed, sender=Indicator.conformity.through)
-def indicator_conformity_evidence_sync(instance, action, **kwargs):
+@receiver(m2m_changed, sender=Indicator.requirements.through)
+def indicator_requirement_targets_changed(instance, action, **kwargs):
     if action in {'post_add', 'post_remove', 'post_clear'}:
-        from .services.evidence import sync_indicator_point
+        conformities = Conformity.objects.filter(
+            organization=instance.organization,
+            requirement__in=instance.requirements.all(),
+        )
         for point in IndicatorPoint.objects.filter(indicator=instance):
-            sync_indicator_point(point)
+            point.conformities.set(conformities)
 
 
 @receiver(m2m_changed, sender=Evidence.conformities.through)
@@ -133,7 +118,10 @@ def evidence_conformity_changed(instance, action, reverse, pk_set, **kwargs):
 
 
 @receiver(post_save, sender=HumanEvidence)
-def human_evidence_saved(instance: HumanEvidence, **kwargs):
+@receiver(post_save, sender=ManualEvidence)
+@receiver(post_save, sender=DocumentEvidence)
+@receiver(post_save, sender=FindingEvidence)
+def specialized_evidence_saved(instance, **kwargs):
     from .services.evidence import evaluate_evidence
     evaluate_evidence(instance)
 
@@ -143,16 +131,3 @@ def evidence_saved(instance: Evidence, **kwargs):
     from .services.evidence import evaluate_evidence
     evaluate_evidence(instance)
 
-
-@receiver(m2m_changed, sender=ControlPoint.attachment.through)
-def controlpoint_attachment_evidence_sync(instance, action, **kwargs):
-    if action in {'post_add', 'post_remove', 'post_clear'} and instance.pk:
-        from .services.evidence import sync_control_point
-        sync_control_point(instance)
-
-
-@receiver(m2m_changed, sender=IndicatorPoint.attachment.through)
-def indicatorpoint_attachment_evidence_sync(instance, action, **kwargs):
-    if action in {'post_add', 'post_remove', 'post_clear'} and instance.pk:
-        from .services.evidence import sync_indicator_point
-        sync_indicator_point(instance)
