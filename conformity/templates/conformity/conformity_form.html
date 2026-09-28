@@ -152,8 +152,11 @@
                         <div class="list-group-item">
                             <div class="d-flex justify-content-between align-items-center gap-3">
                                 <div class="min-w-0">
-                                    <div class="fw-semibold">
-                                        {{ item.get_source_type_display }}
+                                    <div class="fw-semibold d-flex align-items-center gap-2">
+                                        <i class="bi {{ item.display_icon }}"
+                                           aria-hidden="true"
+                                           title="{{ item.get_source_type_display }}"></i>
+                                        <span>{{ item.display_name }}</span>
                                     </div>
                                     <div class="small text-body-secondary mt-1">
                                         Valid from {{ item.valid_from|date:"d-M-Y H:i" }}
@@ -184,19 +187,19 @@
 
                                 <div class="d-flex align-items-center gap-2 flex-shrink-0">
                                     {% if item.result == 'POS' %}
-                                        <span class="badge rounded-pill text-bg-success px-3 py-2">
+                                        <span class="badge rounded-pill text-bg-success px-3 py-2 d-inline-block text-center" style="min-width: 10rem;">
                                             {{ item.get_result_display }}
                                         </span>
                                     {% elif item.result == 'NEG' %}
-                                        <span class="badge rounded-pill text-bg-danger px-3 py-2">
+                                        <span class="badge rounded-pill text-bg-danger px-3 py-2 d-inline-block text-center" style="min-width: 10rem;">
                                             {{ item.get_result_display }}
                                         </span>
                                     {% elif item.result == 'PAR' %}
-                                        <span class="badge rounded-pill text-bg-warning px-3 py-2">
+                                        <span class="badge rounded-pill text-bg-warning px-3 py-2 d-inline-block text-center" style="min-width: 10rem;">
                                             {{ item.get_result_display }}
                                         </span>
                                     {% else %}
-                                        <span class="badge rounded-pill text-bg-secondary px-3 py-2">
+                                        <span class="badge rounded-pill text-bg-secondary px-3 py-2 d-inline-block text-center" style="min-width: 10rem;">
                                             {{ item.get_result_display }}
                                         </span>
                                     {% endif %}
@@ -204,19 +207,28 @@
                                     <div class="btn-group btn-group-sm"
                                          role="group"
                                          aria-label="Evidence actions">
-                                        <a class="btn btn-outline-secondary"
+                                        <a class="btn btn-primary"
                                            href="{% url 'conformity:evidence_detail' item.pk %}"
                                            title="View evidence details">
                                             <i class="bi bi-eye" aria-hidden="true"></i>
                                             <span class="visually-hidden">View</span>
                                         </a>
                                         {% if item.source_type != 'CTRL' and item.source_type != 'IND' %}
-                                            <a class="btn btn-outline-primary"
+                                            <a class="btn btn-warning"
                                                href="{% url 'conformity:evidence_form' item.pk %}"
                                                title="Edit evidence">
-                                                <i class="bi bi-pencil" aria-hidden="true"></i>
+                                                <i class="bi bi-pencil-square" aria-hidden="true"></i>
                                                 <span class="visually-hidden">Edit</span>
                                             </a>
+                                        {% else %}
+                                            <button type="button"
+                                                    class="btn btn-warning disabled"
+                                                    disabled
+                                                    aria-disabled="true"
+                                                    title="This evidence is edited from its periodic result screen">
+                                                <i class="bi bi-pencil-square" aria-hidden="true"></i>
+                                                <span class="visually-hidden">Edit unavailable</span>
+                                            </button>
                                         {% endif %}
                                     </div>
                                 </div>
