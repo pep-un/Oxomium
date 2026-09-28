@@ -586,6 +586,28 @@ class EvidenceTests(TestCase):
             html,
         )
 
+    def test_conformity_update_uses_header_actions_for_evidence_and_corrective_action(self):
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse('conformity:conformity_form', args=[self.conformity.pk])
+        )
+        html = response.content.decode()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('btn btn-sm btn-success', html)
+        self.assertIn('Create evidence', html)
+        self.assertIn('Register corrective action', html)
+        self.assertLess(
+            html.index('Associated action'),
+            html.index('Register corrective action'),
+        )
+        self.assertLess(
+            html.index('Evidence'),
+            html.index('Create evidence'),
+        )
+        self.assertIn('bi bi-person-check text-primary', html)
+        self.assertIn('bg-body-tertiary p-3', html)
+
     def test_framework_review_header_uses_status_pill_and_stacked_bar(self):
         manual = ManualEvidence.objects.create(
             title='Framework summary evidence',
