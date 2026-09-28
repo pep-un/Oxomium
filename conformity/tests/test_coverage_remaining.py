@@ -23,6 +23,7 @@ from conformity.models import (
     Conformity,
     Control,
     ControlPoint,
+    Evidence,
     Finding,
     Framework,
     Indicator,
