@@ -6,7 +6,7 @@ from django.contrib import messages
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
-from django.db.models import Count, F, Prefetch
+from django.db.models import Count, F, Prefetch, Q
 from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import UpdateView, CreateView
 from django_filters import FilterSet
@@ -771,23 +771,21 @@ class ControlIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     filterset_class = PeriodicEvidenceFilter
     template_name = 'conformity/periodic_control_list.html'
 
-    def get_filterset_kwargs(self, filterset_class):
-        kwargs = super().get_filterset_kwargs(filterset_class)
-        data = self.request.GET.copy()
-        if 'evaluation' not in data:
-            data['evaluation'] = 'pending'
-        kwargs['data'] = data
-        return kwargs
-
     def get_queryset(self):
-        return (
-            Evidence.objects
-            .filter(
-                source_type__in=[
-                    Evidence.SourceType.CONTROL,
-                    Evidence.SourceType.INDICATOR,
-                ]
+        queryset = Evidence.objects.filter(
+            source_type__in=[
+                Evidence.SourceType.CONTROL,
+                Evidence.SourceType.INDICATOR,
+            ]
+        )
+        if not self.request.GET.get('show_all'):
+            queryset = queryset.filter(
+                Q(controlpoint__status=ControlPoint.Status.TOBEEVALUATED)
+                | Q(indicatorpoint__status=IndicatorPoint.Status.TOBEEVALUATED)
             )
+
+        return (
+            queryset
             .select_related(
                 'controlpoint__control__organization',
                 'indicatorpoint__indicator__organization',
