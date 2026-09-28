@@ -408,10 +408,40 @@ class ConformityUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['active_evidence'] = (
-            self.object.evidence.valid_at(timezone.now())
-            .order_by('-valid_from', '-pk')
-        )
+        now = timezone.now()
+        is_leaf = self.object.requirement.is_leaf_node()
+
+        if is_leaf:
+            active_evidence = (
+                self.object.evidence.valid_at(now)
+                .order_by('-valid_from', '-pk')
+            )
+        else:
+            descendant_conformities = (
+                Conformity.objects
+                .filter(
+                    organization=self.object.organization,
+                    requirement__in=self.object.requirement.get_descendants(),
+                    requirement__rght=F('requirement__lft') + 1,
+                )
+                .select_related('requirement')
+            )
+            active_evidence = (
+                Evidence.objects.valid_at(now)
+                .filter(conformities__in=descendant_conformities)
+                .prefetch_related(
+                    Prefetch(
+                        'conformities',
+                        queryset=descendant_conformities,
+                        to_attr='display_conformities',
+                    )
+                )
+                .distinct()
+                .order_by('-valid_from', '-pk')
+            )
+
+        context['active_evidence'] = active_evidence
+        context['show_evidence_conformities'] = not is_leaf
         return context
 
     def form_valid(self, form):
