@@ -203,8 +203,8 @@ class ControlPointResource(resources.ModelResource):
     class Meta:
         model = ControlPoint
         fields = (
-            "control__title", "control__organization__name", "period_start_date",
-            "period_end_date", "status", "control_user__username", "control_date", "comment",
+            "control__title", "control__organization__name", "valid_from",
+            "valid_to", "status", "evaluator__username", "evaluated_at", "comment",
         )
 
     def dehydrate_status(self, obj):
