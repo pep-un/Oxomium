@@ -54,12 +54,18 @@ does not silently recalculate historical framework totals.
   assessment association.
 - `ManualEvidence`: a simple explicitly entered fact.
 
-Control and indicator points retain their legacy period, comment, evaluator,
-attachment and relationship fields for compatibility. Their common evidence
-projection is synchronized on changes. The data migration creates projections
-for existing points, preserves expert assessments as human evidence when their
-meaning is unambiguous, and creates unassociated finding/document records. It
-does not invent framework relationships for legacy findings or documents.
+ControlPoint and IndicatorPoint are concrete subclasses of Evidence. Common
+validity, result, evaluator, comment, attachments and Conformity relationships
+are stored once on Evidence; only Control/Indicator-specific lifecycle and
+measurement fields remain on the subclasses. Legacy period/evaluator accessors
+are compatibility aliases, not duplicated persistence.
+
+Control and Indicator keep only Requirement target configuration. Concrete
+assessment relationships live exclusively on Evidence.conformities. The data
+migration converts existing points into Evidence subclasses, preserves action
+links and target relationships, migrates expert assessments to HumanEvidence
+when their meaning is unambiguous, and creates unassociated finding/document
+records without inventing framework relationships.
 
 ## Human arbitration
 
