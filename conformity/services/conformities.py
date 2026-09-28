@@ -97,6 +97,11 @@ def recompute_parent_chain(conformity):
                 current.status_justification = Conformity.StatusJustification.CONFORMITY
                 current.status_last_update = timezone.now()
                 current.save(update_fields=['status', 'status_justification', 'status_last_update'])
+            elif current.status_justification == Conformity.StatusJustification.CONFORMITY:
+                # Do not retain a stale aggregate when no child is evaluated.
+                current.status = None
+                current.status_last_update = timezone.now()
+                current.save(update_fields=['status', 'status_last_update'])
             current = current.get_parent()
 
 
