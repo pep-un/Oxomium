@@ -236,7 +236,49 @@ class ConformityQuerySet(models.QuerySet):
 
 
 class EvidenceQuerySet(models.QuerySet):
-    """Queries implementing Evidence's half-open validity interval."""
+    """Queries implementing Evidence validity plus temporary legacy period aliases."""
+
+    @staticmethod
+    def _rewrite_period_lookup(key, value):
+        if key.startswith('period_start_date'):
+            suffix = key[len('period_start_date'):]
+            if suffix == '':
+                return 'valid_from__date', value
+            return f'valid_from{suffix}', value
+
+        if key.startswith('period_end_date'):
+            suffix = key[len('period_end_date'):]
+            if suffix == '':
+                return 'valid_to__date', value + timedelta(days=1)
+            if suffix == '__lt':
+                return 'valid_to__date__lte', value
+            if suffix == '__lte':
+                return 'valid_to__date__lte', value + timedelta(days=1)
+            if suffix == '__gt':
+                return 'valid_to__date__gt', value + timedelta(days=1)
+            if suffix == '__gte':
+                return 'valid_to__date__gte', value + timedelta(days=1)
+            return f'valid_to{suffix}', value
+        return key, value
+
+    @classmethod
+    def _rewrite_period_kwargs(cls, kwargs):
+        return dict(cls._rewrite_period_lookup(key, value) for key, value in kwargs.items())
+
+    def _filter_or_exclude(self, negate, args, kwargs):
+        return super()._filter_or_exclude(negate, args, self._rewrite_period_kwargs(kwargs))
+
+    def order_by(self, *field_names):
+        rewritten = []
+        for field_name in field_names:
+            prefix = '-' if field_name.startswith('-') else ''
+            name = field_name[1:] if prefix else field_name
+            if name == 'period_start_date':
+                name = 'valid_from'
+            elif name == 'period_end_date':
+                name = 'valid_to'
+            rewritten.append(prefix + name)
+        return super().order_by(*rewritten)
 
     def valid_at(self, at=None):
         at = at or timezone.now()
@@ -1409,7 +1451,11 @@ class Indicator (models.Model):
         for _ in range(num_cp):
             period_start_date = date(start_date.year, start_date.month, 1)
             period_end_date = date(end_date.year, end_date.month, monthrange(end_date.year, end_date.month)[1])
-            if not IndicatorPoint.objects.filter(indicator=self, period_start_date=period_start_date, period_end_date=period_end_date).exists() :
+            if not IndicatorPoint.objects.filter(
+                indicator=self,
+                valid_from__date=period_start_date,
+                valid_to__date=period_end_date + timedelta(days=1),
+            ).exists():
                 IndicatorPoint.objects.create(
                     indicator=self,
                     period_start_date=period_start_date,
