@@ -505,8 +505,6 @@ class EvidenceRequirementAddView(LoginRequiredMixin, FormView):
 
     def dispatch(self, request, *args, **kwargs):
         self.evidence = get_object_or_404(Evidence, pk=kwargs['pk'])
-        if self.evidence.conformities.exists():
-            raise Http404('Evidence already has an associated requirement.')
         return super().dispatch(request, *args, **kwargs)
 
     def get_form_kwargs(self):
