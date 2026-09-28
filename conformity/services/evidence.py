@@ -1,93 +1,18 @@
-"""Evidence synchronization and evaluation services."""
+"""Evidence evaluation services.
 
-from datetime import datetime, time, timedelta
+ControlPoint and IndicatorPoint inherit Evidence directly. No projection or
+field synchronization layer is required.
+"""
 
-from django.db import transaction
+from datetime import timedelta
+
 from django.utils import timezone
-
-
-def _day_start(value):
-    value = datetime.combine(value, time.min)
-    return timezone.make_aware(value, timezone.get_current_timezone())
-
-
-def _exclusive_day_after(value):
-    return _day_start(value + timedelta(days=1))
 
 
 def _evaluate(conformities, at=None):
     for conformity in conformities:
         invalidate_human_arbitration(conformity, at=at)
         conformity.evaluate_evidence(at=at)
-
-
-def _update_evidence(evidence, values):
-    """Update through Model.save so auto timestamps and evaluation signals run."""
-    for field, value in values.items():
-        setattr(evidence, field, value)
-    evidence.save(update_fields=[*values, 'updated_at'])
-
-
-@transaction.atomic
-def sync_control_point(point):
-    """Create/update the common Evidence projection of a ControlPoint."""
-    from conformity.models import ControlPoint, Evidence
-
-    result = {
-        ControlPoint.Status.COMPLIANT: Evidence.Result.POSITIVE,
-        ControlPoint.Status.NONCOMPLIANT: Evidence.Result.NEGATIVE,
-    }.get(point.status, Evidence.Result.NEUTRAL)
-    values = {
-        'source_type': Evidence.SourceType.CONTROL,
-        'result': result,
-        'valid_from': _day_start(point.period_start_date),
-        'valid_to': _exclusive_day_after(point.period_end_date),
-        'evaluated_at': point.control_date,
-        'evaluator': point.control_user,
-        'comment': point.comment,
-    }
-    if point.evidence_id:
-        evidence = Evidence.objects.get(pk=point.evidence_id)
-        _update_evidence(evidence, values)
-    else:
-        evidence = Evidence.objects.create(**values)
-        type(point).objects.filter(pk=point.pk).update(evidence=evidence)
-        point.evidence = evidence
-    evidence.conformities.set(point.control.conformity.all() if point.control_id else [])
-    evidence.attachments.set(point.attachment.all())
-    _evaluate(evidence.conformities.all())
-    return evidence
-
-
-@transaction.atomic
-def sync_indicator_point(point):
-    """Create/update the common Evidence projection of an IndicatorPoint."""
-    from conformity.models import Evidence, IndicatorPoint
-
-    result = {
-        IndicatorPoint.Status.COMPLIANT: Evidence.Result.POSITIVE,
-        IndicatorPoint.Status.CRITICAL: Evidence.Result.NEGATIVE,
-    }.get(point.status, Evidence.Result.NEUTRAL)
-    values = {
-        'source_type': Evidence.SourceType.INDICATOR,
-        'result': result,
-        'valid_from': _day_start(point.period_start_date),
-        'valid_to': _exclusive_day_after(point.period_end_date),
-        'evaluated_at': point.control_date,
-        'evaluator': point.control_user,
-        'comment': point.comment,
-    }
-    if point.evidence_id:
-        evidence = Evidence.objects.get(pk=point.evidence_id)
-        _update_evidence(evidence, values)
-    else:
-        evidence = Evidence.objects.create(**values)
-        type(point).objects.filter(pk=point.pk).update(evidence=evidence)
-        point.evidence = evidence
-    evidence.conformities.set(point.indicator.conformity.all() if point.indicator_id else [])
-    evidence.attachments.set(point.attachment.all())
-    _evaluate(evidence.conformities.all())
-    return evidence
 
 
 def invalidate_human_arbitration(conformity, at=None):
