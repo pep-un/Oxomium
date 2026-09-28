@@ -52,7 +52,7 @@ class ConformityResource(resources.ModelResource):
         return ", ".join(f"{action.title}" for action in actions)
 
     def dehydrate_controls(self, obj):
-        controls = obj.controls.all()
+        controls = obj.get_control()
         if not controls.exists():
             return ""
         return ", ".join(f"{control.title}" for control in controls)
