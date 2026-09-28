@@ -158,7 +158,7 @@ class IndicatorBoundsTests(TestCase):
         entry = LogEntry.objects.get_for_object(self.point).get()
         self.assertEqual(entry.actor, self.user)
         self.assertEqual(entry.changes['value'], ['None', '0'])
-        self.assertEqual(entry.changes['status'], ['SCHD', 'OK'])
+        self.assertEqual(entry.changes['status'], ['TOBE', 'OK'])
         for name in ('conformity:indicator_index', 'conformity:indicator_detail'):
             url = reverse(name, args=[self.indicator.pk]) if name.endswith('detail') else reverse(name)
             response = self.client.get(url)

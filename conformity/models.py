@@ -10,7 +10,7 @@ from typing import List, Literal, Tuple
 # Django (third-party)
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import Count, Q
@@ -243,8 +243,9 @@ class EvidenceQuerySet(models.QuerySet):
     def _rewrite_period_lookup(key, value):
         if key.startswith('period_start_date'):
             suffix = key[len('period_start_date'):]
-            if suffix == '':
-                return 'valid_from__date', value
+            date_lookups = {'', '__lt', '__lte', '__gt', '__gte', '__range', '__in'}
+            if suffix in date_lookups:
+                return f'valid_from__date{suffix}', value
             return f'valid_from{suffix}', value
 
         if key.startswith('period_end_date'):
@@ -375,17 +376,16 @@ class Evidence(models.Model):
     @property
     def periodic_point(self):
         """Return the concrete periodic Evidence subtype, when applicable."""
-        if self.source_type == self.SourceType.CONTROL:
-            try:
-                return self.controlpoint
-            except ControlPoint.DoesNotExist:
-                return None
-        if self.source_type == self.SourceType.INDICATOR:
-            try:
-                return self.indicatorpoint
-            except IndicatorPoint.DoesNotExist:
-                return None
-        return None
+        accessor = {
+            self.SourceType.CONTROL: 'controlpoint',
+            self.SourceType.INDICATOR: 'indicatorpoint',
+        }.get(self.source_type)
+        if accessor is None:
+            return None
+        try:
+            return getattr(self, accessor)
+        except ObjectDoesNotExist:
+            return None
 
     @property
     def periodic_name(self):
@@ -409,19 +409,19 @@ class Evidence(models.Model):
             return _('Human assessment')
         if self.source_type == self.SourceType.MANUAL:
             try:
-                return self.manualevidence.title
-            except ManualEvidence.DoesNotExist:
+                return getattr(self, 'manualevidence').title
+            except ObjectDoesNotExist:
                 return _('Manual evidence')
         if self.source_type == self.SourceType.DOCUMENT:
             try:
-                document = self.documentevidence
+                document = getattr(self, 'documentevidence')
                 return document.title or str(document.document)
-            except DocumentEvidence.DoesNotExist:
+            except ObjectDoesNotExist:
                 return _('Documentary proof')
         if self.source_type == self.SourceType.FINDING:
             try:
-                return str(self.findingevidence.finding)
-            except FindingEvidence.DoesNotExist:
+                return str(getattr(self, 'findingevidence').finding)
+            except ObjectDoesNotExist:
                 return _('Audit finding')
         return self.get_source_type_display()
 

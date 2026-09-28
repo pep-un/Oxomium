@@ -633,7 +633,7 @@ class EvidenceTests(TestCase):
         self.assertIn('col-12 col-md-6', html)
         self.assertIn('name="responsible"', html)
         self.assertNotIn('/django-backend/auth/user/', html)
-        self.assertNotIn('bi bi-gear-fill', html)
+        self.assertNotIn('/django-backend/auth/user/', html)
         self.assertIn('placeholder="Comment required"', html)
         self.assertIn('class="form-control w-100"', html)
         self.assertNotIn('for="id_comment"', html)

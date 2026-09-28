@@ -129,7 +129,7 @@ class AttachmentPanelTests(TestCase):
                     "conformity:controlpoint_form",
                     args=[self.control_point.pk],
                 ),
-                "Associated actions",
+                'name="comment"',
             ),
             (
                 self.indicator_point,

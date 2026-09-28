@@ -232,7 +232,7 @@ class RemainingCoverageTests(TestCase):
             (AuditExportView, "/audits", "audits"),
             (FindingExportView, "/findings", "findings"),
             (ActionExportView, "/actions", "actions"),
-            (ControlExportView, "/controls", "controls"),
+            (ControlExportView, "/controls", "periodic-controls"),
             (IndicatorExportView, "/indicators", "indicators"),
             (AttachmentExportView, "/attachments", "attachments"),
             (AuditLogExportView, "/auditlog", "audit-log"),
@@ -359,13 +359,13 @@ class RemainingCoverageTests(TestCase):
         ))
 
         control_view = ControlIndexView()
-        control_view.request = self.factory.get("/")
+        control_view.request = self.factory.get("/", {"status": "TOBE"})
         control_view.request.user = self.user
-        control_view.object_list = Control.objects.all()
+        control_view.object_list = Evidence.objects.none()
         control_view.kwargs = {}
         with patch.object(FilterView, "get_context_data", return_value={}):
             context = control_view.get_context_data()
-        self.assertIn("controlpoint_list", context)
+        self.assertNotIn("controlpoint_list", context)
 
         log_view = AuditLogDetailView()
         self.assertEqual(log_view.get_queryset().query.order_by, ("-timestamp", "-pk"))

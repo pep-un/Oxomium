@@ -5,7 +5,7 @@ from constance.test import override_config
 from django.urls import reverse
 
 from conformity.models import (
-    Action, Audit, Conformity, Control, ControlPoint, Finding, Framework,
+    Action, Audit, Conformity, Control, ControlPoint, Evidence, Finding, Framework,
     Indicator, IndicatorPoint, Organization, Requirement,
 )
 from conformity.tables import (
@@ -25,6 +25,10 @@ from conformity.views import (
 
 
 class RichTableConfigurationTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(username="issue44-config")
+        self.client.force_login(self.user)
+
     def test_all_tabular_index_views_have_explicit_table_classes(self):
         expected = {
             ActionIndexView: ActionTable,
@@ -684,7 +688,10 @@ class RichTableInteractionTests(TestCase):
         self.assertIsNotNone(point)
         self.assertEqual(point.status, IndicatorPoint.Status.TOBEEVALUATED)
 
-        response = self.client.get(reverse("conformity:control_index"))
+        response = self.client.get(
+            reverse("conformity:control_index"),
+            {"status": "TOBE"},
+        )
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "MFA coverage")
