@@ -150,11 +150,12 @@ def evaluate_conformity(conformity, *, at=None, trigger=None, persist=True):
     return state
 
 
-def evaluate_evidence(evidence, *, at=None):
+def evaluate_evidence(evidence, *, at=None, contradiction=True):
     """Recompute every Conformity associated with a changed Evidence."""
     at = at or timezone.now()
+    trigger = evidence if contradiction else None
     for conformity in evidence.conformities.select_related('requirement').all():
-        evaluate_conformity(conformity, at=at, trigger=evidence)
+        evaluate_conformity(conformity, at=at, trigger=trigger)
 
 
 def evaluate_conformities(conformities, *, at=None):
