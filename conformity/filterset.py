@@ -44,6 +44,10 @@ class ControlFilter(FilterSet):
 
 
 class PeriodicEvidenceFilter(FilterSet):
+    name = CharFilter(
+        method='filter_name',
+        label='Name',
+    )
     status = ChoiceFilter(
         choices=(
             (ControlPoint.Status.TOBEEVALUATED, 'To evaluate'),
@@ -55,7 +59,7 @@ class PeriodicEvidenceFilter(FilterSet):
             (ControlPoint.Status.MISSED, 'Missed'),
         ),
         method='filter_status',
-        label='Status',
+        label='Last result',
     )
     organization = ModelChoiceFilter(
         queryset=Organization.objects.all(),
@@ -79,10 +83,33 @@ class PeriodicEvidenceFilter(FilterSet):
         method='filter_frequency',
         label='Frequency',
     )
+    requirement = ModelChoiceFilter(
+        queryset=Requirement.objects.all(),
+        field_name='conformities__requirement',
+        label='Associated requirement',
+        distinct=True,
+    )
+    reference = ModelChoiceFilter(
+        queryset=Framework.objects.all(),
+        field_name='conformities__requirement__framework',
+        label='Associated reference',
+        distinct=True,
+    )
 
     class Meta:
         model = Evidence
-        fields = ['status', 'organization', 'source_type', 'level', 'frequency']
+        fields = [
+            'name', 'status', 'organization', 'source_type', 'level',
+            'frequency', 'requirement', 'reference',
+        ]
+
+    def filter_name(self, queryset, name, value):
+        if not value:
+            return queryset
+        return queryset.filter(
+            Q(controlpoint__control__title__icontains=value)
+            | Q(indicatorpoint__indicator__name__icontains=value)
+        )
 
     def filter_status(self, queryset, name, value):
         if not value:
