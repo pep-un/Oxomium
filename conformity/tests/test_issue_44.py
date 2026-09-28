@@ -72,6 +72,21 @@ class RichTableConfigurationTests(TestCase):
                 self.assertIn("col-2", first_column.attrs["td"]["class"])
                 self.assertIn("text-start", first_column.attrs["td"]["class"])
 
+    def test_conformity_table_uses_balanced_column_widths(self):
+        table = ConformityTable([])
+        self.assertEqual(
+            table.columns["conformity"].attrs["th"]["style"],
+            "width: 35%;",
+        )
+        self.assertEqual(
+            table.columns["requirements"].attrs["th"]["style"],
+            "width: 10%;",
+        )
+        self.assertEqual(
+            table.columns["evidence_status"].attrs["th"]["style"],
+            "width: 55%;",
+        )
+
     def test_conformity_table_uses_stacked_evidence_status_column(self):
         table = ConformityTable([])
         self.assertIn("evidence_status", table.columns)
