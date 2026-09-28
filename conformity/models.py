@@ -1664,7 +1664,21 @@ class IndicatorPoint(Evidence):
         )
 
     def status_update(self):
-        if self.value is None or self.indicator_id is None:
+        if self.value is None:
+            today = date.today()
+            if self.period_end_date and self.period_end_date < today:
+                self.status = IndicatorPoint.Status.MISSED
+            elif (
+                self.period_start_date
+                and self.period_end_date
+                and self.period_start_date <= today <= self.period_end_date
+            ):
+                self.status = IndicatorPoint.Status.TOBEEVALUATED
+            else:
+                self.status = IndicatorPoint.Status.SCHEDULED
+            return
+
+        if self.indicator_id is None:
             return
 
         if self.indicator.best > self.indicator.worst:
