@@ -72,13 +72,35 @@
                     <div class="card-body">
                         <p><strong>Evaluation:</strong> {{ conformity.get_evidence_state_display }}</p>
                         <ul class="list-group list-group-flush">
-                        {% for item in conformity.evidence.all %}
-                            <li class="list-group-item d-flex justify-content-between gap-2">
-                                <span>{{ item.get_source_type_display }}</span>
-                                <span>{{ item.get_result_display }}</span>
+                        {% for item in active_evidence %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center gap-2">
+                                <div class="d-flex flex-column">
+                                    <span>{{ item.get_source_type_display }}</span>
+                                    <small class="text-body-secondary">
+                                        {{ item.get_result_display }}
+                                        · valid from {{ item.valid_from|date:"d-M-Y H:i" }}
+                                        {% if item.valid_to %}to {{ item.valid_to|date:"d-M-Y H:i" }}{% endif %}
+                                    </small>
+                                </div>
+                                <div class="btn-group btn-group-sm" role="group" aria-label="Evidence actions">
+                                    <a class="btn btn-outline-secondary"
+                                       href="{% url 'conformity:evidence_detail' item.pk %}"
+                                       title="View evidence details">
+                                        <i class="bi bi-eye" aria-hidden="true"></i>
+                                        <span class="visually-hidden">View</span>
+                                    </a>
+                                    {% if item.source_type != 'CTRL' and item.source_type != 'IND' %}
+                                    <a class="btn btn-outline-primary"
+                                       href="{% url 'conformity:evidence_form' item.pk %}"
+                                       title="Edit evidence">
+                                        <i class="bi bi-pencil" aria-hidden="true"></i>
+                                        <span class="visually-hidden">Edit</span>
+                                    </a>
+                                    {% endif %}
+                                </div>
                             </li>
                         {% empty %}
-                            <li class="list-group-item text-body-secondary">No evidence associated.</li>
+                            <li class="list-group-item text-body-secondary">No currently valid evidence associated.</li>
                         {% endfor %}
                         </ul>
                     </div>
