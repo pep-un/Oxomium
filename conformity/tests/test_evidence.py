@@ -202,10 +202,10 @@ class EvidenceTests(TestCase):
             comment='Access not removed.',
         )
         point.refresh_from_db()
-        self.assertIsNotNone(point.evidence_id)
-        self.assertTrue(issubclass(IndicatorPoint, Evidence))\n        self.assertEqual(point.result, Evidence.Result.NEGATIVE)
-        self.assertEqual(point.evidence.comment, point.comment)
-        self.assertEqual(list(point.evidence.conformities.all()), [self.conformity])
+        self.assertTrue(issubclass(ControlPoint, Evidence))
+        self.assertEqual(point.result, Evidence.Result.NEGATIVE)
+        self.assertEqual(point.comment, 'Access not removed.')
+        self.assertEqual(list(point.conformities.all()), [self.conformity])
 
     def test_indicator_point_is_evidence_and_preserves_threshold_logic(self):
         indicator = Indicator.objects.create(
@@ -221,7 +221,8 @@ class EvidenceTests(TestCase):
         )
         point.refresh_from_db()
         self.assertEqual(point.status, IndicatorPoint.Status.CRITICAL)
-        self.assertEqual(point.evidence.result, Evidence.Result.NEGATIVE)
+        self.assertTrue(issubclass(IndicatorPoint, Evidence))
+        self.assertEqual(point.result, Evidence.Result.NEGATIVE)
 
     def test_human_evidence_view_requires_login_and_records_author(self):
         url = reverse('conformity:human_evidence_create', args=[self.conformity.pk])
