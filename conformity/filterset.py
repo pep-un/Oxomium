@@ -44,14 +44,6 @@ class ControlFilter(FilterSet):
 
 
 class PeriodicEvidenceFilter(FilterSet):
-    evaluation = ChoiceFilter(
-        choices=(
-            ('pending', 'To be evaluated'),
-            ('all', 'All results'),
-        ),
-        method='filter_evaluation',
-        label='Results',
-    )
     organization = ModelChoiceFilter(
         queryset=Organization.objects.all(),
         method='filter_organization',
@@ -77,15 +69,7 @@ class PeriodicEvidenceFilter(FilterSet):
 
     class Meta:
         model = Evidence
-        fields = ['evaluation', 'organization', 'source_type', 'level', 'frequency']
-
-    def filter_evaluation(self, queryset, name, value):
-        if value != 'pending':
-            return queryset
-        return queryset.filter(
-            Q(controlpoint__status=ControlPoint.Status.TOBEEVALUATED)
-            | Q(indicatorpoint__status=IndicatorPoint.Status.TOBEEVALUATED)
-        )
+        fields = ['organization', 'source_type', 'level', 'frequency']
 
     def filter_organization(self, queryset, name, value):
         if not value:
