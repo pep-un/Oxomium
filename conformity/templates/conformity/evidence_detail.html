@@ -1,0 +1,85 @@
+{% extends "conformity/main.html" %}
+
+{% block header %}
+<h1 class="h1 d-flex align-items-center gap-2">
+    <i class="bi bi-journal-check" aria-hidden="true"></i>
+    Evidence detail
+</h1>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center gap-2">
+        <div>
+            <strong>{{ evidence.get_source_type_display }}</strong>
+            <span class="badge text-bg-secondary ms-2">{{ evidence.get_result_display }}</span>
+        </div>
+        <div class="btn-group btn-group-sm">
+            {% if evidence.source_type != 'CTRL' and evidence.source_type != 'IND' %}
+            <a class="btn btn-outline-primary" href="{% url 'conformity:evidence_form' evidence.pk %}">
+                <i class="bi bi-pencil" aria-hidden="true"></i> Edit
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-3">Source</dt>
+            <dd class="col-sm-9">{{ evidence.get_source_type_display }}</dd>
+
+            <dt class="col-sm-3">Result</dt>
+            <dd class="col-sm-9">{{ evidence.get_result_display }}</dd>
+
+            <dt class="col-sm-3">Valid from</dt>
+            <dd class="col-sm-9">{{ evidence.valid_from|date:"d-M-Y H:i" }}</dd>
+
+            <dt class="col-sm-3">Valid to</dt>
+            <dd class="col-sm-9">{{ evidence.valid_to|date:"d-M-Y H:i"|default:"Open-ended" }}</dd>
+
+            <dt class="col-sm-3">Evaluated at</dt>
+            <dd class="col-sm-9">{{ evidence.evaluated_at|date:"d-M-Y H:i"|default:"—" }}</dd>
+
+            <dt class="col-sm-3">Evaluator</dt>
+            <dd class="col-sm-9">{{ evidence.evaluator|default:"—" }}</dd>
+
+            <dt class="col-sm-3">Comment</dt>
+            <dd class="col-sm-9">{{ evidence.comment|default:"—"|linebreaksbr }}</dd>
+
+            {% if evidence.source_type == 'CTRL' %}
+            <dt class="col-sm-3">Control</dt>
+            <dd class="col-sm-9">{{ evidence.control }}</dd>
+            <dt class="col-sm-3">Control status</dt>
+            <dd class="col-sm-9">{{ evidence.get_status_display }}</dd>
+            {% elif evidence.source_type == 'IND' %}
+            <dt class="col-sm-3">Indicator</dt>
+            <dd class="col-sm-9">{{ evidence.indicator }}</dd>
+            <dt class="col-sm-3">Value</dt>
+            <dd class="col-sm-9">{{ evidence.value|default_if_none:"—" }}</dd>
+            <dt class="col-sm-3">Indicator status</dt>
+            <dd class="col-sm-9">{{ evidence.get_status_display }}</dd>
+            {% elif evidence.source_type == 'HUM' %}
+            <dt class="col-sm-3">Decision</dt>
+            <dd class="col-sm-9">{{ evidence.get_decision_display }}</dd>
+            {% elif evidence.source_type == 'MAN' %}
+            <dt class="col-sm-3">Title</dt>
+            <dd class="col-sm-9">{{ evidence.title }}</dd>
+            {% elif evidence.source_type == 'DOC' %}
+            <dt class="col-sm-3">Document</dt>
+            <dd class="col-sm-9">{{ evidence.document }}</dd>
+            {% elif evidence.source_type == 'FIND' %}
+            <dt class="col-sm-3">Finding</dt>
+            <dd class="col-sm-9">{{ evidence.finding }}</dd>
+            {% endif %}
+        </dl>
+    </div>
+</div>
+
+<div class="mt-3 d-flex gap-2">
+    {% for conformity in evidence.conformities.all %}
+    <a class="btn btn-outline-secondary" href="{% url 'conformity:conformity_form' conformity.pk %}">
+        <i class="bi bi-shield-check" aria-hidden="true"></i>
+        {{ conformity.requirement.full_path }}
+    </a>
+    {% endfor %}
+</div>
+{% endblock %}
