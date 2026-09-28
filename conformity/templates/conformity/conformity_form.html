@@ -59,7 +59,7 @@
                             role="switch"
                             id="id_applicable"
                             name="applicable"
-                            {% if conformity.applicable %}
+                            {% if form.applicable.value %}
                                 checked
                                 aria-checked="true"
                             {% else %}
@@ -68,14 +68,33 @@
                         >
                     </div>
 
-                    {% bootstrap_field form.responsible %}
-
-                    <div id="conformity-comment"
-                         class="{% if conformity.applicable %}d-none{% endif %}">
-                        {% bootstrap_field form.comment %}
+                    <div class="mb-3">
+                        {{ form.responsible.label_tag }}
+                        {{ form.responsible }}
+                        {% for error in form.responsible.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
                     </div>
 
-                    {% bootstrap_field form.propagate_to_children %}
+                    <div id="conformity-comment"
+                         class="{% if form.applicable.value %}d-none{% endif %}">
+                        {{ form.comment.label_tag }}
+                        {{ form.comment }}
+                        {% if form.comment.help_text %}
+                            <div class="form-text">{{ form.comment.help_text }}</div>
+                        {% endif %}
+                        {% for error in form.comment.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="form-check mb-3">
+                        {{ form.propagate_to_children }}
+                        {{ form.propagate_to_children.label_tag }}
+                        {% for error in form.propagate_to_children.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
 
