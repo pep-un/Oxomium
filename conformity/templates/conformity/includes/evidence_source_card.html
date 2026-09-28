@@ -1,0 +1,45 @@
+{% if controlpoint %}
+    <div class="card border-secondary mb-4">
+        <div class="card-header text-bg-secondary">
+            <span class="h4 mb-0">Control</span>
+        </div>
+        <div class="card-body">
+            <h5 class="card-title">{{ controlpoint.control.title }}</h5>
+            {% if controlpoint.control.description %}
+                <p class="card-text">{{ controlpoint.control.description }}</p>
+            {% endif %}
+            <dl class="row mb-0">
+                <dt class="col-sm-4">Organization</dt>
+                <dd class="col-sm-8">{{ controlpoint.control.organization|default:"—" }}</dd>
+                <dt class="col-sm-4">Level</dt>
+                <dd class="col-sm-8">{{ controlpoint.control.get_level_display }}</dd>
+                <dt class="col-sm-4">Frequency</dt>
+                <dd class="col-sm-8">{{ controlpoint.control.get_frequency_display }}</dd>
+                <dt class="col-sm-4">Period</dt>
+                <dd class="col-sm-8">{{ controlpoint.period_start_date }} — {{ controlpoint.period_end_date }}</dd>
+            </dl>
+        </div>
+    </div>
+{% elif indicatorpoint %}
+    <div class="card border-secondary mb-4">
+        <div class="card-header text-bg-secondary">
+            <span class="h4 mb-0">Indicator</span>
+        </div>
+        <div class="card-body">
+            <h5 class="card-title">{{ indicatorpoint.indicator.name }}</h5>
+            {% if indicatorpoint.indicator.goal %}
+                <p class="card-text">{{ indicatorpoint.indicator.goal }}</p>
+            {% endif %}
+            <dl class="row mb-0">
+                <dt class="col-sm-4">Organization</dt>
+                <dd class="col-sm-8">{{ indicatorpoint.indicator.organization|default:"—" }}</dd>
+                <dt class="col-sm-4">Frequency</dt>
+                <dd class="col-sm-8">{{ indicatorpoint.indicator.get_frequency_display }}</dd>
+                <dt class="col-sm-4">Period</dt>
+                <dd class="col-sm-8">{{ indicatorpoint.period_start_date }} — {{ indicatorpoint.period_end_date }}</dd>
+                <dt class="col-sm-4">Direction</dt>
+                <dd class="col-sm-8">{{ indicatorpoint.indicator.direction_label }}</dd>
+            </dl>
+        </div>
+    </div>
+{% endif %}
