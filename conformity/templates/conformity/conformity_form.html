@@ -4,7 +4,7 @@
 {% load mptt_tags %}
 
 {% block header %}
-<h1 class="h1 d-flex align-items-center gap-2">
+<h1 class="h1 d-flex align-items-center gap-2 w-100">
     <a href="{% url 'conformity:conformity_detail_index' conformity.organization.pk conformity.requirement.framework.pk %}"
        class="header-back-link"
        aria-label="Back to conformity review"
@@ -13,15 +13,15 @@
     </a>
     {{ conformity.requirement.full_path }} — {{ conformity.organization.name }}
     {% if conformity.evidence_state == 'COMP' %}
-        <span class="badge rounded-pill text-bg-success fs-6">Compliant</span>
+        <span class="badge rounded-pill text-bg-success fs-5 px-3 py-2 ms-auto">Compliant</span>
     {% elif conformity.evidence_state == 'NONC' %}
-        <span class="badge rounded-pill text-bg-danger fs-6">Non-compliant</span>
+        <span class="badge rounded-pill text-bg-danger fs-5 px-3 py-2 ms-auto">Non-compliant</span>
     {% elif conformity.evidence_state == 'PART' %}
-        <span class="badge rounded-pill text-bg-warning fs-6">Partially compliant</span>
+        <span class="badge rounded-pill text-bg-warning fs-5 px-3 py-2 ms-auto">Partially compliant</span>
     {% elif conformity.evidence_state == 'INCO' %}
-        <span class="badge rounded-pill text-bg-secondary fs-6">Inconclusive</span>
+        <span class="badge rounded-pill text-bg-secondary fs-5 px-3 py-2 ms-auto">Inconclusive</span>
     {% else %}
-        <span class="badge rounded-pill text-bg-secondary fs-6">Not evaluated</span>
+        <span class="badge rounded-pill text-bg-secondary fs-5 px-3 py-2 ms-auto">Not evaluated</span>
     {% endif %}
 </h1>
 {% endblock %}
