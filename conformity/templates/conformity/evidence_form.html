@@ -43,10 +43,17 @@
                 Cancel
             </a>
         {% else %}
-            <a class="btn btn-outline-secondary"
-               href="{% url 'conformity:evidence_detail' object.pk %}">
-                Cancel
-            </a>
+            {% if return_conformity %}
+                <a class="btn btn-outline-secondary"
+                   href="{% url 'conformity:conformity_form' return_conformity.pk %}">
+                    Cancel
+                </a>
+            {% else %}
+                <a class="btn btn-outline-secondary"
+                   href="{% url 'conformity:evidence_detail' object.pk %}">
+                    Cancel
+                </a>
+            {% endif %}
         {% endif %}
     </div>
 </form>
