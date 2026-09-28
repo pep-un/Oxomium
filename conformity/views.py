@@ -525,6 +525,8 @@ class ConformityEvidenceCreateMixin:
             Conformity,
             pk=kwargs['conformity_pk'],
         )
+        if not self.conformity.requirement.is_leaf_node():
+            raise Http404('Evidence can only be created for leaf requirements.')
         return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
