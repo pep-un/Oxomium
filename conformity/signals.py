@@ -82,7 +82,10 @@ def controlpoint_post_save_evidence(instance: ControlPoint, **kwargs):
             )
         instance.conformities.set(conformities)
     from .services.evidence import evaluate_evidence
-    evaluate_evidence(instance)
+    evaluate_evidence(
+        instance,
+        contradiction=getattr(instance, '_evidence_semantic_change', False),
+    )
 
 
 @receiver(post_save, sender=IndicatorPoint)
@@ -98,7 +101,10 @@ def indicatorpoint_post_save_evidence(instance: IndicatorPoint, **kwargs):
             )
         instance.conformities.set(conformities)
     from .services.evidence import evaluate_evidence
-    evaluate_evidence(instance)
+    evaluate_evidence(
+        instance,
+        contradiction=getattr(instance, '_evidence_semantic_change', False),
+    )
 
 
 @receiver(m2m_changed, sender=Control.requirements.through)
@@ -179,11 +185,17 @@ def evidence_conformity_changed(instance, action, reverse, pk_set, **kwargs):
 @receiver(post_save, sender=FindingEvidence)
 def specialized_evidence_saved(instance, **kwargs):
     from .services.evidence import evaluate_evidence
-    evaluate_evidence(instance)
+    evaluate_evidence(
+        instance,
+        contradiction=getattr(instance, '_evidence_semantic_change', False),
+    )
 
 
 @receiver(post_save, sender=Evidence)
 def evidence_saved(instance: Evidence, **kwargs):
     from .services.evidence import evaluate_evidence
-    evaluate_evidence(instance)
+    evaluate_evidence(
+        instance,
+        contradiction=getattr(instance, '_evidence_semantic_change', False),
+    )
 
