@@ -249,6 +249,49 @@ class EvidenceTests(TestCase):
             Conformity.EvidenceState.PARTIAL,
         )
 
+    def test_parent_conformity_form_lists_descendant_evidence_with_ownership(self):
+        second_leaf = Requirement.objects.create(
+            framework=self.framework,
+            parent=self.root,
+            code='E2',
+            title='Second Evidence leaf',
+        )
+        second = Conformity.objects.create(
+            organization=self.organization,
+            requirement=second_leaf,
+        )
+
+        shared = ManualEvidence.objects.create(
+            title='Shared child evidence',
+            result=Evidence.Result.POSITIVE,
+            valid_from=self.now - timedelta(hours=1),
+        )
+        shared.conformities.add(self.conformity, second)
+
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse('conformity:conformity_form', args=[self.parent.pk])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Evidence from descendant requirements')
+        self.assertContains(response, self.leaf.full_path)
+        self.assertContains(response, self.leaf.title)
+        self.assertContains(response, second_leaf.full_path)
+        self.assertContains(response, second_leaf.title)
+        self.assertContains(
+            response,
+            reverse('conformity:conformity_form', args=[self.conformity.pk]),
+        )
+        self.assertContains(
+            response,
+            reverse('conformity:conformity_form', args=[second.pk]),
+        )
+        self.assertEqual(
+            list(response.context['active_evidence']),
+            [shared.evidence_ptr],
+        )
+
     def test_framework_review_header_uses_status_pill_and_stacked_bar(self):
         manual = ManualEvidence.objects.create(
             title='Framework summary evidence',
