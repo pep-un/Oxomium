@@ -6,8 +6,9 @@ from django.forms import ModelForm, FileField, ClearableFileInput, BooleanField,
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from .models import (
-    Action, Audit, Conformity, Control, ControlPoint, Finding, HumanEvidence,
-    Indicator, IndicatorPoint, Organization,
+    Action, Audit, Conformity, Control, ControlPoint, DocumentEvidence, Finding,
+    FindingEvidence, HumanEvidence, Indicator, IndicatorPoint, ManualEvidence,
+    Organization,
 )
 from .validators import attachment_accept, attachment_max_size_help, validate_attachment_once
 
@@ -83,6 +84,24 @@ class HumanEvidenceForm(ModelForm):
         super().__init__(*args, **kwargs)
         if not self.is_bound and not self.initial.get('valid_from'):
             self.initial['valid_from'] = timezone.now()
+
+
+class ManualEvidenceForm(ModelForm):
+    class Meta:
+        model = ManualEvidence
+        fields = ['title', 'result', 'valid_from', 'valid_to', 'comment']
+
+
+class DocumentEvidenceForm(ModelForm):
+    class Meta:
+        model = DocumentEvidence
+        fields = ['title', 'document', 'result', 'valid_from', 'valid_to', 'comment']
+
+
+class FindingEvidenceForm(ModelForm):
+    class Meta:
+        model = FindingEvidence
+        fields = ['finding', 'result', 'valid_from', 'valid_to', 'comment']
 
 
 class OrganizationForm(AttachmentUploadFormMixin, ModelForm):
