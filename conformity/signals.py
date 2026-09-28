@@ -49,6 +49,26 @@ def action_finding_sync_on_m2m(instance, action, reverse, pk_set, **kwargs):
     for f in findings:
         f.update_archived()
 
+@receiver(post_save, sender=Action)
+def action_post_save_sync(instance: Action, **kwargs):
+    """Preserve the existing Action-driven conformity compatibility behavior."""
+    for conformity in instance.associated_conformity.all():
+        if instance.is_in_progress():
+            conformity.set_status_from(0, Conformity.StatusJustification.ACTION)
+        elif instance.is_completed():
+            conformity.set_status_from(100, Conformity.StatusJustification.ACTION)
+
+
+@receiver(post_save, sender=Indicator)
+def indicator_post_save_bootstrap(instance: Indicator, **kwargs):
+    instance.indicator_point_init()
+
+
+@receiver(pre_save, sender=IndicatorPoint)
+def indicatorpoint_pre_save_status(instance: IndicatorPoint, **kwargs):
+    instance.status_update()
+
+
 @receiver(post_save, sender=ControlPoint)
 def controlpoint_post_save_evidence(instance: ControlPoint, **kwargs):
     """A ControlPoint is itself Evidence; attach configured targets and evaluate them."""
