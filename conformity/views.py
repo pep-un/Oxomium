@@ -1027,6 +1027,7 @@ class AttachmentUnlinkView(LoginRequiredMixin, View):
         "audit": (Audit, "conformity:audit_form"),
         "controlpoint": (ControlPoint, "conformity:controlpoint_form"),
         "indicatorpoint": (IndicatorPoint, "conformity:indicatorpoint_form"),
+        "evidence": (Evidence, "conformity:evidence_form"),
     }
 
     def post(self, request, owner_type, owner_pk, attachment_pk):
@@ -1036,8 +1037,13 @@ class AttachmentUnlinkView(LoginRequiredMixin, View):
 
         owner_model, return_route = owner_config
         owner = get_object_or_404(owner_model, pk=owner_pk)
+        attachment_manager = (
+            owner.attachments
+            if isinstance(owner, Evidence)
+            else owner.attachment
+        )
         attachment = get_object_or_404(
-            getattr(owner, "attachment").all(),
+            attachment_manager.all(),
             pk=attachment_pk,
         )
         orphan_deleted = unlink_attachment(owner, attachment)
