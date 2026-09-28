@@ -128,6 +128,10 @@ class EvidenceTests(TestCase):
         self.parent.refresh_from_db()
         self.assertEqual(self.conformity.status, 100)
         self.assertEqual(self.parent.status, 100)
+        self.assertEqual(
+            self.parent.evidence_state,
+            Conformity.EvidenceState.COMPLIANT,
+        )
 
         positive.result = Evidence.Result.NEGATIVE
         positive.save(update_fields=['result'])
@@ -135,6 +139,63 @@ class EvidenceTests(TestCase):
         self.parent.refresh_from_db()
         self.assertEqual(self.conformity.status, 0)
         self.assertEqual(self.parent.status, 0)
+        self.assertEqual(
+            self.parent.evidence_state,
+            Conformity.EvidenceState.NON_COMPLIANT,
+        )
+
+    def test_parent_aggregate_uses_partial_evidence_state(self):
+        second_leaf = Requirement.objects.create(
+            framework=self.framework,
+            parent=self.root,
+            code='E2',
+            title='Second Evidence leaf',
+        )
+        second = Conformity.objects.create(
+            organization=self.organization,
+            requirement=second_leaf,
+        )
+
+        positive = Evidence.objects.create(
+            source_type=Evidence.SourceType.MANUAL,
+            result=Evidence.Result.POSITIVE,
+            valid_from=self.now - timedelta(hours=1),
+        )
+        positive.conformities.add(self.conformity)
+
+        negative = Evidence.objects.create(
+            source_type=Evidence.SourceType.MANUAL,
+            result=Evidence.Result.NEGATIVE,
+            valid_from=self.now - timedelta(hours=1),
+        )
+        negative.conformities.add(second)
+
+        self.parent.refresh_from_db()
+        self.assertEqual(
+            self.parent.evidence_state,
+            Conformity.EvidenceState.PARTIAL,
+        )
+
+    def test_framework_review_uses_evidence_column_and_categorical_status(self):
+        manual = ManualEvidence.objects.create(
+            title='Framework review evidence',
+            result=Evidence.Result.POSITIVE,
+            valid_from=self.now - timedelta(hours=1),
+        )
+        manual.conformities.add(self.conformity)
+
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse(
+                'conformity:conformity_detail_index',
+                args=[self.organization.pk, self.framework.pk],
+            )
+        )
+
+        self.assertContains(response, '>Evidence<', html=False)
+        self.assertContains(response, 'Conforme')
+        self.assertContains(response, '1 evidence')
+        self.assertNotContains(response, '>Control<', html=False)
 
     def test_removing_last_evidence_clears_parent_aggregate(self):
         positive = self.evidence(Evidence.Result.POSITIVE)
@@ -146,6 +207,10 @@ class EvidenceTests(TestCase):
         self.parent.refresh_from_db()
         self.assertIsNone(self.conformity.status)
         self.assertIsNone(self.parent.status)
+        self.assertEqual(
+            self.parent.evidence_state,
+            Conformity.EvidenceState.NOT_EVALUATED,
+        )
 
     def test_human_arbitration_and_automatic_invalidation(self):
         self.evidence(Evidence.Result.POSITIVE)
