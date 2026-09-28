@@ -131,7 +131,7 @@ class HomeView(LoginRequiredMixin, TemplateView):
         context['my_conformity'] = Conformity.objects.with_related().filter(
             responsible=user
         ).order_by('status', 'pk')[:50]
-        context['cp_list'] = ControlPoint.objects.filter(status='TOBE').order_by('period_end_date', 'pk')[:constance_config.HOME_ITEMS_LIMIT]
+        context['cp_list'] = ControlPoint.objects.filter(status='TOBE').order_by('valid_to', 'pk')[:constance_config.HOME_ITEMS_LIMIT]
 
         return context
 
@@ -601,12 +601,12 @@ class ControlIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
         current_points = ControlPoint.objects.filter(
             period_start_date__lte=today,
             period_end_date__gte=today,
-        ).order_by("period_start_date", "pk")
+        ).order_by("valid_from", "pk")
         return (
             Control.objects
             .select_related("organization")
             .prefetch_related(
-                "conformity__requirement",
+                "requirements",
                 Prefetch(
                     "controlpoint_set",
                     queryset=current_points,
@@ -649,8 +649,8 @@ class ControlPointIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
 
     def get_queryset(self):
         return ControlPoint.objects.select_related(
-            "control", "control_user"
-        ).order_by("period_end_date", "pk")
+            "control", "evaluator"
+        ).order_by("valid_to", "pk")
 
 
 class ControlPointUpdateView(AttachmentUploadViewMixin, LoginRequiredMixin, SaveStayMixin, UpdateView):
