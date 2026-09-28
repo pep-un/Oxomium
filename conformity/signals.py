@@ -1,3 +1,5 @@
+from django.core.exceptions import ValidationError
+from django.db import models
 from django.db.models.signals import m2m_changed, pre_save, post_save
 from django.dispatch import receiver
 from .models import (
@@ -74,7 +76,9 @@ def controlpoint_post_save_evidence(instance: ControlPoint, **kwargs):
     """A ControlPoint is itself Evidence; attach configured targets and evaluate them."""
     if instance.control_id and not instance.conformities.exists():
         conformities = Conformity.objects.filter(
-            requirement__in=instance.control.requirements.all(),
+            requirement__in=instance.control.requirements.filter(
+                rght=models.F('lft') + 1,
+            ),
         )
         if instance.control.organization_id:
             conformities = conformities.filter(
@@ -93,7 +97,9 @@ def indicatorpoint_post_save_evidence(instance: IndicatorPoint, **kwargs):
     """An IndicatorPoint is itself Evidence; attach configured targets and evaluate them."""
     if instance.indicator_id and not instance.conformities.exists():
         conformities = Conformity.objects.filter(
-            requirement__in=instance.indicator.requirements.all(),
+            requirement__in=instance.indicator.requirements.filter(
+                rght=models.F('lft') + 1,
+            ),
         )
         if instance.indicator.organization_id:
             conformities = conformities.filter(
@@ -111,7 +117,9 @@ def indicatorpoint_post_save_evidence(instance: IndicatorPoint, **kwargs):
 def control_requirement_targets_changed(instance, action, **kwargs):
     if action in {'post_add', 'post_remove', 'post_clear'}:
         conformities = Conformity.objects.filter(
-            requirement__in=instance.requirements.all(),
+            requirement__in=instance.requirements.filter(
+                rght=models.F('lft') + 1,
+            ),
         )
         if instance.organization_id:
             conformities = conformities.filter(
@@ -137,8 +145,24 @@ def indicator_requirement_targets_changed(instance, action, **kwargs):
 
 @receiver(m2m_changed, sender=Evidence.conformities.through)
 def evidence_conformity_changed(instance, action, reverse, pk_set, **kwargs):
-    """Recompute both newly-associated and detached Conformities."""
+    """Allow Evidence only on leaf Conformities and recompute changed targets."""
     from .services.evidence import evaluate_conformity, evaluate_evidence
+
+    if action == 'pre_add' and pk_set:
+        if reverse:
+            # instance is a Conformity; adding any Evidence to a chapter is invalid.
+            invalid = not instance.requirement.is_leaf_node()
+        else:
+            invalid = Conformity.objects.filter(
+                pk__in=pk_set,
+            ).exclude(
+                requirement__rght=models.F('requirement__lft') + 1,
+            ).exists()
+        if invalid:
+            raise ValidationError(
+                'Evidence can only be associated with leaf requirements.'
+            )
+        return
 
     if action == 'pre_clear':
         if reverse:
