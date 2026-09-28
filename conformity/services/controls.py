@@ -1,5 +1,5 @@
 from calendar import monthrange
-from datetime import date
+from datetime import date, timedelta
 
 from django.db import transaction
 
@@ -24,7 +24,7 @@ def generate_controlpoints(control, year=None):
     with transaction.atomic():
         Control.objects.select_for_update().get(pk=control.pk)
         points = list(ControlPoint.objects.filter(
-            control=control, period_start_date__year=year
+            control=control, valid_from__year=year
         ))
         for point in points:
             pair = (point.period_start_date, point.period_end_date)
@@ -35,7 +35,7 @@ def generate_controlpoints(control, year=None):
 
         for start, end in sorted(desired):
             if not ControlPoint.objects.filter(
-                control=control, period_start_date=start, period_end_date=end
+                control=control, valid_from=ControlPoint._day_start(start), valid_to=ControlPoint._day_start(end + timedelta(days=1))
             ).exists():
                 ControlPoint.objects.create(
                     control=control, period_start_date=start, period_end_date=end
