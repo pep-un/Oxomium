@@ -8,7 +8,7 @@ from django.utils import timezone
 
 class EvidenceMigrationTests(TransactionTestCase):
     migrate_from = [('conformity', '0072_attachment_sha256')]
-    migrate_to = [('conformity', '0073_evidence_models')]
+    migrate_to = [('conformity', '0074_evidence_point_inheritance')]
 
     def setUp(self):
         super().setUp()
@@ -100,8 +100,8 @@ class EvidenceMigrationTests(TransactionTestCase):
         FindingEvidence = apps.get_model('conformity', 'FindingEvidence')
         DocumentEvidence = apps.get_model('conformity', 'DocumentEvidence')
 
-        control_point = ControlPoint.objects.get(pk=self.ids['control_point'])
-        indicator_point = IndicatorPoint.objects.get(pk=self.ids['indicator_point'])
+        control_point = ControlPoint.objects.get()
+        indicator_point = IndicatorPoint.objects.get()
         self.assertEqual(control_point.result, 'NEG')
         self.assertEqual(indicator_point.result, 'POS')
         self.assertEqual(control_point.comment, 'Legacy control result')
@@ -125,12 +125,8 @@ class EvidenceMigrationTests(TransactionTestCase):
         self.executor = MigrationExecutor(connection)
         self.executor.migrate(self.migrate_from)
         old_apps = self.executor.loader.project_state(self.migrate_from).apps
-        old_control_point = old_apps.get_model('conformity', 'ControlPoint').objects.get(
-            pk=self.ids['control_point']
-        )
-        old_indicator_point = old_apps.get_model('conformity', 'IndicatorPoint').objects.get(
-            pk=self.ids['indicator_point']
-        )
+        old_control_point = old_apps.get_model('conformity', 'ControlPoint').objects.get()
+        old_indicator_point = old_apps.get_model('conformity', 'IndicatorPoint').objects.get()
         self.assertEqual(old_control_point.status, 'NOK')
         self.assertEqual(old_control_point.comment, 'Legacy control result')
         self.assertEqual(old_indicator_point.status, 'OK')
