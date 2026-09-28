@@ -426,8 +426,6 @@ class ConformityUpdateView(LoginRequiredMixin, UpdateView):
             )
         if "responsible" in form.changed_data:
             self.object.update_responsible()
-        if "status" in form.changed_data:
-            self.object.update_status()
 
         # Manage Save&Next and Save&Stay submitting to allow easy filling of the conformity
         if self.request.POST.get("action") == "save_next":
