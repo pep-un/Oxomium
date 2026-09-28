@@ -8,7 +8,7 @@ from django.db.models import Q
 from django import forms
 from django_filters import FilterSet, CharFilter, DateFilter, ModelChoiceFilter, ChoiceFilter
 from .models import Action, Attachment, Control, ControlPoint, Conformity, Finding, Requirement, Framework, Organization, Audit, \
-    Indicator, IndicatorPoint
+    Evidence, Indicator, IndicatorPoint
 
 
 def audit_actor_choices():
@@ -41,6 +41,72 @@ class ControlFilter(FilterSet):
         model = Control
         fields = ['title', 'level', 'frequency', 'organization',
                   'conformity']
+
+
+class PeriodicEvidenceFilter(FilterSet):
+    evaluation = ChoiceFilter(
+        choices=(
+            ('pending', 'To be evaluated'),
+            ('all', 'All results'),
+        ),
+        method='filter_evaluation',
+        label='Results',
+    )
+    organization = ModelChoiceFilter(
+        queryset=Organization.objects.all(),
+        method='filter_organization',
+        label='Organization',
+    )
+    source_type = ChoiceFilter(
+        choices=(
+            (Evidence.SourceType.CONTROL, 'Control'),
+            (Evidence.SourceType.INDICATOR, 'Indicator'),
+        ),
+        label='Type',
+    )
+    level = ChoiceFilter(
+        choices=Control.Level.choices,
+        method='filter_level',
+        label='Level',
+    )
+    frequency = ChoiceFilter(
+        choices=Control.Frequency.choices,
+        method='filter_frequency',
+        label='Frequency',
+    )
+
+    class Meta:
+        model = Evidence
+        fields = ['evaluation', 'organization', 'source_type', 'level', 'frequency']
+
+    def filter_evaluation(self, queryset, name, value):
+        if value != 'pending':
+            return queryset
+        return queryset.filter(
+            Q(controlpoint__status=ControlPoint.Status.TOBEEVALUATED)
+            | Q(indicatorpoint__status=IndicatorPoint.Status.TOBEEVALUATED)
+        )
+
+    def filter_organization(self, queryset, name, value):
+        if not value:
+            return queryset
+        return queryset.filter(
+            Q(controlpoint__control__organization=value)
+            | Q(indicatorpoint__indicator__organization=value)
+        )
+
+    def filter_level(self, queryset, name, value):
+        if not value:
+            return queryset
+        return queryset.filter(controlpoint__control__level=value)
+
+    def filter_frequency(self, queryset, name, value):
+        if not value:
+            return queryset
+        return queryset.filter(
+            Q(controlpoint__control__frequency=value)
+            | Q(indicatorpoint__indicator__frequency=value)
+        )
 
 
 class ControlPointFilter(FilterSet):
