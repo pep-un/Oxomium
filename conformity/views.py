@@ -507,6 +507,7 @@ class ConformityEvidenceCreateMixin:
 
     template_name = 'conformity/evidence_form.html'
     success_message = 'Evidence recorded.'
+    evidence_label = 'Evidence'
 
     def dispatch(self, request, *args, **kwargs):
         self.conformity = get_object_or_404(
@@ -519,6 +520,7 @@ class ConformityEvidenceCreateMixin:
         context = super().get_context_data(**kwargs)
         context['conformity'] = self.conformity
         context['creating_evidence'] = True
+        context['evidence_label'] = self.evidence_label
         return context
 
     def form_valid(self, form):
@@ -542,6 +544,7 @@ class HumanEvidenceCreateView(
     model = HumanEvidence
     form_class = HumanEvidenceForm
     success_message = 'Human evidence recorded.'
+    evidence_label = 'Human assessment'
 
 
 class ManualEvidenceCreateView(
@@ -552,6 +555,7 @@ class ManualEvidenceCreateView(
     model = ManualEvidence
     form_class = ManualEvidenceForm
     success_message = 'Manual evidence recorded.'
+    evidence_label = 'Manual evidence'
 
 
 class DocumentEvidenceCreateView(
@@ -562,6 +566,7 @@ class DocumentEvidenceCreateView(
     model = DocumentEvidence
     form_class = DocumentEvidenceForm
     success_message = 'Document evidence recorded.'
+    evidence_label = 'Document evidence'
 
 
 class FindingEvidenceCreateView(
@@ -572,6 +577,7 @@ class FindingEvidenceCreateView(
     model = FindingEvidence
     form_class = FindingEvidenceForm
     success_message = 'Finding evidence recorded.'
+    evidence_label = 'Finding evidence'
 
 
 class ConformityExportView(LoginRequiredMixin, View):
