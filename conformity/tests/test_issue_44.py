@@ -159,8 +159,8 @@ class RichTableConfigurationTests(TestCase):
         )
         self.assertNotIn("actions", table.columns)
 
-    def test_periodic_controls_filter_dropdown_excludes_pending_mode(self):
-        self.assertNotIn("evaluation", getattr(PeriodicEvidenceFilter, "base_filters"))
+    def test_periodic_controls_filter_uses_standard_status_field(self):
+        self.assertIn("status", getattr(PeriodicEvidenceFilter, "base_filters"))
         self.assertIn("organization", getattr(PeriodicEvidenceFilter, "base_filters"))
         self.assertIn("source_type", getattr(PeriodicEvidenceFilter, "base_filters"))
 
@@ -452,7 +452,7 @@ class RichTableInteractionTests(TestCase):
 
         response = self.client.get(
             reverse("conformity:control_index"),
-            {"evaluation": "all"},
+            {"status": ""},
         )
 
         self.assertEqual(response.status_code, 200)
@@ -485,16 +485,23 @@ class RichTableInteractionTests(TestCase):
 
         response = self.client.get(reverse("conformity:control_index"))
 
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(
+            response.url,
+            f'{reverse("conformity:control_index")}?status=TOBE',
+        )
+
+        response = self.client.get(response.url)
         self.assertEqual(response.status_code, 200)
         records = [row.record.pk for row in response.context["table"].page.object_list]
         self.assertIn(pending_point.pk, records)
         self.assertNotIn(completed_point.pk, records)
-        self.assertContains(response, 'id="pending-only"')
-        self.assertContains(response, 'checked')
+        self.assertEqual(response.context["filter"].form["status"].value(), "TOBE")
+        self.assertContains(response, 'btn btn-primary dropdown-toggle')
         self.assertNotContains(response, reverse("conformity:control_create"))
         self.assertNotContains(response, reverse("conformity:indicator_create"))
 
-    def test_periodic_controls_switch_can_show_completed_results(self):
+    def test_periodic_controls_status_filter_can_be_cleared(self):
         organization = Organization.objects.create(name="Periodic all org")
         control = Control.objects.create(
             title="Completed visible control",
@@ -510,14 +517,13 @@ class RichTableInteractionTests(TestCase):
 
         response = self.client.get(
             reverse("conformity:control_index"),
-            {"show_all": "1"},
+            {"status": ""},
         )
 
         self.assertEqual(response.status_code, 200)
         records = [row.record.pk for row in response.context["table"].page.object_list]
         self.assertIn(point.pk, records)
-        self.assertContains(response, 'id="pending-only"')
-        self.assertNotContains(response, 'id="pending-only" checked')
+        self.assertNotContains(response, 'btn btn-primary dropdown-toggle')
 
     def test_periodic_controls_include_indicator_evidence(self):
         organization = Organization.objects.create(name="Indicator queue org")
