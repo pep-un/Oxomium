@@ -12,6 +12,17 @@
         <i class="bi bi-chevron-left" aria-hidden="true"></i>
     </a>
     {{ conformity.requirement.full_path }} — {{ conformity.organization.name }}
+    {% if conformity.evidence_state == 'COMP' %}
+        <span class="badge rounded-pill text-bg-success fs-6">Compliant</span>
+    {% elif conformity.evidence_state == 'NONC' %}
+        <span class="badge rounded-pill text-bg-danger fs-6">Non-compliant</span>
+    {% elif conformity.evidence_state == 'PART' %}
+        <span class="badge rounded-pill text-bg-warning fs-6">Partially compliant</span>
+    {% elif conformity.evidence_state == 'INCO' %}
+        <span class="badge rounded-pill text-bg-secondary fs-6">Inconclusive</span>
+    {% else %}
+        <span class="badge rounded-pill text-bg-secondary fs-6">Not evaluated</span>
+    {% endif %}
 </h1>
 {% endblock %}
 
@@ -49,6 +60,14 @@
                     <span class="h4 mb-0">Assessment</span>
                 </div>
                 <div class="card-body">
+                    <div class="mb-3">
+                        {{ form.responsible.label_tag }}
+                        {{ form.responsible }}
+                        {% for error in form.responsible.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
                     <div class="form-check form-switch mb-3">
                         <label class="form-check-label" for="id_applicable">
                             Requirement is applicable
@@ -66,14 +85,6 @@
                                 aria-checked="false"
                             {% endif %}
                         >
-                    </div>
-
-                    <div class="mb-3">
-                        {{ form.responsible.label_tag }}
-                        {{ form.responsible }}
-                        {% for error in form.responsible.errors %}
-                            <div class="invalid-feedback d-block">{{ error }}</div>
-                        {% endfor %}
                     </div>
 
                     <div id="conformity-comment"
@@ -127,129 +138,125 @@
 
         <div class="col-12 col-lg-6">
             <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center gap-2">
+                <div class="card-header">
                     <span class="h4 mb-0">Evidence</span>
-                    <span class="badge rounded-pill text-bg-secondary">
-                        {{ conformity.get_evidence_state_display }}
-                    </span>
                 </div>
 
-                <div class="card-body">
-                    <div class="d-flex flex-column gap-3">
-                        {% for item in active_evidence %}
-                            <div class="border rounded-3 p-3">
-                                <div class="d-flex justify-content-between align-items-start gap-3">
-                                    <div class="min-w-0">
-                                        <div class="fw-semibold">
-                                            {{ item.get_source_type_display }}
-                                        </div>
-                                        <div class="small text-body-secondary mt-1">
-                                            Valid from {{ item.valid_from|date:"d-M-Y H:i" }}
-                                            {% if item.valid_to %}
-                                                to {{ item.valid_to|date:"d-M-Y H:i" }}
-                                            {% else %}
-                                                · no expiry
-                                            {% endif %}
-                                        </div>
-                                        {% if item.comment %}
-                                            <div class="small mt-2">
-                                                {{ item.comment|truncatechars:160 }}
-                                            </div>
+                <div class="list-group list-group-flush">
+                    {% for item in active_evidence %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center gap-3">
+                                <div class="min-w-0">
+                                    <div class="fw-semibold">
+                                        {{ item.get_source_type_display }}
+                                    </div>
+                                    <div class="small text-body-secondary mt-1">
+                                        Valid from {{ item.valid_from|date:"d-M-Y H:i" }}
+                                        {% if item.valid_to %}
+                                            to {{ item.valid_to|date:"d-M-Y H:i" }}
+                                        {% else %}
+                                            · no expiry
                                         {% endif %}
                                     </div>
-
-                                    <div class="d-flex flex-column align-items-end gap-2 flex-shrink-0">
-                                        {% if item.result == 'POS' %}
-                                            <span class="badge rounded-pill text-bg-success px-3 py-2">
-                                                {{ item.get_result_display }}
-                                            </span>
-                                        {% elif item.result == 'NEG' %}
-                                            <span class="badge rounded-pill text-bg-danger px-3 py-2">
-                                                {{ item.get_result_display }}
-                                            </span>
-                                        {% elif item.result == 'PAR' %}
-                                            <span class="badge rounded-pill text-bg-warning px-3 py-2">
-                                                {{ item.get_result_display }}
-                                            </span>
-                                        {% else %}
-                                            <span class="badge rounded-pill text-bg-secondary px-3 py-2">
-                                                {{ item.get_result_display }}
-                                            </span>
-                                        {% endif %}
-
-                                        <div class="btn-group btn-group-sm"
-                                             role="group"
-                                             aria-label="Evidence actions">
-                                            <a class="btn btn-outline-secondary"
-                                               href="{% url 'conformity:evidence_detail' item.pk %}"
-                                               title="View evidence details">
-                                                <i class="bi bi-eye" aria-hidden="true"></i>
-                                                <span class="visually-hidden">View</span>
-                                            </a>
-                                            {% if item.source_type != 'CTRL' and item.source_type != 'IND' %}
-                                                <a class="btn btn-outline-primary"
-                                                   href="{% url 'conformity:evidence_form' item.pk %}"
-                                                   title="Edit evidence">
-                                                    <i class="bi bi-pencil" aria-hidden="true"></i>
-                                                    <span class="visually-hidden">Edit</span>
-                                                </a>
-                                            {% endif %}
+                                    {% if item.comment %}
+                                        <div class="small mt-1">
+                                            {{ item.comment|truncatechars:160 }}
                                         </div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                    {% if item.result == 'POS' %}
+                                        <span class="badge rounded-pill text-bg-success px-3 py-2">
+                                            {{ item.get_result_display }}
+                                        </span>
+                                    {% elif item.result == 'NEG' %}
+                                        <span class="badge rounded-pill text-bg-danger px-3 py-2">
+                                            {{ item.get_result_display }}
+                                        </span>
+                                    {% elif item.result == 'PAR' %}
+                                        <span class="badge rounded-pill text-bg-warning px-3 py-2">
+                                            {{ item.get_result_display }}
+                                        </span>
+                                    {% else %}
+                                        <span class="badge rounded-pill text-bg-secondary px-3 py-2">
+                                            {{ item.get_result_display }}
+                                        </span>
+                                    {% endif %}
+
+                                    <div class="btn-group btn-group-sm"
+                                         role="group"
+                                         aria-label="Evidence actions">
+                                        <a class="btn btn-outline-secondary"
+                                           href="{% url 'conformity:evidence_detail' item.pk %}"
+                                           title="View evidence details">
+                                            <i class="bi bi-eye" aria-hidden="true"></i>
+                                            <span class="visually-hidden">View</span>
+                                        </a>
+                                        {% if item.source_type != 'CTRL' and item.source_type != 'IND' %}
+                                            <a class="btn btn-outline-primary"
+                                               href="{% url 'conformity:evidence_form' item.pk %}"
+                                               title="Edit evidence">
+                                                <i class="bi bi-pencil" aria-hidden="true"></i>
+                                                <span class="visually-hidden">Edit</span>
+                                            </a>
+                                        {% endif %}
                                     </div>
                                 </div>
                             </div>
-                        {% empty %}
-                            <div class="text-body-secondary text-center py-4">
-                                No currently valid evidence associated.
-                            </div>
-                        {% endfor %}
-                    </div>
-                </div>
-
-                {% if conformity.requirement.is_leaf_node %}
-                    <div class="card-footer d-flex justify-content-end">
-                        <div class="dropdown">
-                            <button class="btn btn-success dropdown-toggle"
-                                    type="button"
-                                    data-bs-toggle="dropdown"
-                                    aria-expanded="false">
-                                <i class="bi bi-plus-circle me-1" aria-hidden="true"></i>
-                                Create evidence
-                            </button>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li>
-                                    <a class="dropdown-item"
-                                       href="{% url 'conformity:human_evidence_create' conformity.pk %}">
-                                        <i class="bi bi-person-check me-2" aria-hidden="true"></i>
-                                        Human assessment
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item"
-                                       href="{% url 'conformity:manual_evidence_create' conformity.pk %}">
-                                        <i class="bi bi-pencil-square me-2" aria-hidden="true"></i>
-                                        Manual evidence
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item"
-                                       href="{% url 'conformity:document_evidence_create' conformity.pk %}">
-                                        <i class="bi bi-file-earmark-check me-2" aria-hidden="true"></i>
-                                        Document evidence
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item"
-                                       href="{% url 'conformity:finding_evidence_create' conformity.pk %}">
-                                        <i class="bi bi-exclamation-diamond me-2" aria-hidden="true"></i>
-                                        Finding evidence
-                                    </a>
-                                </li>
-                            </ul>
                         </div>
-                    </div>
-                {% endif %}
+                    {% empty %}
+                        <div class="list-group-item text-body-secondary text-center py-4">
+                            No currently valid evidence associated.
+                        </div>
+                    {% endfor %}
+
+                    {% if conformity.requirement.is_leaf_node %}
+                        <div class="list-group-item d-flex justify-content-center">
+                            <div class="dropdown">
+                                <button class="btn btn-success dropdown-toggle"
+                                        type="button"
+                                        data-bs-toggle="dropdown"
+                                        aria-expanded="false">
+                                    <i class="bi bi-plus-circle me-1" aria-hidden="true"></i>
+                                    Create evidence
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a class="dropdown-item"
+                                           href="{% url 'conformity:human_evidence_create' conformity.pk %}">
+                                            <i class="bi bi-person-check me-2" aria-hidden="true"></i>
+                                            Human assessment
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item"
+                                           href="{% url 'conformity:manual_evidence_create' conformity.pk %}">
+                                            <i class="bi bi-pencil-square me-2" aria-hidden="true"></i>
+                                            Manual evidence
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item"
+                                           href="{% url 'conformity:document_evidence_create' conformity.pk %}">
+                                            <i class="bi bi-file-earmark-check me-2" aria-hidden="true"></i>
+                                            Document evidence
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item"
+                                           href="{% url 'conformity:finding_evidence_create' conformity.pk %}">
+                                            <i class="bi bi-exclamation-diamond me-2" aria-hidden="true"></i>
+                                            Finding evidence
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
             </div>
+
         </div>
     </div>
 
