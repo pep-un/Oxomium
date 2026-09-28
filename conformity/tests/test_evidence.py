@@ -317,7 +317,7 @@ class EvidenceTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, self.framework.name, count=2)
+        self.assertContains(response, self.framework.name, count=1)
         self.assertContains(response, self.leaf.title)
         self.assertContains(response, second_leaf.title)
         self.assertContains(response, self.leaf.full_path)
@@ -325,6 +325,52 @@ class EvidenceTests(TestCase):
         self.assertContains(response, 'col-12 col-lg-6', count=2)
         self.assertContains(response, 'name="attachments"')
         self.assertContains(response, 'Add another document')
+
+    def test_requirement_context_compacts_shared_framework_and_section(self):
+        section = Requirement.objects.create(
+            framework=self.framework,
+            parent=self.root,
+            code='SEC',
+            title='Shared section',
+        )
+        first_leaf = Requirement.objects.create(
+            framework=self.framework,
+            parent=section,
+            code='1',
+            title='First grouped leaf',
+        )
+        second_leaf = Requirement.objects.create(
+            framework=self.framework,
+            parent=section,
+            code='2',
+            title='Second grouped leaf',
+        )
+        first = Conformity.objects.create(
+            organization=self.organization,
+            requirement=first_leaf,
+        )
+        second = Conformity.objects.create(
+            organization=self.organization,
+            requirement=second_leaf,
+        )
+        manual = ManualEvidence.objects.create(
+            title='Grouped requirements',
+            result=Evidence.Result.POSITIVE,
+            valid_from=self.now - timedelta(hours=1),
+        )
+        manual.conformities.add(first, second)
+
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse('conformity:evidence_form', args=[manual.pk])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.framework.name, count=1)
+        self.assertContains(response, 'Shared section', count=1)
+        self.assertContains(response, 'First grouped leaf')
+        self.assertContains(response, 'Second grouped leaf')
+        self.assertContains(response, 'Add requirement')
 
     def test_control_point_editor_shows_requirement_and_control_context(self):
         control = Control.objects.create(
@@ -382,6 +428,8 @@ class EvidenceTests(TestCase):
         self.assertContains(response, 'Context indicator')
         self.assertContains(response, 'Monthly')
         self.assertContains(response, 'Indicator result')
+        self.assertContains(response, 'card border-primary mb-4')
+        self.assertContains(response, 'card-header text-bg-primary')
         self.assertContains(response, 'name="value"')
         self.assertContains(response, 'Attachments')
 
