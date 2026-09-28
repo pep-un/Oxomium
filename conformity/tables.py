@@ -269,13 +269,20 @@ class ConformityTable(BaseRichTable):
             </a>
         """,
         order_by=("organization__name", "requirement__framework__name"),
-        attrs=PRIMARY_COLUMN,
+        attrs={
+            "th": {"class": "text-start", "style": "width: 35%;"},
+            "td": {"class": "text-start", "style": "width: 35%;"},
+            "a": {"class": "table-primary-link"},
+        },
     )
     requirements = tables.TemplateColumn(
         verbose_name="Requirements",
         template_code="{{ record.get_leaf|length }}",
         orderable=False,
-        attrs=CENTER,
+        attrs={
+            "th": {"class": "text-center text-nowrap", "style": "width: 10%;"},
+            "td": {"class": "text-center", "style": "width: 10%;"},
+        },
     )
     evidence_status = tables.TemplateColumn(
         verbose_name="Status",
@@ -317,7 +324,10 @@ class ConformityTable(BaseRichTable):
             {% endwith %}
         """,
         orderable=False,
-        attrs=CENTER,
+        attrs={
+            "th": {"class": "text-center", "style": "width: 55%;"},
+            "td": {"class": "text-center", "style": "width: 55%;"},
+        },
     )
     class Meta(BaseRichTable.Meta):
         model = Conformity
