@@ -96,6 +96,57 @@ class EvidenceTests(TestCase):
             self.conformity.evidence_state, Conformity.EvidenceState.NOT_EVALUATED
         )
 
+    def test_attaching_existing_contradictory_evidence_invalidates_human(self):
+        self.evidence(Evidence.Result.POSITIVE)
+        self.evidence(Evidence.Result.NEGATIVE)
+        human = HumanEvidence.objects.create(
+            decision=HumanEvidence.Decision.COMPLIANT,
+            valid_from=self.now,
+            evaluator=self.user,
+        )
+        human.conformities.add(self.conformity)
+
+        existing_negative = Evidence.objects.create(
+            source_type=Evidence.SourceType.MANUAL,
+            result=Evidence.Result.NEGATIVE,
+            valid_from=self.now - timedelta(days=1),
+        )
+        # It predates the human decision but becomes relevant only now.
+        existing_negative.conformities.add(self.conformity)
+
+        human.refresh_from_db()
+        self.assertIsNotNone(human.valid_to)
+        self.conformity.refresh_from_db()
+        self.assertEqual(
+            self.conformity.evidence_state,
+            Conformity.EvidenceState.INCONCLUSIVE,
+        )
+
+    def test_evidence_status_change_propagates_to_parent(self):
+        positive = self.evidence(Evidence.Result.POSITIVE)
+        self.conformity.refresh_from_db()
+        self.parent.refresh_from_db()
+        self.assertEqual(self.conformity.status, 100)
+        self.assertEqual(self.parent.status, 100)
+
+        positive.result = Evidence.Result.NEGATIVE
+        positive.save(update_fields=['result'])
+        self.conformity.refresh_from_db()
+        self.parent.refresh_from_db()
+        self.assertEqual(self.conformity.status, 0)
+        self.assertEqual(self.parent.status, 0)
+
+    def test_removing_last_evidence_clears_parent_aggregate(self):
+        positive = self.evidence(Evidence.Result.POSITIVE)
+        self.parent.refresh_from_db()
+        self.assertEqual(self.parent.status, 100)
+
+        positive.conformities.remove(self.conformity)
+        self.conformity.refresh_from_db()
+        self.parent.refresh_from_db()
+        self.assertIsNone(self.conformity.status)
+        self.assertIsNone(self.parent.status)
+
     def test_human_arbitration_and_automatic_invalidation(self):
         self.evidence(Evidence.Result.POSITIVE)
         negative = self.evidence(Evidence.Result.NEGATIVE)
