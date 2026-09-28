@@ -133,7 +133,9 @@ def control_requirement_targets_changed(instance, action, **kwargs):
 def indicator_requirement_targets_changed(instance, action, **kwargs):
     if action in {'post_add', 'post_remove', 'post_clear'}:
         conformities = Conformity.objects.filter(
-            requirement__in=instance.requirements.all(),
+            requirement__in=instance.requirements.filter(
+                rght=models.F('lft') + 1,
+            ),
         )
         if instance.organization_id:
             conformities = conformities.filter(
