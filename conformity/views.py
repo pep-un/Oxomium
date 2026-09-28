@@ -8,7 +8,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
 from django.db.models import Count, F, Prefetch, Q
 from django.views.generic import DetailView, ListView, TemplateView
-from django.views.generic.edit import UpdateView, CreateView
+from django.views.generic.edit import UpdateView, CreateView, FormView
 from django_filters import FilterSet
 from django_filters.views import FilterView
 from constance import config as constance_config
@@ -26,7 +26,7 @@ from .forms import (
     ActionForm, AuditForm, ConformityForm, ControlForm, ControlPointForm,
     DocumentEvidenceForm, EvidenceForm, FindingEvidenceForm, FindingForm,
     HumanEvidenceForm, IndicatorForm, IndicatorPointForm, ManualEvidenceForm,
-    OrganizationForm,
+    OrganizationForm, EvidenceRequirementForm,
 )
 from .models import (
     Action, Attachment, Audit, Conformity, Control, ControlPoint,
@@ -497,6 +497,39 @@ def _resolve_evidence_subtype(evidence):
         except (AttributeError, ObjectDoesNotExist):
             continue
     return evidence
+
+
+class EvidenceRequirementAddView(LoginRequiredMixin, FormView):
+    template_name = 'conformity/evidence_requirement_form.html'
+    form_class = EvidenceRequirementForm
+
+    def dispatch(self, request, *args, **kwargs):
+        self.evidence = get_object_or_404(Evidence, pk=kwargs['pk'])
+        if self.evidence.conformities.exists():
+            raise Http404('Evidence already has an associated requirement.')
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['evidence'] = self.evidence
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['evidence'] = self.evidence
+        return context
+
+    def form_valid(self, form):
+        self.evidence.conformities.add(form.cleaned_data['conformity'])
+        messages.success(self.request, 'Requirement associated with Evidence.')
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        if self.evidence.source_type == Evidence.SourceType.CONTROL:
+            return reverse('conformity:controlpoint_form', args=[self.evidence.pk])
+        if self.evidence.source_type == Evidence.SourceType.INDICATOR:
+            return reverse('conformity:indicatorpoint_form', args=[self.evidence.pk])
+        return reverse('conformity:evidence_form', args=[self.evidence.pk])
 
 
 class EvidenceDetailView(LoginRequiredMixin, DetailView):
