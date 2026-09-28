@@ -496,7 +496,20 @@ class EvidenceUpdateView(LoginRequiredMixin, UpdateView):
         except KeyError as exc:
             raise Http404('Unsupported Evidence type.') from exc
 
+    def get_return_conformity(self):
+        if self.object.source_type != Evidence.SourceType.HUMAN:
+            return None
+        return self.object.conformities.order_by('pk').first()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['return_conformity'] = self.get_return_conformity()
+        return context
+
     def get_success_url(self):
+        conformity = self.get_return_conformity()
+        if conformity is not None:
+            return reverse('conformity:conformity_form', args=[conformity.pk])
         return reverse('conformity:evidence_detail', args=[self.object.pk])
 
 
