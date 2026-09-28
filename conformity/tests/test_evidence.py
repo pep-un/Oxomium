@@ -163,7 +163,7 @@ class EvidenceTests(TestCase):
         human.refresh_from_db()
         point.refresh_from_db()
         self.assertIsNotNone(human.valid_to)
-        self.assertEqual(point.evidence.result, Evidence.Result.NEGATIVE)
+        self.assertEqual(point.result, Evidence.Result.NEGATIVE)
 
     def test_non_result_control_update_keeps_human_arbitration(self):
         control = Control.objects.create(
@@ -189,7 +189,7 @@ class EvidenceTests(TestCase):
         human.refresh_from_db()
         self.assertIsNone(human.valid_to)
 
-    def test_control_point_is_projected_without_losing_legacy_fields(self):
+    def test_control_point_is_evidence_without_losing_business_fields(self):
         control = Control.objects.create(
             title='Access review', organization=self.organization
         )
@@ -203,11 +203,11 @@ class EvidenceTests(TestCase):
         )
         point.refresh_from_db()
         self.assertIsNotNone(point.evidence_id)
-        self.assertEqual(point.evidence.result, Evidence.Result.NEGATIVE)
+        self.assertTrue(issubclass(IndicatorPoint, Evidence))\n        self.assertEqual(point.result, Evidence.Result.NEGATIVE)
         self.assertEqual(point.evidence.comment, point.comment)
         self.assertEqual(list(point.evidence.conformities.all()), [self.conformity])
 
-    def test_indicator_threshold_result_is_projected(self):
+    def test_indicator_point_is_evidence_and_preserves_threshold_logic(self):
         indicator = Indicator.objects.create(
             name='Coverage', responsible=self.user, organization=self.organization,
             worst=0, critical=20, warning=80, best=100,
