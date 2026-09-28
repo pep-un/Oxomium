@@ -313,6 +313,61 @@ class EvidenceTests(TestCase):
             Conformity.StatusJustification.EVIDENCE,
         )
 
+    def test_standalone_human_evidence_evaluates_conformity(self):
+        human = HumanEvidence.objects.create(
+            decision=HumanEvidence.Decision.COMPLIANT,
+            valid_from=self.now - timedelta(minutes=1),
+            evaluator=self.user,
+        )
+        human.conformities.add(self.conformity)
+
+        self.conformity.refresh_from_db()
+        self.assertEqual(
+            self.conformity.evidence_state,
+            Conformity.EvidenceState.COMPLIANT,
+        )
+        self.assertEqual(self.conformity.status, 100)
+
+    def test_editing_human_evidence_re_evaluates_conformity(self):
+        human = HumanEvidence.objects.create(
+            decision=HumanEvidence.Decision.COMPLIANT,
+            valid_from=self.now - timedelta(minutes=1),
+            evaluator=self.user,
+            comment='Initial decision',
+        )
+        human.conformities.add(self.conformity)
+        self.conformity.refresh_from_db()
+        self.assertEqual(self.conformity.status, 100)
+
+        self.client.force_login(self.user)
+        response = self.client.post(
+            reverse('conformity:evidence_form', args=[human.pk]),
+            {
+                'decision': HumanEvidence.Decision.NON_COMPLIANT,
+                'valid_from': human.valid_from.strftime('%Y-%m-%d %H:%M:%S'),
+                'valid_to': '',
+                'comment': 'Decision changed after review',
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            reverse('conformity:evidence_detail', args=[human.pk]),
+        )
+        human.refresh_from_db()
+        self.conformity.refresh_from_db()
+
+        self.assertEqual(human.result, Evidence.Result.NEGATIVE)
+        self.assertEqual(
+            self.conformity.evidence_state,
+            Conformity.EvidenceState.NON_COMPLIANT,
+        )
+        self.assertEqual(self.conformity.status, 0)
+        self.assertEqual(
+            self.conformity.status_justification,
+            Conformity.StatusJustification.EVIDENCE,
+        )
+
     def test_conformity_update_shows_only_current_evidence(self):
         current = ManualEvidence.objects.create(
             title='Current evidence',
