@@ -171,16 +171,16 @@ class RichTableConfigurationTests(TestCase):
         self.assertNotIn("actions", table.columns)
 
     def test_periodic_controls_filter_uses_standard_status_field(self):
-        filters = getattr(PeriodicEvidenceFilter, "base_filters")
-        self.assertIn("name", filters)
-        self.assertIn("status", filters)
-        self.assertIn("organization", filters)
-        self.assertIn("source_type", filters)
-        self.assertIn("requirement", filters)
-        self.assertIn("reference", filters)
-        self.assertEqual(filters["status"].label, "Last result")
-        self.assertEqual(filters["requirement"].label, "Associated requirement")
-        self.assertEqual(filters["reference"].label, "Associated Framework")
+        fields = PeriodicControlFilterForm.base_fields
+        self.assertIn("name", fields)
+        self.assertIn("status", fields)
+        self.assertIn("organization", fields)
+        self.assertIn("source_type", fields)
+        self.assertIn("requirement", fields)
+        self.assertIn("reference", fields)
+        self.assertEqual(fields["status"].label, "Last result")
+        self.assertEqual(fields["requirement"].label, "Associated requirement")
+        self.assertEqual(fields["reference"].label, "Associated Framework")
 
     def test_periodic_controls_show_export_and_result_count(self):
         organization = Organization.objects.create(name="Periodic toolbar org")
@@ -206,8 +206,8 @@ class RichTableConfigurationTests(TestCase):
         self.assertEqual(response.context["result_total_count"], 1)
         self.assertEqual(response.context["result_visible_count"], 1)
         self.assertEqual(
-            [row.record.pk for row in response.context["table"].page.object_list],
-            [point.pk],
+            [row.record for row in response.context["table"].page.object_list],
+            [control],
         )
 
     def test_periodic_controls_selection_export_uses_current_filters(self):
@@ -262,31 +262,26 @@ class RichTableConfigurationTests(TestCase):
             organization=organization,
             frequency=Control.Frequency.YEARLY,
         )
-        point = next(
-            item for item in control.get_controlpoint()
-            if item.is_current_period()
-        )
-        point.conformities.add(conformity)
+        control.requirements.add(leaf)
+        base = [control]
 
-        base = Evidence.objects.filter(pk=point.pk)
-
-        by_name = PeriodicEvidenceFilter(
+        by_name = PeriodicControlFilter(
             {"name": "access"},
             queryset=base,
         )
-        self.assertEqual(list(by_name.qs), [point.evidence_ptr])
+        self.assertEqual(by_name.qs, [control])
 
-        by_requirement = PeriodicEvidenceFilter(
+        by_requirement = PeriodicControlFilter(
             {"requirement": leaf.pk},
             queryset=base,
         )
-        self.assertEqual(list(by_requirement.qs), [point.evidence_ptr])
+        self.assertEqual(by_requirement.qs, [control])
 
-        by_reference = PeriodicEvidenceFilter(
+        by_reference = PeriodicControlFilter(
             {"reference": framework.pk},
             queryset=base,
         )
-        self.assertEqual(list(by_reference.qs), [point.evidence_ptr])
+        self.assertEqual(by_reference.qs, [control])
 
     def test_control_table_exposes_organization_and_last_result(self):
         table = ControlTable([])
@@ -694,7 +689,9 @@ class RichTableInteractionTests(TestCase):
 
         response = self.client.get(response.url)
         self.assertEqual(response.status_code, 200)
-        records = list(response.context["table"].page.object_list)
+        records = [
+            row.record for row in response.context["table"].page.object_list
+        ]
         self.assertIn(pending_control, records)
         self.assertNotIn(completed_control, records)
         self.assertEqual(response.context["filter"].form["status"].value(), "TOBE")
@@ -722,7 +719,9 @@ class RichTableInteractionTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        records = list(response.context["table"].page.object_list)
+        records = [
+            row.record for row in response.context["table"].page.object_list
+        ]
         self.assertIn(control, records)
         self.assertNotContains(response, 'btn btn-primary dropdown-toggle')
 
@@ -766,9 +765,10 @@ class RichTableInteractionTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         names = [
-            item.periodic_name
-            for item in response.context["table"].page.object_list
-            if item.periodic_name in {"Alpha periodic source", "Zulu periodic source"}
+            row.record.periodic_name
+            for row in response.context["table"].page.object_list
+            if row.record.periodic_name
+            in {"Alpha periodic source", "Zulu periodic source"}
         ]
         self.assertEqual(names, ["Zulu periodic source", "Alpha periodic source"])
 
@@ -816,7 +816,9 @@ class RichTableInteractionTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        rows = list(response.context["table"].page.object_list)
+        rows = [
+            row.record for row in response.context["table"].page.object_list
+        ]
         self.assertEqual(sum(item == control for item in rows), 1)
         self.assertFalse(any(isinstance(item, ControlPoint) for item in rows))
         self.assertFalse(any(isinstance(item, IndicatorPoint) for item in rows))

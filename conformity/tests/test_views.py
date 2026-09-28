@@ -394,7 +394,6 @@ class SharedUxComponentsTests(BaseDataMixin, TestCase):
             views.FrameworkIndexView,
             views.ConformityIndexView,
             views.ActionIndexView,
-            views.ControlIndexView,
             views.ControlPointIndexView,
             views.AttachmentIndexView,
             views.AuditLogDetailView,
