@@ -67,12 +67,7 @@ class ConformityForm(ModelForm):
 
     class Meta:
         model = Conformity
-        fields = ['applicable', 'responsible', 'status', 'comment']
-
-    def __init__(self, *args, **kwargs):
-        super(ConformityForm, self).__init__(*args, **kwargs)
-        if self.instance.get_descendants().exists():
-            self.fields['status'].disabled = True
+        fields = ['applicable', 'responsible', 'comment']
 
 
 class HumanEvidenceForm(ModelForm):
