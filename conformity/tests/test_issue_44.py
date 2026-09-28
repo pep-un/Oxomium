@@ -642,6 +642,31 @@ class RichTableInteractionTests(TestCase):
         self.assertIn(point.pk, records)
         self.assertNotContains(response, 'btn btn-primary dropdown-toggle')
 
+    def test_periodic_control_name_links_to_result_editor(self):
+        organization = Organization.objects.create(name="Periodic title link org")
+        control = Control.objects.create(
+            title="Linked periodic control",
+            organization=organization,
+            frequency=Control.Frequency.YEARLY,
+        )
+        point = next(
+            item for item in control.get_controlpoint()
+            if item.is_current_period()
+        )
+
+        response = self.client.get(
+            reverse("conformity:control_index"),
+            {"status": "TOBE"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            f'href="{reverse("conformity:controlpoint_form", args=[point.pk])}"',
+            count=2,
+        )
+        self.assertContains(response, "Linked periodic control")
+
     def test_periodic_controls_include_indicator_evidence(self):
         organization = Organization.objects.create(name="Indicator queue org")
         indicator = Indicator.objects.create(
