@@ -1,8 +1,10 @@
 from django.db.models.signals import m2m_changed, pre_save, post_save
 from django.dispatch import receiver
-from .models import Requirement, Control, ControlPoint, Action, Finding, Conformity, \
-    Indicator, IndicatorPoint, Evidence, HumanEvidence, ManualEvidence,
-    DocumentEvidence, FindingEvidence
+from .models import (
+    Action, Conformity, Control, ControlPoint, DocumentEvidence, Evidence,
+    Finding, FindingEvidence, HumanEvidence, Indicator, IndicatorPoint,
+    ManualEvidence, Requirement,
+)
 
 
 @receiver(post_save, sender=Control)
