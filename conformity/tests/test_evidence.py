@@ -405,6 +405,8 @@ class EvidenceTests(TestCase):
         indicator = Indicator.objects.create(
             name='Context indicator',
             goal='Measure the control objective',
+            source='SIEM export',
+            formula='Compliant systems / total systems * 100',
             responsible=self.user,
             organization=self.organization,
             frequency=Indicator.Frequency.MONTHLY,
@@ -427,6 +429,16 @@ class EvidenceTests(TestCase):
         self.assertContains(response, '<span class="h4 mb-0">Indicator</span>', html=True)
         self.assertContains(response, 'Context indicator')
         self.assertContains(response, 'Monthly')
+        self.assertContains(response, 'Responsible')
+        self.assertContains(response, self.user.username)
+        self.assertContains(response, 'Source of data')
+        self.assertContains(response, 'SIEM export')
+        self.assertContains(response, 'Formula or calculation')
+        self.assertContains(response, 'Compliant systems / total systems * 100')
+        self.assertContains(response, 'Thresholds')
+        self.assertContains(response, 'Critical')
+        self.assertContains(response, 'Warning')
+        self.assertContains(response, 'Compliant')
         self.assertContains(response, 'Indicator result')
         self.assertContains(response, 'card border-primary mb-4')
         self.assertContains(response, 'card-header text-bg-primary')
