@@ -29,8 +29,21 @@ def _operational_flags(conformity, at):
     )
 
 
+def _human_state(conformity, human):
+    """Map one valid HumanEvidence conclusion to a Conformity evidence state."""
+    from conformity.models import Evidence
+
+    if human is None:
+        return None
+    return {
+        Evidence.Result.POSITIVE: conformity.EvidenceState.COMPLIANT,
+        Evidence.Result.NEGATIVE: conformity.EvidenceState.NON_COMPLIANT,
+        Evidence.Result.PARTIAL: conformity.EvidenceState.PARTIAL,
+    }.get(human.result)
+
+
 def _state_from_current_evidence(conformity, at):
-    """Return the categorical state derived from currently valid Evidence."""
+    """Return the state derived from all Evidence currently valid."""
     from conformity.models import Evidence
 
     current = _current_evidence(conformity, at)
@@ -38,27 +51,24 @@ def _state_from_current_evidence(conformity, at):
     results = set(operational.values_list('result', flat=True))
     positive = Evidence.Result.POSITIVE in results
     negative = Evidence.Result.NEGATIVE in results
+    human = (
+        current
+        .filter(source_type=Evidence.SourceType.HUMAN)
+        .order_by('-valid_from', '-pk')
+        .first()
+    )
 
     if positive and negative:
-        human = (
-            current
-            .filter(source_type=Evidence.SourceType.HUMAN)
-            .order_by('-valid_from', '-pk')
-            .first()
-        )
-        if human is None:
-            return conformity.EvidenceState.INCONCLUSIVE
-        return {
-            Evidence.Result.POSITIVE: conformity.EvidenceState.COMPLIANT,
-            Evidence.Result.NEGATIVE: conformity.EvidenceState.NON_COMPLIANT,
-            Evidence.Result.PARTIAL: conformity.EvidenceState.PARTIAL,
-        }.get(human.result, conformity.EvidenceState.INCONCLUSIVE)
+        return _human_state(conformity, human) or conformity.EvidenceState.INCONCLUSIVE
 
     if positive:
         return conformity.EvidenceState.COMPLIANT
     if negative:
         return conformity.EvidenceState.NON_COMPLIANT
-    return conformity.EvidenceState.NOT_EVALUATED
+
+    # HumanEvidence is itself valid Evidence. This is important for
+    # migrated expert assessments with no operational Evidence yet.
+    return _human_state(conformity, human) or conformity.EvidenceState.NOT_EVALUATED
 
 
 def _close_human_evidence(human, at):
@@ -97,8 +107,10 @@ def invalidate_human_arbitration(conformity, *, trigger=None, at=None):
         contradicted = False
 
         if human.result == Evidence.Result.PARTIAL:
-            # Partial arbitration is meaningful only while evidence is mixed.
-            contradicted = not (positive and negative)
+            # Standalone human assessment may legitimately be partial.
+            # Once operational evidence exists, keep it only while mixed.
+            has_operational_conclusion = positive or negative
+            contradicted = has_operational_conclusion and not (positive and negative)
         elif (
             trigger is not None
             and trigger.source_type != Evidence.SourceType.HUMAN
