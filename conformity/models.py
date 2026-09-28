@@ -14,6 +14,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import Count, Q
+from django.db.models.functions import TruncDate
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -279,6 +280,30 @@ class EvidenceQuerySet(models.QuerySet):
                 name = 'valid_to'
             rewritten.append(prefix + name)
         return super().order_by(*rewritten)
+
+    def values_list(self, *fields, **kwargs):
+        """Expose legacy period names in projection queries during transition."""
+        annotations = {}
+        rewritten = []
+        for index, field in enumerate(fields):
+            if field == 'period_start_date':
+                alias = f'_legacy_period_start_{index}'
+                annotations[alias] = TruncDate('valid_from')
+                rewritten.append(alias)
+            elif field == 'period_end_date':
+                alias = f'_legacy_period_end_{index}'
+                annotations[alias] = TruncDate(
+                    models.ExpressionWrapper(
+                        models.F('valid_to') - timedelta(microseconds=1),
+                        output_field=models.DateTimeField(),
+                    )
+                )
+                rewritten.append(alias)
+            else:
+                rewritten.append(field)
+
+        queryset = self.annotate(**annotations) if annotations else self
+        return models.QuerySet.values_list(queryset, *rewritten, **kwargs)
 
     def valid_at(self, at=None):
         at = at or timezone.now()
