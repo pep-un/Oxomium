@@ -287,6 +287,11 @@ class EvidenceTests(TestCase):
         url = reverse('conformity:human_evidence_create', args=[self.conformity.pk])
         self.assertEqual(self.client.get(url).status_code, 302)
         self.client.force_login(self.user)
+        create_response = self.client.get(url)
+        valid_from = create_response.context['form'].initial['valid_from']
+        valid_to = create_response.context['form'].initial['valid_to']
+        self.assertEqual(valid_to - valid_from, timedelta(days=365))
+
         response = self.client.post(url, {
             'decision': HumanEvidence.Decision.COMPLIANT,
             'valid_from': self.now.strftime('%Y-%m-%d %H:%M:%S'),
@@ -352,7 +357,7 @@ class EvidenceTests(TestCase):
 
         self.assertRedirects(
             response,
-            reverse('conformity:evidence_detail', args=[human.pk]),
+            reverse('conformity:conformity_form', args=[self.conformity.pk]),
         )
         human.refresh_from_db()
         self.conformity.refresh_from_db()
