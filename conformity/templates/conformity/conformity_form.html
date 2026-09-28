@@ -138,8 +138,13 @@
 
         <div class="col-12 col-lg-6">
             <div class="card">
-                <div class="card-header">
+                <div class="card-header d-flex justify-content-between align-items-center gap-2">
                     <span class="h4 mb-0">Evidence</span>
+                    {% if show_evidence_conformities %}
+                        <span class="small text-body-secondary">
+                            Evidence from descendant requirements
+                        </span>
+                    {% endif %}
                 </div>
 
                 <div class="list-group list-group-flush">
@@ -158,6 +163,18 @@
                                             · no expiry
                                         {% endif %}
                                     </div>
+                                    {% if show_evidence_conformities %}
+                                        <div class="d-flex flex-wrap gap-1 mt-2">
+                                            {% for target in item.display_conformities %}
+                                                <a href="{% url 'conformity:conformity_form' target.pk %}"
+                                                   class="badge rounded-pill text-bg-light text-dark border text-decoration-none"
+                                                   title="{{ target.requirement.title }}">
+                                                    <i class="bi bi-diagram-3 me-1" aria-hidden="true"></i>
+                                                    {{ target.requirement.full_path }} · {{ target.requirement.title|truncatechars:48 }}
+                                                </a>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
                                     {% if item.comment %}
                                         <div class="small mt-1">
                                             {{ item.comment|truncatechars:160 }}
@@ -207,7 +224,11 @@
                         </div>
                     {% empty %}
                         <div class="list-group-item text-body-secondary text-center py-4">
-                            No currently valid evidence associated.
+                            {% if show_evidence_conformities %}
+                                No currently valid evidence in descendant requirements.
+                            {% else %}
+                                No currently valid evidence associated.
+                            {% endif %}
                         </div>
                     {% endfor %}
 
