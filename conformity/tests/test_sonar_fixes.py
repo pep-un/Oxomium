@@ -381,7 +381,7 @@ class ConformityRelatedCreateViewTest(TestCase):
         control = form.save()
         self.assertEqual(list(control.conformity.all()), [self.other_conformity])
 
-    def test_conformity_form_links_to_prefilled_action_and_control_creation(self):
+    def test_conformity_form_links_to_action_but_not_legacy_control_creation(self):
         response = self.client.get(reverse('conformity:conformity_form', args=[self.conformity.pk]))
 
         self.assertEqual(response.status_code, 200)
@@ -390,7 +390,7 @@ class ConformityRelatedCreateViewTest(TestCase):
         self.assertContains(
             response, f'href="{action_create_url}?conformity={self.conformity.pk}"'
         )
-        self.assertContains(
+        self.assertNotContains(
             response, f'href="{control_create_url}?conformity={self.conformity.pk}"'
         )
 
