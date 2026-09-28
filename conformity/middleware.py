@@ -23,6 +23,8 @@ class SanityCheckMiddleware:
         if SanityCheckMiddleware.last_checked != today:
             self.check_control_points(today)
             self.check_indicator_points(today)
+            from .services.evidence import refresh_time_bound_conformities
+            refresh_time_bound_conformities()
             SanityCheckMiddleware.last_checked = today
 
     @staticmethod
