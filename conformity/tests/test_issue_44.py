@@ -160,9 +160,65 @@ class RichTableConfigurationTests(TestCase):
         self.assertNotIn("actions", table.columns)
 
     def test_periodic_controls_filter_uses_standard_status_field(self):
-        self.assertIn("status", getattr(PeriodicEvidenceFilter, "base_filters"))
-        self.assertIn("organization", getattr(PeriodicEvidenceFilter, "base_filters"))
-        self.assertIn("source_type", getattr(PeriodicEvidenceFilter, "base_filters"))
+        filters = getattr(PeriodicEvidenceFilter, "base_filters")
+        self.assertIn("name", filters)
+        self.assertIn("status", filters)
+        self.assertIn("organization", filters)
+        self.assertIn("source_type", filters)
+        self.assertIn("requirement", filters)
+        self.assertIn("reference", filters)
+        self.assertEqual(filters["status"].label, "Last result")
+        self.assertEqual(filters["requirement"].label, "Associated requirement")
+        self.assertEqual(filters["reference"].label, "Associated reference")
+
+    def test_periodic_controls_filters_name_requirement_and_reference(self):
+        organization = Organization.objects.create(name="Filter org")
+        framework = Framework.objects.create(name="Filter reference")
+        root = Requirement.objects.create(
+            framework=framework,
+            code="FR",
+            title="Filter root",
+        )
+        leaf = Requirement.objects.create(
+            framework=framework,
+            parent=root,
+            code="1",
+            title="Target requirement",
+        )
+        conformity = Conformity.objects.create(
+            organization=organization,
+            requirement=leaf,
+        )
+        control = Control.objects.create(
+            title="Quarterly access review",
+            organization=organization,
+            frequency=Control.Frequency.YEARLY,
+        )
+        point = next(
+            item for item in control.get_controlpoint()
+            if item.is_current_period()
+        )
+        point.conformities.add(conformity)
+
+        base = Evidence.objects.filter(pk=point.pk)
+
+        by_name = PeriodicEvidenceFilter(
+            {"name": "access"},
+            queryset=base,
+        )
+        self.assertEqual(list(by_name.qs), [point.evidence_ptr])
+
+        by_requirement = PeriodicEvidenceFilter(
+            {"requirement": leaf.pk},
+            queryset=base,
+        )
+        self.assertEqual(list(by_requirement.qs), [point.evidence_ptr])
+
+        by_reference = PeriodicEvidenceFilter(
+            {"reference": framework.pk},
+            queryset=base,
+        )
+        self.assertEqual(list(by_reference.qs), [point.evidence_ptr])
 
     def test_control_table_exposes_organization_and_last_result(self):
         table = ControlTable([])
