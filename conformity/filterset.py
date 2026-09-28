@@ -44,6 +44,19 @@ class ControlFilter(FilterSet):
 
 
 class PeriodicEvidenceFilter(FilterSet):
+    status = ChoiceFilter(
+        choices=(
+            (ControlPoint.Status.TOBEEVALUATED, 'To evaluate'),
+            (ControlPoint.Status.SCHEDULED, 'Scheduled'),
+            (ControlPoint.Status.COMPLIANT, 'Compliant'),
+            (ControlPoint.Status.NONCOMPLIANT, 'Non-Compliant'),
+            (IndicatorPoint.Status.WARNING, 'Warning'),
+            (IndicatorPoint.Status.CRITICAL, 'Critical'),
+            (ControlPoint.Status.MISSED, 'Missed'),
+        ),
+        method='filter_status',
+        label='Status',
+    )
     organization = ModelChoiceFilter(
         queryset=Organization.objects.all(),
         method='filter_organization',
@@ -69,7 +82,15 @@ class PeriodicEvidenceFilter(FilterSet):
 
     class Meta:
         model = Evidence
-        fields = ['organization', 'source_type', 'level', 'frequency']
+        fields = ['status', 'organization', 'source_type', 'level', 'frequency']
+
+    def filter_status(self, queryset, name, value):
+        if not value:
+            return queryset
+        return queryset.filter(
+            Q(controlpoint__status=value)
+            | Q(indicatorpoint__status=value)
+        )
 
     def filter_organization(self, queryset, name, value):
         if not value:
