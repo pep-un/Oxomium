@@ -397,6 +397,46 @@ class Evidence(models.Model):
         return ''
 
     @property
+    def display_name(self):
+        """Human-readable source name for Evidence list views."""
+        if self.source_type == self.SourceType.CONTROL:
+            point = self.periodic_point
+            return point.control.title if point and point.control_id else _('Control evidence')
+        if self.source_type == self.SourceType.INDICATOR:
+            point = self.periodic_point
+            return point.indicator.name if point and point.indicator_id else _('Indicator evidence')
+        if self.source_type == self.SourceType.HUMAN:
+            return _('Human assessment')
+        if self.source_type == self.SourceType.MANUAL:
+            try:
+                return self.manualevidence.title
+            except ManualEvidence.DoesNotExist:
+                return _('Manual evidence')
+        if self.source_type == self.SourceType.DOCUMENT:
+            try:
+                document = self.documentevidence
+                return document.title or str(document.document)
+            except DocumentEvidence.DoesNotExist:
+                return _('Documentary proof')
+        if self.source_type == self.SourceType.FINDING:
+            try:
+                return str(self.findingevidence.finding)
+            except FindingEvidence.DoesNotExist:
+                return _('Audit finding')
+        return self.get_source_type_display()
+
+    @property
+    def display_icon(self):
+        return {
+            self.SourceType.CONTROL: 'bi-clipboard2-check',
+            self.SourceType.INDICATOR: 'bi-speedometer',
+            self.SourceType.HUMAN: 'bi-person-check',
+            self.SourceType.MANUAL: 'bi-pencil-square',
+            self.SourceType.DOCUMENT: 'bi-file-earmark-check',
+            self.SourceType.FINDING: 'bi-exclamation-diamond',
+        }.get(self.source_type, 'bi-journal-check')
+
+    @property
     def periodic_organization(self):
         point = self.periodic_point
         if isinstance(point, ControlPoint) and point.control_id:
