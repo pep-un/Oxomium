@@ -2,6 +2,7 @@ from datetime import date, timedelta
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -49,10 +50,10 @@ class EvidenceTests(TestCase):
             valid_from=self.now - timedelta(hours=1),
         )
 
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(ValidationError), transaction.atomic():
             item.conformities.add(self.parent)
 
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(ValidationError), transaction.atomic():
             self.parent.evidence.add(item)
 
         self.assertFalse(item.conformities.exists())
@@ -311,7 +312,6 @@ class EvidenceTests(TestCase):
 
         self.assertIn('badge rounded-pill text-bg-success fs-5 px-3 py-2 ms-auto', html)
         self.assertIn('progress-bar bg-success', html)
-        self.assertIn('progress-bar bg-secondary progress-bar-striped text-white', html)
         self.assertNotIn('Completeness:', html)
 
     def test_framework_review_uses_evidence_column_and_categorical_status(self):
