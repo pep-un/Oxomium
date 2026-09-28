@@ -12,13 +12,6 @@ def backfill_evidence_state(apps, schema_editor):
     queryset.filter(status__gt=0, status__lt=100).update(evidence_state='PART')
 
 
-def reverse_backfill(apps, schema_editor):
-    Conformity = apps.get_model('conformity', 'Conformity')
-    Conformity.objects.filter(
-        evidence_state__in=['COMP', 'NONC', 'PART'],
-    ).update(evidence_state='NONE')
-
-
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -26,5 +19,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(backfill_evidence_state, reverse_backfill),
+        migrations.RunPython(backfill_evidence_state, migrations.RunPython.noop),
     ]
