@@ -771,21 +771,22 @@ class ControlIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
     filterset_class = PeriodicEvidenceFilter
     template_name = 'conformity/periodic_control_list.html'
 
-    def get_queryset(self):
-        queryset = Evidence.objects.filter(
-            source_type__in=[
-                Evidence.SourceType.CONTROL,
-                Evidence.SourceType.INDICATOR,
-            ]
-        )
-        if not self.request.GET.get('show_all'):
-            queryset = queryset.filter(
-                Q(controlpoint__status=ControlPoint.Status.TOBEEVALUATED)
-                | Q(indicatorpoint__status=IndicatorPoint.Status.TOBEEVALUATED)
-            )
+    def get(self, request, *args, **kwargs):
+        if 'status' not in request.GET:
+            params = request.GET.copy()
+            params['status'] = ControlPoint.Status.TOBEEVALUATED
+            return redirect(f"{request.path}?{params.urlencode()}")
+        return super().get(request, *args, **kwargs)
 
+    def get_queryset(self):
         return (
-            queryset
+            Evidence.objects
+            .filter(
+                source_type__in=[
+                    Evidence.SourceType.CONTROL,
+                    Evidence.SourceType.INDICATOR,
+                ]
+            )
             .select_related(
                 'controlpoint__control__organization',
                 'indicatorpoint__indicator__organization',
