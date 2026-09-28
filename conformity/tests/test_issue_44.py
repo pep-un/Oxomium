@@ -569,6 +569,26 @@ class RichTableInteractionTests(TestCase):
             {"CRT", "MAJ", "MIN", "OBS"},
         )
 
+    def test_default_filter_button_is_only_shown_on_preset_views(self):
+        finding = self.client.get(
+            reverse("conformity:finding_index"),
+            follow=True,
+        )
+        self.assertContains(finding, "Default filter")
+        self.assertContains(finding, 'class="btn btn-secondary"')
+        self.assertContains(finding, "defaults=off")
+
+        periodic = self.client.get(
+            reverse("conformity:control_index"),
+            follow=True,
+        )
+        self.assertContains(periodic, "Default filter")
+        self.assertContains(periodic, "status=TOBE")
+        self.assertContains(periodic, "defaults=off")
+
+        organization = self.client.get(reverse("conformity:organization_index"))
+        self.assertNotContains(organization, "Default filter")
+
     def test_relation_filtered_findings_include_items_hidden_from_general_list(self):
         general = self.client.get(
             reverse("conformity:finding_index"),
@@ -714,6 +734,43 @@ class RichTableInteractionTests(TestCase):
         self.assertIn("col-2", column.attrs["th"]["class"])
         self.assertIn("text-start", column.attrs["th"]["class"])
         self.assertIn("table-primary-link", column.attrs["a"]["class"])
+
+    def test_periodic_controls_columns_are_sortable_like_other_tables(self):
+        table = PeriodicControlTable([])
+
+        for column_name in (
+            "name", "organization", "type", "level", "frequency", "last_result",
+        ):
+            with self.subTest(column=column_name):
+                self.assertTrue(table.columns[column_name].orderable)
+
+        self.assertFalse(table.columns["requirements"].orderable)
+
+    def test_periodic_controls_sort_by_name(self):
+        organization = Organization.objects.create(name="Sorting org")
+        Control.objects.create(
+            title="Alpha periodic source",
+            organization=organization,
+            frequency=Control.Frequency.YEARLY,
+        )
+        Control.objects.create(
+            title="Zulu periodic source",
+            organization=organization,
+            frequency=Control.Frequency.YEARLY,
+        )
+
+        response = self.client.get(
+            reverse("conformity:control_index"),
+            {"status": "", "sort": "-name"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        names = [
+            item.periodic_name
+            for item in response.context["table"].page.object_list
+            if item.periodic_name in {"Alpha periodic source", "Zulu periodic source"}
+        ]
+        self.assertEqual(names, ["Zulu periodic source", "Alpha periodic source"])
 
     def test_periodic_control_name_links_to_result_editor(self):
         organization = Organization.objects.create(name="Periodic title link org")

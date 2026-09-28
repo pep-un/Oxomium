@@ -21,11 +21,16 @@
             {% endfor %}
 
             <div class="d-flex flex-wrap justify-content-end gap-2 mt-3 pt-3 border-top">
-                <a href="?"
+                <a href="{{ reset_filter_url|default:'?' }}"
                    class="btn btn-outline-danger{% if not active_filters %} disabled{% endif %}"
                    {% if not active_filters %}aria-disabled="true" tabindex="-1"{% endif %}>
                     Reset filters
                 </a>
+                {% if default_filter_url %}
+                    <a href="{{ default_filter_url }}" class="btn btn-secondary">
+                        Default filter
+                    </a>
+                {% endif %}
                 <button type="submit" class="btn btn-primary">Apply filters</button>
             </div>
         </form>

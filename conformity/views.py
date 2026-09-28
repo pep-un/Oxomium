@@ -65,6 +65,29 @@ class SaveStayMixin:
         return response
 
 
+class DefaultFilterMixin:
+    """Expose and apply a reusable default filter preset."""
+
+    default_filter_url_name = None
+    default_filter_params = {}
+
+    def get_default_filter_url(self):
+        params = self.request.GET.copy()
+        params.clear()
+        for key, value in self.default_filter_params.items():
+            if isinstance(value, (tuple, list)):
+                params.setlist(key, [str(item) for item in value])
+            else:
+                params[key] = value
+        return f"{reverse(self.default_filter_url_name)}?{params.urlencode()}"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['default_filter_url'] = self.get_default_filter_url()
+        context['reset_filter_url'] = '?defaults=off'
+        return context
+
+
 class RichTableMixin(SingleTableMixin):
     """Common pagination policy and result counts for filtered rich tables."""
 
@@ -230,7 +253,7 @@ class AuditExportView(LoginRequiredMixin, FilteredExportMixin, View):
 #
 # Findings
 #
-class FindingIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
+class FindingIndexView(DefaultFilterMixin, LoginRequiredMixin, RichTableMixin, FilterView):
     model = Finding
     table_class = FindingTable
     filterset_class = FindingFilter
@@ -241,14 +264,15 @@ class FindingIndexView(LoginRequiredMixin, RichTableMixin, FilterView):
         Finding.Severity.MINOR,
         Finding.Severity.OBSERVATION,
     )
+    default_filter_url_name = 'conformity:finding_index'
+    default_filter_params = {
+        'nature': default_natures,
+        'status': 'active',
+    }
 
     def get(self, request, *args, **kwargs):
         if not request.GET:
-            params = request.GET.copy()
-            params.setlist('nature', self.default_natures)
-            params['status'] = 'active'
-            url = reverse('conformity:finding_index')
-            return redirect(f"{url}?{params.urlencode()}")
+            return redirect(self.get_default_filter_url())
         return super().get(request, *args, **kwargs)
 
     def get_queryset(self, **kwargs):
@@ -844,18 +868,19 @@ def _periodic_sources():
     )
 
 
-class ControlIndexView(LoginRequiredMixin, RichTableMixin, TemplateView):
+class ControlIndexView(DefaultFilterMixin, LoginRequiredMixin, RichTableMixin, TemplateView):
     """Unified periodic source list: Controls and Indicators."""
 
     table_class = PeriodicControlTable
     template_name = 'conformity/periodic_control_list.html'
+    default_filter_url_name = 'conformity:control_index'
+    default_filter_params = {
+        'status': ControlPoint.Status.TOBEEVALUATED,
+    }
 
     def get(self, request, *args, **kwargs):
-        if 'status' not in request.GET:
-            params = request.GET.copy()
-            params['status'] = ControlPoint.Status.TOBEEVALUATED
-            url = reverse('conformity:control_index')
-            return redirect(f"{url}?{params.urlencode()}")
+        if 'status' not in request.GET and 'defaults' not in request.GET:
+            return redirect(self.get_default_filter_url())
         return super().get(request, *args, **kwargs)
 
     def get_periodic_items(self):

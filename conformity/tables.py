@@ -361,7 +361,7 @@ class PeriodicControlTable(BaseRichTable):
         accessor="periodic_name",
         verbose_name="Name",
         linkify=periodic_source_url,
-        orderable=False,
+        order_by=("periodic_name",),
         attrs=PRIMARY_COLUMN,
     )
     organization = tables.TemplateColumn(
@@ -376,25 +376,25 @@ class PeriodicControlTable(BaseRichTable):
                 <span class="text-body-secondary">—</span>
             {% endif %}
         """,
-        orderable=False,
+        order_by=("organization__name",),
         attrs=CENTER,
     )
     type = tables.Column(
         accessor="periodic_type",
         verbose_name="Type",
-        orderable=False,
+        order_by=("periodic_type",),
         attrs=CENTER,
     )
     level = tables.Column(
         accessor="periodic_level",
         verbose_name="Level",
-        orderable=False,
+        order_by=("periodic_level",),
         attrs=CENTER,
     )
     frequency = tables.Column(
         accessor="periodic_frequency",
         verbose_name="Frequency",
-        orderable=False,
+        order_by=("frequency",),
         attrs=CENTER,
     )
     last_result = tables.TemplateColumn(
@@ -438,7 +438,7 @@ class PeriodicControlTable(BaseRichTable):
                 {% endif %}
             {% endwith %}
         """,
-        orderable=False,
+        order_by=("periodic_result_sort",),
         attrs=CENTER,
     )
     requirements = tables.TemplateColumn(

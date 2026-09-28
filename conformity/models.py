@@ -1101,6 +1101,11 @@ class Control(models.Model):
             points[0] if points else None,
         )
 
+    @property
+    def periodic_result_sort(self):
+        point = self.periodic_point
+        return point.status if point is not None else ''
+
 class ControlPoint(Evidence):
     """A periodic control result represented directly as Evidence."""
 
@@ -1667,6 +1672,12 @@ class Indicator (models.Model):
             (point for point in points if point.period_start_date <= today <= point.period_end_date),
             points[0] if points else None,
         )
+
+
+    @property
+    def periodic_result_sort(self):
+        point = self.periodic_point
+        return point.status if point is not None else ''
 
 
 class IndicatorPoint(Evidence):
