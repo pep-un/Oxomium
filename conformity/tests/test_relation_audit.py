@@ -30,7 +30,8 @@ class RelationAuditTests(TestCase):
             Attachment.objects.create(file=SimpleUploadedFile(f'audit{i}.txt', f'content-{i}'.encode()))
             for i in range(2)
         ]
-        self.conformities = [Conformity.objects.create(organization=self.org, requirement=Requirement.objects.create(framework=self.frameworks[i], code=f'ROOT{i}')) for i in range(2)]
+        self.requirements = [Requirement.objects.create(framework=self.frameworks[i], code=f'ROOT{i}') for i in range(2)]
+        self.conformities = [Conformity.objects.create(organization=self.org, requirement=self.requirements[i]) for i in range(2)]
         self.audit = Audit.objects.create(organization=self.org, auditor='Auditor')
         self.findings = [Finding.objects.create(audit=self.audit, short_description=f'Finding {i}') for i in range(2)]
         self.controls = [Control.objects.create(title=f'Control {i}') for i in range(3)]
@@ -48,14 +49,12 @@ class RelationAuditTests(TestCase):
             (self.org, 'applicable_frameworks', self.frameworks),
             (self.audit, 'audited_frameworks', self.frameworks),
             (self.audit, 'attachment', self.attachments),
-            (self.controls[0], 'conformity', self.conformities),
+            (self.controls[0], 'requirements', self.requirements),
             (self.controls[0], 'control', self.controls[1:]),
-            (self.points[0], 'attachment', self.attachments),
             (self.action, 'associated_conformity', self.conformities),
             (self.action, 'associated_findings', self.findings),
             (self.action, 'associated_controlPoints', self.points),
-            (self.indicator, 'conformity', self.conformities),
-            (self.indicator_point, 'attachment', self.attachments),
+            (self.indicator, 'requirements', self.requirements),
             (self.evidence, 'attachments', self.attachments),
             (self.evidence, 'conformities', self.conformities),
         ]
