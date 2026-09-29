@@ -1,0 +1,16 @@
+services:
+  web:
+    image: docker.io/pepun/oxomium:${OXOMIUM_VERSION}
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${OXOMIUM_PORT:-8001}:8000"
+    env_file: [.env]
+    volumes:
+      - ./data:/app/data
+      - ./staticfiles:/app/staticfiles
+    healthcheck:
+      test: ["CMD", "python", "manage.py", "check"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
