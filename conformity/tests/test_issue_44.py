@@ -258,7 +258,7 @@ class RichTableConfigurationTests(TestCase):
             title="Quarterly access review",
             frequency=Control.Frequency.YEARLY,
         )
-        control.requirements.add(leaf)
+        control.conformity.add(conformity)
         base = [control]
 
         by_name = PeriodicControlFilter(
