@@ -743,15 +743,13 @@ class Conformity(models.Model):
             items.extend(("action", action) for action in self.actions.filter(status__in=statuses))
         if include_controls:
             today = date.today()
-            statuses = [
-                ControlPoint.Status.NONCOMPLIANT, ControlPoint.Status.MISSED,
-                ControlPoint.Status.SCHEDULED, ControlPoint.Status.TOBEEVALUATED,
-            ]
             points = ControlPoint.objects.filter(
                 conformities=self,
                 valid_from__date__lte=today,
                 valid_to__date__gt=today,
-                status__in=statuses,
+            ).filter(
+                Q(result=Evidence.Result.NEGATIVE)
+                | Q(status__in=[Evidence.Status.MISSED, Evidence.Status.SCHEDULED, Evidence.Status.TOBEEVALUATED])
             )
             items.extend(("controlpoint", point) for point in points)
         return items
