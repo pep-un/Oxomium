@@ -34,7 +34,7 @@
                 </div>
             </div>
 
-            {% include "includes/attachment_panel.html" with attachments=controlpoint.attachment.all owner=controlpoint owner_type="controlpoint" editable=True attachment_field=form.attachments %}
+            {% include "includes/attachment_panel.html" with attachments=controlpoint.attachments.all owner=controlpoint owner_type="controlpoint" editable=True attachment_field=form.attachments %}
 
             <div class="card mb-4">
                 <div class="card-header">
