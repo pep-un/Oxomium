@@ -265,45 +265,14 @@ class ActionForm(ModelForm):
 
 
 class ControlForm(ModelForm):
-    # Compatibility UI: users still select organization-specific Conformity
-    # records, but the Control stores only normative Requirement targets.
-    conformity = ModelMultipleChoiceField(queryset=Conformity.objects.all(), required=False)
-
     class Meta:
         model = Control
-        fields = ['title', 'description', 'organization', 'conformity', 'control', 'frequency', 'level']
+        fields = ['title', 'description', 'conformity', 'control', 'frequency', 'level']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        organization = self.initial.get('organization')
-        if organization is None:
-            organization_id = self.instance.organization_id
-        else:
-            organization_id = getattr(organization, 'pk', organization)
-
-        if self.instance.pk and 'conformity' not in self.initial:
-            self.initial['conformity'] = Conformity.objects.filter(
-                organization_id=self.instance.organization_id,
-                requirement__in=self.instance.requirements.all(),
-            )
-
-        if organization_id:
-            self.fields['conformity'].queryset = Conformity.objects.filter(
-                organization_id=organization_id
-            )
-            self.fields['control'].queryset = Control.objects.filter(
-                organization_id=organization_id
-            )
-        if self.instance.pk is None and 'organization' in self.initial:
-            self.fields['organization'].disabled = True
         if self.instance.pk is None and self.initial.get('conformity'):
             self.fields['conformity'].disabled = True
-
-    def _save_m2m(self):
-        super()._save_m2m()
-        conformities = self.cleaned_data.get('conformity')
-        if conformities is not None:
-            self.instance.requirements.set(conformities.values_list('requirement_id', flat=True))
 
 
 class ControlPointForm(AttachmentUploadFormMixin, ModelForm):
@@ -336,38 +305,12 @@ class ControlPointForm(AttachmentUploadFormMixin, ModelForm):
 
 
 class IndicatorForm(ModelForm):
-    conformity = ModelMultipleChoiceField(queryset=Conformity.objects.all(), required=False)
-
     class Meta:
         model = Indicator
         fields = [
             'name', 'goal', 'source', 'formula', 'worst', 'critical', 'warning', 'best',
-            'responsible', 'organization', 'conformity', 'frequency',
+            'responsible', 'conformity', 'frequency',
         ]
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        organization = self.initial.get('organization')
-        if organization is None:
-            organization_id = self.instance.organization_id
-        else:
-            organization_id = getattr(organization, 'pk', organization)
-
-        if self.instance.pk and 'conformity' not in self.initial:
-            self.initial['conformity'] = Conformity.objects.filter(
-                organization_id=self.instance.organization_id,
-                requirement__in=self.instance.requirements.all(),
-            )
-        if organization_id:
-            self.fields['conformity'].queryset = Conformity.objects.filter(
-                organization_id=organization_id
-            )
-
-    def _save_m2m(self):
-        super()._save_m2m()
-        conformities = self.cleaned_data.get('conformity')
-        if conformities is not None:
-            self.instance.requirements.set(conformities.values_list('requirement_id', flat=True))
 
 
 class IndicatorPointForm(AttachmentUploadFormMixin, ModelForm):
