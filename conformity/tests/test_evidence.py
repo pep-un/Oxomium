@@ -83,7 +83,7 @@ class EvidenceTests(TestCase):
             control=control,
             period_start_date=date.today() - timedelta(days=1),
             period_end_date=date.today() + timedelta(days=1),
-            status=ControlPoint.Status.COMPLIANT,
+            status=Evidence.Status.EVALUATED, result=Evidence.Result.POSITIVE,
         )
 
         self.assertEqual(
@@ -748,7 +748,7 @@ class EvidenceTests(TestCase):
             control=control,
             period_start_date=date.today() - timedelta(days=1),
             period_end_date=date.today() + timedelta(days=1),
-            status=ControlPoint.Status.COMPLIANT,
+            status=Evidence.Status.EVALUATED, result=Evidence.Result.POSITIVE,
         )
         human = HumanEvidence.objects.create(
             decision=HumanEvidence.Decision.COMPLIANT,
@@ -757,7 +757,8 @@ class EvidenceTests(TestCase):
         )
         human.conformities.add(self.conformity)
 
-        point.status = ControlPoint.Status.NONCOMPLIANT
+        point.status = Evidence.Status.EVALUATED
+        point.result = Evidence.Result.NEGATIVE
         point.save(update_fields=['status'])
         human.refresh_from_db()
         point.refresh_from_db()
@@ -773,7 +774,7 @@ class EvidenceTests(TestCase):
             control=control,
             period_start_date=date.today() - timedelta(days=1),
             period_end_date=date.today() + timedelta(days=1),
-            status=ControlPoint.Status.NONCOMPLIANT,
+            status=Evidence.Status.EVALUATED, result=Evidence.Result.NEGATIVE,
         )
         self.evidence(Evidence.Result.POSITIVE)
         human = HumanEvidence.objects.create(
@@ -797,7 +798,7 @@ class EvidenceTests(TestCase):
             control=control,
             period_start_date=date.today() - timedelta(days=1),
             period_end_date=date.today() + timedelta(days=1),
-            status=ControlPoint.Status.NONCOMPLIANT,
+            status=Evidence.Status.EVALUATED, result=Evidence.Result.NEGATIVE,
             comment='Access not removed.',
         )
         point.refresh_from_db()
@@ -819,7 +820,8 @@ class EvidenceTests(TestCase):
             value=10,
         )
         point.refresh_from_db()
-        self.assertEqual(point.status, IndicatorPoint.Status.CRITICAL)
+        self.assertEqual(point.status, Evidence.Status.EVALUATED)
+        self.assertEqual(point.result, Evidence.Result.NEGATIVE)
         self.assertTrue(issubclass(IndicatorPoint, Evidence))
         self.assertEqual(point.result, Evidence.Result.NEGATIVE)
 
@@ -964,7 +966,7 @@ class EvidenceTests(TestCase):
             control=control,
             period_start_date=date.today() - timedelta(days=1),
             period_end_date=date.today() + timedelta(days=1),
-            status=ControlPoint.Status.COMPLIANT,
+            status=Evidence.Status.EVALUATED, result=Evidence.Result.POSITIVE,
         )
 
         self.client.force_login(self.user)
