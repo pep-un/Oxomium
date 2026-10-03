@@ -893,6 +893,21 @@ class ConformityTargetedSourceCreateMixin:
             initial['conformity'] = [conformity]
         return initial
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        conformity = self.get_target_conformity()
+        if conformity is not None:
+            context['evidence_conformities'] = [conformity]
+        elif getattr(self, 'object', None) is not None and self.object.pk:
+            context['evidence_conformities'] = (
+                self.object.conformity
+                .select_related('organization', 'requirement__framework')
+                .order_by('requirement__tree_id', 'requirement__lft', 'pk')
+            )
+        else:
+            context['evidence_conformities'] = []
+        return context
+
     def get_success_url(self):
         conformity = self.get_target_conformity()
         if conformity is not None and self.request.POST.get("action") != "save_stay":
@@ -977,7 +992,7 @@ class ControlIndexView(DefaultFilterMixin, LoginRequiredMixin, RichTableMixin, T
         return context
 
 
-class ControlUpdateView(LoginRequiredMixin, SaveStayMixin, UpdateView):
+class ControlUpdateView(LoginRequiredMixin, ConformityTargetedSourceCreateMixin, SaveStayMixin, UpdateView):
     stay_url_name = "conformity:control_form"
     model = Control
     form_class = ControlForm
@@ -1087,7 +1102,7 @@ class IndicatorIndexView(LoginRequiredMixin, FilterView):
     template_name = 'conformity/indicator_list.html'
 
 
-class IndicatorUpdateView(LoginRequiredMixin, SaveStayMixin, UpdateView):
+class IndicatorUpdateView(LoginRequiredMixin, ConformityTargetedSourceCreateMixin, SaveStayMixin, UpdateView):
     stay_url_name = "conformity:indicator_form"
     model = Indicator
     form_class = IndicatorForm
