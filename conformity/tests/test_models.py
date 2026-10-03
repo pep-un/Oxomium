@@ -486,7 +486,6 @@ class ConformityGetRelatedTests(TestCase):
         # Control + a current ControlPoint in an evaluable status
         self.ctrl = Control.objects.create(
             title="Quarterly Check",
-            organization=self.org,
             level=Control.Level.FIRST,
             frequency=Control.Frequency.QUARTERLY,
         )
@@ -563,7 +562,7 @@ class ConformityRelationAndGuardsTests(TestCase):
         self.c_child = Conformity.objects.get(organization=self.org, requirement=self.child)
 
     def test_get_control(self):
-        ctl = Control.objects.create(title="C1", organization=self.org)
+        ctl = Control.objects.create(title="C1",)
         ctl.conformity.add(self.c_child)
         res = list(self.c_child.get_control())
         self.assertEqual(res, [ctl])
@@ -574,7 +573,7 @@ class ConformityRelationAndGuardsTests(TestCase):
         a.associated_conformity.add(self.c_child)
 
         # ControlPoint for "today" window and set as NONCOMPLIANT
-        ctl = Control.objects.create(title="C2", organization=self.org)
+        ctl = Control.objects.create(title="C2",)
         ctl.conformity.add(self.c_child)
         # generate CPs
         Control.controlpoint_bootstrap(ctl)
@@ -641,7 +640,7 @@ class ConformityRelationAndGuardsTests(TestCase):
         # With negative evidence present, 100% must be refused
         a = Action.objects.create(title="A2", organization=self.org, status=Action.Status.ANALYSING)
         a.associated_conformity.add(self.c_child)
-        ctl = Control.objects.create(title="C3", organization=self.org)
+        ctl = Control.objects.create(title="C3",)
         ctl.conformity.add(self.c_child)
         Control.controlpoint_bootstrap(ctl)
         cp = ctl.get_controlpoint().first()
@@ -711,7 +710,7 @@ class AuditAndFindingExtraTests(TestCase):
 class ControlAndControlPointExtrasTests(TestCase):
     def setUp(self):
         self.org = Organization.objects.create(name="Org Z")
-        self.ctl = Control.objects.create(title="Ctl", organization=self.org)
+        self.ctl = Control.objects.create(title="Ctl",)
 
     def test_control_str_and_get_controlpoint_and_signal_idempotent(self):
         # initial creation generates CPs via callback
