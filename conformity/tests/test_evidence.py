@@ -26,10 +26,10 @@ class EvidenceTests(TestCase):
         )
         self.organization = Organization.objects.create(name='Evidence organization')
         self.parent = Conformity.objects.create(
-            requirement=self.root
+            organization=self.organization, requirement=self.root
         )
         self.conformity = Conformity.objects.create(
-            requirement=self.leaf
+            organization=self.organization, requirement=self.leaf
         )
         self.now = timezone.now()
 
@@ -224,6 +224,7 @@ class EvidenceTests(TestCase):
             title='Second Evidence leaf',
         )
         second = Conformity.objects.create(
+            organization=self.organization,
             requirement=second_leaf,
         )
 
@@ -255,6 +256,7 @@ class EvidenceTests(TestCase):
             title='Second Evidence leaf',
         )
         second = Conformity.objects.create(
+            organization=self.organization,
             requirement=second_leaf,
         )
 
@@ -297,6 +299,7 @@ class EvidenceTests(TestCase):
             title='Second Evidence leaf',
         )
         second = Conformity.objects.create(
+            organization=self.organization,
             requirement=second_leaf,
         )
         manual = ManualEvidence.objects.create(
@@ -341,9 +344,11 @@ class EvidenceTests(TestCase):
             title='Second grouped leaf',
         )
         first = Conformity.objects.create(
+            organization=self.organization,
             requirement=first_leaf,
         )
         second = Conformity.objects.create(
+            organization=self.organization,
             requirement=second_leaf,
         )
         manual = ManualEvidence.objects.create(
@@ -466,6 +471,7 @@ class EvidenceTests(TestCase):
             title='Second Evidence leaf',
         )
         second = Conformity.objects.create(
+            organization=self.organization,
             requirement=second_leaf,
         )
         manual = ManualEvidence.objects.create(
@@ -735,7 +741,7 @@ class EvidenceTests(TestCase):
 
     def test_later_control_result_invalidates_human_arbitration(self):
         control = Control.objects.create(
-            title='Human-arbitrated control'
+            title='Human-arbitrated control',
         )
         control.conformity.add(self.conformity)
         point = ControlPoint.objects.create(
@@ -760,7 +766,7 @@ class EvidenceTests(TestCase):
 
     def test_non_result_control_update_keeps_human_arbitration(self):
         control = Control.objects.create(
-            title='Documented control'
+            title='Documented control',
         )
         control.conformity.add(self.conformity)
         point = ControlPoint.objects.create(
@@ -784,7 +790,7 @@ class EvidenceTests(TestCase):
 
     def test_control_point_is_evidence_without_losing_business_fields(self):
         control = Control.objects.create(
-            title='Access review'
+            title='Access review',
         )
         control.conformity.add(self.conformity)
         point = ControlPoint.objects.create(
