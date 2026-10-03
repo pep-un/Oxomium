@@ -18,6 +18,7 @@
     {% csrf_token %}
     <div class="row g-4 align-items-start">
         <div class="col-12 col-lg-6">
+            {% include "conformity/includes/evidence_organization_cards.html" %}
             {% include "conformity/includes/evidence_requirement_cards.html" %}
         </div>
 
