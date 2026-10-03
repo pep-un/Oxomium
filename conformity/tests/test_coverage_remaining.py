@@ -110,6 +110,7 @@ class RemainingCoverageTests(TestCase):
         invalidated = Finding.objects.create(
             audit=self.audit,
             short_description="Invalidated",
+            valid_from=timezone.now() - timedelta(days=1),
             valid_to=timezone.now() - timedelta(minutes=1),
         )
         invalidated_form = FindingForm(instance=invalidated)
