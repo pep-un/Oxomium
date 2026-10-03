@@ -35,7 +35,7 @@ class EvidenceTests(TestCase):
 
     def evidence(self, result, start=None, end=None):
         item = Evidence.objects.create(
-            source_type=Evidence.SourceType.GENERIC,
+            source_type=Evidence.SourceType.DOCUMENT,
             result=result,
             valid_from=start or self.now - timedelta(hours=1),
             valid_to=end,
@@ -45,7 +45,7 @@ class EvidenceTests(TestCase):
 
     def test_evidence_cannot_be_associated_with_parent_conformity(self):
         item = Evidence.objects.create(
-            source_type=Evidence.SourceType.GENERIC,
+            source_type=Evidence.SourceType.DOCUMENT,
             result=Evidence.Result.POSITIVE,
             valid_from=self.now - timedelta(hours=1),
         )
@@ -63,7 +63,6 @@ class EvidenceTests(TestCase):
 
         for route_name in (
             'human_evidence_create',
-            'evidence_create',
             'document_evidence_create',
         ):
             with self.subTest(route=route_name):
@@ -178,7 +177,7 @@ class EvidenceTests(TestCase):
         human.conformities.add(self.conformity)
 
         existing_negative = Evidence.objects.create(
-            source_type=Evidence.SourceType.GENERIC,
+            source_type=Evidence.SourceType.DOCUMENT,
             result=Evidence.Result.NEGATIVE,
             valid_from=self.now - timedelta(days=1),
         )
@@ -228,14 +227,14 @@ class EvidenceTests(TestCase):
         )
 
         positive = Evidence.objects.create(
-            source_type=Evidence.SourceType.GENERIC,
+            source_type=Evidence.SourceType.DOCUMENT,
             result=Evidence.Result.POSITIVE,
             valid_from=self.now - timedelta(hours=1),
         )
         positive.conformities.add(self.conformity)
 
         negative = Evidence.objects.create(
-            source_type=Evidence.SourceType.GENERIC,
+            source_type=Evidence.SourceType.DOCUMENT,
             result=Evidence.Result.NEGATIVE,
             valid_from=self.now - timedelta(hours=1),
         )
@@ -259,7 +258,7 @@ class EvidenceTests(TestCase):
             requirement=second_leaf,
         )
 
-        shared = Evidence.objects.create(source_type=Evidence.SourceType.GENERIC, 
+        shared = Evidence.objects.create(source_type=Evidence.SourceType.DOCUMENT, 
             title='Shared child evidence',
             result=Evidence.Result.POSITIVE,
             valid_from=self.now - timedelta(hours=1),
@@ -290,7 +289,7 @@ class EvidenceTests(TestCase):
             [shared],
         )
 
-    def test_generic_evidence_editor_shows_all_requirement_context_cards(self):
+    def test_base_evidence_editor_shows_all_requirement_context_cards(self):
         second_leaf = Requirement.objects.create(
             framework=self.framework,
             parent=self.root,
@@ -301,8 +300,8 @@ class EvidenceTests(TestCase):
             organization=self.organization,
             requirement=second_leaf,
         )
-        manual = Evidence.objects.create(source_type=Evidence.SourceType.GENERIC, 
-            title='Shared generic evidence',
+        manual = Evidence.objects.create(source_type=Evidence.SourceType.DOCUMENT, 
+            title='Shared evidence',
             result=Evidence.Result.POSITIVE,
             valid_from=self.now - timedelta(hours=1),
         )
@@ -350,7 +349,7 @@ class EvidenceTests(TestCase):
             organization=self.organization,
             requirement=second_leaf,
         )
-        manual = Evidence.objects.create(source_type=Evidence.SourceType.GENERIC, 
+        manual = Evidence.objects.create(source_type=Evidence.SourceType.DOCUMENT, 
             title='Grouped requirements',
             result=Evidence.Result.POSITIVE,
             valid_from=self.now - timedelta(hours=1),
@@ -473,7 +472,7 @@ class EvidenceTests(TestCase):
             organization=self.organization,
             requirement=second_leaf,
         )
-        manual = Evidence.objects.create(source_type=Evidence.SourceType.GENERIC, 
+        manual = Evidence.objects.create(source_type=Evidence.SourceType.DOCUMENT, 
             title='Multi requirement evidence',
             result=Evidence.Result.POSITIVE,
             valid_from=self.now - timedelta(hours=1),
@@ -515,7 +514,7 @@ class EvidenceTests(TestCase):
         )
 
     def test_orphan_evidence_editor_offers_requirement_association(self):
-        orphan = Evidence.objects.create(source_type=Evidence.SourceType.GENERIC, 
+        orphan = Evidence.objects.create(source_type=Evidence.SourceType.DOCUMENT, 
             title='Orphan evidence',
             result=Evidence.Result.POSITIVE,
             valid_from=self.now - timedelta(hours=1),
@@ -559,7 +558,7 @@ class EvidenceTests(TestCase):
         indicator.conformity.add(self.conformity)
         indicator_point = indicator.get_current_point()
 
-        manual = Evidence.objects.create(source_type=Evidence.SourceType.GENERIC, 
+        manual = Evidence.objects.create(source_type=Evidence.SourceType.DOCUMENT, 
             title='Named manual evidence',
             result=Evidence.Result.POSITIVE,
             valid_from=self.now - timedelta(hours=1),
@@ -638,7 +637,7 @@ class EvidenceTests(TestCase):
         self.assertIn('No currently valid evidence associated.', html)
 
     def test_framework_review_header_uses_status_pill_and_stacked_bar(self):
-        manual = Evidence.objects.create(source_type=Evidence.SourceType.GENERIC, 
+        manual = Evidence.objects.create(source_type=Evidence.SourceType.DOCUMENT, 
             title='Framework summary evidence',
             result=Evidence.Result.POSITIVE,
             valid_from=self.now - timedelta(hours=1),
@@ -659,7 +658,7 @@ class EvidenceTests(TestCase):
         self.assertNotIn('Completeness:', html)
 
     def test_framework_review_uses_evidence_column_and_categorical_status(self):
-        manual = Evidence.objects.create(source_type=Evidence.SourceType.GENERIC, 
+        manual = Evidence.objects.create(source_type=Evidence.SourceType.DOCUMENT, 
             title='Framework review evidence',
             result=Evidence.Result.POSITIVE,
             valid_from=self.now - timedelta(hours=1),
@@ -730,7 +729,7 @@ class EvidenceTests(TestCase):
         self.assertEqual(self.conformity.evidence_state, Conformity.EvidenceState.COMPLIANT)
 
         later_negative = Evidence.objects.create(
-            source_type=Evidence.SourceType.GENERIC,
+            source_type=Evidence.SourceType.DOCUMENT,
             result=Evidence.Result.NEGATIVE,
             valid_from=self.now - timedelta(minutes=1),
         )
@@ -923,7 +922,7 @@ class EvidenceTests(TestCase):
         )
 
     def test_conformity_update_shows_only_current_evidence(self):
-        current = Evidence.objects.create(source_type=Evidence.SourceType.GENERIC, 
+        current = Evidence.objects.create(source_type=Evidence.SourceType.DOCUMENT, 
             title='Current evidence',
             result=Evidence.Result.POSITIVE,
             valid_from=self.now - timedelta(hours=1),
@@ -931,7 +930,7 @@ class EvidenceTests(TestCase):
         )
         current.conformities.add(self.conformity)
 
-        expired = Evidence.objects.create(source_type=Evidence.SourceType.GENERIC, 
+        expired = Evidence.objects.create(source_type=Evidence.SourceType.DOCUMENT, 
             title='Expired evidence',
             result=Evidence.Result.NEGATIVE,
             valid_from=self.now - timedelta(days=2),
@@ -939,7 +938,7 @@ class EvidenceTests(TestCase):
         )
         expired.conformities.add(self.conformity)
 
-        future = Evidence.objects.create(source_type=Evidence.SourceType.GENERIC, 
+        future = Evidence.objects.create(source_type=Evidence.SourceType.DOCUMENT, 
             title='Future evidence',
             result=Evidence.Result.POSITIVE,
             valid_from=self.now + timedelta(days=1),
@@ -975,8 +974,8 @@ class EvidenceTests(TestCase):
         self.assertEqual(self.client.get(detail_url).status_code, 200)
         self.assertEqual(self.client.get(edit_url).status_code, 404)
 
-    def test_generic_evidence_can_be_edited(self):
-        manual = Evidence.objects.create(source_type=Evidence.SourceType.GENERIC, 
+    def test_base_evidence_can_be_edited(self):
+        manual = Evidence.objects.create(source_type=Evidence.SourceType.DOCUMENT, 
             title='Editable evidence',
             result=Evidence.Result.POSITIVE,
             valid_from=self.now - timedelta(hours=1),
@@ -991,7 +990,7 @@ class EvidenceTests(TestCase):
                 'result': Evidence.Result.NEGATIVE,
                 'valid_from': manual.valid_from.strftime('%Y-%m-%d %H:%M:%S'),
                 'valid_to': '',
-                'comment': 'Updated generically',
+                'comment': 'Updated evidence',
             },
         )
 
@@ -1002,13 +1001,13 @@ class EvidenceTests(TestCase):
         manual.refresh_from_db()
         self.assertEqual(manual.title, 'Edited evidence')
         self.assertEqual(manual.result, Evidence.Result.NEGATIVE)
-        self.assertEqual(manual.comment, 'Updated generically')
+        self.assertEqual(manual.comment, 'Updated evidence')
 
     def test_additional_evidence_types_share_common_engine(self):
-        manual = Evidence.objects.create(source_type=Evidence.SourceType.GENERIC, 
+        manual = Evidence.objects.create(source_type=Evidence.SourceType.DOCUMENT, 
             title='Supplier attestation', result=Evidence.Result.POSITIVE,
             valid_from=self.now,
         )
         manual.conformities.add(self.conformity)
-        self.assertEqual(manual.source_type, Evidence.SourceType.GENERIC)
+        self.assertEqual(manual.source_type, Evidence.SourceType.DOCUMENT)
         self.assertTrue(issubclass(DocumentEvidence, Evidence))
