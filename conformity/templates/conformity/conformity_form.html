@@ -245,22 +245,49 @@
                                             <i class="bi bi-eye" aria-hidden="true"></i>
                                             <span class="visually-hidden">View</span>
                                         </a>
-                                        {% if item.source_type != 'CTRL' and item.source_type != 'IND' %}
+                                        {% if item.source_type == 'CTRL' %}
+                                            {% if item.status == 'TOBE' %}
+                                                <a class="btn btn-warning"
+                                                   href="{% url 'conformity:controlpoint_form' item.pk %}"
+                                                   title="Enter control result">
+                                                    <i class="bi bi-pencil-square" aria-hidden="true"></i>
+                                                    <span class="visually-hidden">Enter result</span>
+                                                </a>
+                                            {% else %}
+                                                <button type="button"
+                                                        class="btn btn-secondary disabled"
+                                                        disabled
+                                                        aria-disabled="true"
+                                                        title="{% if item.status == 'EVAL' %}Control already evaluated{% else %}Control is not ready for evaluation{% endif %}">
+                                                    <i class="bi bi-pencil-square" aria-hidden="true"></i>
+                                                    <span class="visually-hidden">Entry unavailable</span>
+                                                </button>
+                                            {% endif %}
+                                        {% elif item.source_type == 'IND' %}
+                                            {% if item.status == 'TOBE' %}
+                                                <a class="btn btn-warning"
+                                                   href="{% url 'conformity:indicatorpoint_form' item.pk %}"
+                                                   title="Enter indicator value">
+                                                    <i class="bi bi-pencil-square" aria-hidden="true"></i>
+                                                    <span class="visually-hidden">Enter value</span>
+                                                </a>
+                                            {% else %}
+                                                <button type="button"
+                                                        class="btn btn-secondary disabled"
+                                                        disabled
+                                                        aria-disabled="true"
+                                                        title="{% if item.status == 'EVAL' %}Indicator already evaluated{% else %}Indicator is not ready for evaluation{% endif %}">
+                                                    <i class="bi bi-pencil-square" aria-hidden="true"></i>
+                                                    <span class="visually-hidden">Entry unavailable</span>
+                                                </button>
+                                            {% endif %}
+                                        {% else %}
                                             <a class="btn btn-warning"
                                                href="{% url 'conformity:evidence_form' item.pk %}"
                                                title="Edit evidence">
                                                 <i class="bi bi-pencil-square" aria-hidden="true"></i>
                                                 <span class="visually-hidden">Edit</span>
                                             </a>
-                                        {% else %}
-                                            <button type="button"
-                                                    class="btn btn-warning disabled"
-                                                    disabled
-                                                    aria-disabled="true"
-                                                    title="This evidence is edited from its periodic result screen">
-                                                <i class="bi bi-pencil-square" aria-hidden="true"></i>
-                                                <span class="visually-hidden">Edit unavailable</span>
-                                            </button>
                                         {% endif %}
                                     </div>
                                 </div>
