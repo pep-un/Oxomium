@@ -47,6 +47,24 @@ def requirement_pre_save_naming(instance, **kwargs):
     from .services.requirements import compute_hierarchy_fields
     compute_hierarchy_fields(instance)
 
+@receiver(post_save, sender=Requirement)
+def requirement_post_save_evidence_leaf_guard(instance: Requirement, **kwargs):
+    """Detach Evidence when adding a child turns a former leaf into a parent."""
+    if instance.parent_id is None:
+        return
+
+    parent = Requirement.objects.filter(pk=instance.parent_id).first()
+    if parent is None or parent.is_leaf_node():
+        return
+
+    parents = Conformity.objects.filter(requirement=parent).prefetch_related('evidence')
+    for conformity in parents:
+        if conformity.evidence.exists():
+            conformity.evidence.clear()
+        from .services.conformities import recompute_parent_chain
+        recompute_parent_chain(conformity)
+
+
 @receiver(post_save, sender=Action)
 def action_post_save_sync_findings(instance: Action, **kwargs):
     """
