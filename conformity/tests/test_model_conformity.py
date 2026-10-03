@@ -7,7 +7,7 @@ from django.utils import timezone
 
 from conformity.models import (
     Framework, Organization, Requirement, Conformity,
-    Action, Control, ControlPoint
+    Action, Control, ControlPoint, Evidence
 )
 
 def _uniq(s: str) -> str:
