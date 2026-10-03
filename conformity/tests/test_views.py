@@ -102,8 +102,10 @@ class BaseDataMixin:
         )
         self.cp = ControlPoint.objects.create(
             control=self.ctrl_q,
-            period_start_date=timezone.now().date().replace(month=1, day=1),
-            period_end_date=timezone.now().date().replace(month=12, day=31),
+            valid_from=ControlPoint._day_start(timezone.now().date().replace(month=1, day=1)),
+            valid_to=ControlPoint._day_start(
+                timezone.now().date().replace(month=12, day=31) + timedelta(days=1)
+            ),
             status=ControlPoint.Status.TOBEEVALUATED,
         )
 
@@ -276,8 +278,8 @@ class SharedUxComponentsTests(BaseDataMixin, TestCase):
         )
         indicator_point = IndicatorPoint.objects.create(
             indicator=indicator,
-            period_start_date=timezone.localdate(),
-            period_end_date=timezone.localdate(),
+            valid_from=IndicatorPoint._day_start(timezone.localdate()),
+            valid_to=IndicatorPoint._day_start(timezone.localdate() + timedelta(days=1)),
         )
         form_urls = (
             reverse("conformity:audit_form", args=[self.audit.pk]),
