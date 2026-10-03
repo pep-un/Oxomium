@@ -325,7 +325,7 @@ class RemainingCoverageTests(TestCase):
         point.indicator = self.indicator
         self.indicator.best, self.indicator.warning, self.indicator.critical, self.indicator.worst = 100, 80, 50, 0
         for value, result in ((90, Evidence.Result.POSITIVE),
-                              (70, Evidence.Result.NEUTRAL),
+                              (70, Evidence.Result.PARTIAL),
                               (40, Evidence.Result.NEGATIVE),
                               (20, Evidence.Result.NEGATIVE),
                               (-1, Evidence.Result.NEUTRAL)):
@@ -334,7 +334,7 @@ class RemainingCoverageTests(TestCase):
             self.assertEqual(point.result, result)
         self.indicator.best, self.indicator.warning, self.indicator.critical, self.indicator.worst = 0, 20, 50, 100
         for value, result in ((10, Evidence.Result.POSITIVE),
-                              (30, Evidence.Result.NEUTRAL),
+                              (30, Evidence.Result.PARTIAL),
                               (75, Evidence.Result.NEGATIVE),
                               (150, Evidence.Result.NEUTRAL)):
             point.value = value
