@@ -9,6 +9,19 @@ from .models import (
 )
 
 
+def _leaf_conformities(queryset):
+    """Keep only concrete leaf assessments eligible for Evidence."""
+    return queryset.filter(
+        requirement__rght=models.F('requirement__lft') + 1,
+    )
+
+
+def _sync_pending_periodic_points(points, targets):
+    """Retarget only periodic points that do not yet represent final Evidence."""
+    for point in points:
+        point.conformities.set(targets)
+
+
 @receiver(post_save, sender=Control)
 def control_post_save_bootstrap(instance: Control, **kwargs):
     Control.controlpoint_bootstrap(instance)
@@ -18,13 +31,11 @@ def control_post_save_bootstrap(instance: Control, **kwargs):
 def control_conformity_bootstrap(instance: Control, action, **kwargs):
     """Create periodic points once the Control has concrete assessment context."""
     if action in {'post_add', 'post_remove', 'post_clear'}:
-        targets = instance.conformity.filter(
-            requirement__rght=models.F('requirement__lft') + 1,
-        )
-        for point in instance.get_controlpoint().filter(
+        targets = _leaf_conformities(instance.conformity)
+        points = instance.get_controlpoint().filter(
             status__in=[ControlPoint.Status.SCHEDULED, ControlPoint.Status.TOBEEVALUATED],
-        ):
-            point.conformities.set(targets)
+        )
+        _sync_pending_periodic_points(points, targets)
 
 @receiver(pre_save, sender=ControlPoint)
 def controlpoint_pre_save_status(sender, instance: ControlPoint, **kwargs):
@@ -83,14 +94,12 @@ def indicator_post_save_bootstrap(instance: Indicator, **kwargs):
 def indicator_conformity_bootstrap(instance: Indicator, action, **kwargs):
     """Create periodic points once the Indicator has concrete assessment context."""
     if action in {'post_add', 'post_remove', 'post_clear'}:
-        targets = instance.conformity.filter(
-            requirement__rght=models.F('requirement__lft') + 1,
-        )
-        for point in IndicatorPoint.objects.filter(
+        targets = _leaf_conformities(instance.conformity)
+        points = IndicatorPoint.objects.filter(
             indicator=instance,
             status__in=[IndicatorPoint.Status.SCHEDULED, IndicatorPoint.Status.TOBEEVALUATED],
-        ):
-            point.conformities.set(targets)
+        )
+        _sync_pending_periodic_points(points, targets)
 
 
 @receiver(pre_save, sender=IndicatorPoint)
@@ -102,11 +111,7 @@ def indicatorpoint_pre_save_status(instance: IndicatorPoint, **kwargs):
 def controlpoint_post_save_evidence(instance: ControlPoint, **kwargs):
     """Attach a new ControlPoint to its Control's configured Conformities."""
     if instance.control_id and not instance.conformities.exists():
-        instance.conformities.set(
-            instance.control.conformity.filter(
-                requirement__rght=models.F('requirement__lft') + 1,
-            )
-        )
+        instance.conformities.set(_leaf_conformities(instance.control.conformity))
     from .services.evidence import evaluate_evidence
     evaluate_evidence(
         instance,
@@ -118,11 +123,7 @@ def controlpoint_post_save_evidence(instance: ControlPoint, **kwargs):
 def indicatorpoint_post_save_evidence(instance: IndicatorPoint, **kwargs):
     """Attach a new IndicatorPoint to its Indicator's configured Conformities."""
     if instance.indicator_id and not instance.conformities.exists():
-        instance.conformities.set(
-            instance.indicator.conformity.filter(
-                requirement__rght=models.F('requirement__lft') + 1,
-            )
-        )
+        instance.conformities.set(_leaf_conformities(instance.indicator.conformity))
     from .services.evidence import evaluate_evidence
     evaluate_evidence(
         instance,
