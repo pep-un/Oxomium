@@ -566,7 +566,7 @@ def _resolve_evidence_subtype(evidence):
     """Return the concrete Evidence instance when one exists."""
     for accessor in (
         'controlpoint', 'indicatorpoint', 'humanevidence',
-        'manualevidence', 'documentevidence', 'finding',
+        'documentevidence', 'finding',
     ):
         try:
             return getattr(evidence, accessor)
@@ -621,7 +621,6 @@ class EvidenceUpdateView(AttachmentUploadViewMixin, LoginRequiredMixin, UpdateVi
 
     form_classes = {
         Evidence.SourceType.HUMAN: HumanEvidenceForm,
-        Evidence.SourceType.MANUAL: ManualEvidenceForm,
         Evidence.SourceType.DOCUMENT: DocumentEvidenceForm,
         Evidence.SourceType.FINDING: FindingForm,
     }
@@ -632,7 +631,7 @@ class EvidenceUpdateView(AttachmentUploadViewMixin, LoginRequiredMixin, UpdateVi
             Evidence.SourceType.CONTROL,
             Evidence.SourceType.INDICATOR,
         }:
-            raise Http404('Control and Indicator evidence are immutable here.')
+            raise Http404('Periodic control and periodic indicator evidence are immutable here.')
         return evidence
 
     def get_form_class(self):
@@ -719,19 +718,19 @@ class HumanEvidenceCreateView(
 ):
     model = HumanEvidence
     form_class = HumanEvidenceForm
-    success_message = 'Human evidence recorded.'
-    evidence_label = 'Human assessment'
+    success_message = 'Expert assessment recorded.'
+    evidence_label = 'Expert assessment'
 
 
-class ManualEvidenceCreateView(
+class GenericEvidenceCreateView(
     LoginRequiredMixin,
     ConformityEvidenceCreateMixin,
     CreateView,
 ):
-    model = ManualEvidence
-    form_class = ManualEvidenceForm
-    success_message = 'Manual evidence recorded.'
-    evidence_label = 'Manual evidence'
+    model = Evidence
+    form_class = EvidenceForm
+    success_message = 'Evidence recorded.'
+    evidence_label = 'Evidence'
 
 
 class DocumentEvidenceCreateView(
@@ -741,8 +740,8 @@ class DocumentEvidenceCreateView(
 ):
     model = DocumentEvidence
     form_class = DocumentEvidenceForm
-    success_message = 'Document evidence recorded.'
-    evidence_label = 'Document evidence'
+    success_message = 'Document recorded.'
+    evidence_label = 'Document'
 
 
 class ConformityExportView(LoginRequiredMixin, View):
