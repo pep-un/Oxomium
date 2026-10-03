@@ -389,7 +389,3 @@ class IndicatorPointForm(AttachmentUploadFormMixin, ModelForm):
                 'Enter an integer between %(lower)s and %(upper)s (inclusive).'
             ) % {'lower': lower, 'upper': upper}
 
-        if self.instance.status != Evidence.Status.TOBEEVALUATED:
-            for field_name, field in self.fields.items():
-                if field_name != 'attachments':
-                    field.disabled = True
