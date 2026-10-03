@@ -94,7 +94,6 @@ class BaseDataMixin:
         # Controls and ControlPoints
         self.ctrl_q = Control.objects.create(
             title="CtrlQ",
-            organization=self.org,
             frequency=Control.Frequency.QUARTERLY,
             level=Control.Level.FIRST,
         )
@@ -271,7 +270,6 @@ class SharedUxComponentsTests(BaseDataMixin, TestCase):
         indicator = Indicator.objects.create(
             name="Toolbar indicator",
             responsible=self.user,
-            organization=self.org,
         )
         indicator_point = IndicatorPoint.objects.create(
             indicator=indicator,
