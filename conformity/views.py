@@ -723,17 +723,6 @@ class HumanEvidenceCreateView(
     evidence_label = 'Expert assessment'
 
 
-class GenericEvidenceCreateView(
-    LoginRequiredMixin,
-    ConformityEvidenceCreateMixin,
-    CreateView,
-):
-    model = Evidence
-    form_class = EvidenceForm
-    success_message = 'Evidence recorded.'
-    evidence_label = 'Evidence'
-
-
 class DocumentEvidenceCreateView(
     LoginRequiredMixin,
     ConformityEvidenceCreateMixin,
