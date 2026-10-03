@@ -8,6 +8,7 @@ from django.utils import timezone
 from constance.test import override_config
 
 from conformity import views
+from conformity.forms import FindingForm
 from conformity.models import (
     Organization, Framework, Requirement, Conformity,
     Audit, Action, Finding, Control, ControlPoint, Attachment, Indicator, IndicatorPoint
@@ -458,6 +459,47 @@ class SharedUxComponentsTests(BaseDataMixin, TestCase):
         self.assertContains(response, 'class="header-back-link"')
         self.assertContains(response, reverse("conformity:control_index"))
 
+class FindingEvidenceFormTests(TestCase):
+    def setUp(self):
+        self.organization = Organization.objects.create(name="Finding form organization")
+        self.audit = Audit.objects.create(
+            organization=self.organization,
+            auditor="Auditor",
+        )
+
+    def test_new_finding_defaults_and_optional_audit(self):
+        before = timezone.now()
+        form = FindingForm()
+        after = timezone.now()
+
+        self.assertFalse(form.fields["audit"].required)
+        self.assertEqual(form.fields["cvss"].widget.attrs["min"], 0)
+        self.assertEqual(form.fields["cvss"].widget.attrs["max"], 10)
+        self.assertEqual(form.fields["cvss"].widget.attrs["step"], 0.1)
+
+        valid_from = form.initial["valid_from"]
+        valid_to = form.initial["valid_to"]
+        self.assertGreaterEqual(valid_from, before)
+        self.assertLessEqual(valid_from, after)
+        self.assertEqual(valid_to.year, valid_from.year + 3)
+        self.assertEqual(valid_to.month, valid_from.month)
+        self.assertEqual(valid_to.day, valid_from.day)
+
+    def test_finding_can_be_created_without_audit(self):
+        finding = Finding(
+            short_description="Discovery outside audit",
+            severity=Finding.Severity.MAJOR,
+            cvss=0,
+        )
+        finding.full_clean(exclude=["valid_from"])
+        finding.save()
+
+        self.assertIsNone(finding.audit)
+        self.assertEqual(finding.cvss, 0)
+        self.assertIsNotNone(finding.valid_from)
+        self.assertIsNotNone(finding.valid_to)
+
+
 class ConformityPeriodicEvidenceCreationTests(BaseDataMixin, TestCase):
     FRAMEWORK_NAME = "FW-ConformityPeriodicEvidenceCreation"
 
@@ -474,12 +516,12 @@ class ConformityPeriodicEvidenceCreationTests(BaseDataMixin, TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Associated Organization")
+        self.assertContains(response, "Associated organization")
         self.assertContains(response, self.org.name)
         self.assertContains(response, self.org.description)
         content = response.content.decode()
         self.assertLess(
-            content.index("Associated Organization"),
+            content.index("Associated organization"),
             content.index("Associated requirements"),
         )
 
