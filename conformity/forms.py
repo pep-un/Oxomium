@@ -226,8 +226,8 @@ class ActionForm(ModelForm):
                 audit__organization_id=organization_id
             )
             self.fields['associated_controlPoints'].queryset = ControlPoint.objects.filter(
-                control__organization_id=organization_id
-            )
+                control__conformity__organization_id=organization_id
+            ).distinct()
 
         if self.instance.pk is None and self.initial.get('associated_findings'):
             self.fields['associated_findings'].disabled = True
