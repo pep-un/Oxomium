@@ -299,6 +299,11 @@ class Evidence(models.Model):
 
     objects = EvidenceQuerySet.as_manager()
 
+    @staticmethod
+    def _day_start(value):
+        naive = datetime.combine(value, time.min)
+        return timezone.make_aware(naive, timezone.get_current_timezone())
+
     class Meta:
         ordering = ['-valid_from', '-pk']
         constraints = [
