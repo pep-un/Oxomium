@@ -279,7 +279,7 @@ class ControlPointForm(AttachmentUploadFormMixin, ModelForm):
     attachments = MultipleFileField(required=False)
     class Meta:
         model = ControlPoint
-        fields = ['evaluated_at', 'evaluator', 'status', 'comment', 'attachments']
+        fields = ['evaluated_at', 'evaluator', 'result', 'comment', 'attachments']
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
@@ -290,12 +290,12 @@ class ControlPointForm(AttachmentUploadFormMixin, ModelForm):
         self.fields['evaluator'].disabled = True
 
         # Set some value if the ControlPoint has to be evaluated
-        if self.get_initial_for_field(self.fields['status'], 'status') == ControlPoint.Status.TOBEEVALUATED.value:
+        if self.instance.status == Evidence.Status.TOBEEVALUATED:
             self.initial['evaluated_at'] = timezone.now()
             self.initial['evaluator'] = self.user
-            self.fields['status'].widget.choices = [
-                (ControlPoint.Status.COMPLIANT, ControlPoint.Status.COMPLIANT.label),
-                (ControlPoint.Status.NONCOMPLIANT, ControlPoint.Status.NONCOMPLIANT.label),
+            self.fields['result'].widget.choices = [
+                (Evidence.Result.POSITIVE, _('Compliant')),
+                (Evidence.Result.NEGATIVE, _('Non-Compliant')),
             ]
         # Keep attachment uploads available even when the control result is read-only.
         else:
