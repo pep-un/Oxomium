@@ -138,8 +138,10 @@ A Control or Indicator is configured directly against one or more Conformity
 records. It has no direct Requirement or Organization relation.
 
 When a ControlPoint or IndicatorPoint is created, the current source
-Conformities are copied to the Evidence. This is a creation-time snapshot, not
-a permanently synchronized relation.
+Conformities are copied to the Evidence. Pending periodic points
+(`SCHEDULED`/`TOBEEVALUATED`) may follow later configuration changes because
+they do not yet represent a completed observation. Once a point has a final
+result, its Evidence/Conformity association is historical and is not rewritten.
 
 ### Invariant
 
