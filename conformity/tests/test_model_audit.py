@@ -97,7 +97,7 @@ class ModelAuditTests(TestCase):
         self.exercise_crud(Action, {'organization': self.org, 'title': 'Before'}, 'title', 'Before', 'After', {'organization': self.org.pk})
 
     def test_control_crud(self):
-        self.exercise_crud(Control, {'organization': self.org, 'title': 'Before'}, 'title', 'Before', 'After', {'organization': self.org.pk})
+        self.exercise_crud(Control, {'title': 'Before'}, 'title', 'Before', 'After')
 
     def test_controlpoint_crud(self):
         self.exercise_crud(ControlPoint, {'control': self.control, 'period_start_date': date.today(), 'period_end_date': date.today() + timedelta(days=5), 'comment': 'Before'}, 'comment', 'Before', 'After', {'control': self.control.pk})
