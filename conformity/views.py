@@ -758,7 +758,6 @@ class ActionCreateView(LoginRequiredMixin, SaveStayMixin, CreateView):
                 raise Http404('Invalid conformity identifier.') from exc
             conformity = get_object_or_404(Conformity, pk=conformity_id)
             initial['associated_conformity'] = [conformity]
-            initial['organization'] = conformity.organization_id
         return initial
 
 
@@ -843,24 +842,24 @@ def _periodic_sources():
     indicator_points = IndicatorPoint.objects.order_by('-valid_from', '-pk')
     controls = (
         Control.objects
-        .select_related('organization')
         .prefetch_related(
-            'requirements__framework',
+            'conformity__organization',
+            'conformity__requirement__framework',
             Prefetch('controlpoint_set', queryset=control_points, to_attr='periodic_points'),
         )
     )
     indicators = (
         Indicator.objects
-        .select_related('organization')
         .prefetch_related(
-            'requirements__framework',
+            'conformity__organization',
+            'conformity__requirement__framework',
             Prefetch('indicatorpoint_set', queryset=indicator_points, to_attr='periodic_points'),
         )
     )
     return sorted(
         [*controls, *indicators],
         key=lambda item: (
-            str(item.organization or '').casefold(),
+            ', '.join(sorted({str(conf.organization) for conf in item.conformity.all()})).casefold(),
             item.periodic_name.casefold(),
             item.periodic_kind,
             item.pk,
