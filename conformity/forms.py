@@ -202,15 +202,24 @@ class FindingForm(
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['valid_from'].required = False
+        self.fields['audit'].required = False
+        self.fields['cvss'].widget.attrs.update({
+            'min': 0,
+            'max': 10,
+            'step': 0.1,
+        })
+
+        if not self.is_bound and self.instance.pk is None:
+            valid_from = self.initial.get('valid_from') or timezone.now()
+            self.initial['valid_from'] = valid_from
+            if not self.initial.get('valid_to'):
+                self.initial['valid_to'] = Finding._plus_years(valid_from, 3)
 
         audit = self.initial.get('audit')
         if self.instance.pk is None and audit:
             self.fields['audit'].disabled = True
             if isinstance(audit, Audit):
                 self.initial['organization'] = audit.organization
-                source_date = audit.report_date or audit.end_date or audit.start_date
-                if source_date and not self.initial.get('valid_from'):
-                    self.initial['valid_from'] = Finding._day_start(source_date)
             self.fields['organization'] = ModelChoiceField(
                 queryset=Organization.objects.all(),
                 required=False,
@@ -381,3 +390,8 @@ class IndicatorPointForm(AttachmentUploadFormMixin, ModelForm):
             self.fields['value'].help_text = _(
                 'Enter an integer between %(lower)s and %(upper)s (inclusive).'
             ) % {'lower': lower, 'upper': upper}
+
+        if self.instance.status != Evidence.Status.TOBEEVALUATED:
+            for field_name, field in self.fields.items():
+                if field_name != 'attachments':
+                    field.disabled = True
