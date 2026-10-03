@@ -339,7 +339,6 @@ class Evidence(models.Model):
         HUMAN = 'HUM', _('Expert assessment')
         FINDING = 'FIND', _('Finding')
         DOCUMENT = 'DOC', _('Document')
-        GENERIC = 'MAN', _('Evidence')
 
     class Status(models.TextChoices):
         SCHEDULED = 'SCHD', _('Scheduled')
@@ -347,11 +346,7 @@ class Evidence(models.Model):
         EVALUATED = 'EVAL', _('Evaluated')
         MISSED = 'MISS', _('Missed')
 
-    source_type = models.CharField(
-        max_length=4,
-        choices=SourceType.choices,
-        default=SourceType.GENERIC,
-    )
+    source_type = models.CharField(max_length=4, choices=SourceType.choices)
     title = models.CharField(max_length=256, blank=True)
     status = models.CharField(choices=Status.choices, max_length=4, default=Status.SCHEDULED)
     result = models.CharField(max_length=3, choices=Result.choices, default=Result.NEUTRAL)
@@ -479,9 +474,7 @@ class Evidence(models.Model):
             point = self.periodic_point
             return point.indicator.name if point and point.indicator_id else _('Indicator evidence')
         if self.source_type == self.SourceType.HUMAN:
-            return _('Expert assessment')
-        if self.source_type == self.SourceType.GENERIC:
-            return self.title or _('Evidence')
+            return self.title or _('Expert assessment')
         if self.source_type == self.SourceType.DOCUMENT:
             try:
                 document = getattr(self, 'documentevidence')
@@ -501,7 +494,6 @@ class Evidence(models.Model):
             self.SourceType.CONTROL: 'bi-clipboard2-check',
             self.SourceType.INDICATOR: 'bi-speedometer',
             self.SourceType.HUMAN: 'bi-person-check',
-            self.SourceType.GENERIC: 'bi-pencil-square',
             self.SourceType.DOCUMENT: 'bi-file-earmark-check',
             self.SourceType.FINDING: 'bi-exclamation-diamond',
         }.get(self.source_type, 'bi-journal-check')
@@ -1772,6 +1764,7 @@ class HumanEvidence(Evidence):
         COMPLIANT = Evidence.Result.POSITIVE, _('Compliant')
         PARTIAL = Evidence.Result.PARTIAL, _('Partially compliant')
         NON_COMPLIANT = Evidence.Result.NEGATIVE, _('Non-compliant')
+        INCONCLUSIVE = Evidence.Result.NEUTRAL, _('Inconclusive')
 
     decision = models.CharField(max_length=3, choices=Decision.choices)
 
