@@ -312,6 +312,11 @@ class IndicatorForm(ModelForm):
             'responsible', 'conformity', 'frequency',
         ]
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.pk is None and self.initial.get('conformity'):
+            self.fields['conformity'].disabled = True
+
 
 class IndicatorPointForm(AttachmentUploadFormMixin, ModelForm):
     attachments = MultipleFileField(required=False)
