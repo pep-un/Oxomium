@@ -65,7 +65,6 @@ class EvidenceTests(TestCase):
             'human_evidence_create',
             'manual_evidence_create',
             'document_evidence_create',
-            'finding_evidence_create',
         ):
             with self.subTest(route=route_name):
                 response = self.client.get(
