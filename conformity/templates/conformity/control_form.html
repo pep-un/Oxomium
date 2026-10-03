@@ -5,33 +5,47 @@
 {% block header %}
 <h1 class="h1 d-flex align-items-center gap-2">
     {% if object %}
-        <a href="{% url 'conformity:control_detail' object.pk %}" class="header-back-link" aria-label="Back to periodic control" title="Back to periodic control">
-            <i class="bi bi-chevron-left" aria-hidden="true"></i>
-        </a>
-        {{ object.title }}
+        <i class="bi bi-pencil-square" aria-hidden="true"></i>
+        Edit Periodic control
     {% else %}
-        <a href="{% url 'conformity:control_index' %}" class="header-back-link" aria-label="Back to periodic controls" title="Back to periodic controls">
-            <i class="bi bi-chevron-left" aria-hidden="true"></i>
-        </a>
-        Create periodic control
+        <i class="bi bi-plus-circle" aria-hidden="true"></i>
+        Create Periodic control
     {% endif %}
 </h1>
 {% endblock %}
 
 {% block content %}
-
-    <form class="form" method="post" action="">
-        {% csrf_token %}
-        <div class="row justify-content-center">
-            <div class="col col-6">
-                {% bootstrap_form form %}
-                {% if object %}
-                    {% url 'conformity:control_detail' object.pk as cancel_url %}
-                {% else %}
-                    {% url 'conformity:control_index' as cancel_url %}
-                {% endif %}
-                {% include "includes/form_toolbar.html" with cancel_url=cancel_url %}
-            </div>
+<form class="form" method="post" action="" id="object-form">
+    {% csrf_token %}
+    <div class="row g-4 align-items-start">
+        <div class="col-12 col-lg-6">
+            {% if evidence_conformities %}
+                {% include "conformity/includes/evidence_organization_cards.html" %}
+                {% include "conformity/includes/evidence_requirement_cards.html" with hide_add_requirement=True %}
+            {% endif %}
         </div>
-    </form>
+
+        <div class="col-12 col-lg-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <span class="h4 mb-0">Periodic control</span>
+                </div>
+                <div class="card-body">
+                    {% for field in form %}
+                        {% bootstrap_field field %}
+                    {% endfor %}
+                </div>
+            </div>
+
+            {% if object %}
+                {% url 'conformity:control_detail' object.pk as cancel_url %}
+            {% elif request.GET.conformity %}
+                {% url 'conformity:conformity_form' request.GET.conformity as cancel_url %}
+            {% else %}
+                {% url 'conformity:control_index' as cancel_url %}
+            {% endif %}
+            {% include "includes/form_toolbar.html" with cancel_url=cancel_url form_id="object-form" %}
+        </div>
+    </div>
+</form>
 {% endblock %}
