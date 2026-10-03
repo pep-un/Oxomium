@@ -35,18 +35,7 @@ def migrate_points_to_inheritance(apps, schema_editor):
     LegacyIndicatorPoint = apps.get_model('conformity', 'LegacyIndicatorPoint')
     ControlPoint = apps.get_model('conformity', 'ControlPoint')
     IndicatorPoint = apps.get_model('conformity', 'IndicatorPoint')
-    Control = apps.get_model('conformity', 'Control')
-    Indicator = apps.get_model('conformity', 'Indicator')
     Action = apps.get_model('conformity', 'Action')
-
-    for control in Control.objects.all().iterator():
-        control.requirements.add(
-            *control.conformity.values_list('requirement_id', flat=True)
-        )
-    for indicator in Indicator.objects.all().iterator():
-        indicator.requirements.add(
-            *indicator.conformity.values_list('requirement_id', flat=True)
-        )
 
     connection = schema_editor.connection
     qn = connection.ops.quote_name
@@ -95,8 +84,6 @@ def restore_legacy_points(apps, schema_editor):
     IndicatorPoint = apps.get_model('conformity', 'IndicatorPoint')
     LegacyControlPoint = apps.get_model('conformity', 'LegacyControlPoint')
     LegacyIndicatorPoint = apps.get_model('conformity', 'LegacyIndicatorPoint')
-    Control = apps.get_model('conformity', 'Control')
-    Indicator = apps.get_model('conformity', 'Indicator')
     Action = apps.get_model('conformity', 'Action')
 
     control_map = {}
@@ -163,25 +150,13 @@ class Migration(migrations.Migration):
             old_name='IndicatorPoint',
             new_name='LegacyIndicatorPoint',
         ),
-        migrations.AddField(
+        migrations.RemoveField(
             model_name='control',
-            name='requirements',
-            field=models.ManyToManyField(
-                blank=True,
-                help_text='Requirements targeted by this control. Concrete Conformity links live on Evidence.',
-                related_name='controls',
-                to='conformity.requirement',
-            ),
+            name='organization',
         ),
-        migrations.AddField(
+        migrations.RemoveField(
             model_name='indicator',
-            name='requirements',
-            field=models.ManyToManyField(
-                blank=True,
-                help_text='Requirements targeted by this indicator. Concrete Conformity links live on Evidence.',
-                related_name='indicators',
-                to='conformity.requirement',
-            ),
+            name='organization',
         ),
         migrations.CreateModel(
             name='ControlPoint',
@@ -296,14 +271,6 @@ class Migration(migrations.Migration):
                 related_name='actions',
                 to='conformity.controlpoint',
             ),
-        ),
-        migrations.RemoveField(
-            model_name='control',
-            name='conformity',
-        ),
-        migrations.RemoveField(
-            model_name='indicator',
-            name='conformity',
         ),
         migrations.DeleteModel(
             name='LegacyControlPoint',
