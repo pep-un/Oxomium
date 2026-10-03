@@ -95,6 +95,9 @@ class ConformityForm(ModelForm):
         model = Conformity
         fields = ['applicable', 'responsible', 'comment']
         widgets = {
+            'responsible': forms.Select(attrs={
+                'class': 'form-select w-100',
+            }),
             'comment': forms.Textarea(attrs={
                 'placeholder': 'Comment required',
                 'class': 'form-control w-100',
