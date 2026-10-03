@@ -7,7 +7,7 @@ from django.core.management.base import CommandError
 from django.db import IntegrityError, transaction
 from django.test import TestCase
 
-from conformity.models import Conformity, Control, ControlPoint, Framework, Organization, Requirement
+from conformity.models import Conformity, Control, ControlPoint, Evidence, Framework, Organization, Requirement
 from conformity.services.conformities import propagate_applicable_and_comment
 from conformity.services.controls import calendar_periods, generate_controlpoints
 
