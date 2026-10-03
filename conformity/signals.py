@@ -1,4 +1,5 @@
 from django.core.exceptions import ValidationError
+from django.db import models
 from django.db.models.signals import m2m_changed, pre_save, post_save
 from django.dispatch import receiver
 from .models import (
@@ -90,7 +91,11 @@ def indicatorpoint_pre_save_status(instance: IndicatorPoint, **kwargs):
 def controlpoint_post_save_evidence(instance: ControlPoint, **kwargs):
     """Attach a new ControlPoint to its Control's configured Conformities."""
     if instance.control_id and not instance.conformities.exists():
-        instance.conformities.set(instance.control.conformity.all())
+        instance.conformities.set(
+            instance.control.conformity.filter(
+                requirement__rght=models.F('requirement__lft') + 1,
+            )
+        )
     from .services.evidence import evaluate_evidence
     evaluate_evidence(
         instance,
@@ -102,7 +107,11 @@ def controlpoint_post_save_evidence(instance: ControlPoint, **kwargs):
 def indicatorpoint_post_save_evidence(instance: IndicatorPoint, **kwargs):
     """Attach a new IndicatorPoint to its Indicator's configured Conformities."""
     if instance.indicator_id and not instance.conformities.exists():
-        instance.conformities.set(instance.indicator.conformity.all())
+        instance.conformities.set(
+            instance.indicator.conformity.filter(
+                requirement__rght=models.F('requirement__lft') + 1,
+            )
+        )
     from .services.evidence import evaluate_evidence
     evaluate_evidence(
         instance,
