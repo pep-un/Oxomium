@@ -171,7 +171,7 @@ class RichTableConfigurationTests(TestCase):
         self.assertNotIn("actions", table.columns)
 
     def test_periodic_controls_filter_uses_standard_status_field(self):
-        fields = PeriodicControlFilterForm.base_fields
+        fields = getattr(PeriodicControlFilterForm, "base_fields")
         self.assertIn("name", fields)
         self.assertIn("status", fields)
         self.assertIn("organization", fields)
