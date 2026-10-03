@@ -42,13 +42,13 @@
     {% for cp in control.get_controlpoint %}
         <tr>
             <td class="col">
-                {{ cp.period_start_date | date:'d-M-Y'}}
+                {{ cp.valid_from | date:'d-M-Y'}}
             </td>
             <td class="col">
-                {{ cp.period_end_date | date:'d-M-Y'}}
+                {{ cp.valid_to | date:'d-M-Y'}}
             </td>
             <td class="col">
-                {{ cp.control_user| default_if_none:"" }}
+                {{ cp.evaluator| default_if_none:"" }}
             </td>
             <td class="col">
                 {% include 'conformity/includes/controlpoint_status.html' with controlpoint=cp %}
