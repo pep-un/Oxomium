@@ -6,6 +6,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from django import forms
+from django.utils import timezone
 from django_filters import (
     FilterSet, CharFilter, DateFilter, ModelChoiceFilter, ChoiceFilter,
     MultipleChoiceFilter,
@@ -247,7 +248,7 @@ class FindingFilter(FilterSet):
         label='Nature',
     )
     status = ChoiceFilter(
-        choices=(('active', 'Active'), ('archived', 'Archived')),
+        choices=(('active', 'Active'), ('invalidated', 'Invalidated')),
         method='filter_status',
         label='Status',
     )
@@ -267,10 +268,11 @@ class FindingFilter(FilterSet):
         ]
 
     def filter_status(self, queryset, name, value):
+        now = timezone.now()
         if value == 'active':
-            return queryset.filter(archived=False)
-        if value == 'archived':
-            return queryset.filter(archived=True)
+            return queryset.filter(Q(valid_to__isnull=True) | Q(valid_to__gt=now))
+        if value == 'invalidated':
+            return queryset.filter(valid_to__lte=now)
         return queryset
 
 class IndicatorFilter(FilterSet):
