@@ -418,15 +418,15 @@ class PeriodicControlTable(BaseRichTable):
                            class="btn btn-sm btn-outline-primary w-75 mx-auto bi bi-pencil-square">
                             Enter value
                         </a>
-                    {% elif point.status == 'OK' %}
+                    {% elif point.status == 'EVAL' and point.result == 'POS' %}
                         <span class="badge rounded-pill text-bg-success">
                             {{ point.value }} · {{ point.get_status_display }}
                         </span>
-                    {% elif point.status == 'WARN' %}
+                    {% elif point.status == 'EVAL' and point.result == 'NEU' %}
                         <span class="badge rounded-pill text-bg-warning">
                             {{ point.value }} · {{ point.get_status_display }}
                         </span>
-                    {% elif point.status == 'CRIT' %}
+                    {% elif point.status == 'EVAL' and point.result == 'NEG' %}
                         <span class="badge rounded-pill text-bg-danger">
                             {{ point.value }} · {{ point.get_status_display }}
                         </span>
