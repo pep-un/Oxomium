@@ -11,15 +11,20 @@ from .models import (
 
 @receiver(post_save, sender=Control)
 def control_post_save_bootstrap(instance: Control, **kwargs):
-    if instance.pk and instance.conformity.exists():
-        Control.controlpoint_bootstrap(instance)
+    Control.controlpoint_bootstrap(instance)
 
 
 @receiver(m2m_changed, sender=Control.conformity.through)
 def control_conformity_bootstrap(instance: Control, action, **kwargs):
     """Create periodic points once the Control has concrete assessment context."""
-    if action == 'post_add' and instance.conformity.exists():
-        Control.controlpoint_bootstrap(instance)
+    if action in {'post_add', 'post_remove', 'post_clear'}:
+        targets = instance.conformity.filter(
+            requirement__rght=models.F('requirement__lft') + 1,
+        )
+        for point in instance.get_controlpoint().filter(
+            status__in=[ControlPoint.Status.SCHEDULED, ControlPoint.Status.TOBEEVALUATED],
+        ):
+            point.conformities.set(targets)
 
 @receiver(pre_save, sender=ControlPoint)
 def controlpoint_pre_save_status(sender, instance: ControlPoint, **kwargs):
@@ -71,15 +76,21 @@ def action_post_save_sync(instance: Action, **kwargs):
 
 @receiver(post_save, sender=Indicator)
 def indicator_post_save_bootstrap(instance: Indicator, **kwargs):
-    if instance.pk and instance.conformity.exists():
-        instance.indicator_point_init()
+    instance.indicator_point_init()
 
 
 @receiver(m2m_changed, sender=Indicator.conformity.through)
 def indicator_conformity_bootstrap(instance: Indicator, action, **kwargs):
     """Create periodic points once the Indicator has concrete assessment context."""
-    if action == 'post_add' and instance.conformity.exists():
-        instance.indicator_point_init()
+    if action in {'post_add', 'post_remove', 'post_clear'}:
+        targets = instance.conformity.filter(
+            requirement__rght=models.F('requirement__lft') + 1,
+        )
+        for point in IndicatorPoint.objects.filter(
+            indicator=instance,
+            status__in=[IndicatorPoint.Status.SCHEDULED, IndicatorPoint.Status.TOBEEVALUATED],
+        ):
+            point.conformities.set(targets)
 
 
 @receiver(pre_save, sender=IndicatorPoint)
