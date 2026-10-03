@@ -82,6 +82,7 @@ class BaseDataMixin:
             audit=self.audit,
             short_description="MajA",
             severity=Finding.Severity.MAJOR,
+            valid_from=timezone.now() - timedelta(days=1),
             valid_to=timezone.now() - timedelta(minutes=1),
         )
 
