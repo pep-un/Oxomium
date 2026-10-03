@@ -31,7 +31,7 @@ class ModelAuditTests(TestCase):
         self.fw = Framework.objects.create(name='Dependency framework')
         self.req = Requirement.objects.create(framework=self.fw, code='ROOT')
         self.audit = Audit.objects.create(organization=self.org, auditor='Auditor')
-        self.control = Control.objects.create(title='Dependency control', organization=self.org)
+        self.control = Control.objects.create(title='Dependency control',)
         self.indicator = Indicator.objects.create(name='Dependency indicator', responsible=self.actor)
         LogEntry.objects.all().delete()
 
