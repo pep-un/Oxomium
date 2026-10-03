@@ -4,7 +4,7 @@ from django.db.models.signals import m2m_changed, pre_save, post_save
 from django.dispatch import receiver
 from .models import (
     Action, Conformity, Control, ControlPoint, DocumentEvidence, Evidence,
-    Finding, HumanEvidence, Indicator, IndicatorPoint, ManualEvidence,
+    Finding, HumanEvidence, Indicator, IndicatorPoint,
     Requirement,
 )
 
@@ -192,7 +192,6 @@ def evidence_conformity_changed(instance, action, reverse, pk_set, **kwargs):
 
 
 @receiver(post_save, sender=HumanEvidence)
-@receiver(post_save, sender=ManualEvidence)
 @receiver(post_save, sender=DocumentEvidence)
 @receiver(post_save, sender=Finding)
 def specialized_evidence_saved(instance, **kwargs):
