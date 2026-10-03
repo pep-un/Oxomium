@@ -11,8 +11,8 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from .models import (
     Action, Audit, Conformity, Control, ControlPoint, DocumentEvidence, Evidence,
-    Finding, FindingEvidence, HumanEvidence, Indicator, IndicatorPoint,
-    ManualEvidence, Organization,
+    Finding, HumanEvidence, Indicator, IndicatorPoint, ManualEvidence,
+    Organization,
 )
 from .validators import attachment_accept, attachment_max_size_help, validate_attachment_once
 
@@ -168,13 +168,6 @@ class DocumentEvidenceForm(AttachmentUploadFormMixin, EvidenceValidityFormMixin,
         fields = ['title', 'document', 'result', 'valid_from', 'valid_to', 'comment', 'attachments']
 
 
-class FindingEvidenceForm(AttachmentUploadFormMixin, EvidenceValidityFormMixin, ModelForm):
-    attachments = MultipleFileField(required=False)
-    class Meta:
-        model = FindingEvidence
-        fields = ['finding', 'result', 'valid_from', 'valid_to', 'comment', 'attachments']
-
-
 class OrganizationForm(AttachmentUploadFormMixin, ModelForm):
     attachments = MultipleFileField(required=False)
     class Meta:
@@ -190,31 +183,64 @@ class AuditForm(AttachmentUploadFormMixin, ModelForm):
                   'end_date', 'report_date', 'type', 'attachments']
 
 
-class FindingForm(ModelForm):
+class FindingForm(
+    AttachmentUploadFormMixin,
+    EvidenceValidityFormMixin,
+    ModelForm,
+):
+    attachments = MultipleFileField(required=False)
+
     class Meta:
         model = Finding
-        fields = ['name', 'audit', 'severity', 'short_description', 'description', 'observation', 'recommendation', 'reference', 'cvss', 'cvss_descriptor', 'archived']
-    def __init__(self, *args, **kwargs):
-        super(FindingForm, self).__init__(*args, **kwargs)
+        fields = [
+            'name', 'audit', 'severity', 'short_description', 'description',
+            'observation', 'recommendation', 'reference', 'cvss',
+            'cvss_descriptor', 'valid_from', 'valid_to', 'comment',
+            'attachments',
+        ]
 
-        # Only lock the audit when creating a finding from an audit page.
-        # Existing findings carry their audit in initial too and must stay editable.
-        if self.instance.pk is None and self.initial.get('audit'):
-            audit = self.initial['audit']
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['valid_from'].required = False
+
+        audit = self.initial.get('audit')
+        if self.instance.pk is None and audit:
             self.fields['audit'].disabled = True
             if isinstance(audit, Audit):
                 self.initial['organization'] = audit.organization
+                source_date = audit.report_date or audit.end_date or audit.start_date
+                if source_date and not self.initial.get('valid_from'):
+                    self.initial['valid_from'] = Finding._day_start(source_date)
             self.fields['organization'] = ModelChoiceField(
-                queryset=Organization.objects.all(), required=False, disabled=True
+                queryset=Organization.objects.all(),
+                required=False,
+                disabled=True,
             )
             self.order_fields([
-                'name', 'audit', 'organization', 'severity', 'short_description',
-                'description', 'observation', 'recommendation', 'reference', 'cvss',
-                'cvss_descriptor', 'archived',
+                'name', 'audit', 'organization', 'severity',
+                'short_description', 'description', 'observation',
+                'recommendation', 'reference', 'cvss', 'cvss_descriptor',
+                'valid_from', 'valid_to', 'comment', 'attachments',
             ])
-        if self.get_initial_for_field(self.fields['archived'], 'archived') :
-            for key, value in self.fields.items():
-                self.fields[key].disabled = True
+
+        conformity = self.initial.get('conformity')
+        if self.instance.pk is None and conformity:
+            organization = conformity.organization
+            self.fields['audit'].queryset = Audit.objects.filter(
+                organization=organization
+            )
+            self.fields['organization'] = ModelChoiceField(
+                queryset=Organization.objects.filter(pk=organization.pk),
+                required=False,
+                disabled=True,
+                initial=organization,
+            )
+            self.order_fields([
+                'name', 'organization', 'audit', 'severity',
+                'short_description', 'description', 'observation',
+                'recommendation', 'reference', 'cvss', 'cvss_descriptor',
+                'valid_from', 'valid_to', 'comment', 'attachments',
+            ])
 
 
 class ActionForm(ModelForm):
