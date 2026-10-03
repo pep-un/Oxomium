@@ -371,55 +371,55 @@ class ControlModelTest(TestCase):
         year = date.today().year
 
         # Year test
-        self.assertEqual(yearly_cp[0].period_start_date, date(year, 1, 1))
-        self.assertEqual(yearly_cp[0].period_end_date, date(year, 12, 31))
+        self.assertEqual(yearly_cp[0].valid_from.date(), date(year, 1, 1))
+        self.assertEqual((yearly_cp[0].valid_to - timedelta(microseconds=1)).date(), date(year, 12, 31))
 
         # Biannual test
-        self.assertEqual(halfyearly_cp_list[0].period_start_date, date(year, 1, 1))
-        self.assertEqual(halfyearly_cp_list[0].period_end_date, date(year, 6, 30))
-        self.assertEqual(halfyearly_cp_list[1].period_start_date, date(year, 7, 1))
-        self.assertEqual(halfyearly_cp_list[1].period_end_date, date(year, 12, 31))
+        self.assertEqual(halfyearly_cp_list[0].valid_from.date(), date(year, 1, 1))
+        self.assertEqual((halfyearly_cp_list[0].valid_to - timedelta(microseconds=1)).date(), date(year, 6, 30))
+        self.assertEqual(halfyearly_cp_list[1].valid_from.date(), date(year, 7, 1))
+        self.assertEqual((halfyearly_cp_list[1].valid_to - timedelta(microseconds=1)).date(), date(year, 12, 31))
 
         # Quaterly test
-        self.assertEqual(quarterly_cp_list[0].period_start_date, date(year, 1, 1))
-        self.assertEqual(quarterly_cp_list[0].period_end_date, date(year, 3, 31))
-        self.assertEqual(quarterly_cp_list[1].period_start_date, date(year, 4, 1))
-        self.assertEqual(quarterly_cp_list[1].period_end_date, date(year, 6, 30))
-        self.assertEqual(quarterly_cp_list[2].period_start_date, date(year, 7, 1))
-        self.assertEqual(quarterly_cp_list[2].period_end_date, date(year, 9, 30))
-        self.assertEqual(quarterly_cp_list[3].period_start_date, date(year, 10, 1))
-        self.assertEqual(quarterly_cp_list[3].period_end_date, date(year, 12, 31))
+        self.assertEqual(quarterly_cp_list[0].valid_from.date(), date(year, 1, 1))
+        self.assertEqual((quarterly_cp_list[0].valid_to - timedelta(microseconds=1)).date(), date(year, 3, 31))
+        self.assertEqual(quarterly_cp_list[1].valid_from.date(), date(year, 4, 1))
+        self.assertEqual((quarterly_cp_list[1].valid_to - timedelta(microseconds=1)).date(), date(year, 6, 30))
+        self.assertEqual(quarterly_cp_list[2].valid_from.date(), date(year, 7, 1))
+        self.assertEqual((quarterly_cp_list[2].valid_to - timedelta(microseconds=1)).date(), date(year, 9, 30))
+        self.assertEqual(quarterly_cp_list[3].valid_from.date(), date(year, 10, 1))
+        self.assertEqual((quarterly_cp_list[3].valid_to - timedelta(microseconds=1)).date(), date(year, 12, 31))
 
         # Bimonthly test
-        self.assertEqual(bimonthly_cp_list[0].period_start_date, date(year, 1, 1))
-        self.assertEqual(bimonthly_cp_list[0].period_end_date, date(year, 2, monthrange(year, 2)[1]))
-        self.assertEqual(bimonthly_cp_list[1].period_start_date, date(year, 3, 1))
-        self.assertEqual(bimonthly_cp_list[1].period_end_date, date(year, 4, 30))
-        self.assertEqual(bimonthly_cp_list[2].period_start_date, date(year, 5, 1))
-        self.assertEqual(bimonthly_cp_list[2].period_end_date, date(year, 6, 30))
-        self.assertEqual(bimonthly_cp_list[3].period_start_date, date(year, 7, 1))
-        self.assertEqual(bimonthly_cp_list[3].period_end_date, date(year, 8, 31))
-        self.assertEqual(bimonthly_cp_list[4].period_start_date, date(year, 9, 1))
-        self.assertEqual(bimonthly_cp_list[4].period_end_date, date(year, 10, 31))
-        self.assertEqual(bimonthly_cp_list[5].period_start_date, date(year, 11, 1))
-        self.assertEqual(bimonthly_cp_list[5].period_end_date, date(year, 12, 31))
+        self.assertEqual(bimonthly_cp_list[0].valid_from.date(), date(year, 1, 1))
+        self.assertEqual((bimonthly_cp_list[0].valid_to - timedelta(microseconds=1)).date(), date(year, 2, monthrange(year, 2)[1]))
+        self.assertEqual(bimonthly_cp_list[1].valid_from.date(), date(year, 3, 1))
+        self.assertEqual((bimonthly_cp_list[1].valid_to - timedelta(microseconds=1)).date(), date(year, 4, 30))
+        self.assertEqual(bimonthly_cp_list[2].valid_from.date(), date(year, 5, 1))
+        self.assertEqual((bimonthly_cp_list[2].valid_to - timedelta(microseconds=1)).date(), date(year, 6, 30))
+        self.assertEqual(bimonthly_cp_list[3].valid_from.date(), date(year, 7, 1))
+        self.assertEqual((bimonthly_cp_list[3].valid_to - timedelta(microseconds=1)).date(), date(year, 8, 31))
+        self.assertEqual(bimonthly_cp_list[4].valid_from.date(), date(year, 9, 1))
+        self.assertEqual((bimonthly_cp_list[4].valid_to - timedelta(microseconds=1)).date(), date(year, 10, 31))
+        self.assertEqual(bimonthly_cp_list[5].valid_from.date(), date(year, 11, 1))
+        self.assertEqual((bimonthly_cp_list[5].valid_to - timedelta(microseconds=1)).date(), date(year, 12, 31))
 
         # Month test
         for i in range(1,13,1):
             end_day = monthrange(year, i)[1]
-            self.assertEqual(monthly_cp_list[i-1].period_start_date, date(year, i, 1))
-            self.assertEqual(monthly_cp_list[i-1].period_end_date, date(year, i, end_day))
+            self.assertEqual(monthly_cp_list[i-1].valid_from.date(), date(year, i, 1))
+            self.assertEqual((monthly_cp_list[i-1].valid_to - timedelta(microseconds=1)).date(), date(year, i, end_day))
 
 
 class ControlPointModelTest(TestCase):
     def setUp(self):
         today = date.today()
         self.ctrl = Control.objects.create(title='Yearly', frequency=Control.Frequency.YEARLY)
-        ControlPoint.objects.create(control=self.ctrl, period_start_date=today - timedelta(days=3),
-                                    period_end_date=today - timedelta(days=1) )
-        ControlPoint.objects.create(control=self.ctrl, period_start_date=today, period_end_date= today)
-        ControlPoint.objects.create(control=self.ctrl, period_start_date=today + timedelta(days=1),
-                                    period_end_date=today + timedelta(days=3))
+        ControlPoint.objects.create(control=self.ctrl, valid_from=ControlPoint._day_start(today - timedelta(days=3)),
+                                    valid_to=ControlPoint._day_start(today) )
+        ControlPoint.objects.create(control=self.ctrl, valid_from=ControlPoint._day_start(today), valid_to=ControlPoint._day_start(today + timedelta(days=1)))
+        ControlPoint.objects.create(control=self.ctrl, valid_from=ControlPoint._day_start(today + timedelta(days=1)),
+                                    valid_to=ControlPoint._day_start(today + timedelta(days=4)))
 
     def test_control_point_status(self):
         miss = ControlPoint.objects.filter(control=self.ctrl, status=ControlPoint.Status.MISSED).count()
@@ -499,8 +499,8 @@ class ConformityGetRelatedTests(TestCase):
         today = timezone.now().date()
         self.cp = ControlPoint.objects.create(
             control=self.ctrl,
-            period_start_date=today.replace(day=1),
-            period_end_date=today,
+            valid_from=ControlPoint._day_start(today.replace(day=1)),
+            valid_to=ControlPoint._day_start(today + timedelta(days=1)),
             status=ControlPoint.Status.TOBEEVALUATED,
         )
 
@@ -581,8 +581,8 @@ class ConformityRelationAndGuardsTests(TestCase):
         cp = ctl.get_controlpoint().first()
         # ensure current period
         from datetime import date, timedelta
-        cp.period_start_date = date.today() - timedelta(days=1)
-        cp.period_end_date = date.today() + timedelta(days=1)
+        cp.valid_from.date() = date.today() - timedelta(days=1)
+        (cp.valid_to - timedelta(microseconds=1)).date() = date.today() + timedelta(days=1)
         ControlPoint.update_status(cp)
         cp.result = Evidence.Result.NEGATIVE
         cp.save()
@@ -645,8 +645,8 @@ class ConformityRelationAndGuardsTests(TestCase):
         Control.controlpoint_bootstrap(ctl)
         cp = ctl.get_controlpoint().first()
         from datetime import date, timedelta
-        cp.period_start_date = date.today() - timedelta(days=1)
-        cp.period_end_date = date.today() + timedelta(days=1)
+        cp.valid_from.date() = date.today() - timedelta(days=1)
+        (cp.valid_to - timedelta(microseconds=1)).date() = date.today() + timedelta(days=1)
         ControlPoint.update_status(cp)
         cp.result = Evidence.Result.NEGATIVE
         cp.save()
@@ -733,7 +733,7 @@ class ControlAndControlPointExtrasTests(TestCase):
         Control.controlpoint_bootstrap(self.ctl)
         cps2 = list(self.ctl.get_controlpoint())
         # By comparing (start,end) pairs
-        pairs = {(c.period_start_date, c.period_end_date) for c in cps2}
+        pairs = {(c.valid_from.date(), (c.valid_to - timedelta(microseconds=1)).date()) for c in cps2}
         self.assertEqual(len(pairs), len(cps2))
 
         s = str(self.ctl)
@@ -744,8 +744,8 @@ class ControlAndControlPointExtrasTests(TestCase):
         cp = self.ctl.get_controlpoint().first()
         # Force dates around today and compute status via update_status
         from datetime import date, timedelta
-        cp.period_start_date = date.today()
-        cp.period_end_date = date.today()
+        cp.valid_from.date() = date.today()
+        (cp.valid_to - timedelta(microseconds=1)).date() = date.today()
         ControlPoint.update_status(cp)
         self.assertEqual(cp.status, ControlPoint.Status.TOBEEVALUATED)
         # helper methods
