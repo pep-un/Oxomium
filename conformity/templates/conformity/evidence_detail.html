@@ -88,6 +88,9 @@
             {% elif evidence.source_type == 'DOC' %}
             <dt class="col-sm-3">Document</dt>
             <dd class="col-sm-9">{{ evidence.document }}</dd>
+            {% elif evidence.source_type == 'MAN' %}
+            <dt class="col-sm-3">Title</dt>
+            <dd class="col-sm-9">{{ evidence.title|default:"—" }}</dd>
             {% elif evidence.source_type == 'FIND' %}
             <dt class="col-sm-3">Finding</dt>
             <dd class="col-sm-9">{{ evidence.short_description }}</dd>
