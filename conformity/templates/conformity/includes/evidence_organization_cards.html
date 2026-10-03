@@ -1,0 +1,30 @@
+<div class="card border-info mb-4">
+    <div class="card-header border-info text-bg-info">
+        <span class="h4 mb-0">Associated organization</span>
+    </div>
+
+    <div class="list-group list-group-flush">
+        {% regroup evidence_conformities|dictsort:"organization.name" by organization as organization_groups %}
+        {% for group in organization_groups %}
+            <div class="list-group-item border-info">
+                <div class="d-flex align-items-start gap-2">
+                    <i class="bi bi-building text-primary flex-shrink-0" aria-hidden="true"></i>
+                    <div class="min-w-0">
+                        <div class="fw-semibold">{{ group.grouper.name }}</div>
+                        {% if group.grouper.description %}
+                            <div class="small text-body-secondary mt-1">
+                                {{ group.grouper.description|linebreaksbr }}
+                            </div>
+                        {% else %}
+                            <div class="small text-body-secondary mt-1">No description.</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="list-group-item text-body-secondary text-center py-4">
+                No associated organization.
+            </div>
+        {% endfor %}
+    </div>
+</div>
