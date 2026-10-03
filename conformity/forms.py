@@ -36,6 +36,28 @@ class MultipleFileField(FileField):
         return []
 
 
+class EvidenceValidityFormMixin:
+    """Render Evidence validity bounds with native date/time pickers."""
+
+    datetime_local_format = '%Y-%m-%dT%H:%M'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field_name in ('valid_from', 'valid_to'):
+            field = self.fields.get(field_name)
+            if field is None:
+                continue
+            field.widget = forms.DateTimeInput(
+                attrs={'type': 'datetime-local'},
+                format=self.datetime_local_format,
+            )
+            field.input_formats = [
+                self.datetime_local_format,
+                '%Y-%m-%dT%H:%M:%S',
+                *field.input_formats,
+            ]
+
+
 class AttachmentUploadFormMixin:
     """Apply the shared attachment policy to every multi-upload form."""
 
@@ -110,7 +132,7 @@ class EvidenceRequirementForm(Form):
         self.fields['conformity'].queryset = queryset
 
 
-class HumanEvidenceForm(AttachmentUploadFormMixin, ModelForm):
+class HumanEvidenceForm(AttachmentUploadFormMixin, EvidenceValidityFormMixin, ModelForm):
     attachments = MultipleFileField(required=False)
     class Meta:
         model = HumanEvidence
@@ -125,28 +147,28 @@ class HumanEvidenceForm(AttachmentUploadFormMixin, ModelForm):
                 self.initial['valid_to'] = valid_from + timedelta(days=365)
 
 
-class EvidenceForm(AttachmentUploadFormMixin, ModelForm):
+class EvidenceForm(AttachmentUploadFormMixin, EvidenceValidityFormMixin, ModelForm):
     attachments = MultipleFileField(required=False)
     class Meta:
         model = Evidence
         fields = ['result', 'valid_from', 'valid_to', 'evaluator', 'comment', 'attachments']
 
 
-class ManualEvidenceForm(AttachmentUploadFormMixin, ModelForm):
+class ManualEvidenceForm(AttachmentUploadFormMixin, EvidenceValidityFormMixin, ModelForm):
     attachments = MultipleFileField(required=False)
     class Meta:
         model = ManualEvidence
         fields = ['title', 'result', 'valid_from', 'valid_to', 'comment', 'attachments']
 
 
-class DocumentEvidenceForm(AttachmentUploadFormMixin, ModelForm):
+class DocumentEvidenceForm(AttachmentUploadFormMixin, EvidenceValidityFormMixin, ModelForm):
     attachments = MultipleFileField(required=False)
     class Meta:
         model = DocumentEvidence
         fields = ['title', 'document', 'result', 'valid_from', 'valid_to', 'comment', 'attachments']
 
 
-class FindingEvidenceForm(AttachmentUploadFormMixin, ModelForm):
+class FindingEvidenceForm(AttachmentUploadFormMixin, EvidenceValidityFormMixin, ModelForm):
     attachments = MultipleFileField(required=False)
     class Meta:
         model = FindingEvidence
