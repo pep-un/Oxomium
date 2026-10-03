@@ -220,9 +220,10 @@ class SignalTests(TestCase):
             severity=Finding.Severity.MAJOR,
         )
 
+        original_valid_to = finding.valid_to
         finding.close_if_actions_completed()
         finding.refresh_from_db()
-        self.assertIsNone(finding.valid_to)
+        self.assertEqual(finding.valid_to, original_valid_to)
 
         act = Action.objects.create(
             title="A1",
@@ -232,12 +233,12 @@ class SignalTests(TestCase):
         act.associated_findings.add(finding)
         act.save()
         finding.refresh_from_db()
-        self.assertIsNone(finding.valid_to)
+        self.assertEqual(finding.valid_to, original_valid_to)
 
         act.status = Action.Status.ENDED
         act.save()
         finding.refresh_from_db()
-        self.assertIsNotNone(finding.valid_to)
+        self.assertLess(finding.valid_to, original_valid_to)
         closed_at = finding.valid_to
 
         # Reopening the Action does not erase historical/manual invalidation.
