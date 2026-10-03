@@ -1012,11 +1012,6 @@ class Control(models.Model):
     def __str__(self):
         return self.title
 
-    @property
-    def organizations(self):
-        """Organizations derived exclusively from configured Conformities."""
-        return Organization.objects.filter(conformities__controls=self).distinct()
-
     @staticmethod
     def get_absolute_url():
         """return the absolute URL for Forms, could probably do better"""
@@ -1456,18 +1451,13 @@ class Indicator (models.Model):
     critical = models.IntegerField(default=20)
     responsible = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     conformity = models.ManyToManyField(
-        Conformity, blank=True, related_name="indicators",
+        Conformity, blank=True,
         help_text=_("Organization-specific conformities measured by this indicator."),
     )
     frequency = models.IntegerField(
         choices=Frequency.choices,
         default=Frequency.QUARTERLY,
     )
-
-    @property
-    def organizations(self):
-        """Organizations derived exclusively from configured Conformities."""
-        return Organization.objects.filter(conformities__indicators=self).distinct()
 
     @staticmethod
     def get_absolute_url():
