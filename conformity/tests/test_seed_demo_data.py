@@ -8,10 +8,10 @@ from conformity.models import (
     ControlPoint,
     Finding,
     Framework,
+    Evidence,
     HumanEvidence,
     Indicator,
     IndicatorPoint,
-    ManualEvidence,
     Organization,
 )
 
@@ -76,7 +76,10 @@ class SeedDemoDataCommandTests(TestCase):
         )
 
         self.assertEqual(
-            ManualEvidence.objects.filter(title__startswith="Demo - ").count(),
+            Evidence.objects.filter(
+                title__startswith="Demo - ",
+                source_type=Evidence.SourceType.GENERIC,
+            ).count(),
             3,
         )
         self.assertEqual(
