@@ -26,10 +26,10 @@ class EvidenceTests(TestCase):
         )
         self.organization = Organization.objects.create(name='Evidence organization')
         self.parent = Conformity.objects.create(
-            organization=self.organization, requirement=self.root
+            requirement=self.root
         )
         self.conformity = Conformity.objects.create(
-            organization=self.organization, requirement=self.leaf
+            requirement=self.leaf
         )
         self.now = timezone.now()
 
@@ -76,9 +76,8 @@ class EvidenceTests(TestCase):
     def test_control_point_only_targets_leaf_conformities(self):
         control = Control.objects.create(
             title='Leaf-only control',
-            organization=self.organization,
         )
-        control.requirements.add(self.root, self.leaf)
+        control.conformity.add(self.parent, self.conformity)
 
         point = ControlPoint.objects.create(
             control=control,
@@ -96,13 +95,12 @@ class EvidenceTests(TestCase):
         indicator = Indicator.objects.create(
             name='Leaf-only indicator',
             responsible=self.user,
-            organization=self.organization,
             worst=0,
             critical=20,
             warning=80,
             best=100,
         )
-        indicator.requirements.add(self.root, self.leaf)
+        indicator.conformity.add(self.parent, self.conformity)
 
         point = IndicatorPoint.objects.create(
             indicator=indicator,
@@ -226,7 +224,6 @@ class EvidenceTests(TestCase):
             title='Second Evidence leaf',
         )
         second = Conformity.objects.create(
-            organization=self.organization,
             requirement=second_leaf,
         )
 
@@ -258,7 +255,6 @@ class EvidenceTests(TestCase):
             title='Second Evidence leaf',
         )
         second = Conformity.objects.create(
-            organization=self.organization,
             requirement=second_leaf,
         )
 
@@ -301,7 +297,6 @@ class EvidenceTests(TestCase):
             title='Second Evidence leaf',
         )
         second = Conformity.objects.create(
-            organization=self.organization,
             requirement=second_leaf,
         )
         manual = ManualEvidence.objects.create(
@@ -346,11 +341,9 @@ class EvidenceTests(TestCase):
             title='Second grouped leaf',
         )
         first = Conformity.objects.create(
-            organization=self.organization,
             requirement=first_leaf,
         )
         second = Conformity.objects.create(
-            organization=self.organization,
             requirement=second_leaf,
         )
         manual = ManualEvidence.objects.create(
@@ -376,11 +369,10 @@ class EvidenceTests(TestCase):
         control = Control.objects.create(
             title='Context control',
             description='Control context description',
-            organization=self.organization,
             frequency=Control.Frequency.QUARTERLY,
             level=Control.Level.SECOND,
         )
-        control.requirements.add(self.leaf)
+        control.conformity.add(self.conformity)
         point = next(
             item for item in control.get_controlpoint()
             if item.is_current_period()
@@ -408,14 +400,13 @@ class EvidenceTests(TestCase):
             source='SIEM export',
             formula='Compliant systems / total systems * 100',
             responsible=self.user,
-            organization=self.organization,
             frequency=Indicator.Frequency.MONTHLY,
             worst=0,
             critical=20,
             warning=80,
             best=100,
         )
-        indicator.requirements.add(self.leaf)
+        indicator.conformity.add(self.conformity)
         point = indicator.get_current_point()
 
         self.client.force_login(self.user)
@@ -475,7 +466,6 @@ class EvidenceTests(TestCase):
             title='Second Evidence leaf',
         )
         second = Conformity.objects.create(
-            organization=self.organization,
             requirement=second_leaf,
         )
         manual = ManualEvidence.objects.create(
@@ -555,14 +545,13 @@ class EvidenceTests(TestCase):
         indicator = Indicator.objects.create(
             name='Named indicator',
             responsible=self.user,
-            organization=self.organization,
             frequency=Indicator.Frequency.YEARLY,
             worst=0,
             critical=20,
             warning=80,
             best=100,
         )
-        indicator.requirements.add(self.leaf)
+        indicator.conformity.add(self.conformity)
         indicator_point = indicator.get_current_point()
 
         manual = ManualEvidence.objects.create(
@@ -746,7 +735,7 @@ class EvidenceTests(TestCase):
 
     def test_later_control_result_invalidates_human_arbitration(self):
         control = Control.objects.create(
-            title='Human-arbitrated control', organization=self.organization
+            title='Human-arbitrated control'
         )
         control.conformity.add(self.conformity)
         point = ControlPoint.objects.create(
@@ -771,7 +760,7 @@ class EvidenceTests(TestCase):
 
     def test_non_result_control_update_keeps_human_arbitration(self):
         control = Control.objects.create(
-            title='Documented control', organization=self.organization
+            title='Documented control'
         )
         control.conformity.add(self.conformity)
         point = ControlPoint.objects.create(
@@ -795,7 +784,7 @@ class EvidenceTests(TestCase):
 
     def test_control_point_is_evidence_without_losing_business_fields(self):
         control = Control.objects.create(
-            title='Access review', organization=self.organization
+            title='Access review'
         )
         control.conformity.add(self.conformity)
         point = ControlPoint.objects.create(
@@ -813,7 +802,7 @@ class EvidenceTests(TestCase):
 
     def test_indicator_point_is_evidence_and_preserves_threshold_logic(self):
         indicator = Indicator.objects.create(
-            name='Coverage', responsible=self.user, organization=self.organization,
+            name='Coverage', responsible=self.user,
             worst=0, critical=20, warning=80, best=100,
         )
         indicator.conformity.add(self.conformity)
@@ -963,7 +952,6 @@ class EvidenceTests(TestCase):
     def test_evidence_detail_is_available_for_control_but_edit_is_not(self):
         control = Control.objects.create(
             title='Immutable control evidence',
-            organization=self.organization,
         )
         control.conformity.add(self.conformity)
         point = ControlPoint.objects.create(
