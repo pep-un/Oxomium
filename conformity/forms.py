@@ -154,14 +154,10 @@ class EvidenceForm(AttachmentUploadFormMixin, EvidenceValidityFormMixin, ModelFo
     attachments = MultipleFileField(required=False)
     class Meta:
         model = Evidence
-        fields = ['result', 'valid_from', 'valid_to', 'evaluator', 'comment', 'attachments']
-
-
-class ManualEvidenceForm(AttachmentUploadFormMixin, EvidenceValidityFormMixin, ModelForm):
-    attachments = MultipleFileField(required=False)
-    class Meta:
-        model = ManualEvidence
-        fields = ['title', 'result', 'valid_from', 'valid_to', 'comment', 'attachments']
+        fields = [
+            'title', 'result', 'valid_from', 'valid_to', 'evaluator',
+            'comment', 'attachments',
+        ]
 
 
 class DocumentEvidenceForm(AttachmentUploadFormMixin, EvidenceValidityFormMixin, ModelForm):
