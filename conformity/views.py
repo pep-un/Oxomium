@@ -833,7 +833,6 @@ class ControlCreateView(LoginRequiredMixin, SaveStayMixin, CreateView):
                 raise Http404('Invalid conformity identifier.') from exc
             conformity = get_object_or_404(Conformity, pk=conformity_id)
             initial['conformity'] = [conformity]
-            initial['organization'] = conformity.organization_id
         return initial
 
 
