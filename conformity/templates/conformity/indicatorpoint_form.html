@@ -4,13 +4,8 @@
 
 {% block header %}
 <h1 class="h1 d-flex align-items-center gap-2">
-    <a href="{% url 'conformity:indicator_detail' indicatorpoint.indicator.pk %}"
-       class="header-back-link"
-       aria-label="Back to periodic indicator"
-       title="Back to periodic indicator">
-        <i class="bi bi-chevron-left" aria-hidden="true"></i>
-    </a>
-    {{ indicatorpoint.indicator.name }}
+    <i class="bi bi-pencil-square" aria-hidden="true"></i>
+    Edit Periodic indicator
 </h1>
 {% endblock %}
 
