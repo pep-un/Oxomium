@@ -1012,6 +1012,11 @@ class Control(models.Model):
     def __str__(self):
         return self.title
 
+    @property
+    def organizations(self):
+        """Organizations derived exclusively from configured Conformities."""
+        return Organization.objects.filter(conformities__controls=self).distinct()
+
     @staticmethod
     def get_absolute_url():
         """return the absolute URL for Forms, could probably do better"""
@@ -1458,6 +1463,11 @@ class Indicator (models.Model):
         choices=Frequency.choices,
         default=Frequency.QUARTERLY,
     )
+
+    @property
+    def organizations(self):
+        """Organizations derived exclusively from configured Conformities."""
+        return Organization.objects.filter(conformities__indicators=self).distinct()
 
     @staticmethod
     def get_absolute_url():
