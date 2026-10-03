@@ -79,6 +79,38 @@ def migrate_points_to_inheritance(apps, schema_editor):
             action.evidence_control_points.add(*new_ids)
 
 
+def _legacy_control_status(point):
+    if point.result == 'POS':
+        return 'OK'
+    if point.result == 'NEG':
+        return 'NOK'
+    today = timezone.localdate()
+    end = (timezone.localtime(point.valid_to) - timedelta(microseconds=1)).date()
+    start = timezone.localtime(point.valid_from).date()
+    if end < today:
+        return 'MISS'
+    if start <= today <= end:
+        return 'TOBE'
+    return 'SCHD'
+
+
+def _legacy_indicator_status(point):
+    if point.result == 'POS':
+        return 'OK'
+    if point.result == 'NEG':
+        return 'CRIT'
+    if point.result == 'NEU' and point.value is not None:
+        return 'WARN'
+    today = timezone.localdate()
+    end = (timezone.localtime(point.valid_to) - timedelta(microseconds=1)).date()
+    start = timezone.localtime(point.valid_from).date()
+    if end < today:
+        return 'MISS'
+    if start <= today <= end:
+        return 'TOBE'
+    return 'SCHD'
+
+
 def restore_legacy_points(apps, schema_editor):
     ControlPoint = apps.get_model('conformity', 'ControlPoint')
     IndicatorPoint = apps.get_model('conformity', 'IndicatorPoint')
@@ -98,7 +130,7 @@ def restore_legacy_points(apps, schema_editor):
             period_end_date=(
                 timezone.localtime(point.valid_to) - timedelta(microseconds=1)
             ).date(),
-            status=point.status,
+            status=_legacy_control_status(point),
             comment=point.comment,
         )
         old.attachment.add(*point.attachments.all())
@@ -117,7 +149,7 @@ def restore_legacy_points(apps, schema_editor):
             period_end_date=(
                 timezone.localtime(point.valid_to) - timedelta(microseconds=1)
             ).date(),
-            status=point.status,
+            status=_legacy_indicator_status(point),
             comment=point.comment,
             value=point.value,
         )
