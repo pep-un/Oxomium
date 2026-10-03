@@ -169,10 +169,10 @@ class FindingTable(BaseRichTable):
         attrs=PRIMARY_COLUMN,
     )
     def render_name(self, value, record):
-        if record.archived:
+        if record.valid_to is not None:
             return format_html(
-                '{} <i class="bi bi-archive-fill text-body-secondary ms-1" '
-                'title="Archived" aria-label="Archived"></i>',
+                '{} <i class="bi bi-clock-history text-body-secondary ms-1" '
+                'title="Invalidated" aria-label="Invalidated"></i>',
                 value,
             )
         return value
