@@ -985,10 +985,6 @@ class Finding(Evidence):
     class Meta:
         ordering = ['severity']
 
-    def __init__(self, *args, **kwargs):
-        kwargs.setdefault('source_type', Evidence.SourceType.FINDING)
-        super().__init__(*args, **kwargs)
-
     def clean(self):
         self.source_type = Evidence.SourceType.FINDING
         if self.cvss is not None and (self.cvss < 0.0 or self.cvss > 10.0):
