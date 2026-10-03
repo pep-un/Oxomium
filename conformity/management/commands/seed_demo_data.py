@@ -17,7 +17,6 @@ from conformity.models import (
     HumanEvidence,
     Indicator,
     IndicatorPoint,
-    ManualEvidence,
     Organization,
     Requirement,
 )
@@ -500,11 +499,16 @@ class Command(BaseCommand):
                 point.comment = "Demonstration measurement."
                 point.save()
 
-    def _upsert_manual(self, title, conformity, result, comment, owner):
-        evidence = ManualEvidence.objects.filter(title=title).first()
+    def _upsert_evidence(self, title, conformity, result, comment, owner):
+        evidence = Evidence.objects.filter(
+            title=title,
+            source_type=Evidence.SourceType.GENERIC,
+        ).first()
         if evidence is None:
-            evidence = ManualEvidence(
+            evidence = Evidence(
                 title=title,
+                source_type=Evidence.SourceType.GENERIC,
+                status=Evidence.Status.EVALUATED,
                 result=result,
                 valid_from=timezone.now() - timedelta(days=5),
                 evaluator=owner,
@@ -515,12 +519,13 @@ class Command(BaseCommand):
             evidence.result = result
             evidence.comment = comment
             evidence.evaluator = owner
+            evidence.status = Evidence.Status.EVALUATED
         evidence.save()
         evidence.conformities.set([conformity])
         return evidence
 
     def _other_evidence(self, findings, conformities, owner):
-        self._upsert_manual(
+        self._upsert_evidence(
             "Demo - Access governance procedure reviewed",
             conformities["acme_sec_iam"],
             Evidence.Result.POSITIVE,
@@ -528,14 +533,14 @@ class Command(BaseCommand):
             owner,
         )
 
-        self._upsert_manual(
+        self._upsert_evidence(
             "Demo - Logging coverage confirmed",
             conformities["acme_sec_log"],
             Evidence.Result.POSITIVE,
             "Logging inventory confirms coverage of required systems.",
             owner,
         )
-        self._upsert_manual(
+        self._upsert_evidence(
             "Demo - Logging retention gap",
             conformities["acme_sec_log"],
             Evidence.Result.NEGATIVE,
