@@ -367,16 +367,16 @@ class PeriodicControlTable(BaseRichTable):
     organization = tables.TemplateColumn(
         verbose_name="Organization",
         template_code="""
-            {% if record.organization %}
-                <a href="{% url 'conformity:organization_detail' record.organization.pk %}"
+            {% for conformity in record.conformity.all %}
+                <a href="{% url 'conformity:organization_detail' conformity.organization.pk %}"
                    class="btn btn-sm btn-outline-secondary w-75 mx-auto">
-                    {{ record.organization }}
+                    {{ conformity.organization }}
                 </a>
-            {% else %}
+            {% empty %}
                 <span class="text-body-secondary">—</span>
-            {% endif %}
+            {% endfor %}
         """,
-        order_by=("organization__name",),
+        orderable=False,
         attrs=CENTER,
     )
     type = tables.Column(
@@ -445,18 +445,12 @@ class PeriodicControlTable(BaseRichTable):
         verbose_name="Associated requirements",
         template_code="""
             <div class="d-grid gap-1">
-                {% for requirement in record.requirements.all %}
-                    {% if record.organization %}
-                        <a href="{% url 'conformity:conformity_detail_index' record.organization.id requirement.framework.id %}#requirement-{{ requirement.id }}"
-                           class="btn btn-sm btn-outline-secondary w-75 mx-auto"
-                           title="{{ requirement.title }}">
-                            {{ requirement.full_path }}
-                        </a>
-                    {% else %}
-                        <span class="badge text-bg-light text-dark border">
-                            {{ requirement.full_path }}
-                        </span>
-                    {% endif %}
+                {% for conformity in record.conformity.all %}
+                    <a href="{% url 'conformity:conformity_detail_index' conformity.organization.id conformity.requirement.framework.id %}#requirement-{{ conformity.requirement.id }}"
+                       class="btn btn-sm btn-outline-secondary w-75 mx-auto"
+                       title="{{ conformity.requirement.title }}">
+                        {{ conformity.requirement.full_path }}
+                    </a>
                 {% empty %}
                     <span class="text-body-secondary">—</span>
                 {% endfor %}
