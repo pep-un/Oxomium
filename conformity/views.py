@@ -25,13 +25,13 @@ from .filterset import ActionFilter, ControlFilter, ControlPointFilter, Framewor
 from .forms import (
     ActionForm, AuditForm, ConformityForm, ControlForm, ControlPointForm,
     DocumentEvidenceForm, EvidenceForm, FindingForm, HumanEvidenceForm,
-    IndicatorForm, IndicatorPointForm, ManualEvidenceForm,
+    IndicatorForm, IndicatorPointForm,
     OrganizationForm, EvidenceRequirementForm,
 )
 from .models import (
     Action, Attachment, Audit, Conformity, Control, ControlPoint,
     DocumentEvidence, Evidence, Finding, Framework, HumanEvidence, Indicator,
-    IndicatorPoint, ManualEvidence, Organization,
+    IndicatorPoint, Organization,
     Requirement,
 )
 from .resources import (
