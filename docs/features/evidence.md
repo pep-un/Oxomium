@@ -72,3 +72,7 @@ records without inventing framework relationships.
 Authenticated users can record a human assessment from a leaf Conformity edit
 page. The author and evaluation time are captured automatically. Human evidence
 is displayed with the complete evidence history on the same page.
+
+See [Evidence and HumanEvidence arbitration](evidence-arbitration.md) for the
+complete decision table, invalidation rules, target synchronization contract,
+and simplification opportunities.
