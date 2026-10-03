@@ -584,7 +584,7 @@ class ConformityRelationAndGuardsTests(TestCase):
         cp.period_start_date = date.today() - timedelta(days=1)
         cp.period_end_date = date.today() + timedelta(days=1)
         ControlPoint.update_status(cp)
-        cp.status = ControlPoint.Status.NONCOMPLIANT
+        cp.status = Evidence.Status.EVALUATED
         cp.save()
 
         # Default mode: actions + controls
@@ -648,7 +648,7 @@ class ConformityRelationAndGuardsTests(TestCase):
         cp.period_start_date = date.today() - timedelta(days=1)
         cp.period_end_date = date.today() + timedelta(days=1)
         ControlPoint.update_status(cp)
-        cp.status = ControlPoint.Status.NONCOMPLIANT
+        cp.status = Evidence.Status.EVALUATED
         cp.save()
         changed = self.c_child.set_status_from(100, Conformity.StatusJustification.CONTROL)
         self.assertFalse(changed)
