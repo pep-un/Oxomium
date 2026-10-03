@@ -86,7 +86,7 @@ class IndicatorBoundsTests(TestCase):
             (0, 100, 80, 20, ((0, 'NEG'), (20, 'NEG'), (21, 'PAR'), (80, 'PAR'), (81, 'POS'), (100, 'POS'))),
             (100, 0, 20, 80, ((0, 'POS'), (19, 'POS'), (20, 'PAR'), (79, 'PAR'), (80, 'NEG'), (100, 'NEG'))),
             (-10, -2, -4, -8, ((-10, 'NEG'), (-6, 'PAR'), (-2, 'POS'))),
-            (5, 5, 5, 5, ((5, 'PAR'),)),
+            (5, 5, 5, 5, ((5, 'NEU'),)),
         )
         for worst, best, warning, critical, cases in configurations:
             self.configure(worst, best, warning, critical)
@@ -162,7 +162,7 @@ class IndicatorBoundsTests(TestCase):
         self.assertEqual(entry.actor, self.user)
         self.assertEqual(entry.changes['value'], ['None', '0'])
         self.assertEqual(entry.changes['status'], ['TOBE', 'EVAL'])
-        self.assertEqual(entry.changes['result'], ['PAR', 'POS'])
+        self.assertEqual(entry.changes['result'], ['NEU', 'POS'])
         for name in ('conformity:indicator_index', 'conformity:indicator_detail'):
             url = reverse(name, args=[self.indicator.pk]) if name.endswith('detail') else reverse(name)
             response = self.client.get(url)
