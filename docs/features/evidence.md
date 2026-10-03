@@ -47,16 +47,15 @@ does not silently recalculate historical framework totals.
   states are neutral.
 - `IndicatorPoint`: compliant is positive, critical is negative, and warning or
   lifecycle states are neutral.
-- `HumanEvidence`: explicit human arbitration.
+- `HumanEvidence`: expert assessment used to arbitrate evidence.
 - `Finding`: audit findings are first-class Evidence. Severity remains
   Finding-specific; positive findings map to positive Evidence,
   critical/major/minor findings map to negative Evidence, and observation/other
   findings map to neutral Evidence.
-- `DocumentEvidence`: a documentary attachment with an explicit result and
-  assessment association.
-- `ManualEvidence`: a simple explicitly entered fact.
+- `DocumentEvidence`: a Document with an explicit result and assessment association.
+- Base `Evidence`: a generic explicitly entered fact; no separate manual subtype is needed.
 
-ControlPoint, IndicatorPoint and Finding are concrete subclasses of Evidence.
+ControlPoint, IndicatorPoint, Finding, HumanEvidence and DocumentEvidence are concrete subclasses of Evidence.
 Common validity, result, evaluator, comment, attachments and Conformity
 relationships are stored once on Evidence; only source-specific fields remain
 on the subclasses. Finding validity replaces the former archived flag:
@@ -64,7 +63,7 @@ on the subclasses. Finding validity replaces the former archived flag:
 corrective Actions are completed. Legacy period/evaluator accessors
 are compatibility aliases, not duplicated persistence.
 
-Control and Indicator are configured directly against organization-specific
+Periodic Control and Periodic Indicator are configured directly against organization-specific
 Conformity records. They do not reference Requirement or Organization directly.
 Each periodic Evidence snapshots those Conformity targets; completed Evidence
 keeps its historical associations. The data
