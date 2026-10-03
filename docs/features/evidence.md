@@ -48,16 +48,20 @@ does not silently recalculate historical framework totals.
 - `IndicatorPoint`: compliant is positive, critical is negative, and warning or
   lifecycle states are neutral.
 - `HumanEvidence`: explicit human arbitration.
-- `FindingEvidence`: positive findings are positive, critical/major/minor
-  findings are negative, and other findings are neutral.
+- `Finding`: audit findings are first-class Evidence. Severity remains
+  Finding-specific; positive findings map to positive Evidence,
+  critical/major/minor findings map to negative Evidence, and observation/other
+  findings map to neutral Evidence.
 - `DocumentEvidence`: a documentary attachment with an explicit result and
   assessment association.
 - `ManualEvidence`: a simple explicitly entered fact.
 
-ControlPoint and IndicatorPoint are concrete subclasses of Evidence. Common
-validity, result, evaluator, comment, attachments and Conformity relationships
-are stored once on Evidence; only Control/Indicator-specific lifecycle and
-measurement fields remain on the subclasses. Legacy period/evaluator accessors
+ControlPoint, IndicatorPoint and Finding are concrete subclasses of Evidence.
+Common validity, result, evaluator, comment, attachments and Conformity
+relationships are stored once on Evidence; only source-specific fields remain
+on the subclasses. Finding validity replaces the former archived flag:
+`valid_to` may be set manually and is closed automatically when all linked
+corrective Actions are completed. Legacy period/evaluator accessors
 are compatibility aliases, not duplicated persistence.
 
 Control and Indicator are configured directly against organization-specific
@@ -66,8 +70,8 @@ Each periodic Evidence snapshots those Conformity targets; completed Evidence
 keeps its historical associations. The data
 migration converts existing points into Evidence subclasses, preserves action
 links and target relationships, migrates expert assessments to HumanEvidence
-when their meaning is unambiguous, and creates unassociated finding/document
-records without inventing framework relationships.
+when their meaning is unambiguous, and preserves finding/document evidence without inventing framework
+relationships.
 
 ## Human arbitration
 
