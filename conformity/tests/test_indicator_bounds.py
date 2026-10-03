@@ -83,10 +83,10 @@ class IndicatorBoundsTests(TestCase):
 
     def test_inclusive_boundaries_and_thresholds_have_correct_status(self):
         configurations = (
-            (0, 100, 80, 20, ((0, 'NEG'), (20, 'NEG'), (21, 'NEU'), (80, 'NEU'), (81, 'POS'), (100, 'POS'))),
-            (100, 0, 20, 80, ((0, 'POS'), (19, 'POS'), (20, 'NEU'), (79, 'NEU'), (80, 'NEG'), (100, 'NEG'))),
-            (-10, -2, -4, -8, ((-10, 'NEG'), (-6, 'NEU'), (-2, 'POS'))),
-            (5, 5, 5, 5, ((5, 'NEU'),)),
+            (0, 100, 80, 20, ((0, 'NEG'), (20, 'NEG'), (21, 'PAR'), (80, 'PAR'), (81, 'POS'), (100, 'POS'))),
+            (100, 0, 20, 80, ((0, 'POS'), (19, 'POS'), (20, 'PAR'), (79, 'PAR'), (80, 'NEG'), (100, 'NEG'))),
+            (-10, -2, -4, -8, ((-10, 'NEG'), (-6, 'PAR'), (-2, 'POS'))),
+            (5, 5, 5, 5, ((5, 'PAR'),)),
         )
         for worst, best, warning, critical, cases in configurations:
             self.configure(worst, best, warning, critical)
@@ -162,7 +162,7 @@ class IndicatorBoundsTests(TestCase):
         self.assertEqual(entry.actor, self.user)
         self.assertEqual(entry.changes['value'], ['None', '0'])
         self.assertEqual(entry.changes['status'], ['TOBE', 'EVAL'])
-        self.assertEqual(entry.changes['result'], ['NEU', 'POS'])
+        self.assertEqual(entry.changes['result'], ['PAR', 'POS'])
         for name in ('conformity:indicator_index', 'conformity:indicator_detail'):
             url = reverse(name, args=[self.indicator.pk]) if name.endswith('detail') else reverse(name)
             response = self.client.get(url)
