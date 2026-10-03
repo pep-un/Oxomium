@@ -619,7 +619,7 @@ class EvidenceUpdateView(AttachmentUploadViewMixin, LoginRequiredMixin, UpdateVi
         Evidence.SourceType.HUMAN: HumanEvidenceForm,
         Evidence.SourceType.MANUAL: ManualEvidenceForm,
         Evidence.SourceType.DOCUMENT: DocumentEvidenceForm,
-        Evidence.SourceType.FINDING: FindingEvidenceForm,
+        Evidence.SourceType.FINDING: FindingForm,
     }
 
     def get_object(self, queryset=None):
