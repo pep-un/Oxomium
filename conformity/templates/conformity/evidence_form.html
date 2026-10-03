@@ -62,12 +62,7 @@
                 {% endif %}
             {% endif %}
 
-            <div class="mt-3 d-flex gap-2">
-                <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-save" aria-hidden="true"></i>
-                    {% if creating_evidence %}Create{% else %}Save{% endif %}
-                </button>
-
+            <div class="mt-3 d-flex gap-2 justify-content-end">
                 {% if creating_evidence %}
                     <a class="btn btn-outline-secondary"
                        href="{% url 'conformity:conformity_form' conformity.pk %}">
@@ -84,6 +79,11 @@
                         Cancel
                     </a>
                 {% endif %}
+
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save" aria-hidden="true"></i>
+                    {% if creating_evidence %}Create{% else %}Save{% endif %}
+                </button>
             </div>
         </div>
     </div>
