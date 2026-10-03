@@ -245,3 +245,77 @@ class FindingEvidenceMergeMigrationTests(TransactionTestCase):
             [finding.pk],
         )
 
+class ManualEvidenceToExpertMigrationTests(TransactionTestCase):
+    migrate_from = [('conformity', '0080_finding_optional_audit')]
+    migrate_to = [('conformity', '0081_simplify_evidence_types')]
+
+    def setUp(self):
+        super().setUp()
+        self.executor = MigrationExecutor(connection)
+        self.executor.migrate(self.migrate_from)
+        apps = self.executor.loader.project_state(self.migrate_from).apps
+
+        Framework = apps.get_model('conformity', 'Framework')
+        Requirement = apps.get_model('conformity', 'Requirement')
+        Organization = apps.get_model('conformity', 'Organization')
+        Conformity = apps.get_model('conformity', 'Conformity')
+        ManualEvidence = apps.get_model('conformity', 'ManualEvidence')
+        Attachment = apps.get_model('conformity', 'Attachment')
+
+        framework = Framework.objects.create(name='Manual conversion framework')
+        requirement = Requirement.objects.create(
+            framework=framework,
+            code='MC1',
+            name='MC1',
+            level=0,
+            tree_id=1,
+            lft=1,
+            rght=2,
+        )
+        organization = Organization.objects.create(name='Manual conversion org')
+        conformity = Conformity.objects.create(
+            organization=organization,
+            requirement=requirement,
+        )
+        attachment = Attachment.objects.create(file='attachments/manual-conversion.txt')
+        manual = ManualEvidence.objects.create(
+            title='Legacy manual conclusion',
+            result='NEU',
+            status='EVAL',
+            valid_from=timezone.now() - timedelta(days=2),
+            comment='Legacy manual comment',
+        )
+        manual.conformities.add(conformity)
+        manual.attachments.add(attachment)
+
+        self.pk = manual.pk
+        self.conformity_pk = conformity.pk
+        self.attachment_pk = attachment.pk
+
+    def tearDown(self):
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
+        super().tearDown()
+
+    def test_manual_evidence_becomes_expert_assessment(self):
+        self.executor = MigrationExecutor(connection)
+        self.executor.migrate(self.migrate_to)
+        apps = self.executor.loader.project_state(self.migrate_to).apps
+
+        HumanEvidence = apps.get_model('conformity', 'HumanEvidence')
+
+        expert = HumanEvidence.objects.get(pk=self.pk)
+        self.assertEqual(expert.source_type, 'HUM')
+        self.assertEqual(expert.decision, 'NEU')
+        self.assertEqual(expert.result, 'NEU')
+        self.assertEqual(expert.title, 'Legacy manual conclusion')
+        self.assertEqual(expert.comment, 'Legacy manual comment')
+        self.assertEqual(
+            list(expert.conformities.values_list('pk', flat=True)),
+            [self.conformity_pk],
+        )
+        self.assertEqual(
+            list(expert.attachments.values_list('pk', flat=True)),
+            [self.attachment_pk],
+        )
+
