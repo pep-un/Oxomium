@@ -315,7 +315,7 @@ class ConformityModelTest(TestCase):
         conformity_parent.save()
         self.assertEqual(conformity_parent.status, 0)
 
-        status1 = random.randint(0, 100)
+        status1 = 51
         conformity_child1 = Conformity.objects.get(id=4)
         conformity_child1.status = status1
         conformity_child1.applicable = True
@@ -323,7 +323,7 @@ class ConformityModelTest(TestCase):
         conformity_child1.update_status()
         self.assertEqual(conformity_child1.status, status1)
 
-        status2 = random.randint(0, 100)
+        status2 = 52
         conformity_child2 = Conformity.objects.get(id=5)
         conformity_child2.status = status2
         conformity_child2.applicable = True
@@ -332,10 +332,10 @@ class ConformityModelTest(TestCase):
         self.assertEqual(conformity_child2.status, status2)
 
         conformity_parent = Conformity.objects.get(id=3)
-        self.assertEqual(conformity_parent.status, int(mean([status1, status2])))
+        self.assertEqual(conformity_parent.status, round(mean([status1, status2])))
 
         conformity_root = Conformity.objects.get(id=1)
-        self.assertEqual(conformity_root.status, int(mean([mean([status1, status2])])))
+        self.assertEqual(conformity_root.status, round(mean([status1, status2])))
 
 
 class ControlModelTest(TestCase):

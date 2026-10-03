@@ -79,7 +79,9 @@ class SignalTests(TestCase):
         except ModuleNotFoundError:
             signals_ctx = contextlib.nullcontext()
 
-        with patch.object(cp_mod, "date", FrozenDate, create=True), signals_ctx:
+        frozen_now = ControlPoint._day_start(frozen_today) + datetime.timedelta(hours=12)
+        with patch.object(cp_mod, "date", FrozenDate, create=True), signals_ctx, \
+                patch("django.utils.timezone.now", return_value=frozen_now):
             # Create initial Control with QUARTERLY frequency -> bootstrap ControlPoints
             ctrl = Control.objects.create(title="Bootstrap", frequency=Control.Frequency.QUARTERLY)
             self.assertEqual(
@@ -94,10 +96,10 @@ class SignalTests(TestCase):
                 valid_from=ControlPoint._day_start(frozen_today - datetime.timedelta(days=40)),
                 valid_to=ControlPoint._day_start(frozen_today - datetime.timedelta(days=29)),
             )
-            manual_past.update_schedule_status()  # uses timezone.now(), not patched date
+            manual_past.update_schedule_status()
             manual_past.save(update_fields=['status'])
             manual_past.refresh_from_db()
-            self.assertEqual(manual_past.status, ControlPoint.Status.SCHEDULED)
+            self.assertEqual(manual_past.status, ControlPoint.Status.MISSED)
 
             # Collect IDs of past CPs before frequency change
             before_qs = ControlPoint.objects.filter(control=ctrl)
