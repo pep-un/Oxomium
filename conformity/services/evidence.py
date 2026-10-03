@@ -76,13 +76,11 @@ def _combine_states(conformity, automatic, human):
         return automatic
 
     # A direct human/automatic disagreement expresses partial conformity.
-    if {
-        automatic,
-        human_state,
-    } == {
-        conformity.EvidenceState.COMPLIANT,
-        conformity.EvidenceState.NON_COMPLIANT,
-    }:
+    opposite_states = {
+        conformity.EvidenceState.COMPLIANT: conformity.EvidenceState.NON_COMPLIANT,
+        conformity.EvidenceState.NON_COMPLIANT: conformity.EvidenceState.COMPLIANT,
+    }
+    if human_state == opposite_states.get(automatic):
         return conformity.EvidenceState.PARTIAL
 
     return human_state
