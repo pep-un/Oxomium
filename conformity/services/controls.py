@@ -27,10 +27,10 @@ def generate_controlpoints(control, year=None):
             control=control, valid_from__year=year
         ))
         for point in points:
-            pair = (point.period_start_date, point.period_end_date)
+            pair = (point.valid_from.date(), (point.valid_to - timedelta(microseconds=1)).date())
             if pair not in desired and point.status in (
                 ControlPoint.Status.SCHEDULED, ControlPoint.Status.TOBEEVALUATED
-            ) and not point.attachment.exists():
+            ) and not point.attachments.exists():
                 point.delete()
 
         for start, end in sorted(desired):
@@ -38,5 +38,7 @@ def generate_controlpoints(control, year=None):
                 control=control, valid_from=ControlPoint._day_start(start), valid_to=ControlPoint._day_start(end + timedelta(days=1))
             ).exists():
                 ControlPoint.objects.create(
-                    control=control, period_start_date=start, period_end_date=end
+                    control=control,
+                    valid_from=ControlPoint._day_start(start),
+                    valid_to=ControlPoint._day_start(end + timedelta(days=1)),
                 )
