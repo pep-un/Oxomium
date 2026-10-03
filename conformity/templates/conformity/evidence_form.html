@@ -37,7 +37,17 @@
                 </div>
                 <div class="card-body">
                     {% for field in form %}
-                        {% if field.name != "attachments" %}
+                        {% if field.name == "valid_from" %}
+                            <div class="row g-3">
+                                <div class="col-12 col-md-6">
+                                    {% bootstrap_field field %}
+                                </div>
+                        {% elif field.name == "valid_to" %}
+                                <div class="col-12 col-md-6">
+                                    {% bootstrap_field field %}
+                                </div>
+                            </div>
+                        {% elif field.name != "attachments" %}
                             {% bootstrap_field field %}
                         {% endif %}
                     {% endfor %}
