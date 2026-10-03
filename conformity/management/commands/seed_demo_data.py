@@ -499,23 +499,22 @@ class Command(BaseCommand):
                 point.comment = "Demonstration measurement."
                 point.save()
 
-    def _upsert_evidence(self, title, conformity, result, comment, owner):
-        evidence = Evidence.objects.filter(
-            title=title,
-            source_type=Evidence.SourceType.GENERIC,
-        ).first()
+    def _upsert_expert_assessment(
+        self, title, conformity, result, comment, owner
+    ):
+        evidence = HumanEvidence.objects.filter(title=title).first()
         if evidence is None:
-            evidence = Evidence(
+            evidence = HumanEvidence(
                 title=title,
-                source_type=Evidence.SourceType.GENERIC,
+                decision=result,
                 status=Evidence.Status.EVALUATED,
-                result=result,
                 valid_from=timezone.now() - timedelta(days=5),
                 evaluator=owner,
                 evaluated_at=timezone.now() - timedelta(days=5),
                 comment=comment,
             )
         else:
+            evidence.decision = result
             evidence.result = result
             evidence.comment = comment
             evidence.evaluator = owner
@@ -525,7 +524,7 @@ class Command(BaseCommand):
         return evidence
 
     def _other_evidence(self, findings, conformities, owner):
-        self._upsert_evidence(
+        self._upsert_expert_assessment(
             "Demo - Access governance procedure reviewed",
             conformities["acme_sec_iam"],
             Evidence.Result.POSITIVE,
@@ -533,14 +532,14 @@ class Command(BaseCommand):
             owner,
         )
 
-        self._upsert_evidence(
+        self._upsert_expert_assessment(
             "Demo - Logging coverage confirmed",
             conformities["acme_sec_log"],
             Evidence.Result.POSITIVE,
             "Logging inventory confirms coverage of required systems.",
             owner,
         )
-        self._upsert_evidence(
+        self._upsert_expert_assessment(
             "Demo - Logging retention gap",
             conformities["acme_sec_log"],
             Evidence.Result.NEGATIVE,
