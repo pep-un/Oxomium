@@ -34,6 +34,7 @@ Start with [Installation overview](installation/main.md).
 
 - [Attachment validation](features/attachment-validation.md)
 - [Evidence-based conformity evaluation](features/evidence.md)
+- [Evidence and HumanEvidence arbitration](features/evidence-arbitration.md)
 - [User feedback](features/user-feedback.md)
 
 ## Project information
