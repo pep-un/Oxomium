@@ -320,6 +320,18 @@ class FindingCreateView(
             initial['organization'] = audit.organization
         return initial
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        conformity_id = self.request.GET.get('conformity')
+        if conformity_id:
+            conformity = get_object_or_404(Conformity, pk=conformity_id)
+            context['evidence_conformities'] = [conformity]
+        else:
+            context['evidence_conformities'] = []
+        context['creating_evidence'] = True
+        context['evidence_label'] = 'Finding'
+        return context
+
     def form_valid(self, form):
         with transaction.atomic():
             self.object = form.save(commit=False)
@@ -357,6 +369,16 @@ class FindingUpdateView(
     stay_url_name = "conformity:finding_form"
     model = Finding
     form_class = FindingForm
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['evidence_conformities'] = (
+            self.object.conformities
+            .select_related('organization', 'requirement__framework')
+            .order_by('requirement__tree_id', 'requirement__lft', 'pk')
+        )
+        context['evidence_label'] = 'Finding'
+        return context
 
     def form_valid(self, form):
         response = super().form_valid(form)
