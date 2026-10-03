@@ -118,10 +118,7 @@ class RemainingCoverageTests(TestCase):
             self.assertTrue(form.fields["update_date"].disabled)
 
         evaluating = ControlPointForm(instance=self.control_point, user=self.user)
-        self.assertIn(
-            (Evidence.Status.EVALUATED, Evidence.Status.EVALUATED.label),
-            list(evaluating.fields["status"].widget.choices),
-        )
+        self.assertNotIn("status", evaluating.fields)
         scheduled = ControlPoint.objects.create(
             control=self.control,
             period_start_date=date.today().replace(year=date.today().year + 1),
@@ -327,26 +324,26 @@ class RemainingCoverageTests(TestCase):
         point = IndicatorPoint.objects.filter(indicator=self.indicator).first()
         point.indicator = self.indicator
         self.indicator.best, self.indicator.warning, self.indicator.critical, self.indicator.worst = 100, 80, 50, 0
-        for value, status in ((90, Evidence.Status.EVALUATED),
-                              (70, Evidence.Status.EVALUATED),
-                              (40, Evidence.Status.EVALUATED),
-                              (20, Evidence.Status.EVALUATED),
-                              (-1, IndicatorPoint.Status.MISSED)):
+        for value, result in ((90, Evidence.Result.POSITIVE),
+                              (70, Evidence.Result.NEUTRAL),
+                              (40, Evidence.Result.NEGATIVE),
+                              (20, Evidence.Result.NEGATIVE),
+                              (-1, Evidence.Result.NEUTRAL)):
             point.value = value
-            point.status_update()
-            self.assertEqual(point.status, status)
+            point.result_update()
+            self.assertEqual(point.result, result)
         self.indicator.best, self.indicator.warning, self.indicator.critical, self.indicator.worst = 0, 20, 50, 100
-        for value, status in ((10, Evidence.Status.EVALUATED),
-                              (30, Evidence.Status.EVALUATED),
-                              (75, Evidence.Status.EVALUATED),
-                              (150, IndicatorPoint.Status.MISSED)):
+        for value, result in ((10, Evidence.Result.POSITIVE),
+                              (30, Evidence.Result.NEUTRAL),
+                              (75, Evidence.Result.NEGATIVE),
+                              (150, Evidence.Result.NEUTRAL)):
             point.value = value
-            point.status_update()
-            self.assertEqual(point.status, status)
+            point.result_update()
+            self.assertEqual(point.result, result)
         self.indicator.best = self.indicator.worst = 50
         point.value = 50
-        point.status_update()
-        self.assertEqual(point.status, IndicatorPoint.Status.MISSED)
+        point.result_update()
+        self.assertEqual(point.result, Evidence.Result.NEUTRAL)
 
     def test_view_context_helpers(self):
         framework_view = FrameworkDetailView()
