@@ -45,7 +45,7 @@
                 {{ cp.valid_from | date:'d-M-Y'}}
             </td>
             <td class="col">
-                {{ cp.valid_to_display | date:'d-M-Y'}}
+                {{ cp.valid_to|inclusive_valid_to|date:'d-M-Y' }}
             </td>
             <td class="col">
                 {{ cp.evaluator| default_if_none:"" }}
