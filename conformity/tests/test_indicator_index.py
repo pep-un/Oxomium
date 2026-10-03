@@ -32,7 +32,7 @@ class IndicatorIndexTests(TestCase):
         IndicatorPoint.objects.filter(indicator=self.indicator).delete()
         today = timezone.localdate()
         point = IndicatorPoint.objects.create(
-            indicator=self.indicator, period_start_date=today, period_end_date=today
+            indicator=self.indicator, valid_from=IndicatorPoint._day_start(today), valid_to=IndicatorPoint._day_start(today + timedelta(days=1))
         )
 
         response = self.client.get(reverse('conformity:indicator_index'))
