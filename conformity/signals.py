@@ -4,8 +4,8 @@ from django.db.models.signals import m2m_changed, pre_save, post_save
 from django.dispatch import receiver
 from .models import (
     Action, Conformity, Control, ControlPoint, DocumentEvidence, Evidence,
-    Finding, FindingEvidence, HumanEvidence, Indicator, IndicatorPoint,
-    ManualEvidence, Requirement,
+    Finding, HumanEvidence, Indicator, IndicatorPoint, ManualEvidence,
+    Requirement,
 )
 
 
@@ -54,12 +54,12 @@ def action_post_save_sync_findings(instance: Action, **kwargs):
     re-evaluate the archive state of all linked Findings.
     """
     for f in instance.associated_findings.all():
-        f.update_archived()
+        f.close_if_actions_completed()
 
 @receiver(m2m_changed, sender=Action.associated_findings.through)
 def action_finding_sync_on_m2m(instance, action, reverse, pk_set, **kwargs):
     """
-    Keep Finding.archived consistent when Action<->Finding links change.
+    Close Finding validity when all linked Actions are completed.
 
     - reverse=False: `instance` is an Action; `pk_set` are Finding IDs added/removed.
     - reverse=True:  `instance` is a Finding; re-evaluate that single Finding.
@@ -73,7 +73,7 @@ def action_finding_sync_on_m2m(instance, action, reverse, pk_set, **kwargs):
         findings = Finding.objects.filter(pk__in=pk_set) if pk_set else instance.associated_findings.all()
 
     for f in findings:
-        f.update_archived()
+        f.close_if_actions_completed()
 
 @receiver(post_save, sender=Action)
 def action_post_save_sync(instance: Action, **kwargs):
@@ -194,7 +194,7 @@ def evidence_conformity_changed(instance, action, reverse, pk_set, **kwargs):
 @receiver(post_save, sender=HumanEvidence)
 @receiver(post_save, sender=ManualEvidence)
 @receiver(post_save, sender=DocumentEvidence)
-@receiver(post_save, sender=FindingEvidence)
+@receiver(post_save, sender=Finding)
 def specialized_evidence_saved(instance, **kwargs):
     from .services.evidence import evaluate_evidence
     evaluate_evidence(
