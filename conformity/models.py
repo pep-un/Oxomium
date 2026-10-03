@@ -653,13 +653,17 @@ class Conformity(models.Model):
             order_kind = {"action": 0, "control": 1, "controlpoint": 2}
             items.sort(key=lambda item: (order_kind.get(item[0], 99), cls._related_label(item[1])))
         elif sort == "recent_first":
-            items.sort(
-                key=lambda item: (
+            def related_datetime(item):
+                value = (
                     getattr(item[1], "update_date", None)
                     or getattr(item[1], "valid_to", None)
-                    or timezone.make_aware(datetime.min),
-                    cls._related_label(item[1]),
-                ),
+                )
+                if isinstance(value, date) and not isinstance(value, datetime):
+                    return timezone.make_aware(datetime.combine(value, datetime.min.time()))
+                return value or timezone.make_aware(datetime.min)
+
+            items.sort(
+                key=lambda item: (related_datetime(item), cls._related_label(item[1])),
                 reverse=True,
             )
         elif sort == "alpha":
