@@ -111,7 +111,7 @@ class IndicatorBoundsTests(TestCase):
                 self.point.refresh_from_db()
                 self.assertEqual(self.point.value, 50)
                 self.assertEqual(self.point.status, Evidence.Status.EVALUATED)
-                self.assertEqual(self.point.result, Evidence.Result.NEUTRAL)
+                self.assertEqual(self.point.result, Evidence.Result.PARTIAL)
                 self.assertEqual(self.point.comment, '')
                 self.assertFalse(LogEntry.objects.get_for_object(self.point).exists())
 
