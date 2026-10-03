@@ -20,10 +20,19 @@
         {% if finding.valid_to %}since {{ finding.valid_to|date:"d-M-Y H:i" }}{% endif %}.
     </p>
     {% endif %}
+    {% if finding.audit %}
     <p class="alert alert-info">
-        <i class="bi bi-ui-checks-grid"></i> Audit of {{ audit.organization }} realised by {{ audit.auditor }} ({{ audit.get_type }}).
-        <a class="text-info" href="{% url 'conformity:audit_detail' finding.audit.id %}"> See audit </a>
+        <i class="bi bi-ui-checks-grid"></i>
+        Audit of {{ finding.audit.organization }} realised by {{ finding.audit.auditor }}
+        ({{ finding.audit.get_type }}).
+        <a class="text-info" href="{% url 'conformity:audit_detail' finding.audit.id %}">See audit</a>
     </p>
+    {% else %}
+    <p class="alert alert-secondary">
+        <i class="bi bi-exclamation-diamond"></i>
+        Finding recorded outside an audit.
+    </p>
+    {% endif %}
 
     <h2>Evidence validity</h2>
     <p>
