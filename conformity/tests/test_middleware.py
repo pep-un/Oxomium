@@ -18,14 +18,14 @@ class SanityCheckMiddlewareTest(TestCase):
         # Control points that should be marked as 'MISS'
         cls.missed_control_1 = ControlPoint.objects.create(
             control=cls.control,
-            control_user=cls.user,
+            evaluator=cls.user,
             valid_from=ControlPoint._day_start(today - relativedelta(days=10)),
             valid_to=ControlPoint._day_start(today - relativedelta(days=1)),  # missed yesterday
             status="TOBE"
         )
         cls.missed_control_3 = ControlPoint.objects.create(
             control=cls.control,
-            control_user=cls.user,
+            evaluator=cls.user,
             valid_from=ControlPoint._day_start(today - relativedelta(days=10)),
             valid_to=ControlPoint._day_start(today - relativedelta(days=5)),  # missed 5 days ago
             status="TOBE"
@@ -34,14 +34,14 @@ class SanityCheckMiddlewareTest(TestCase):
         # Control points that should not be updated (not in TOBE status)
         cls.not_missed_control = ControlPoint.objects.create(
             control=cls.control,
-            control_user=cls.user,
+            evaluator=cls.user,
             valid_from=ControlPoint._day_start(today - relativedelta(days=10)),
             valid_to=ControlPoint._day_start(today - relativedelta(days=5)),  # missed but not in TOBE
             status="MISS"
         )
         cls.not_missed_control_2 = ControlPoint.objects.create(
             control=cls.control,
-            control_user=cls.user,
+            evaluator=cls.user,
             valid_from=ControlPoint._day_start(today - relativedelta(days=10)),
             valid_to=ControlPoint._day_start(today),  # today is not miss
             status="TOBE"
@@ -50,14 +50,14 @@ class SanityCheckMiddlewareTest(TestCase):
         # Control points that should be marked as 'TOBE'
         cls.scheduled_control_1 = ControlPoint.objects.create(
             control=cls.control,
-            control_user=cls.user,
+            evaluator=cls.user,
             valid_from=ControlPoint._day_start(today.replace(day=1)),
             valid_to=ControlPoint._day_start(today.replace(day=1) + relativedelta(months=1) - relativedelta(days=1)),
             status="SCHD"
         )
         cls.scheduled_control_2 = ControlPoint.objects.create(
             control=cls.control,
-            control_user=cls.user,
+            evaluator=cls.user,
             valid_from=ControlPoint._day_start(today.replace(day=1) - relativedelta(months=3)),
             valid_to=ControlPoint._day_start(today.replace(day=1) + relativedelta(months=2)),
             status="SCHD"
@@ -66,7 +66,7 @@ class SanityCheckMiddlewareTest(TestCase):
         # Control point that should stay in SCHED
         cls.scheduled_control_3 = ControlPoint.objects.create(
             control=cls.control,
-            control_user=cls.user,
+            evaluator=cls.user,
             valid_from=ControlPoint._day_start(today + relativedelta(days=1)),
             valid_to=ControlPoint._day_start(today + relativedelta(days=30)),
             status="SCHD"
@@ -75,7 +75,7 @@ class SanityCheckMiddlewareTest(TestCase):
         # Control point that should not be updated (not in SCHD status)
         cls.not_scheduled_control = ControlPoint.objects.create(
             control=cls.control,
-            control_user=cls.user,
+            evaluator=cls.user,
             valid_from=ControlPoint._day_start(today.replace(day=1)),
             valid_to=ControlPoint._day_start(today.replace(day=1) + relativedelta(months=1) - relativedelta(days=1)),
             status="TOBE"
@@ -84,14 +84,14 @@ class SanityCheckMiddlewareTest(TestCase):
         # Control point that should not be updated (OK ou NOK)
         cls.ok_control = ControlPoint.objects.create(
             control=cls.control,
-            control_user=cls.user,
+            evaluator=cls.user,
             valid_from=ControlPoint._day_start(today.replace(day=1)),
             valid_to=ControlPoint._day_start(today.replace(day=1) + relativedelta(months=1) - relativedelta(days=1)),
             status=Evidence.Status.EVALUATED, result=Evidence.Result.POSITIVE
         )
         cls.nok_control = ControlPoint.objects.create(
             control=cls.control,
-            control_user=cls.user,
+            evaluator=cls.user,
             valid_from=ControlPoint._day_start(today.replace(day=1) - relativedelta(months=3)),
             valid_to=ControlPoint._day_start(today.replace(day=1) - relativedelta(days=1)),
             status=Evidence.Status.EVALUATED, result=Evidence.Result.NEGATIVE
