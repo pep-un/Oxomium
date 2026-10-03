@@ -55,7 +55,7 @@ class AutomaticAuditTests(TestCase):
             self.parent.update_status()
         entry = LogEntry.objects.get_for_object(self.parent).get()
         self.assertEqual(entry.actor, self.user)
-        self.assertEqual(entry.changes['status'], ['None', '80.0'])
+        self.assertEqual(entry.changes['status'], ['None', '80'])
 
     def test_daily_checks_log_each_transition_once(self):
         today = date.today()
