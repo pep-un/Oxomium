@@ -34,7 +34,7 @@
                 </div>
             </div>
 
-            {% include "includes/attachment_panel.html" with attachments=indicatorpoint.attachment.all owner=indicatorpoint owner_type="indicatorpoint" editable=True attachment_field=form.attachments %}
+            {% include "includes/attachment_panel.html" with attachments=indicatorpoint.attachments.all owner=indicatorpoint owner_type="indicatorpoint" editable=True attachment_field=form.attachments %}
 
             {% url 'conformity:indicator_detail' indicatorpoint.indicator.pk as cancel_url %}
             {% include "includes/form_toolbar.html" with cancel_url=cancel_url form_id="object-form" %}
