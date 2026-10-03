@@ -33,7 +33,7 @@ def control_conformity_bootstrap(instance: Control, action, **kwargs):
     if action in {'post_add', 'post_remove', 'post_clear'}:
         targets = _leaf_conformities(instance.conformity)
         points = instance.get_controlpoint().filter(
-            status__in=[ControlPoint.Status.SCHEDULED, ControlPoint.Status.TOBEEVALUATED],
+            status__in=[Evidence.Status.SCHEDULED, Evidence.Status.TOBEEVALUATED],
         )
         _sync_pending_periodic_points(points, targets)
 
@@ -97,7 +97,7 @@ def indicator_conformity_bootstrap(instance: Indicator, action, **kwargs):
         targets = _leaf_conformities(instance.conformity)
         points = IndicatorPoint.objects.filter(
             indicator=instance,
-            status__in=[IndicatorPoint.Status.SCHEDULED, IndicatorPoint.Status.TOBEEVALUATED],
+            status__in=[Evidence.Status.SCHEDULED, Evidence.Status.TOBEEVALUATED],
         )
         _sync_pending_periodic_points(points, targets)
 
