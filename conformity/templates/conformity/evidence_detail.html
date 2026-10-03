@@ -68,16 +68,16 @@
             <dd class="col-sm-9">{{ evidence.comment|default:"—"|linebreaksbr }}</dd>
 
             {% if evidence.source_type == 'CTRL' %}
-            <dt class="col-sm-3">Control</dt>
+            <dt class="col-sm-3">Periodic control</dt>
             <dd class="col-sm-9">{{ evidence.control }}</dd>
-            <dt class="col-sm-3">Control status</dt>
+            <dt class="col-sm-3">Periodic control status</dt>
             <dd class="col-sm-9">{{ evidence.get_status_display }}</dd>
             {% elif evidence.source_type == 'IND' %}
-            <dt class="col-sm-3">Indicator</dt>
+            <dt class="col-sm-3">Periodic indicator</dt>
             <dd class="col-sm-9">{{ evidence.indicator }}</dd>
             <dt class="col-sm-3">Value</dt>
             <dd class="col-sm-9">{{ evidence.value|default_if_none:"—" }}</dd>
-            <dt class="col-sm-3">Indicator status</dt>
+            <dt class="col-sm-3">Periodic indicator status</dt>
             <dd class="col-sm-9">{{ evidence.get_status_display }}</dd>
             {% elif evidence.source_type == 'HUM' %}
             <dt class="col-sm-3">Decision</dt>
