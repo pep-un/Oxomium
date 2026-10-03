@@ -337,6 +337,10 @@ class FindingCreateView(
                 attachment = Attachment.get_or_create_for_upload(file)[0]
                 self.object.attachments.add(attachment)
 
+        if self.request.POST.get("action") == "save_stay":
+            return redirect("conformity:finding_form", self.object.pk)
+        if conformity_id:
+            return redirect("conformity:conformity_form", conformity.pk)
         return HttpResponseRedirect(self.get_success_url())
 
 
