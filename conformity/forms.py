@@ -48,7 +48,7 @@ class EvidenceValidityFormMixin:
             if field is None:
                 continue
             field.widget = forms.DateTimeInput(
-                attrs={'type': 'datetime-local'},
+                attrs={'type': 'datetime-local', 'step': 300},
                 format=self.datetime_local_format,
             )
             field.input_formats = [
