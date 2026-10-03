@@ -186,7 +186,6 @@ class RichTableConfigurationTests(TestCase):
         organization = Organization.objects.create(name="Periodic toolbar org")
         control = Control.objects.create(
             title="Toolbar control",
-            organization=organization,
             frequency=Control.Frequency.YEARLY,
         )
         point = next(
@@ -214,12 +213,10 @@ class RichTableConfigurationTests(TestCase):
         organization = Organization.objects.create(name="Periodic export org")
         pending = Control.objects.create(
             title="Pending export control",
-            organization=organization,
             frequency=Control.Frequency.YEARLY,
         )
         completed = Control.objects.create(
             title="Completed export control",
-            organization=organization,
             frequency=Control.Frequency.YEARLY,
         )
         completed_point = next(
@@ -259,7 +256,6 @@ class RichTableConfigurationTests(TestCase):
         )
         control = Control.objects.create(
             title="Quarterly access review",
-            organization=organization,
             frequency=Control.Frequency.YEARLY,
         )
         control.requirements.add(leaf)
@@ -608,7 +604,6 @@ class RichTableInteractionTests(TestCase):
         organization = Organization.objects.create(name="Control result org")
         control = Control.objects.create(
             title="Control awaiting evaluation",
-            organization=organization,
             frequency=Control.Frequency.YEARLY,
         )
         current_point = next(
@@ -636,7 +631,6 @@ class RichTableInteractionTests(TestCase):
         organization = Organization.objects.create(name="Completed control org")
         control = Control.objects.create(
             title="Completed current control",
-            organization=organization,
             frequency=Control.Frequency.YEARLY,
         )
         current_point = next(
@@ -659,7 +653,6 @@ class RichTableInteractionTests(TestCase):
         organization = Organization.objects.create(name="Periodic default org")
         pending_control = Control.objects.create(
             title="Pending control",
-            organization=organization,
             frequency=Control.Frequency.YEARLY,
         )
         pending_point = next(
@@ -669,7 +662,6 @@ class RichTableInteractionTests(TestCase):
 
         completed_control = Control.objects.create(
             title="Completed hidden control",
-            organization=organization,
             frequency=Control.Frequency.YEARLY,
         )
         completed_point = next(
@@ -703,7 +695,6 @@ class RichTableInteractionTests(TestCase):
         organization = Organization.objects.create(name="Periodic all org")
         control = Control.objects.create(
             title="Completed visible control",
-            organization=organization,
             frequency=Control.Frequency.YEARLY,
         )
         point = next(
@@ -749,12 +740,10 @@ class RichTableInteractionTests(TestCase):
         organization = Organization.objects.create(name="Sorting org")
         Control.objects.create(
             title="Alpha periodic source",
-            organization=organization,
             frequency=Control.Frequency.YEARLY,
         )
         Control.objects.create(
             title="Zulu periodic source",
-            organization=organization,
             frequency=Control.Frequency.YEARLY,
         )
 
@@ -776,7 +765,6 @@ class RichTableInteractionTests(TestCase):
         organization = Organization.objects.create(name="Periodic title link org")
         control = Control.objects.create(
             title="Linked periodic control",
-            organization=organization,
             frequency=Control.Frequency.YEARLY,
         )
         point = next(
@@ -804,7 +792,6 @@ class RichTableInteractionTests(TestCase):
         organization = Organization.objects.create(name="Source identity org")
         control = Control.objects.create(
             title="Source identity control",
-            organization=organization,
             frequency=Control.Frequency.QUARTERLY,
         )
         points = list(control.get_controlpoint())
@@ -828,7 +815,6 @@ class RichTableInteractionTests(TestCase):
         indicator = Indicator.objects.create(
             name="MFA coverage",
             responsible=self.user,
-            organization=organization,
             frequency=Indicator.Frequency.YEARLY,
             worst=0,
             critical=20,
