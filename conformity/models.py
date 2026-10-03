@@ -426,6 +426,19 @@ class Evidence(models.Model):
         at = at or timezone.now()
         return self.valid_from <= at and (self.valid_to is None or at < self.valid_to)
 
+    def update_schedule_status(self):
+        """Refresh lifecycle status from the canonical validity window."""
+        if self.result != self.Result.NEUTRAL:
+            self.status = self.Status.EVALUATED
+            return
+        now = timezone.now()
+        if self.valid_to is not None and self.valid_to <= now:
+            self.status = self.Status.MISSED
+        elif self.valid_from <= now and (self.valid_to is None or now < self.valid_to):
+            self.status = self.Status.TOBEEVALUATED
+        else:
+            self.status = self.Status.SCHEDULED
+
     def __str__(self):
         return f'{self.get_source_type_display()}: {self.get_result_display()}'
 
