@@ -63,8 +63,8 @@ class AutomaticAuditTests(TestCase):
         indicator = Indicator.objects.create(name='Daily indicator', responsible=self.user)
         for model, parent_field, parent in ((ControlPoint, 'control', control), (IndicatorPoint, 'indicator', indicator)):
             model.objects.all().delete()
-            current = model.objects.create(**{parent_field: parent}, period_start_date=today, period_end_date=today + timedelta(days=5))
-            expired = model.objects.create(**{parent_field: parent}, period_start_date=today - timedelta(days=10), period_end_date=today - timedelta(days=1))
+            current = model.objects.create(**{parent_field: parent}, valid_from=model._day_start(today), valid_to=model._day_start(today + timedelta(days=6)))
+            expired = model.objects.create(**{parent_field: parent}, valid_from=model._day_start(today - timedelta(days=10)), valid_to=model._day_start(today))
             model.objects.filter(pk=current.pk).update(status='SCHD')
             model.objects.filter(pk=expired.pk).update(status='TOBE')
             LogEntry.objects.all().delete()
