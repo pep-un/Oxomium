@@ -3,7 +3,7 @@
 {% load ui_tags %}
 
 {% block header %}
-    <h1 class="h1 bi bi-clipboard2-check"> Controls </h1>
+    <h1 class="h1 bi bi-clipboard2-check"> Periodic controls </h1>
 {% endblock %}
 
 {% block content %}
@@ -18,7 +18,7 @@
                     </div>
                     <ul class="list-group list-group-flush">
                         <li class="list-group-item">
-                            <span>Control </span> <span class="badge text-bg-secondary float-end w-25">{{ control_list.count | default:"-" }} </span>
+                            <span>Periodic control </span> <span class="badge text-bg-secondary float-end w-25">{{ control_list.count | default:"-" }} </span>
                         </li>
                         <li class="list-group-item">
                             <span><i class="bi bi-caret-right-fill"></i> 1st level </span> <span class="badge text-bg-primary float-end w-25">{{ c1st | default:"-" }} </span>
@@ -27,7 +27,7 @@
                             <span><i class="bi bi-caret-right-fill"></i> 2nd level </span> <span class="badge text-bg-success float-end w-25">{{ c2nd | default:"-" }} </span>
                         </li>
                         <li class="list-group-item">
-                            <span>Control Point </span> <span class="badge text-bg-secondary float-end w-25">{{ controlpoint_list.count | default:"-" }} </span>
+                            <span>Evaluation points </span> <span class="badge text-bg-secondary float-end w-25">{{ controlpoint_list.count | default:"-" }} </span>
                         </li>
                     </ul>
                 </div>
@@ -36,13 +36,13 @@
     </div>
 
     <div class="col">
-        <h3 class="mx-4">Controls to evaluate</h3>
+        <h3 class="mx-4">Periodic controls to evaluate</h3>
         <div class="row mx-3">
             <div class="col">
                 <div class="card">
                     <div class="card-body">
                         <h4 class="text-primary display-5">{{ cp0x }}</h4>
-                        <p class="m-0">All controls</p>
+                        <p class="m-0">All periodic controls</p>
                     </div>
                     <div class="card-footer text-end">
                         <a href="{% url 'conformity:controlpoint_index' %}?status=TOBE" class="small">See more ></a>
