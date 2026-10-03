@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django import template
 from django.urls import reverse
 
@@ -30,3 +32,11 @@ def active_filter_count(context):
 @register.simple_tag
 def route_url(route_name, *args):
     return reverse(route_name, args=args)
+
+
+@register.filter
+def inclusive_valid_to(value):
+    """Display the inclusive date corresponding to a half-open validity end."""
+    if value is None:
+        return None
+    return value - timedelta(microseconds=1)
