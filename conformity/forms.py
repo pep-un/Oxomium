@@ -11,8 +11,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from .models import (
     Action, Audit, Conformity, Control, ControlPoint, DocumentEvidence, Evidence,
-    Finding, HumanEvidence, Indicator, IndicatorPoint, ManualEvidence,
-    Organization,
+    Finding, HumanEvidence, Indicator, IndicatorPoint, Organization,
 )
 from .validators import attachment_accept, attachment_max_size_help, validate_attachment_once
 
