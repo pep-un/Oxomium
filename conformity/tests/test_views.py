@@ -519,7 +519,7 @@ class ConformityPeriodicEvidenceCreationTests(BaseDataMixin, TestCase):
         self.org.save(update_fields=["description"])
 
         response = self.client.get(
-            reverse("conformity:evidence_create", args=[self.c_a.pk])
+            reverse("conformity:document_evidence_create", args=[self.c_a.pk])
         )
 
         self.assertEqual(response.status_code, 200)
