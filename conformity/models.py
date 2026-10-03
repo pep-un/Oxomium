@@ -986,6 +986,7 @@ class Finding(Evidence):
         ordering = ['severity']
 
     def clean(self):
+        self.source_type = Evidence.SourceType.FINDING
         if self.cvss is not None and (self.cvss < 0.0 or self.cvss > 10.0):
             raise ValidationError('CVSS must be between 0 and 10.')
         super().clean()
