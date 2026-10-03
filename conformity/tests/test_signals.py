@@ -91,8 +91,8 @@ class SignalTests(TestCase):
             # Insert one explicit past CP so preservation can be tested regardless of random date
             manual_past = ControlPoint.objects.create(
                 control=ctrl,
-                period_start_date=frozen_today - datetime.timedelta(days=40),
-                period_end_date=frozen_today - datetime.timedelta(days=30),
+                valid_from=ControlPoint._day_start(frozen_today - datetime.timedelta(days=40)),
+                valid_to=ControlPoint._day_start(frozen_today - datetime.timedelta(days=29)),
             )
             manual_past.refresh_from_db()
             self.assertEqual(manual_past.status, ControlPoint.Status.MISSED)
@@ -100,7 +100,7 @@ class SignalTests(TestCase):
             # Collect IDs of past CPs before frequency change
             before_qs = ControlPoint.objects.filter(control=ctrl)
             past_ids = set(
-                before_qs.filter(period_end_date__lt=frozen_today).values_list("id", flat=True)
+                before_qs.filter(valid_to__date__lte=frozen_today).values_list("id", flat=True)
             )
             self.assertIn(manual_past.id, past_ids, "The manual past CP must be preserved later")
 
@@ -108,7 +108,7 @@ class SignalTests(TestCase):
             ctrl.frequency = Control.Frequency.MONTHLY
             ctrl.save()
 
-            after_qs = ControlPoint.objects.filter(control=ctrl).order_by("period_start_date", "pk")
+            after_qs = ControlPoint.objects.filter(control=ctrl).order_by("valid_from", "pk")
 
             # Past CPs are preserved
             after_ids = set(after_qs.values_list("id", flat=True))
@@ -118,7 +118,7 @@ class SignalTests(TestCase):
             )
 
             # At least one non-past CP exists (current or future)
-            non_past_after_qs = after_qs.filter(period_end_date__gte=frozen_today)
+            non_past_after_qs = after_qs.filter(valid_to__date__gt=frozen_today)
             self.assertGreater(
                 non_past_after_qs.count(),
                 0,
@@ -128,7 +128,7 @@ class SignalTests(TestCase):
             # At least one regenerated CP looks like a monthly window (≤ 31 days)
             monthly_like = any(
                 (pe - ps).days <= 31
-                for ps, pe in non_past_after_qs.values_list("period_start_date", "period_end_date")
+                for ps, pe in non_past_after_qs.values_list("valid_from", "valid_to")
             )
             self.assertTrue(
                 monthly_like,
@@ -142,18 +142,18 @@ class SignalTests(TestCase):
 
         cp_past = ControlPoint.objects.create(
             control=ctrl,
-            period_start_date=today - timedelta(days=10),
-            period_end_date=today - timedelta(days=1),
+            valid_from=ControlPoint._day_start(today - timedelta(days=10)),
+            valid_to=ControlPoint._day_start(today),
         )
         cp_now = ControlPoint.objects.create(
             control=ctrl,
-            period_start_date=today,
-            period_end_date=today,
+            valid_from=ControlPoint._day_start(today),
+            valid_to=ControlPoint._day_start(today + timedelta(days=1)),
         )
         cp_future = ControlPoint.objects.create(
             control=ctrl,
-            period_start_date=today + timedelta(days=1),
-            period_end_date=today + timedelta(days=2),
+            valid_from=ControlPoint._day_start(today + timedelta(days=1)),
+            valid_to=ControlPoint._day_start(today + timedelta(days=3)),
         )
 
         cp_past.refresh_from_db()
@@ -270,7 +270,7 @@ def test_controlpoint_final_status_updates_conformity(self):
     ctrl.conformity.add(conf_leaf)
 
     # Take the latest CP (bootstrap produced at least one)
-    cp = ControlPoint.objects.filter(control=ctrl).order_by("period_start_date", "pk").last()
+    cp = ControlPoint.objects.filter(control=ctrl).order_by("valid_from", "pk").last()
     self.assertIsNotNone(cp, "Bootstrap must create at least one ControlPoint")
 
     # 1) NONCOMPLIANT -> Conformity 0 (justification CONTROL)
@@ -299,8 +299,8 @@ def test_controlpoint_final_status_updates_conformity(self):
     ctrl_ok.conformity.add(conf_leaf)
     ctrl_ko.conformity.add(conf_leaf)
 
-    cp_ok = ControlPoint.objects.filter(control=ctrl_ok).order_by("period_start_date", "pk").last()
-    cp_ko = ControlPoint.objects.filter(control=ctrl_ko).order_by("period_start_date", "pk").last()
+    cp_ok = ControlPoint.objects.filter(control=ctrl_ok).order_by("valid_from", "pk").last()
+    cp_ko = ControlPoint.objects.filter(control=ctrl_ko).order_by("valid_from", "pk").last()
     self.assertIsNotNone(cp_ok)
     self.assertIsNotNone(cp_ko)
 
@@ -354,7 +354,7 @@ def test_controlpoint_final_status_updates_conformity(self):
         ctrl.conformity.add(conf_leaf)
 
         ## Take the latest CP (bootstrap produced at least one)
-        cp = ControlPoint.objects.filter(control=ctrl).order_by("period_start_date", "pk").last()
+        cp = ControlPoint.objects.filter(control=ctrl).order_by("valid_from", "pk").last()
         self.assertIsNotNone(cp, "Bootstrap must create at least one ControlPoint")
 
         ## NONCOMPLIANT -> Conformity 0 (justification CONTROL)
@@ -383,8 +383,8 @@ def test_controlpoint_final_status_updates_conformity(self):
         ctrl_ok.conformity.add(conf_leaf)
         ctrl_ko.conformity.add(conf_leaf)
 
-        cp_ok = ControlPoint.objects.filter(control=ctrl_ok).order_by("period_start_date", "pk").last()
-        cp_ko = ControlPoint.objects.filter(control=ctrl_ko).order_by("period_start_date", "pk").last()
+        cp_ok = ControlPoint.objects.filter(control=ctrl_ok).order_by("valid_from", "pk").last()
+        cp_ko = ControlPoint.objects.filter(control=ctrl_ko).order_by("valid_from", "pk").last()
         self.assertIsNotNone(cp_ok)
         self.assertIsNotNone(cp_ko)
 
@@ -495,8 +495,8 @@ def test_controlpoint_final_status_updates_conformity(self):
         ctrl_b.conformity.add(conf_leaf)
 
         # Latest ControlPoints bootstrapped by frequency
-        cp_a = ControlPoint.objects.filter(control=ctrl_a).order_by("period_start_date", "pk").last()
-        cp_b = ControlPoint.objects.filter(control=ctrl_b).order_by("period_start_date", "pk").last()
+        cp_a = ControlPoint.objects.filter(control=ctrl_a).order_by("valid_from", "pk").last()
+        cp_b = ControlPoint.objects.filter(control=ctrl_b).order_by("valid_from", "pk").last()
         self.assertIsNotNone(cp_a, "Bootstrap must create at least one ControlPoint for CTRL-A")
         self.assertIsNotNone(cp_b, "Bootstrap must create at least one ControlPoint for CTRL-B")
 
