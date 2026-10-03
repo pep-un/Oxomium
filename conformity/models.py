@@ -977,7 +977,9 @@ class Finding(Evidence):
     observation = models.TextField(max_length=4096, blank=True)
     recommendation = models.TextField(max_length=4096, blank=True)
     reference = models.TextField(max_length=4096, blank=True)
-    audit = models.ForeignKey(Audit, on_delete=models.CASCADE)
+    audit = models.ForeignKey(
+        Audit, on_delete=models.SET_NULL, null=True, blank=True
+    )
     severity = models.CharField(
         max_length=5,
         choices=Severity.choices,
@@ -990,8 +992,8 @@ class Finding(Evidence):
         ordering = ['severity']
 
     def clean(self):
-        if self.cvss is not None and (self.cvss < 0.1 or self.cvss > 10.0):
-            raise ValidationError('CVSS must be between 0.1 and 10.0.')
+        if self.cvss is not None and (self.cvss < 0.0 or self.cvss > 10.0):
+            raise ValidationError('CVSS must be between 0 and 10.')
         super().clean()
 
     def result_from_severity(self):
@@ -1005,20 +1007,22 @@ class Finding(Evidence):
             return Evidence.Result.NEGATIVE
         return Evidence.Result.NEUTRAL
 
+    @staticmethod
+    def _plus_years(value, years):
+        try:
+            return value.replace(year=value.year + years)
+        except ValueError:
+            return value.replace(month=2, day=28, year=value.year + years)
+
     def _default_valid_from(self):
-        if self.audit_id:
-            source_date = (
-                self.audit.report_date
-                or self.audit.end_date
-                or self.audit.start_date
-            )
-            if source_date:
-                return self._day_start(source_date)
         return timezone.now()
 
     def save(self, *args, **kwargs):
+        creating = self._state.adding
         if not self.valid_from:
             self.valid_from = self._default_valid_from()
+        if creating and self.valid_to is None:
+            self.valid_to = self._plus_years(self.valid_from, 3)
         self.source_type = Evidence.SourceType.FINDING
         self.status = Evidence.Status.EVALUATED
         self.result = self.result_from_severity()
