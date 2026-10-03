@@ -15,7 +15,8 @@ def _current_evidence(conformity, at):
     return conformity.evidence.valid_at(at)
 
 
-def _operational_flags(conformity, at):
+def _automatic_state(conformity, at):
+    """Evaluate valid non-human Evidence according to the business truth table."""
     from conformity.models import Evidence
 
     results = set(
@@ -23,10 +24,20 @@ def _operational_flags(conformity, at):
         .exclude(source_type=Evidence.SourceType.HUMAN)
         .values_list('result', flat=True)
     )
-    return (
-        Evidence.Result.POSITIVE in results,
-        Evidence.Result.NEGATIVE in results,
-    )
+    if not results:
+        return conformity.EvidenceState.NOT_EVALUATED
+    if Evidence.Result.PARTIAL in results:
+        return conformity.EvidenceState.PARTIAL
+
+    positive = Evidence.Result.POSITIVE in results
+    negative = Evidence.Result.NEGATIVE in results
+    if positive and negative:
+        return conformity.EvidenceState.INCONCLUSIVE
+    if positive:
+        return conformity.EvidenceState.COMPLIANT
+    if negative:
+        return conformity.EvidenceState.NON_COMPLIANT
+    return conformity.EvidenceState.INCONCLUSIVE
 
 
 def _human_state(conformity, human):
@@ -39,36 +50,58 @@ def _human_state(conformity, human):
         Evidence.Result.POSITIVE: conformity.EvidenceState.COMPLIANT,
         Evidence.Result.NEGATIVE: conformity.EvidenceState.NON_COMPLIANT,
         Evidence.Result.PARTIAL: conformity.EvidenceState.PARTIAL,
+        Evidence.Result.NEUTRAL: conformity.EvidenceState.INCONCLUSIVE,
     }.get(human.result)
 
 
-def _state_from_current_evidence(conformity, at):
-    """Return the state derived from all Evidence currently valid."""
+def _combine_states(conformity, automatic, human):
+    """Combine current automatic state with the active human arbitration."""
+    if human is None:
+        return automatic
+
+    human_state = _human_state(conformity, human)
+    if automatic in {
+        conformity.EvidenceState.NOT_EVALUATED,
+        conformity.EvidenceState.INCONCLUSIVE,
+    }:
+        return human_state
+
+    if automatic == conformity.EvidenceState.PARTIAL:
+        return human_state
+
+    if human_state == conformity.EvidenceState.PARTIAL:
+        return conformity.EvidenceState.PARTIAL
+
+    if automatic == human_state:
+        return automatic
+
+    # A direct human/automatic disagreement expresses partial conformity.
+    if {
+        automatic,
+        human_state,
+    } == {
+        conformity.EvidenceState.COMPLIANT,
+        conformity.EvidenceState.NON_COMPLIANT,
+    }:
+        return conformity.EvidenceState.PARTIAL
+
+    return human_state
+
+
+def _active_human(conformity, at):
     from conformity.models import Evidence
 
-    current = _current_evidence(conformity, at)
-    operational = current.exclude(source_type=Evidence.SourceType.HUMAN)
-    results = set(operational.values_list('result', flat=True))
-    positive = Evidence.Result.POSITIVE in results
-    negative = Evidence.Result.NEGATIVE in results
-    human = (
-        current
+    return (
+        _current_evidence(conformity, at)
         .filter(source_type=Evidence.SourceType.HUMAN)
         .order_by('-valid_from', '-pk')
         .first()
     )
 
-    if positive and negative:
-        return _human_state(conformity, human) or conformity.EvidenceState.INCONCLUSIVE
 
-    if positive:
-        return conformity.EvidenceState.COMPLIANT
-    if negative:
-        return conformity.EvidenceState.NON_COMPLIANT
-
-    # HumanEvidence is itself valid Evidence. This is important for
-    # migrated expert assessments with no operational Evidence yet.
-    return _human_state(conformity, human) or conformity.EvidenceState.NOT_EVALUATED
+def _state_from_current_evidence(conformity, at):
+    automatic = _automatic_state(conformity, at)
+    return _combine_states(conformity, automatic, _active_human(conformity, at))
 
 
 def _close_human_evidence(human, at):
@@ -81,13 +114,37 @@ def _close_human_evidence(human, at):
     return True
 
 
-def invalidate_human_arbitration(conformity, *, trigger=None, at=None):
-    """Invalidate active human arbitration when the triggering fact contradicts it.
+def _human_is_compatible(conformity, automatic, human):
+    """Return whether an arbitration remains valid for the current auto state."""
+    from conformity.models import Evidence
 
-    The trigger is important: an Evidence may have been created long ago and
-    only now attached to this Conformity. Association time must therefore count
-    as a new contradiction; comparing Evidence.created_at/result_updated_at is
-    insufficient.
+    if automatic in {
+        conformity.EvidenceState.NOT_EVALUATED,
+        conformity.EvidenceState.INCONCLUSIVE,
+    }:
+        return True
+    compatible = {
+        conformity.EvidenceState.COMPLIANT: {
+            Evidence.Result.POSITIVE,
+            Evidence.Result.PARTIAL,
+        },
+        conformity.EvidenceState.NON_COMPLIANT: {
+            Evidence.Result.NEGATIVE,
+            Evidence.Result.PARTIAL,
+        },
+        conformity.EvidenceState.PARTIAL: {
+            Evidence.Result.PARTIAL,
+        },
+    }
+    return human.result in compatible.get(automatic, set())
+
+
+def invalidate_human_arbitration(conformity, *, trigger=None, at=None):
+    """Close human arbitration made obsolete by a changed automatic situation.
+
+    A human Evidence addition replaces the previous arbitration. Automatic
+    Evidence changes use the agreed compatibility table; merely changing the
+    set of Evidence does not invalidate an otherwise compatible arbitration.
     """
     from conformity.models import Evidence
 
@@ -100,33 +157,22 @@ def invalidate_human_arbitration(conformity, *, trigger=None, at=None):
     if not humans:
         return False
 
-    positive, negative = _operational_flags(conformity, at)
     changed = False
+    if trigger is not None and trigger.source_type == Evidence.SourceType.HUMAN:
+        for human in humans:
+            if human.pk != trigger.pk:
+                changed = _close_human_evidence(human, at) or changed
+        return changed
 
+    # Compatibility is re-evaluated only after a semantic automatic Evidence
+    # change. A normal read must not retroactively reinterpret an arbitration.
+    if trigger is None or trigger.source_type == Evidence.SourceType.HUMAN:
+        return changed
+
+    automatic = _automatic_state(conformity, at)
     for human in humans:
-        contradicted = False
-
-        if human.result == Evidence.Result.PARTIAL:
-            # Standalone human assessment may legitimately be partial.
-            # Once operational evidence exists, keep it only while mixed.
-            has_operational_conclusion = positive or negative
-            contradicted = has_operational_conclusion and not (positive and negative)
-        elif (
-            trigger is not None
-            and trigger.source_type != Evidence.SourceType.HUMAN
-            and trigger.is_valid_at(at)
-        ):
-            contradicted = (
-                human.result == Evidence.Result.POSITIVE
-                and trigger.result == Evidence.Result.NEGATIVE
-            ) or (
-                human.result == Evidence.Result.NEGATIVE
-                and trigger.result == Evidence.Result.POSITIVE
-            )
-
-        if contradicted:
+        if not _human_is_compatible(conformity, automatic, human):
             changed = _close_human_evidence(human, at) or changed
-
     return changed
 
 
@@ -152,10 +198,7 @@ def evaluate_conformity(conformity, *, at=None, trigger=None, persist=True):
     """Recompute one Conformity from the complete current Evidence set."""
     at = at or timezone.now()
 
-    # Close obsolete/contradicted arbitration first so it cannot influence the
-    # state selected below.
     invalidate_human_arbitration(conformity, trigger=trigger, at=at)
-
     state = _state_from_current_evidence(conformity, at)
     if persist:
         _persist_state(conformity, state, at)
@@ -175,6 +218,7 @@ def evaluate_conformities(conformities, *, at=None):
     at = at or timezone.now()
     for conformity in conformities:
         evaluate_conformity(conformity, at=at)
+
 
 def refresh_time_bound_conformities(*, at=None):
     """Refresh persisted states whose truth may have changed only with time."""
