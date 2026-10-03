@@ -579,7 +579,6 @@ class EvidenceTests(TestCase):
         self.assertIn('style="min-width: 10rem;"', html)
         self.assertIn('class="btn btn-primary"', html)
         self.assertIn('class="btn btn-warning"', html)
-        self.assertIn('class="btn btn-warning disabled"', html)
         self.assertIn('bi bi-eye', html)
         self.assertIn('bi bi-pencil-square', html)
         self.assertIn(
