@@ -109,8 +109,14 @@ def _close_human_evidence(human, at):
     if human.valid_to is not None and human.valid_to <= at:
         return False
 
-    human.valid_to = max(at, human.valid_from + timedelta(microseconds=1))
-    human.save(update_fields=['valid_to', 'updated_at'])
+    closed_at = max(at, human.valid_from + timedelta(microseconds=1))
+    # Avoid recursively firing Evidence save signals while invalidating an
+    # arbitration; the outer evaluation persists the resulting state.
+    type(human).objects.filter(pk=human.pk).update(
+        valid_to=closed_at,
+        updated_at=timezone.now(),
+    )
+    human.valid_to = closed_at
     return True
 
 
