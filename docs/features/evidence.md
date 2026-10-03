@@ -60,8 +60,10 @@ are stored once on Evidence; only Control/Indicator-specific lifecycle and
 measurement fields remain on the subclasses. Legacy period/evaluator accessors
 are compatibility aliases, not duplicated persistence.
 
-Control and Indicator keep only Requirement target configuration. Concrete
-assessment relationships live exclusively on Evidence.conformities. The data
+Control and Indicator are configured directly against organization-specific
+Conformity records. They do not reference Requirement or Organization directly.
+Each periodic Evidence snapshots those Conformity targets; completed Evidence
+keeps its historical associations. The data
 migration converts existing points into Evidence subclasses, preserves action
 links and target relationships, migrates expert assessments to HumanEvidence
 when their meaning is unambiguous, and creates unassociated finding/document
