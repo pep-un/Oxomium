@@ -13,7 +13,6 @@ from conformity.models import (
     ControlPoint,
     Evidence,
     Finding,
-    FindingEvidence,
     Framework,
     HumanEvidence,
     Indicator,
@@ -569,29 +568,11 @@ class Command(BaseCommand):
         }
         for key, conformity in finding_targets.items():
             finding = findings[key]
-            result = (
-                Evidence.Result.POSITIVE
-                if finding.severity == Finding.Severity.POSITIVE
-                else Evidence.Result.NEGATIVE
-                if finding.severity in {
-                    Finding.Severity.CRITICAL,
-                    Finding.Severity.MAJOR,
-                    Finding.Severity.MINOR,
-                }
-                else Evidence.Result.NEUTRAL
-            )
-            evidence, _ = FindingEvidence.objects.get_or_create(
-                finding=finding,
-                defaults={
-                    "result": result,
-                    "valid_from": timezone.now() - timedelta(days=10),
-                    "comment": finding.observation or finding.description,
-                },
-            )
-            evidence.result = result
-            evidence.comment = finding.observation or finding.description
-            evidence.save()
-            evidence.conformities.set([conformity])
+            finding.comment = finding.observation or finding.description
+            finding.evaluator = owner
+            finding.evaluated_at = finding.evaluated_at or timezone.now()
+            finding.save()
+            finding.conformities.set([conformity])
 
     def _upsert_action(
         self, organization, title, status, priority, description, owner,
