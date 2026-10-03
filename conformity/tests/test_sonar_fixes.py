@@ -311,55 +311,18 @@ class ConformityRelatedCreateViewTest(TestCase):
         control = submitted.save()
         self.assertEqual(list(control.conformity.all()), [self.conformity])
 
-        self.assertEqual(initial['organization'], self.organization.pk)
-        self.assertTrue(form.fields['organization'].disabled)
+    def test_control_form_context_is_defined_by_conformity(self):
+        first = Control.objects.create(title="First control")
+        second = Control.objects.create(title="Second control")
+        first.conformity.add(self.conformity)
+        second.conformity.add(self.other_conformity)
 
-    def test_control_form_filters_associations_by_organization(self):
-        organization_control = Control.objects.create(
-            title="Organization control", organization=self.organization
-        )
-        other_control = Control.objects.create(
-            title="Other control", organization=self.other_organization
-        )
-        form = ControlForm(initial={'organization': self.organization.pk})
+        form = ControlForm(instance=first)
 
-        self.assertQuerySetEqual(
-            form.fields['conformity'].queryset,
-            [self.conformity, self.other_conformity],
-        )
-        self.assertQuerySetEqual(
-            form.fields['control'].queryset,
-            [organization_control],
-        )
-        self.assertNotIn(other_control, form.fields['control'].queryset)
-
-    def test_existing_action_and_control_filter_associations_by_organization(self):
-        organization_control = Control.objects.create(
-            title="Organization control", organization=self.organization
-        )
-        other_control = Control.objects.create(
-            title="Other control", organization=self.other_organization
-        )
-        action = Action.objects.create(
-            title="Organization action", organization=self.organization
-        )
-        control = Control.objects.create(
-            title="Editable control", organization=self.organization
-        )
-
-        action_form = ActionForm(instance=action)
-        control_form = ControlForm(instance=control)
-
-        self.assertNotIn(other_control, control_form.fields['control'].queryset)
-        self.assertIn(organization_control, control_form.fields['control'].queryset)
-        self.assertQuerySetEqual(
-            action_form.fields['associated_conformity'].queryset,
-            [self.conformity, self.other_conformity],
-        )
-        self.assertQuerySetEqual(
-            control_form.fields['conformity'].queryset,
-            [self.conformity, self.other_conformity],
-        )
+        self.assertNotIn('organization', form.fields)
+        self.assertIn(self.conformity, form.fields['conformity'].queryset)
+        self.assertIn(self.other_conformity, form.fields['conformity'].queryset)
+        self.assertIn(second, form.fields['control'].queryset)
 
     def test_existing_control_can_change_conformity(self):
         control = Control.objects.create(title="Editable conformity control")
