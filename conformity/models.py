@@ -440,9 +440,11 @@ class Evidence(models.Model):
     def periodic_organization(self):
         point = self.periodic_point
         if isinstance(point, ControlPoint) and point.control_id:
-            return point.control.conformity.values_list('organization', flat=True).first()
+            target = point.control.conformity.select_related('organization').first()
+            return target.organization if target else None
         if isinstance(point, IndicatorPoint) and point.indicator_id:
-            return point.indicator.conformity.values_list('organization', flat=True).first()
+            target = point.indicator.conformity.select_related('organization').first()
+            return target.organization if target else None
         return None
 
     @property
