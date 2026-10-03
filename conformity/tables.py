@@ -186,14 +186,22 @@ class FindingTable(BaseRichTable):
         order_by=("cvss",),
         attrs=CENTER,
     )
-    audit = tables.Column(
+    audit = tables.TemplateColumn(
         verbose_name="Audit campaign",
-        linkify=("conformity:audit_detail", [A("audit__pk")]),
+        template_code="""
+            {% if record.audit %}
+                <a href="{% url 'conformity:audit_detail' record.audit.pk %}"
+                   class="btn btn-sm btn-outline-secondary w-75 mx-auto">
+                    {{ record.audit }}
+                </a>
+            {% else %}
+                <span class="text-body-secondary">Outside audit</span>
+            {% endif %}
+        """,
         order_by=("audit__name",),
         attrs={
             "th": {"class": "text-center"},
             "td": {"class": "text-center"},
-            "a": {"class": "btn btn-sm btn-outline-secondary w-75 mx-auto"},
         },
     )
     associated_actions = tables.TemplateColumn(
