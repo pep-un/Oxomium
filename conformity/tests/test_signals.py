@@ -3,7 +3,7 @@ from django.test import TestCase
 from django.utils import timezone
 
 from conformity.models import (
-    Framework, Organization, Requirement, Conformity, Control, ControlPoint, Action, Attachment, Audit, Finding)
+    Framework, Organization, Requirement, Conformity, Control, ControlPoint, Evidence, Action, Attachment, Audit, Finding)
 
 from conformity.services.conformities import apply_framework, unapply_framework
 
