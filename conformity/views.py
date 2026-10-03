@@ -1042,7 +1042,7 @@ class ControlPointUpdateView(AttachmentUploadViewMixin, LoginRequiredMixin, Save
         attachments = self.request.FILES.getlist('attachments')
         for file in attachments:
             attachment = Attachment.get_or_create_for_upload(file)[0]
-            self.object.attachment.add(attachment)
+            self.object.attachments.add(attachment)
         return response
 
 
@@ -1095,7 +1095,7 @@ class IndicatorDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         indicator = self.get_object()
 
-        context['indicator_point_list'] = IndicatorPoint.objects.filter(indicator=indicator).order_by('period_start_date')
+        context['indicator_point_list'] = IndicatorPoint.objects.filter(indicator=indicator).order_by('valid_from')
         return context
 
 
@@ -1130,7 +1130,7 @@ class IndicatorPointUpdateView(AttachmentUploadViewMixin, LoginRequiredMixin, Sa
         attachments = self.request.FILES.getlist('attachments')
         for file in attachments:
             attachment = Attachment.get_or_create_for_upload(file)[0]
-            self.object.attachment.add(attachment)
+            self.object.attachments.add(attachment)
         return response
 
 class IndicatorExportView(LoginRequiredMixin, FilteredExportMixin, View):
