@@ -334,12 +334,12 @@ class Evidence(models.Model):
         PARTIAL = 'PAR', _('Partially compliant')
 
     class SourceType(models.TextChoices):
-        CONTROL = 'CTRL', _('Control')
-        INDICATOR = 'IND', _('Indicator')
-        HUMAN = 'HUM', _('Human assessment')
-        FINDING = 'FIND', _('Audit finding')
-        DOCUMENT = 'DOC', _('Documentary proof')
-        MANUAL = 'MAN', _('Manual evidence')
+        CONTROL = 'CTRL', _('Periodic control')
+        INDICATOR = 'IND', _('Periodic indicator')
+        HUMAN = 'HUM', _('Expert assessment')
+        FINDING = 'FIND', _('Finding')
+        DOCUMENT = 'DOC', _('Document')
+        GENERIC = 'MAN', _('Evidence')
 
     class Status(models.TextChoices):
         SCHEDULED = 'SCHD', _('Scheduled')
@@ -347,7 +347,12 @@ class Evidence(models.Model):
         EVALUATED = 'EVAL', _('Evaluated')
         MISSED = 'MISS', _('Missed')
 
-    source_type = models.CharField(max_length=4, choices=SourceType.choices)
+    source_type = models.CharField(
+        max_length=4,
+        choices=SourceType.choices,
+        default=SourceType.GENERIC,
+    )
+    title = models.CharField(max_length=256, blank=True)
     status = models.CharField(choices=Status.choices, max_length=4, default=Status.SCHEDULED)
     result = models.CharField(max_length=3, choices=Result.choices, default=Result.NEUTRAL)
     valid_from = models.DateTimeField()
@@ -474,18 +479,15 @@ class Evidence(models.Model):
             point = self.periodic_point
             return point.indicator.name if point and point.indicator_id else _('Indicator evidence')
         if self.source_type == self.SourceType.HUMAN:
-            return _('Human assessment')
-        if self.source_type == self.SourceType.MANUAL:
-            try:
-                return getattr(self, 'manualevidence').title
-            except ObjectDoesNotExist:
-                return _('Manual evidence')
+            return _('Expert assessment')
+        if self.source_type == self.SourceType.GENERIC:
+            return self.title or _('Evidence')
         if self.source_type == self.SourceType.DOCUMENT:
             try:
                 document = getattr(self, 'documentevidence')
                 return document.title or str(document.document)
             except ObjectDoesNotExist:
-                return _('Documentary proof')
+                return _('Document')
         if self.source_type == self.SourceType.FINDING:
             try:
                 return getattr(self, 'finding').short_description
@@ -499,7 +501,7 @@ class Evidence(models.Model):
             self.SourceType.CONTROL: 'bi-clipboard2-check',
             self.SourceType.INDICATOR: 'bi-speedometer',
             self.SourceType.HUMAN: 'bi-person-check',
-            self.SourceType.MANUAL: 'bi-pencil-square',
+            self.SourceType.GENERIC: 'bi-pencil-square',
             self.SourceType.DOCUMENT: 'bi-file-earmark-check',
             self.SourceType.FINDING: 'bi-exclamation-diamond',
         }.get(self.source_type, 'bi-journal-check')
@@ -1779,24 +1781,12 @@ class HumanEvidence(Evidence):
         return super().save(*args, **kwargs)
 
 
-class ManualEvidence(Evidence):
-    """A simple evidence record entered directly by an authorized user."""
-
-    title = models.CharField(max_length=256)
-
-    def save(self, *args, **kwargs):
-        self.source_type = Evidence.SourceType.MANUAL
-        return super().save(*args, **kwargs)
-
-
 class DocumentEvidence(Evidence):
     """Evidence whose source is an existing documentary attachment."""
 
     document = models.ForeignKey(
         Attachment, on_delete=models.PROTECT, related_name='document_evidence'
     )
-    title = models.CharField(max_length=256, blank=True)
-
     def save(self, *args, **kwargs):
         self.source_type = Evidence.SourceType.DOCUMENT
         return super().save(*args, **kwargs)
