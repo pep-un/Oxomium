@@ -14,7 +14,7 @@
         {% elif control.level == 2 %} <span class="badge mx-2 text-bg-success">
         {%endif %} {{ control.get_level_display }} </span>
         <span class="badge mx-2 text-bg-secondary"> <i class="bi bi-clock-history"></i> {{ control.get_frequency_display }}</span>
-        <span class="badge mx-2 text-bg-secondary"> <i class="bi bi-building"></i> {{ control.organization }}</span>
+        {% for conformity in control.conformity.all %}<span class="badge mx-2 text-bg-secondary"><i class="bi bi-building"></i> {{ conformity.organization }}</span>{% endfor %}
     </h2>
 {% endblock %}
 
