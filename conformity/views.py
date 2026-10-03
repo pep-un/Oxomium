@@ -702,6 +702,7 @@ class ConformityEvidenceCreateMixin:
                 self.object.evaluator = self.request.user
             if not self.object.evaluated_at:
                 self.object.evaluated_at = timezone.now()
+            self.object.status = Evidence.Status.EVALUATED
             self.object.save()
             self.object.conformities.add(self.conformity)
             for file in self.request.FILES.getlist('attachments'):
