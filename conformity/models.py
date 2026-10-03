@@ -237,74 +237,7 @@ class ConformityQuerySet(models.QuerySet):
 
 
 class EvidenceQuerySet(models.QuerySet):
-    """Queries implementing Evidence validity plus temporary legacy period aliases."""
-
-    @staticmethod
-    def _rewrite_period_lookup(key, value):
-        if key.startswith('period_start_date'):
-            suffix = key[len('period_start_date'):]
-            date_lookups = {'', '__lt', '__lte', '__gt', '__gte', '__range', '__in'}
-            if suffix in date_lookups:
-                return f'valid_from__date{suffix}', value
-            return f'valid_from{suffix}', value
-
-        if key.startswith('period_end_date'):
-            suffix = key[len('period_end_date'):]
-            if suffix == '':
-                return 'valid_to__date', value + timedelta(days=1)
-            if suffix == '__lt':
-                return 'valid_to__date__lte', value
-            if suffix == '__lte':
-                return 'valid_to__date__lte', value + timedelta(days=1)
-            if suffix == '__gt':
-                return 'valid_to__date__gt', value + timedelta(days=1)
-            if suffix == '__gte':
-                return 'valid_to__date__gte', value + timedelta(days=1)
-            return f'valid_to{suffix}', value
-        return key, value
-
-    @classmethod
-    def _rewrite_period_kwargs(cls, kwargs):
-        return dict(cls._rewrite_period_lookup(key, value) for key, value in kwargs.items())
-
-    def _filter_or_exclude(self, negate, args, kwargs):
-        return super()._filter_or_exclude(negate, args, self._rewrite_period_kwargs(kwargs))
-
-    def order_by(self, *field_names):
-        rewritten = []
-        for field_name in field_names:
-            prefix = '-' if field_name.startswith('-') else ''
-            name = field_name[1:] if prefix else field_name
-            if name == 'period_start_date':
-                name = 'valid_from'
-            elif name == 'period_end_date':
-                name = 'valid_to'
-            rewritten.append(prefix + name)
-        return super().order_by(*rewritten)
-
-    def values_list(self, *fields, **kwargs):
-        """Expose legacy period names in projection queries during transition."""
-        annotations = {}
-        rewritten = []
-        for index, field in enumerate(fields):
-            if field == 'period_start_date':
-                alias = f'_legacy_period_start_{index}'
-                annotations[alias] = TruncDate('valid_from')
-                rewritten.append(alias)
-            elif field == 'period_end_date':
-                alias = f'_legacy_period_end_{index}'
-                annotations[alias] = TruncDate(
-                    models.ExpressionWrapper(
-                        models.F('valid_to') - timedelta(microseconds=1),
-                        output_field=models.DateTimeField(),
-                    )
-                )
-                rewritten.append(alias)
-            else:
-                rewritten.append(field)
-
-        queryset = self.annotate(**annotations) if annotations else self
-        return models.QuerySet.values_list(queryset, *rewritten, **kwargs)
+    """Queries for Evidence validity and operational sources."""
 
     def valid_at(self, at=None):
         at = at or timezone.now()
@@ -374,67 +307,6 @@ class Evidence(models.Model):
                 name='chk_evidence_positive_validity',
             ),
         ]
-
-    @staticmethod
-    def _day_start(value):
-        naive = datetime.combine(value, time.min)
-        return timezone.make_aware(naive, timezone.get_current_timezone())
-
-    @property
-    def period_start_date(self):
-        return timezone.localtime(self.valid_from).date() if self.valid_from else None
-
-    @period_start_date.setter
-    def period_start_date(self, value):
-        if value is not None:
-            self.valid_from = self._day_start(value)
-
-    @property
-    def period_end_date(self):
-        if not self.valid_to:
-            return None
-        return (timezone.localtime(self.valid_to) - timedelta(microseconds=1)).date()
-
-    @period_end_date.setter
-    def period_end_date(self, value):
-        if value is not None:
-            self.valid_to = self._day_start(value + timedelta(days=1))
-
-    @property
-    def control_date(self):
-        return self.evaluated_at
-
-    @control_date.setter
-    def control_date(self, value):
-        self.evaluated_at = value
-
-    @property
-    def control_user(self):
-        return self.evaluator
-
-    @control_user.setter
-    def control_user(self, value):
-        self.evaluator = value
-
-    @property
-    def attachment(self):
-        return self.attachments
-
-    def update_schedule_status(self):
-        """Update the shared Evidence lifecycle from its validity window."""
-        if self.status == self.Status.EVALUATED:
-            return
-        today = date.today()
-        if self.period_end_date and self.period_end_date < today:
-            self.status = self.Status.MISSED
-        elif (
-            self.period_start_date
-            and self.period_end_date
-            and self.period_start_date <= today <= self.period_end_date
-        ):
-            self.status = self.Status.TOBEEVALUATED
-        else:
-            self.status = self.Status.SCHEDULED
 
     def clean(self):
         super().clean()
@@ -766,8 +638,8 @@ class Conformity(models.Model):
             items.sort(
                 key=lambda item: (
                     getattr(item[1], "update_date", None)
-                    or getattr(item[1], "period_end_date", None)
-                    or date.min,
+                    or getattr(item[1], "valid_to", None)
+                    or timezone.make_aware(datetime.min),
                     cls._related_label(item[1]),
                 ),
                 reverse=True,
@@ -1156,7 +1028,7 @@ class Control(models.Model):
             )
         today = timezone.localdate()
         return next(
-            (point for point in points if point.period_start_date <= today <= point.period_end_date),
+            (point for point in points if point.valid_from.date() <= today and (point.valid_to is None or today < point.valid_to.date())),
             points[0] if points else None,
         )
 
@@ -1205,8 +1077,11 @@ class ControlPoint(Evidence):
     def __str__(self):
         if not self.control:
             return super().__str__()
-        start = self.period_start_date
-        end = self.period_end_date
+        start = timezone.localtime(self.valid_from).date() if self.valid_from else None
+        end = (
+            (timezone.localtime(self.valid_to) - timedelta(microseconds=1)).date()
+            if self.valid_to else None
+        )
         return (
             f"{self.control.title} "
             f"({start.strftime('%b-%Y') if start else '?'}⇒{end.strftime('%b-%Y') if end else '?'})"
@@ -1217,11 +1092,12 @@ class ControlPoint(Evidence):
 
     def is_current_period(self, when: date | None = None) -> bool:
         when = when or date.today()
-        return bool(
-            self.period_start_date
-            and self.period_end_date
-            and self.period_start_date <= when <= self.period_end_date
+        start = timezone.localtime(self.valid_from).date() if self.valid_from else None
+        end = (
+            (timezone.localtime(self.valid_to) - timedelta(microseconds=1)).date()
+            if self.valid_to else None
         )
+        return bool(start and end and start <= when <= end)
 
     def is_final_status(self) -> bool:
         return self.status == Evidence.Status.EVALUATED
@@ -1615,8 +1491,8 @@ class Indicator (models.Model):
             ).exists():
                 IndicatorPoint.objects.create(
                     indicator=self,
-                    period_start_date=period_start_date,
-                    period_end_date=period_end_date,
+                    valid_from=Evidence._day_start(period_start_date),
+                    valid_to=Evidence._day_start(period_end_date + timedelta(days=1)),
                 )
             start_date = period_end_date + timedelta(days=1)
             end_date = start_date + delta - timedelta(days=1)
@@ -1661,7 +1537,7 @@ class Indicator (models.Model):
             )
         today = timezone.localdate()
         return next(
-            (point for point in points if point.period_start_date <= today <= point.period_end_date),
+            (point for point in points if point.valid_from.date() <= today and (point.valid_to is None or today < point.valid_to.date())),
             points[0] if points else None,
         )
 
