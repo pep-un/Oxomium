@@ -7,7 +7,7 @@ def move_titles_to_evidence(apps, schema_editor):
     DocumentEvidence = apps.get_model('conformity', 'DocumentEvidence')
 
     for item in ManualEvidence.objects.all().iterator():
-        Evidence.objects.filter(pk=item.pk).update(title=item.title)
+        Evidence.objects.filter(pk=item.pk).update(evidence_title=item.title)
 
     for item in DocumentEvidence.objects.all().iterator():
         Evidence.objects.filter(pk=item.pk).update(title=item.title)
@@ -22,7 +22,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name='evidence',
-            name='title',
+            name='evidence_title',
             field=models.CharField(blank=True, max_length=256),
         ),
         migrations.RunPython(
@@ -35,6 +35,11 @@ class Migration(migrations.Migration):
         ),
         migrations.DeleteModel(
             name='ManualEvidence',
+        ),
+        migrations.RenameField(
+            model_name='evidence',
+            old_name='evidence_title',
+            new_name='title',
         ),
         migrations.AlterField(
             model_name='evidence',
