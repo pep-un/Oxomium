@@ -480,7 +480,7 @@ class Evidence(models.Model):
                 document = getattr(self, 'documentevidence')
                 return document.title or str(document.document)
             except ObjectDoesNotExist:
-                return _('Document')
+                return self.title or _('Document')
         if self.source_type == self.SourceType.FINDING:
             try:
                 return getattr(self, 'finding').short_description
