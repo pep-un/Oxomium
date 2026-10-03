@@ -43,7 +43,7 @@ class SanityCheckMiddlewareTest(TestCase):
             control=cls.control,
             evaluator=cls.user,
             valid_from=ControlPoint._day_start(today - relativedelta(days=10)),
-            valid_to=ControlPoint._day_start(today),  # today is not miss
+            valid_to=ControlPoint._day_start(today + relativedelta(days=1)),  # valid through today
             status="TOBE"
         )
 
