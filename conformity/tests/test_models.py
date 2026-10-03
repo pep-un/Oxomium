@@ -645,8 +645,8 @@ class ConformityRelationAndGuardsTests(TestCase):
         Control.controlpoint_bootstrap(ctl)
         cp = ctl.get_controlpoint().first()
         from datetime import date, timedelta
-        cp.valid_from.date() = date.today() - timedelta(days=1)
-        (cp.valid_to - timedelta(microseconds=1)).date() = date.today() + timedelta(days=1)
+        cp.valid_from = ControlPoint._day_start(date.today() - timedelta(days=1))
+        cp.valid_to = ControlPoint._day_start(date.today() + timedelta(days=2))
         ControlPoint.update_status(cp)
         cp.result = Evidence.Result.NEGATIVE
         cp.save()
