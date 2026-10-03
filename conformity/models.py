@@ -341,7 +341,14 @@ class Evidence(models.Model):
         DOCUMENT = 'DOC', _('Documentary proof')
         MANUAL = 'MAN', _('Manual evidence')
 
+    class Status(models.TextChoices):
+        SCHEDULED = 'SCHD', _('Scheduled')
+        TOBEEVALUATED = 'TOBE', _('To evaluate')
+        EVALUATED = 'EVAL', _('Evaluated')
+        MISSED = 'MISS', _('Missed')
+
     source_type = models.CharField(max_length=4, choices=SourceType.choices)
+    status = models.CharField(choices=Status.choices, max_length=4, default=Status.SCHEDULED)
     result = models.CharField(max_length=3, choices=Result.choices, default=Result.NEUTRAL)
     valid_from = models.DateTimeField()
     valid_to = models.DateTimeField(null=True, blank=True)
@@ -367,6 +374,67 @@ class Evidence(models.Model):
                 name='chk_evidence_positive_validity',
             ),
         ]
+
+    @staticmethod
+    def _day_start(value):
+        naive = datetime.combine(value, time.min)
+        return timezone.make_aware(naive, timezone.get_current_timezone())
+
+    @property
+    def period_start_date(self):
+        return timezone.localtime(self.valid_from).date() if self.valid_from else None
+
+    @period_start_date.setter
+    def period_start_date(self, value):
+        if value is not None:
+            self.valid_from = self._day_start(value)
+
+    @property
+    def period_end_date(self):
+        if not self.valid_to:
+            return None
+        return (timezone.localtime(self.valid_to) - timedelta(microseconds=1)).date()
+
+    @period_end_date.setter
+    def period_end_date(self, value):
+        if value is not None:
+            self.valid_to = self._day_start(value + timedelta(days=1))
+
+    @property
+    def control_date(self):
+        return self.evaluated_at
+
+    @control_date.setter
+    def control_date(self, value):
+        self.evaluated_at = value
+
+    @property
+    def control_user(self):
+        return self.evaluator
+
+    @control_user.setter
+    def control_user(self, value):
+        self.evaluator = value
+
+    @property
+    def attachment(self):
+        return self.attachments
+
+    def update_schedule_status(self):
+        """Update the shared Evidence lifecycle from its validity window."""
+        if self.status == self.Status.EVALUATED:
+            return
+        today = date.today()
+        if self.period_end_date and self.period_end_date < today:
+            self.status = self.Status.MISSED
+        elif (
+            self.period_start_date
+            and self.period_end_date
+            and self.period_start_date <= today <= self.period_end_date
+        ):
+            self.status = self.Status.TOBEEVALUATED
+        else:
+            self.status = self.Status.SCHEDULED
 
     def clean(self):
         super().clean()
@@ -1073,80 +1141,14 @@ class Control(models.Model):
         point = self.periodic_point
         return point.status if point is not None else ''
 
-class PeriodicEvidenceMixin:
-    """Shared date and compatibility behavior for periodic Evidence."""
-
-    @staticmethod
-    def _day_start(value):
-        naive = datetime.combine(value, time.min)
-        return timezone.make_aware(naive, timezone.get_current_timezone())
-
-    @property
-    def period_start_date(self):
-        return timezone.localtime(self.valid_from).date() if self.valid_from else None
-
-    @period_start_date.setter
-    def period_start_date(self, value):
-        if value is not None:
-            self.valid_from = self._day_start(value)
-
-    @property
-    def period_end_date(self):
-        if not self.valid_to:
-            return None
-        return (timezone.localtime(self.valid_to) - timedelta(microseconds=1)).date()
-
-    @period_end_date.setter
-    def period_end_date(self, value):
-        if value is not None:
-            self.valid_to = self._day_start(value + timedelta(days=1))
-
-    @property
-    def control_date(self):
-        return self.evaluated_at
-
-    @control_date.setter
-    def control_date(self, value):
-        self.evaluated_at = value
-
-    @property
-    def control_user(self):
-        return self.evaluator
-
-    @control_user.setter
-    def control_user(self, value):
-        self.evaluator = value
-
-    @property
-    def attachment(self):
-        return self.attachments
-
-    def _set_period_status(self, status_class):
-        today = date.today()
-        if self.period_end_date and self.period_end_date < today:
-            self.status = status_class.MISSED
-        elif (
-            self.period_start_date
-            and self.period_end_date
-            and self.period_start_date <= today <= self.period_end_date
-        ):
-            self.status = status_class.TOBEEVALUATED
-        else:
-            self.status = status_class.SCHEDULED
-
-
-class ControlPoint(PeriodicEvidenceMixin, Evidence):
+class ControlPoint(Evidence):
     """A periodic control result represented directly as Evidence."""
 
-    class Status(models.TextChoices):
-        SCHEDULED = 'SCHD', _('Scheduled')
-        TOBEEVALUATED = 'TOBE', _('To evaluate')
+    class Status(Evidence.Status):
         COMPLIANT = 'OK', _('Compliant')
         NONCOMPLIANT = 'NOK', _('Non-Compliant')
-        MISSED = 'MISS', _('Missed')
 
     control = models.ForeignKey(Control, on_delete=models.CASCADE, null=True, blank=True)
-    status = models.CharField(choices=Status.choices, max_length=4, default=Status.SCHEDULED)
 
     class Meta:
         ordering = ['valid_to']
@@ -1158,7 +1160,7 @@ class ControlPoint(PeriodicEvidenceMixin, Evidence):
     @staticmethod
     def update_status(instance):
         if instance.status not in (ControlPoint.Status.COMPLIANT, ControlPoint.Status.NONCOMPLIANT):
-            instance._set_period_status(ControlPoint.Status)
+            instance.update_schedule_status()
 
     def save(self, *args, **kwargs):
         self.source_type = Evidence.SourceType.CONTROL
@@ -1652,19 +1654,15 @@ class Indicator (models.Model):
         return point.status if point is not None else ''
 
 
-class IndicatorPoint(PeriodicEvidenceMixin, Evidence):
+class IndicatorPoint(Evidence):
     """An Indicator measurement represented directly as Evidence."""
 
-    class Status(models.TextChoices):
-        SCHEDULED = 'SCHD', _('Scheduled')
-        TOBEEVALUATED = 'TOBE', _('To evaluate')
+    class Status(Evidence.Status):
         COMPLIANT = 'OK', _('Compliant')
         WARNING = 'WARN', _('Warning')
         CRITICAL = 'CRIT', _('Critical')
-        MISSED = 'MISS', _('Missed')
 
     indicator = models.ForeignKey(Indicator, on_delete=models.CASCADE, null=True, blank=True)
-    status = models.CharField(choices=Status.choices, max_length=4, default=Status.SCHEDULED)
     value = models.IntegerField(null=True)
 
     @staticmethod
@@ -1712,7 +1710,7 @@ class IndicatorPoint(PeriodicEvidenceMixin, Evidence):
 
     def status_update(self):
         if self.value is None:
-            self._set_period_status(IndicatorPoint.Status)
+            self.update_schedule_status()
             return
 
         if self.indicator_id is None:
