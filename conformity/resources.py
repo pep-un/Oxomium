@@ -2,7 +2,10 @@ from auditlog.models import LogEntry
 from django.utils.autoreload import logger
 from import_export import fields, resources
 from import_export.widgets import ManyToManyWidget, ForeignKeyWidget
-from .models import Attachment, Conformity, Control, ControlPoint, Finding, Action, Framework, Indicator, Organization, Audit
+from .models import (
+    Action, Attachment, Audit, Conformity, Control, ControlPoint, Evidence,
+    Finding, Framework, Indicator, IndicatorPoint, Organization,
+)
 
 
 class ConformityResource(resources.ModelResource):
@@ -52,16 +55,62 @@ class ConformityResource(resources.ModelResource):
         return ", ".join(f"{action.title}" for action in actions)
 
     def dehydrate_controls(self, obj):
-        controls = obj.controls.all()
+        controls = obj.get_control()
         if not controls.exists():
             return ""
         return ", ".join(f"{control.title}" for control in controls)
 
 
+class PeriodicControlResource(resources.Resource):
+    name = fields.Field(column_name="Name")
+    organization = fields.Field(column_name="Organization")
+    type = fields.Field(column_name="Type")
+    level = fields.Field(column_name="Level")
+    frequency = fields.Field(column_name="Frequency")
+    last_result = fields.Field(column_name="Last result")
+    requirements = fields.Field(column_name="Associated requirements")
+    references = fields.Field(column_name="Associated Frameworks")
+
+    def dehydrate_name(self, obj):
+        return obj.periodic_name
+
+    def dehydrate_organization(self, obj):
+        return ", ".join(sorted({str(conf.organization) for conf in obj.conformity.all()}))
+
+    def dehydrate_type(self, obj):
+        return obj.periodic_type
+
+    def dehydrate_level(self, obj):
+        return obj.periodic_level
+
+    def dehydrate_frequency(self, obj):
+        return obj.periodic_frequency
+
+    def dehydrate_last_result(self, obj):
+        point = obj.periodic_point
+        if point is None:
+            return ""
+        if isinstance(point, IndicatorPoint) and point.value is not None:
+            return f"{point.value} · {point.get_status_display()}"
+        return point.get_status_display()
+
+    def dehydrate_requirements(self, obj):
+        return ", ".join(conf.requirement.full_path for conf in obj.conformity.select_related('requirement').all())
+
+    def dehydrate_references(self, obj):
+        return ", ".join(sorted({
+            conf.requirement.framework.name
+            for conf in obj.conformity.select_related('requirement__framework').all()
+        }))
+
+
+PeriodicEvidenceResource = PeriodicControlResource
+
+
 class ControlResource(resources.ModelResource):
     class Meta:
         model = Control
-        fields = ("title", "level", "frequency", "organization__name", "description", "conformity")
+        fields = ("title", "level", "frequency", "description", "conformity")
 
     def dehydrate_frequency(self, obj):
         if hasattr(obj, "get_frequency_display"):
@@ -80,13 +129,10 @@ class FindingResource(resources.ModelResource):
 
     class Meta:
         model = Finding
-        fields = ("name", "audit__name", "archived", "short_description", "cvss", "cvss_descriptor", "actions" )
-
-    def dehydrate_archived(self, obj):
-        val = getattr(obj, "archived", None)
-        if val is None:
-            return ""
-        return "Yes" if bool(val) else "No"
+        fields = (
+            "name", "audit__name", "short_description", "severity", "result",
+            "valid_from", "valid_to", "cvss", "cvss_descriptor", "actions",
+        )
 
     def dehydrate_actions(self, obj):
         actions = obj.actions.all()
@@ -203,8 +249,8 @@ class ControlPointResource(resources.ModelResource):
     class Meta:
         model = ControlPoint
         fields = (
-            "control__title", "control__organization__name", "period_start_date",
-            "period_end_date", "status", "control_user__username", "control_date", "comment",
+            "control__title", "valid_from",
+            "valid_to", "status", "evaluator__username", "evaluated_at", "comment",
         )
 
     def dehydrate_status(self, obj):

@@ -8,10 +8,12 @@ from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
+from django.utils import timezone
 
 from conformity.models import (
     Action, Attachment, Audit, Conformity, Control, ControlPoint, Finding,
-    Framework, Indicator, IndicatorPoint, Organization, Requirement,
+    DocumentEvidence, Evidence, Framework, HumanEvidence, Indicator,
+    IndicatorPoint, Organization, Requirement,
 )
 
 
@@ -29,7 +31,7 @@ class ModelAuditTests(TestCase):
         self.fw = Framework.objects.create(name='Dependency framework')
         self.req = Requirement.objects.create(framework=self.fw, code='ROOT')
         self.audit = Audit.objects.create(organization=self.org, auditor='Auditor')
-        self.control = Control.objects.create(title='Dependency control', organization=self.org)
+        self.control = Control.objects.create(title='Dependency control',)
         self.indicator = Indicator.objects.create(name='Dependency indicator', responsible=self.actor)
         LogEntry.objects.all().delete()
 
@@ -95,7 +97,7 @@ class ModelAuditTests(TestCase):
         self.exercise_crud(Action, {'organization': self.org, 'title': 'Before'}, 'title', 'Before', 'After', {'organization': self.org.pk})
 
     def test_control_crud(self):
-        self.exercise_crud(Control, {'organization': self.org, 'title': 'Before'}, 'title', 'Before', 'After', {'organization': self.org.pk})
+        self.exercise_crud(Control, {'title': 'Before'}, 'title', 'Before', 'After')
 
     def test_controlpoint_crud(self):
         self.exercise_crud(ControlPoint, {'control': self.control, 'period_start_date': date.today(), 'period_end_date': date.today() + timedelta(days=5), 'comment': 'Before'}, 'comment', 'Before', 'After', {'control': self.control.pk})
@@ -108,6 +110,28 @@ class ModelAuditTests(TestCase):
 
     def test_indicatorpoint_crud(self):
         self.exercise_crud(IndicatorPoint, {'indicator': self.indicator, 'period_start_date': date.today(), 'period_end_date': date.today() + timedelta(days=5), 'comment': 'Before'}, 'comment', 'Before', 'After', {'indicator': self.indicator.pk})
+
+    def test_evidence_crud(self):
+        self.exercise_crud(Evidence, {
+            'source_type': Evidence.SourceType.DOCUMENT,
+            'result': Evidence.Result.NEUTRAL,
+            'valid_from': timezone.now(), 'comment': 'Before',
+        }, 'comment', 'Before', 'After')
+
+    def test_humanevidence_crud(self):
+        self.exercise_crud(HumanEvidence, {
+            'decision': HumanEvidence.Decision.COMPLIANT,
+            'valid_from': timezone.now(), 'comment': 'Before',
+        }, 'comment', 'Before', 'After')
+
+    def test_documentevidence_crud(self):
+        document = Attachment.objects.create(
+            file=SimpleUploadedFile('evidence.txt', b'evidence')
+        )
+        self.exercise_crud(DocumentEvidence, {
+            'document': document, 'title': 'Before',
+            'result': Evidence.Result.NEUTRAL, 'valid_from': timezone.now(),
+        }, 'title', 'Before', 'After', {'document': document.pk})
 
     def test_every_business_model_has_a_crud_contract(self):
         models = {model._meta.model_name for model in apps.get_app_config('conformity').get_models()}

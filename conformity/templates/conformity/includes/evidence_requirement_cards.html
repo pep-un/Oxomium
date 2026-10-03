@@ -1,0 +1,54 @@
+<div class="card border-info mb-4">
+    <div class="card-header border-info text-bg-info d-flex justify-content-between align-items-center gap-2">
+        <span class="h4 mb-0">Associated requirements</span>
+        {% if not hide_add_requirement and object and object.pk %}
+            <a class="btn btn-sm btn-primary"
+               href="{% url 'conformity:evidence_requirement_add' object.pk %}">
+                <i class="bi bi-plus-circle me-1" aria-hidden="true"></i>
+                Add requirement
+            </a>
+        {% endif %}
+    </div>
+
+    <div class="list-group list-group-flush">
+        {% for conformity in evidence_conformities %}
+            {% ifchanged conformity.requirement.framework.pk %}
+                <div class="list-group-item bg-info bg-opacity-25 py-2">
+                    <div class="fw-semibold">
+                        <i class="bi bi-journal-bookmark me-1" aria-hidden="true"></i>
+                        {{ conformity.requirement.framework }}
+                    </div>
+                </div>
+            {% endifchanged %}
+
+            {% ifchanged conformity.requirement.framework.pk conformity.requirement.parent_id %}
+                {% if conformity.requirement.parent %}
+                    <div class="list-group-item py-1 px-3 small text-body-secondary bg-body-tertiary">
+                        {{ conformity.requirement.parent.full_path }}
+                        · {{ conformity.requirement.parent.title }}
+                    </div>
+                {% endif %}
+            {% endifchanged %}
+
+            <div class="list-group-item border-info">
+                <div class="d-flex align-items-start gap-2">
+                    <span class="badge rounded-pill text-bg-primary flex-shrink-0">
+                        {{ conformity.requirement.full_path }}
+                    </span>
+                    <div class="min-w-0">
+                        <div class="fw-semibold">{{ conformity.requirement.title }}</div>
+                        {% if conformity.requirement.description %}
+                            <div class="small text-body-secondary mt-1">
+                                {{ conformity.requirement.description }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="list-group-item text-body-secondary text-center py-4">
+                No associated requirement.
+            </div>
+        {% endfor %}
+    </div>
+</div>

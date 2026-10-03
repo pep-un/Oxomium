@@ -1,0 +1,83 @@
+{% if controlpoint %}
+    <div class="card border-secondary mb-4">
+        <div class="card-header text-bg-secondary">
+            <span class="h4 mb-0">Periodic control</span>
+        </div>
+        <div class="card-body">
+            <h5 class="card-title">{{ controlpoint.control.title }}</h5>
+            {% if controlpoint.control.description %}
+                <p class="card-text">{{ controlpoint.control.description }}</p>
+            {% endif %}
+            <dl class="row mb-0">
+                <dt class="col-sm-4">Organization</dt>
+                <dd class="col-sm-8">{{ controlpoint.periodic_organization|default:"—" }}</dd>
+                <dt class="col-sm-4">Level</dt>
+                <dd class="col-sm-8">{{ controlpoint.control.get_level_display }}</dd>
+                <dt class="col-sm-4">Frequency</dt>
+                <dd class="col-sm-8">{{ controlpoint.control.get_frequency_display }}</dd>
+                <dt class="col-sm-4">Period</dt>
+                <dd class="col-sm-8">{{ controlpoint.valid_from|date:"d-M-Y" }} — {{ controlpoint.valid_to|date:"d-M-Y" }}</dd>
+            </dl>
+        </div>
+    </div>
+{% elif indicatorpoint %}
+    <div class="card border-secondary mb-4">
+        <div class="card-header text-bg-secondary">
+            <span class="h4 mb-0">Periodic indicator</span>
+        </div>
+        <div class="card-body">
+            <h5 class="card-title">{{ indicatorpoint.indicator.name }}</h5>
+            {% if indicatorpoint.indicator.goal %}
+                <p class="card-text">{{ indicatorpoint.indicator.goal }}</p>
+            {% endif %}
+            <dl class="row mb-3">
+                <dt class="col-sm-4">Organization</dt>
+                <dd class="col-sm-8">{{ indicatorpoint.periodic_organization|default:"—" }}</dd>
+
+                <dt class="col-sm-4">Responsible</dt>
+                <dd class="col-sm-8">{{ indicatorpoint.indicator.responsible|default:"—" }}</dd>
+
+                <dt class="col-sm-4">Frequency</dt>
+                <dd class="col-sm-8">{{ indicatorpoint.indicator.get_frequency_display }}</dd>
+
+                <dt class="col-sm-4">Period</dt>
+                <dd class="col-sm-8">{{ indicatorpoint.valid_from|date:"d-M-Y" }} — {{ indicatorpoint.valid_to|date:"d-M-Y" }}</dd>
+
+                <dt class="col-sm-4">Direction</dt>
+                <dd class="col-sm-8">{{ indicatorpoint.indicator.direction_label }}</dd>
+            </dl>
+
+            <div class="border-top pt-3">
+                <div class="mb-3">
+                    <div class="fw-semibold mb-1">Source of data</div>
+                    <div class="text-body-secondary">
+                        {{ indicatorpoint.indicator.source|default:"—"|linebreaksbr }}
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="fw-semibold mb-1">Formula or calculation</div>
+                    <div class="text-body-secondary">
+                        {{ indicatorpoint.indicator.formula|default:"—"|linebreaksbr }}
+                    </div>
+                </div>
+
+                <div>
+                    <div class="fw-semibold mb-2">Thresholds</div>
+                    {% if indicatorpoint.indicator.threshold_ranges %}
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for range in indicatorpoint.indicator.threshold_ranges %}
+                                <span class="badge rounded-pill text-bg-light text-dark border">
+                                    <span class="{{ range.css_class }}">{{ range.label }}</span>
+                                    {{ range.start }} – {{ range.end }}
+                                </span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <span class="text-danger small">Invalid threshold configuration</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}

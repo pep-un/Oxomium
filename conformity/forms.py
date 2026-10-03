@@ -2,10 +2,17 @@
 Forms for front-end editing of Models instance
 """
 
-from django.forms import ModelForm, FileField, ClearableFileInput, BooleanField, ModelChoiceField
+from datetime import timedelta
+
+from django import forms
+from django.forms import Form, ModelForm, FileField, ClearableFileInput, BooleanField, ModelChoiceField, ModelMultipleChoiceField
+from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from .models import Conformity, Organization, Audit, Finding, Action, Control, ControlPoint, Indicator, IndicatorPoint
+from .models import (
+    Action, Audit, Conformity, Control, ControlPoint, DocumentEvidence, Evidence,
+    Finding, HumanEvidence, Indicator, IndicatorPoint, Organization,
+)
 from .validators import attachment_accept, attachment_max_size_help, validate_attachment_once
 
 
@@ -28,6 +35,28 @@ class MultipleFileField(FileField):
         return []
 
 
+class EvidenceValidityFormMixin:
+    """Render Evidence validity bounds with native date/time pickers."""
+
+    datetime_local_format = '%Y-%m-%dT%H:%M'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field_name in ('valid_from', 'valid_to'):
+            field = self.fields.get(field_name)
+            if field is None:
+                continue
+            field.widget = forms.DateTimeInput(
+                attrs={'type': 'datetime-local', 'step': 300},
+                format=self.datetime_local_format,
+            )
+            field.input_formats = [
+                self.datetime_local_format,
+                '%Y-%m-%dT%H:%M:%S',
+                *field.input_formats,
+            ]
+
+
 class AttachmentUploadFormMixin:
     """Apply the shared attachment policy to every multi-upload form."""
 
@@ -46,6 +75,15 @@ class AttachmentUploadFormMixin:
             validate_attachment_once(uploaded_file)
         return uploaded_files
 
+    def _save_m2m(self):
+        """Do not feed uploaded file objects into a model Attachment M2M."""
+        uploads = self.cleaned_data.pop('attachments', None)
+        try:
+            super()._save_m2m()
+        finally:
+            if uploads is not None:
+                self.cleaned_data['attachments'] = uploads
+
 
 class ConformityForm(ModelForm):
     propagate_to_children = BooleanField(
@@ -54,12 +92,78 @@ class ConformityForm(ModelForm):
 
     class Meta:
         model = Conformity
-        fields = ['applicable', 'responsible', 'status', 'comment']
+        fields = ['applicable', 'responsible', 'comment']
+        widgets = {
+            'responsible': forms.Select(attrs={
+                'class': 'form-select w-100',
+            }),
+            'comment': forms.Textarea(attrs={
+                'placeholder': 'Comment required',
+                'class': 'form-control w-100',
+            }),
+        }
+
+
+class EvidenceRequirementForm(Form):
+    conformity = ModelChoiceField(
+        queryset=Conformity.objects.none(),
+        label='Requirement',
+    )
+
+    def __init__(self, *args, evidence=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        queryset = (
+            Conformity.objects
+            .filter(requirement__rght=models.F('requirement__lft') + 1)
+            .select_related('organization', 'requirement__framework')
+            .order_by(
+                'organization__name',
+                'requirement__framework__name',
+                'requirement__tree_id',
+                'requirement__lft',
+            )
+        )
+        if evidence is not None:
+            if evidence.periodic_organization is not None:
+                queryset = queryset.filter(
+                    organization=evidence.periodic_organization,
+                )
+            queryset = queryset.exclude(
+                pk__in=evidence.conformities.values_list('pk', flat=True),
+            )
+        self.fields['conformity'].queryset = queryset
+
+
+class HumanEvidenceForm(AttachmentUploadFormMixin, EvidenceValidityFormMixin, ModelForm):
+    attachments = MultipleFileField(required=False)
+    class Meta:
+        model = HumanEvidence
+        fields = ['decision', 'valid_from', 'valid_to', 'comment', 'attachments']
 
     def __init__(self, *args, **kwargs):
-        super(ConformityForm, self).__init__(*args, **kwargs)
-        if self.instance.get_descendants().exists():
-            self.fields['status'].disabled = True
+        super().__init__(*args, **kwargs)
+        if not self.is_bound and self.instance.pk is None:
+            valid_from = self.initial.get('valid_from') or timezone.now()
+            self.initial['valid_from'] = valid_from
+            if not self.initial.get('valid_to'):
+                self.initial['valid_to'] = valid_from + timedelta(days=365)
+
+
+class EvidenceForm(AttachmentUploadFormMixin, EvidenceValidityFormMixin, ModelForm):
+    attachments = MultipleFileField(required=False)
+    class Meta:
+        model = Evidence
+        fields = [
+            'title', 'result', 'valid_from', 'valid_to', 'evaluator',
+            'comment', 'attachments',
+        ]
+
+
+class DocumentEvidenceForm(AttachmentUploadFormMixin, EvidenceValidityFormMixin, ModelForm):
+    attachments = MultipleFileField(required=False)
+    class Meta:
+        model = DocumentEvidence
+        fields = ['title', 'document', 'result', 'valid_from', 'valid_to', 'comment', 'attachments']
 
 
 class OrganizationForm(AttachmentUploadFormMixin, ModelForm):
@@ -77,31 +181,73 @@ class AuditForm(AttachmentUploadFormMixin, ModelForm):
                   'end_date', 'report_date', 'type', 'attachments']
 
 
-class FindingForm(ModelForm):
+class FindingForm(
+    AttachmentUploadFormMixin,
+    EvidenceValidityFormMixin,
+    ModelForm,
+):
+    attachments = MultipleFileField(required=False)
+
     class Meta:
         model = Finding
-        fields = ['name', 'audit', 'severity', 'short_description', 'description', 'observation', 'recommendation', 'reference', 'cvss', 'cvss_descriptor', 'archived']
-    def __init__(self, *args, **kwargs):
-        super(FindingForm, self).__init__(*args, **kwargs)
+        fields = [
+            'name', 'audit', 'severity', 'short_description', 'description',
+            'observation', 'recommendation', 'reference', 'cvss',
+            'cvss_descriptor', 'valid_from', 'valid_to', 'comment',
+            'attachments',
+        ]
 
-        # Only lock the audit when creating a finding from an audit page.
-        # Existing findings carry their audit in initial too and must stay editable.
-        if self.instance.pk is None and self.initial.get('audit'):
-            audit = self.initial['audit']
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['valid_from'].required = False
+        self.fields['audit'].required = False
+        self.fields['cvss'].widget.attrs.update({
+            'min': 0,
+            'max': 10,
+            'step': 0.1,
+        })
+
+        if not self.is_bound and self.instance.pk is None:
+            valid_from = self.initial.get('valid_from') or timezone.now()
+            self.initial['valid_from'] = valid_from
+            if not self.initial.get('valid_to'):
+                self.initial['valid_to'] = Finding._plus_years(valid_from, 3)
+
+        audit = self.initial.get('audit')
+        if self.instance.pk is None and audit:
             self.fields['audit'].disabled = True
             if isinstance(audit, Audit):
                 self.initial['organization'] = audit.organization
             self.fields['organization'] = ModelChoiceField(
-                queryset=Organization.objects.all(), required=False, disabled=True
+                queryset=Organization.objects.all(),
+                required=False,
+                disabled=True,
             )
             self.order_fields([
-                'name', 'audit', 'organization', 'severity', 'short_description',
-                'description', 'observation', 'recommendation', 'reference', 'cvss',
-                'cvss_descriptor', 'archived',
+                'name', 'audit', 'organization', 'severity',
+                'short_description', 'description', 'observation',
+                'recommendation', 'reference', 'cvss', 'cvss_descriptor',
+                'valid_from', 'valid_to', 'comment', 'attachments',
             ])
-        if self.get_initial_for_field(self.fields['archived'], 'archived') :
-            for key, value in self.fields.items():
-                self.fields[key].disabled = True
+
+        conformity = self.initial.get('conformity')
+        if self.instance.pk is None and conformity:
+            organization = conformity.organization
+            self.fields['audit'].queryset = Audit.objects.filter(
+                organization=organization
+            )
+            self.fields['organization'] = ModelChoiceField(
+                queryset=Organization.objects.filter(pk=organization.pk),
+                required=False,
+                disabled=True,
+                initial=organization,
+            )
+            self.order_fields([
+                'name', 'organization', 'audit', 'severity',
+                'short_description', 'description', 'observation',
+                'recommendation', 'reference', 'cvss', 'cvss_descriptor',
+                'valid_from', 'valid_to', 'comment', 'attachments',
+            ])
 
 
 class ActionForm(ModelForm):
@@ -135,8 +281,8 @@ class ActionForm(ModelForm):
                 audit__organization_id=organization_id
             )
             self.fields['associated_controlPoints'].queryset = ControlPoint.objects.filter(
-                control__organization_id=organization_id
-            )
+                control__conformity__organization_id=organization_id
+            ).distinct()
 
         if self.instance.pk is None and self.initial.get('associated_findings'):
             self.fields['associated_findings'].disabled = True
@@ -176,24 +322,10 @@ class ActionForm(ModelForm):
 class ControlForm(ModelForm):
     class Meta:
         model = Control
-        fields = ['title', 'description', 'organization', 'conformity', 'control', 'frequency', 'level']
+        fields = ['title', 'description', 'conformity', 'control', 'frequency', 'level']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        organization = self.initial.get('organization')
-        if organization is None:
-            organization_id = self.instance.organization_id
-        else:
-            organization_id = getattr(organization, 'pk', organization)
-        if organization_id:
-            self.fields['conformity'].queryset = Conformity.objects.filter(
-                organization_id=organization_id
-            )
-            self.fields['control'].queryset = Control.objects.filter(
-                organization_id=organization_id
-            )
-        if self.instance.pk is None and 'organization' in self.initial:
-            self.fields['organization'].disabled = True
         if self.instance.pk is None and self.initial.get('conformity'):
             self.fields['conformity'].disabled = True
 
@@ -202,23 +334,23 @@ class ControlPointForm(AttachmentUploadFormMixin, ModelForm):
     attachments = MultipleFileField(required=False)
     class Meta:
         model = ControlPoint
-        fields = ['control_date', 'control_user', 'status', 'comment', 'attachments']
+        fields = ['evaluated_at', 'evaluator', 'result', 'comment', 'attachments']
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         super(ControlPointForm, self).__init__(*args, **kwargs)
 
         # Set some value for all situation
-        self.fields['control_date'].disabled = True
-        self.fields['control_user'].disabled = True
+        self.fields['evaluated_at'].disabled = True
+        self.fields['evaluator'].disabled = True
 
         # Set some value if the ControlPoint has to be evaluated
-        if self.get_initial_for_field(self.fields['status'], 'status') == ControlPoint.Status.TOBEEVALUATED.value:
-            self.initial['control_date'] = timezone.now()
-            self.initial['control_user'] = self.user
-            self.fields['status'].widget.choices = [
-                (ControlPoint.Status.COMPLIANT, ControlPoint.Status.COMPLIANT.label),
-                (ControlPoint.Status.NONCOMPLIANT, ControlPoint.Status.NONCOMPLIANT.label),
+        if self.instance.status == Evidence.Status.TOBEEVALUATED:
+            self.initial['evaluated_at'] = timezone.now()
+            self.initial['evaluator'] = self.user
+            self.fields['result'].widget.choices = [
+                (Evidence.Result.POSITIVE, _('Compliant')),
+                (Evidence.Result.NEGATIVE, _('Non-Compliant')),
             ]
         # Keep attachment uploads available even when the control result is read-only.
         else:
@@ -232,8 +364,13 @@ class IndicatorForm(ModelForm):
         model = Indicator
         fields = [
             'name', 'goal', 'source', 'formula', 'worst', 'critical', 'warning', 'best',
-            'responsible', 'organization', 'conformity', 'frequency',
+            'responsible', 'conformity', 'frequency',
         ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.pk is None and self.initial.get('conformity'):
+            self.fields['conformity'].disabled = True
 
 
 class IndicatorPointForm(AttachmentUploadFormMixin, ModelForm):
@@ -251,3 +388,4 @@ class IndicatorPointForm(AttachmentUploadFormMixin, ModelForm):
             self.fields['value'].help_text = _(
                 'Enter an integer between %(lower)s and %(upper)s (inclusive).'
             ) % {'lower': lower, 'upper': upper}
+

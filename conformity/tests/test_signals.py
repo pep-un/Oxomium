@@ -3,7 +3,7 @@ from django.test import TestCase
 from django.utils import timezone
 
 from conformity.models import (
-    Framework, Organization, Requirement, Conformity, Control, ControlPoint, Action, Attachment, Audit, Finding)
+    Framework, Organization, Requirement, Conformity, Control, ControlPoint, Evidence, Action, Attachment, Audit, Finding)
 
 from conformity.services.conformities import apply_framework, unapply_framework
 
@@ -206,40 +206,47 @@ class SignalTests(TestCase):
                 "Stored file must be deleted at the end of the test",
             )
 
-    def test_findings_archiving_updates_on_action_save_and_m2m(self):
-        """
-        Finding.archived should reflect whether active Actions are linked
-        (via m2m signals and action post_save).
-        """
+    def test_findings_validity_closes_when_actions_complete(self):
+        """Completed Actions close Finding validity without automatic reopening."""
         org = Organization.objects.create(name="Org")
-        audit = Audit.objects.create(organization=org, auditor="Aud", report_date=timezone.now())
+        audit = Audit.objects.create(
+            organization=org,
+            auditor="Aud",
+            report_date=timezone.localdate(),
+        )
         finding = Finding.objects.create(
-            short_description="F1", audit=audit, severity=Finding.Severity.MAJOR
+            short_description="F1",
+            audit=audit,
+            severity=Finding.Severity.MAJOR,
         )
 
-        finding.update_archived()
+        original_valid_to = finding.valid_to
+        finding.close_if_actions_completed()
         finding.refresh_from_db()
-        self.assertFalse(finding.archived, msg="Finding with no action should not be archived")
+        self.assertEqual(finding.valid_to, original_valid_to)
 
-        act = Action.objects.create(title="A1", organization=org, status=Action.Status.PLANNING)
+        act = Action.objects.create(
+            title="A1",
+            organization=org,
+            status=Action.Status.PLANNING,
+        )
         act.associated_findings.add(finding)
         act.save()
         finding.refresh_from_db()
-        self.assertFalse(finding.archived, msg="Finding with active action should not be archived")
+        self.assertEqual(finding.valid_to, original_valid_to)
 
         act.status = Action.Status.ENDED
         act.save()
         finding.refresh_from_db()
-        self.assertTrue(finding.archived, msg="Finding with ended action should be archived")
+        self.assertLess(finding.valid_to, original_valid_to)
+        closed_at = finding.valid_to
 
+        # Reopening the Action does not erase historical/manual invalidation.
         act.status = Action.Status.PLANNING
         act.save()
         finding.refresh_from_db()
-        self.assertFalse(finding.archived, msg="If action is back to active, finding should not be archived")
+        self.assertEqual(finding.valid_to, closed_at)
 
-        finding.actions.remove(act)
-        finding.refresh_from_db()
-        self.assertFalse(finding.archived, msg="Finding with no action should not be archived")
 
 def test_controlpoint_final_status_updates_conformity(self):
     """
@@ -267,7 +274,7 @@ def test_controlpoint_final_status_updates_conformity(self):
     self.assertIsNotNone(cp, "Bootstrap must create at least one ControlPoint")
 
     # 1) NONCOMPLIANT -> Conformity 0 (justification CONTROL)
-    cp.status = ControlPoint.Status.NONCOMPLIANT
+    cp.result = Evidence.Result.NEGATIVE
     cp.save()
     conf_leaf.refresh_from_db()
     self.assertEqual(conf_leaf.status, 0, msg="Conformity should reflect NONCOMPLIANT control")
@@ -277,7 +284,7 @@ def test_controlpoint_final_status_updates_conformity(self):
     )
 
     # 2) COMPLIANT -> Conformity 100 (justification CONTROL)
-    cp.status = ControlPoint.Status.COMPLIANT
+    cp.result = Evidence.Result.POSITIVE
     cp.save()
     conf_leaf.refresh_from_db()
     self.assertEqual(conf_leaf.status, 100, msg="Conformity should reflect COMPLIANT control")
@@ -298,9 +305,9 @@ def test_controlpoint_final_status_updates_conformity(self):
     self.assertIsNotNone(cp_ko)
 
     # 3) One OK, one NONCOMPLIANT -> overall should be 0
-    cp_ok.status = ControlPoint.Status.COMPLIANT
+    cp_ok.result = Evidence.Result.POSITIVE
     cp_ok.save()
-    cp_ko.status = ControlPoint.Status.NONCOMPLIANT
+    cp_ko.result = Evidence.Result.NEGATIVE
     cp_ko.save()
     conf_leaf.refresh_from_db()
     self.assertEqual(
@@ -351,7 +358,7 @@ def test_controlpoint_final_status_updates_conformity(self):
         self.assertIsNotNone(cp, "Bootstrap must create at least one ControlPoint")
 
         ## NONCOMPLIANT -> Conformity 0 (justification CONTROL)
-        cp.status = ControlPoint.Status.NONCOMPLIANT
+        cp.result = Evidence.Result.NEGATIVE
         cp.save()
         conf_leaf.refresh_from_db()
         self.assertEqual(conf_leaf.status, 0, msg="Conformity should reflect NONCOMPLIANT control")
@@ -361,7 +368,7 @@ def test_controlpoint_final_status_updates_conformity(self):
         )
 
         ## COMPLIANT -> Conformity 100 (justification CONTROL)
-        cp.status = ControlPoint.Status.COMPLIANT
+        cp.result = Evidence.Result.POSITIVE
         cp.save()
         conf_leaf.refresh_from_db()
         self.assertEqual(conf_leaf.status, 100, msg="Conformity should reflect COMPLIANT control")
@@ -382,9 +389,9 @@ def test_controlpoint_final_status_updates_conformity(self):
         self.assertIsNotNone(cp_ko)
 
         ## One OK, one NONCOMPLIANT -> overall should be 0
-        cp_ok.status = ControlPoint.Status.COMPLIANT
+        cp_ok.result = Evidence.Result.POSITIVE
         cp_ok.save()
-        cp_ko.status = ControlPoint.Status.NONCOMPLIANT
+        cp_ko.result = Evidence.Result.NEGATIVE
         cp_ko.save()
         conf_leaf.refresh_from_db()
         self.assertEqual(
@@ -494,9 +501,9 @@ def test_controlpoint_final_status_updates_conformity(self):
         self.assertIsNotNone(cp_b, "Bootstrap must create at least one ControlPoint for CTRL-B")
 
         # Normalize baseline: bring controls to a compliant state
-        cp_a.status = ControlPoint.Status.COMPLIANT
+        cp_a.result = Evidence.Result.POSITIVE
         cp_a.save()
-        cp_b.status = ControlPoint.Status.COMPLIANT
+        cp_b.result = Evidence.Result.POSITIVE
         cp_b.save()
         conf_leaf.refresh_from_db()
         self.assertEqual(conf_leaf.status, 100, "With compliant controls and no active actions, status should be 100")
@@ -543,7 +550,7 @@ def test_controlpoint_final_status_updates_conformity(self):
         )
 
         # Flip one control to NONCOMPLIANT -> should drop to 0, justification CONTROL
-        cp_a.status = ControlPoint.Status.NONCOMPLIANT
+        cp_a.result = Evidence.Result.NEGATIVE
         cp_a.save()
         conf_leaf.refresh_from_db()
         self.assertEqual(conf_leaf.status, 0, "A NONCOMPLIANT control must drive conformity to 0")
@@ -554,7 +561,7 @@ def test_controlpoint_final_status_updates_conformity(self):
         )
 
         # Bring that control back to COMPLIANT -> 100 (since both controls are OK and no active actions)
-        cp_a.status = ControlPoint.Status.COMPLIANT
+        cp_a.result = Evidence.Result.POSITIVE
         cp_a.save()
         conf_leaf.refresh_from_db()
         self.assertEqual(conf_leaf.status, 100, "All controls compliant and no active actions -> 100")

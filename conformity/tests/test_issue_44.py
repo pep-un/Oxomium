@@ -1,15 +1,25 @@
+from datetime import timedelta
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.template.loader import render_to_string
 from constance.test import override_config
 from django.urls import reverse
+from django.utils import timezone
 
-from conformity.models import Action, Audit, Control, ControlPoint, Finding, Organization
+from conformity.models import (
+    Action, Audit, Conformity, Control, ControlPoint, Evidence, Finding, Framework,
+    Indicator, IndicatorPoint, Organization, Requirement,
+)
 from conformity.tables import (
     ActionTable, AttachmentTable, AuditLogTable, AuditTable, ConformityTable,
     ControlTable, ControlPointTable, FindingTable, FrameworkTable, OrganizationTable,
+    PeriodicControlTable, PeriodicEvidenceTable,
 )
-from conformity.filterset import AttachmentFilter, ConformityFilter, ControlPointFilter, FindingFilter
+from conformity.filterset import (
+    AttachmentFilter, ConformityFilter, ControlPointFilter, FindingFilter,
+    PeriodicControlFilter, PeriodicControlFilterForm, PeriodicEvidenceFilter,
+)
 from conformity.views import (
     ActionIndexView, AttachmentIndexView, AuditLogDetailView, AuditIndexView,
     ConformityIndexView, ControlIndexView, ControlPointIndexView, FindingIndexView,
@@ -18,6 +28,10 @@ from conformity.views import (
 
 
 class RichTableConfigurationTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(username="issue44-config")
+        self.client.force_login(self.user)
+
     def test_all_tabular_index_views_have_explicit_table_classes(self):
         expected = {
             ActionIndexView: ActionTable,
@@ -25,7 +39,7 @@ class RichTableConfigurationTests(TestCase):
             AuditLogDetailView: AuditLogTable,
             AuditIndexView: AuditTable,
             ConformityIndexView: ConformityTable,
-            ControlIndexView: ControlTable,
+            ControlIndexView: PeriodicControlTable,
             ControlPointIndexView: ControlPointTable,
             FindingIndexView: FindingTable,
             FrameworkIndexView: FrameworkTable,
@@ -41,6 +55,13 @@ class RichTableConfigurationTests(TestCase):
         self.assertIn("action", getattr(ConformityFilter, "base_filters"))
         self.assertIn("action", getattr(ControlPointFilter, "base_filters"))
 
+    def test_finding_filters_expose_nature_and_lifecycle_status(self):
+        filters = getattr(FindingFilter, "base_filters")
+        self.assertIn("nature", filters)
+        self.assertIn("status", filters)
+        self.assertEqual(filters["nature"].label, "Nature")
+        self.assertEqual(filters["status"].label, "Status")
+
     def test_attachment_filters_cover_metadata_relations_and_dates(self):
         expected = {
             "file", "mime_type", "sha256", "organization", "framework", "audit",
@@ -52,7 +73,6 @@ class RichTableConfigurationTests(TestCase):
         table_classes = (
             ActionTable,
             AuditTable,
-            ConformityTable,
             ControlTable,
             ControlPointTable,
             FindingTable,
@@ -68,6 +88,200 @@ class RichTableConfigurationTests(TestCase):
                 self.assertIn("text-start", first_column.attrs["th"]["class"])
                 self.assertIn("col-2", first_column.attrs["td"]["class"])
                 self.assertIn("text-start", first_column.attrs["td"]["class"])
+
+    def test_conformity_table_uses_balanced_column_widths(self):
+        table = ConformityTable([])
+        self.assertEqual(
+            table.columns["conformity"].attrs["th"]["style"],
+            "width: 35%;",
+        )
+        self.assertEqual(
+            table.columns["requirements"].attrs["th"]["style"],
+            "width: 10%;",
+        )
+        self.assertEqual(
+            table.columns["evidence_status"].attrs["th"]["style"],
+            "width: 55%;",
+        )
+
+    def test_conformity_table_uses_stacked_evidence_status_column(self):
+        table = ConformityTable([])
+        self.assertIn("evidence_status", table.columns)
+        self.assertNotIn("completeness", table.columns)
+        self.assertNotIn("status", table.columns)
+        self.assertEqual(
+            table.columns["evidence_status"].verbose_name,
+            "Status",
+        )
+
+    def test_conformity_status_bar_uses_secondary_stripes_without_legend(self):
+        table = ConformityTable([])
+        template = table.columns["evidence_status"].column.template_code
+        self.assertIn("bg-secondary progress-bar-striped", template)
+        self.assertIn("repeating-linear-gradient", template)
+        self.assertNotIn("text-body-secondary mt-1 text-nowrap", template)
+
+    def test_conformity_evidence_distribution_counts_leaf_states(self):
+        organization = Organization.objects.create(name="Evidence summary org")
+        framework = Framework.objects.create(name="Evidence summary framework")
+        root_req = Requirement.objects.create(
+            framework=framework, code="SUM", title="Summary root"
+        )
+        root = Conformity.objects.create(
+            organization=organization,
+            requirement=root_req,
+        )
+        states = (
+            Conformity.EvidenceState.COMPLIANT,
+            Conformity.EvidenceState.PARTIAL,
+            Conformity.EvidenceState.NON_COMPLIANT,
+            Conformity.EvidenceState.INCONCLUSIVE,
+        )
+        for index, state in enumerate(states, start=1):
+            requirement = Requirement.objects.create(
+                framework=framework,
+                parent=root_req,
+                code=f"SUM{index}",
+                title=f"Leaf {index}",
+            )
+            Conformity.objects.create(
+                organization=organization,
+                requirement=requirement,
+                evidence_state=state,
+            )
+
+        distribution = root.get_evidence_state_distribution()
+        self.assertEqual(distribution["total"], 4)
+        self.assertEqual(distribution["compliant_pct"], 25)
+        self.assertEqual(distribution["partial_pct"], 25)
+        self.assertEqual(distribution["non_compliant_pct"], 25)
+        self.assertEqual(distribution["inconclusive_pct"], 25)
+
+    def test_periodic_controls_table_has_operational_columns_only(self):
+        table = PeriodicControlTable([])
+        self.assertEqual(
+            list(table.columns.names()),
+            [
+                "name",
+                "organization",
+                "type",
+                "level",
+                "frequency",
+                "last_result",
+                "requirements",
+            ],
+        )
+        self.assertNotIn("actions", table.columns)
+
+    def test_periodic_controls_filter_uses_standard_status_field(self):
+        fields = getattr(PeriodicControlFilterForm, "base_fields")
+        self.assertIn("name", fields)
+        self.assertIn("status", fields)
+        self.assertIn("organization", fields)
+        self.assertIn("source_type", fields)
+        self.assertIn("requirement", fields)
+        self.assertIn("reference", fields)
+        self.assertEqual(fields["status"].label, "Last result")
+        self.assertEqual(fields["requirement"].label, "Associated requirement")
+        self.assertEqual(fields["reference"].label, "Associated Framework")
+
+    def test_periodic_controls_show_export_and_result_count(self):
+        organization = Organization.objects.create(name="Periodic toolbar org")
+        control = Control.objects.create(
+            title="Toolbar control",
+            frequency=Control.Frequency.YEARLY,
+        )
+        point = next(
+            item for item in control.get_controlpoint()
+            if item.is_current_period()
+        )
+
+        response = self.client.get(
+            reverse("conformity:control_index"),
+            {"status": "TOBE"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse("conformity:control_export"))
+        self.assertContains(response, "Export CSV (All)")
+        self.assertContains(response, "Export XLSX (All)")
+        self.assertEqual(response.context["result_total_count"], 1)
+        self.assertEqual(response.context["result_visible_count"], 1)
+        self.assertEqual(
+            [row.record for row in response.context["table"].page.object_list],
+            [control],
+        )
+
+    def test_periodic_controls_selection_export_uses_current_filters(self):
+        organization = Organization.objects.create(name="Periodic export org")
+        pending = Control.objects.create(
+            title="Pending export control",
+            frequency=Control.Frequency.YEARLY,
+        )
+        completed = Control.objects.create(
+            title="Completed export control",
+            frequency=Control.Frequency.YEARLY,
+        )
+        completed_point = next(
+            item for item in completed.get_controlpoint()
+            if item.is_current_period()
+        )
+        completed_point.status = Evidence.Status.EVALUATED
+        completed_point.result = Evidence.Result.POSITIVE
+        completed_point.save(update_fields=["status"])
+
+        response = self.client.get(
+            reverse("conformity:control_export"),
+            {"format": "csv", "scope": "selection", "status": "TOBE"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn("Pending export control", content)
+        self.assertNotIn("Completed export control", content)
+
+    def test_periodic_controls_filters_name_requirement_and_reference(self):
+        organization = Organization.objects.create(name="Filter org")
+        framework = Framework.objects.create(name="Filter reference")
+        root = Requirement.objects.create(
+            framework=framework,
+            code="FR",
+            title="Filter root",
+        )
+        leaf = Requirement.objects.create(
+            framework=framework,
+            parent=root,
+            code="1",
+            title="Target requirement",
+        )
+        conformity = Conformity.objects.create(
+            organization=organization,
+            requirement=leaf,
+        )
+        control = Control.objects.create(
+            title="Quarterly access review",
+            frequency=Control.Frequency.YEARLY,
+        )
+        control.conformity.add(conformity)
+        base = [control]
+
+        by_name = PeriodicControlFilter(
+            {"name": "access"},
+            queryset=base,
+        )
+        self.assertEqual(by_name.qs, [control])
+
+        by_requirement = PeriodicControlFilter(
+            {"requirement": leaf.pk},
+            queryset=base,
+        )
+        self.assertEqual(by_requirement.qs, [control])
+
+        by_reference = PeriodicControlFilter(
+            {"reference": framework.pk},
+            queryset=base,
+        )
+        self.assertEqual(by_reference.qs, [control])
 
     def test_control_table_exposes_organization_and_last_result(self):
         table = ControlTable([])
@@ -109,7 +323,7 @@ class ActionStatusComponentTests(TestCase):
 
 class ControlPointStatusComponentTests(TestCase):
     def test_non_compliant_uses_danger_filled_hexagon(self):
-        control_point = ControlPoint(status=ControlPoint.Status.NONCOMPLIANT)
+        control_point = ControlPoint(status=Evidence.Status.EVALUATED, result=Evidence.Result.NEGATIVE)
 
         html = render_to_string(
             "conformity/includes/controlpoint_status.html",
@@ -159,6 +373,32 @@ class FindingActionStatusTests(TestCase):
         )
         self.assertContains(response, "bi-hexagon-fill text-primary")
         self.assertContains(response, "Planning")
+
+
+class FindingTableValidityStateTests(TestCase):
+    def test_invalidated_finding_name_shows_history_icon(self):
+        organization = Organization.objects.create(name="Archived finding org")
+        audit = Audit.objects.create(
+            name="Archived finding audit",
+            organization=organization,
+            auditor="Auditor",
+        )
+        finding = Finding.objects.create(
+            name="Archived finding",
+            short_description="Archived finding",
+            audit=audit,
+            severity=Finding.Severity.MAJOR,
+            valid_from=timezone.now() - timedelta(days=1),
+            valid_to=timezone.now() - timedelta(minutes=1),
+        )
+
+        table = FindingTable([finding])
+        html = table.as_html(
+            __import__("django.test").test.RequestFactory().get("/")
+        )
+
+        self.assertIn("bi bi-clock-history", html)
+        self.assertIn('title="Invalidated"', html)
 
 
 class FindingCvssBadgeTests(TestCase):
@@ -277,7 +517,12 @@ class RichTableInteractionTests(TestCase):
         )
         for view_name in view_names:
             with self.subTest(view_name=view_name):
-                response = self.client.get(reverse(view_name))
+                params = {"status": "TOBE"} if view_name == "conformity:control_index" else {}
+                response = self.client.get(
+                    reverse(view_name),
+                    params,
+                    follow=view_name == "conformity:finding_index",
+                )
                 self.assertEqual(response.status_code, 200)
 
     def test_missing_list_actions_are_now_exposed(self):
@@ -295,12 +540,56 @@ class RichTableInteractionTests(TestCase):
                 self.assertEqual(response.status_code, 200)
                 self.assertContains(response, reverse(export_name))
 
-        finding_response = self.client.get(reverse("conformity:finding_index"))
+        finding_response = self.client.get(
+            reverse("conformity:finding_index"),
+            follow=True,
+        )
         self.assertEqual(finding_response.status_code, 200)
         self.assertContains(finding_response, reverse("conformity:finding_create"))
 
+    def test_finding_index_defaults_are_visible_filters(self):
+        response = self.client.get(reverse("conformity:finding_index"))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("status=active", response.url)
+        self.assertIn("nature=CRT", response.url)
+        self.assertIn("nature=MAJ", response.url)
+        self.assertIn("nature=MIN", response.url)
+        self.assertIn("nature=OBS", response.url)
+
+        response = self.client.get(response.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["filter"].form["status"].value(), "active")
+        self.assertEqual(
+            set(response.context["filter"].form["nature"].value()),
+            {"CRT", "MAJ", "MIN", "OBS"},
+        )
+
+    def test_default_filter_button_is_only_shown_on_preset_views(self):
+        finding = self.client.get(
+            reverse("conformity:finding_index"),
+            follow=True,
+        )
+        self.assertContains(finding, "Default filter")
+        self.assertContains(finding, 'class="btn btn-secondary"')
+        self.assertContains(finding, "defaults=off")
+
+        periodic = self.client.get(
+            reverse("conformity:control_index"),
+            follow=True,
+        )
+        self.assertContains(periodic, "Default filter")
+        self.assertContains(periodic, "status=TOBE")
+        self.assertContains(periodic, "defaults=off")
+
+        organization = self.client.get(reverse("conformity:organization_index"))
+        self.assertNotContains(organization, "Default filter")
+
     def test_relation_filtered_findings_include_items_hidden_from_general_list(self):
-        general = self.client.get(reverse("conformity:finding_index"))
+        general = self.client.get(
+            reverse("conformity:finding_index"),
+            follow=True,
+        )
         general_ids = [
             row.record.pk for row in general.context["table"].page.object_list
         ]
@@ -318,17 +607,27 @@ class RichTableInteractionTests(TestCase):
 
     def test_control_index_shows_current_point_evaluate_call_to_action(self):
         organization = Organization.objects.create(name="Control result org")
+        framework = Framework.objects.create(name="Control result framework")
+        requirement = Requirement.objects.create(
+            framework=framework, code="CTRL", title="Control result requirement"
+        )
+        conformity = Conformity.objects.create(
+            organization=organization, requirement=requirement
+        )
         control = Control.objects.create(
             title="Control awaiting evaluation",
-            organization=organization,
             frequency=Control.Frequency.YEARLY,
         )
+        control.conformity.add(conformity)
         current_point = next(
             point for point in control.get_controlpoint()
             if point.is_current_period()
         )
 
-        response = self.client.get(reverse("conformity:control_index"))
+        response = self.client.get(
+            reverse("conformity:control_index"),
+            {"status": "TOBE"},
+        )
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(
@@ -345,21 +644,217 @@ class RichTableInteractionTests(TestCase):
         organization = Organization.objects.create(name="Completed control org")
         control = Control.objects.create(
             title="Completed current control",
-            organization=organization,
             frequency=Control.Frequency.YEARLY,
         )
         current_point = next(
             point for point in control.get_controlpoint()
             if point.is_current_period()
         )
-        current_point.status = ControlPoint.Status.COMPLIANT
+        current_point.status = Evidence.Status.EVALUATED
+        current_point.result = Evidence.Result.POSITIVE
         current_point.save(update_fields=["status"])
 
-        response = self.client.get(reverse("conformity:control_index"))
+        response = self.client.get(
+            reverse("conformity:control_index"),
+            {"status": ""},
+        )
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "bi-hexagon-fill text-success")
         self.assertContains(response, "Compliant")
+
+    def test_periodic_controls_default_to_items_to_evaluate(self):
+        organization = Organization.objects.create(name="Periodic default org")
+        pending_control = Control.objects.create(
+            title="Pending control",
+            frequency=Control.Frequency.YEARLY,
+        )
+        pending_point = next(
+            point for point in pending_control.get_controlpoint()
+            if point.is_current_period()
+        )
+
+        completed_control = Control.objects.create(
+            title="Completed hidden control",
+            frequency=Control.Frequency.YEARLY,
+        )
+        completed_point = next(
+            point for point in completed_control.get_controlpoint()
+            if point.is_current_period()
+        )
+        completed_point.status = Evidence.Status.EVALUATED
+        completed_point.result = Evidence.Result.POSITIVE
+        completed_point.save(update_fields=["status"])
+
+        response = self.client.get(reverse("conformity:control_index"))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(
+            response.url,
+            f'{reverse("conformity:control_index")}?status=TOBE',
+        )
+
+        response = self.client.get(response.url)
+        self.assertEqual(response.status_code, 200)
+        records = [
+            row.record for row in response.context["table"].page.object_list
+        ]
+        self.assertIn(pending_control, records)
+        self.assertNotIn(completed_control, records)
+        self.assertEqual(response.context["filter"].form["status"].value(), "TOBE")
+        self.assertContains(response, 'btn btn-primary dropdown-toggle')
+        self.assertNotContains(response, reverse("conformity:control_create"))
+        self.assertNotContains(response, reverse("conformity:indicator_create"))
+
+    def test_periodic_controls_status_filter_can_be_cleared(self):
+        organization = Organization.objects.create(name="Periodic all org")
+        control = Control.objects.create(
+            title="Completed visible control",
+            frequency=Control.Frequency.YEARLY,
+        )
+        point = next(
+            item for item in control.get_controlpoint()
+            if item.is_current_period()
+        )
+        point.status = Evidence.Status.EVALUATED
+        point.result = Evidence.Result.POSITIVE
+        point.save(update_fields=["status"])
+
+        response = self.client.get(
+            reverse("conformity:control_index"),
+            {"status": ""},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        records = [
+            row.record for row in response.context["table"].page.object_list
+        ]
+        self.assertIn(control, records)
+        self.assertNotContains(response, 'btn btn-primary dropdown-toggle')
+
+    def test_periodic_controls_name_uses_shared_primary_column_style(self):
+        table = PeriodicEvidenceTable([])
+        column = table.columns["name"]
+
+        self.assertFalse(hasattr(column.column, "template_code"))
+        self.assertIn("col-2", column.attrs["th"]["class"])
+        self.assertIn("text-start", column.attrs["th"]["class"])
+        self.assertIn("table-primary-link", column.attrs["a"]["class"])
+
+    def test_periodic_controls_columns_are_sortable_like_other_tables(self):
+        table = PeriodicControlTable([])
+
+        for column_name in (
+            "name", "organization", "type", "level", "frequency", "last_result",
+        ):
+            with self.subTest(column=column_name):
+                self.assertTrue(table.columns[column_name].orderable)
+
+        self.assertFalse(table.columns["requirements"].orderable)
+
+    def test_periodic_controls_sort_by_name(self):
+        organization = Organization.objects.create(name="Sorting org")
+        Control.objects.create(
+            title="Alpha periodic source",
+            frequency=Control.Frequency.YEARLY,
+        )
+        Control.objects.create(
+            title="Zulu periodic source",
+            frequency=Control.Frequency.YEARLY,
+        )
+
+        response = self.client.get(
+            reverse("conformity:control_index"),
+            {"status": "", "sort": "-name"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        names = [
+            row.record.periodic_name
+            for row in response.context["table"].page.object_list
+            if row.record.periodic_name
+            in {"Alpha periodic source", "Zulu periodic source"}
+        ]
+        self.assertEqual(names, ["Zulu periodic source", "Alpha periodic source"])
+
+    def test_periodic_control_name_links_to_result_editor(self):
+        organization = Organization.objects.create(name="Periodic title link org")
+        control = Control.objects.create(
+            title="Linked periodic control",
+            frequency=Control.Frequency.YEARLY,
+        )
+        point = next(
+            item for item in control.get_controlpoint()
+            if item.is_current_period()
+        )
+
+        response = self.client.get(
+            reverse("conformity:control_index"),
+            {"status": "TOBE"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            f'href="{reverse("conformity:control_detail", args=[control.pk])}"',
+        )
+        self.assertContains(
+            response,
+            f'href="{reverse("conformity:controlpoint_form", args=[point.pk])}"',
+        )
+        self.assertContains(response, "Linked periodic control")
+
+    def test_periodic_controls_have_one_row_per_source_not_per_point(self):
+        organization = Organization.objects.create(name="Source identity org")
+        control = Control.objects.create(
+            title="Source identity control",
+            frequency=Control.Frequency.QUARTERLY,
+        )
+        points = list(control.get_controlpoint())
+        self.assertGreater(len(points), 1)
+
+        response = self.client.get(
+            reverse("conformity:control_index"),
+            {"status": ""},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        rows = [
+            row.record for row in response.context["table"].page.object_list
+        ]
+        self.assertEqual(sum(item == control for item in rows), 1)
+        self.assertFalse(any(isinstance(item, ControlPoint) for item in rows))
+        self.assertFalse(any(isinstance(item, IndicatorPoint) for item in rows))
+
+    def test_periodic_controls_include_indicator_evidence(self):
+        organization = Organization.objects.create(name="Indicator queue org")
+        indicator = Indicator.objects.create(
+            name="MFA coverage",
+            responsible=self.user,
+            frequency=Indicator.Frequency.YEARLY,
+            worst=0,
+            critical=20,
+            warning=80,
+            best=100,
+        )
+        point = indicator.get_current_point()
+
+        self.assertIsNotNone(point)
+        self.assertEqual(point.status, IndicatorPoint.Status.TOBEEVALUATED)
+
+        response = self.client.get(
+            reverse("conformity:control_index"),
+            {"status": "TOBE"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "MFA coverage")
+        self.assertContains(response, "Indicator")
+        self.assertContains(
+            response,
+            reverse("conformity:indicatorpoint_form", args=[point.pk]),
+        )
+        self.assertContains(response, "Enter value")
 
     def test_control_detail_renders_generated_control_points(self):
         control = Control.objects.create(

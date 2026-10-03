@@ -486,7 +486,6 @@ class ConformityGetRelatedTests(TestCase):
         # Control + a current ControlPoint in an evaluable status
         self.ctrl = Control.objects.create(
             title="Quarterly Check",
-            organization=self.org,
             level=Control.Level.FIRST,
             frequency=Control.Frequency.QUARTERLY,
         )
@@ -563,7 +562,7 @@ class ConformityRelationAndGuardsTests(TestCase):
         self.c_child = Conformity.objects.get(organization=self.org, requirement=self.child)
 
     def test_get_control(self):
-        ctl = Control.objects.create(title="C1", organization=self.org)
+        ctl = Control.objects.create(title="C1",)
         ctl.conformity.add(self.c_child)
         res = list(self.c_child.get_control())
         self.assertEqual(res, [ctl])
@@ -574,7 +573,7 @@ class ConformityRelationAndGuardsTests(TestCase):
         a.associated_conformity.add(self.c_child)
 
         # ControlPoint for "today" window and set as NONCOMPLIANT
-        ctl = Control.objects.create(title="C2", organization=self.org)
+        ctl = Control.objects.create(title="C2",)
         ctl.conformity.add(self.c_child)
         # generate CPs
         Control.controlpoint_bootstrap(ctl)
@@ -585,7 +584,7 @@ class ConformityRelationAndGuardsTests(TestCase):
         cp.period_start_date = date.today() - timedelta(days=1)
         cp.period_end_date = date.today() + timedelta(days=1)
         ControlPoint.update_status(cp)
-        cp.status = ControlPoint.Status.NONCOMPLIANT
+        cp.result = Evidence.Result.NEGATIVE
         cp.save()
 
         # Default mode: actions + controls
@@ -641,7 +640,7 @@ class ConformityRelationAndGuardsTests(TestCase):
         # With negative evidence present, 100% must be refused
         a = Action.objects.create(title="A2", organization=self.org, status=Action.Status.ANALYSING)
         a.associated_conformity.add(self.c_child)
-        ctl = Control.objects.create(title="C3", organization=self.org)
+        ctl = Control.objects.create(title="C3",)
         ctl.conformity.add(self.c_child)
         Control.controlpoint_bootstrap(ctl)
         cp = ctl.get_controlpoint().first()
@@ -649,7 +648,7 @@ class ConformityRelationAndGuardsTests(TestCase):
         cp.period_start_date = date.today() - timedelta(days=1)
         cp.period_end_date = date.today() + timedelta(days=1)
         ControlPoint.update_status(cp)
-        cp.status = ControlPoint.Status.NONCOMPLIANT
+        cp.result = Evidence.Result.NEGATIVE
         cp.save()
         changed = self.c_child.set_status_from(100, Conformity.StatusJustification.CONTROL)
         self.assertFalse(changed)
@@ -667,32 +666,44 @@ class AuditAndFindingExtraTests(TestCase):
         self.assertEqual(self.audit.get_positive_findings().count(), 1)
         self.assertEqual(self.audit.get_other_findings().count(), 1)
 
-    def test_finding_helpers_and_archived_logic(self):
-        f = Finding.objects.create(short_description="x", audit=self.audit, severity=Finding.Severity.MAJOR)
-        # is_active True by default (not archived, not positive)
+    def test_finding_helpers_and_validity_logic(self):
+        f = Finding.objects.create(
+            short_description="x",
+            audit=self.audit,
+            severity=Finding.Severity.MAJOR,
+        )
         self.assertTrue(f.is_active())
+        self.assertEqual(f.result, Evidence.Result.NEGATIVE)
+        self.assertEqual(f.source_type, Evidence.SourceType.FINDING)
 
         # cvss validation
         f.cvss = 10.1
         with self.assertRaises(ValidationError):
             f.clean()
-        f.cvss = 0.05
+        f.cvss = -0.01
         with self.assertRaises(ValidationError):
             f.clean()
+        f.cvss = 0
+        f.clean()
 
-        # update_archived with actions
-        a1 = Action.objects.create(title="A", organization=self.org, status=Action.Status.ANALYSING)
+        # Active actions keep the Finding valid.
+        a1 = Action.objects.create(
+            title="A",
+            organization=self.org,
+            status=Action.Status.ANALYSING,
+        )
         a1.associated_findings.add(f)
-        f.update_archived()
+        original_valid_to = f.valid_to
+        f.close_if_actions_completed()
         f.refresh_from_db()
-        self.assertFalse(f.archived)  # at least one active
+        self.assertEqual(f.valid_to, original_valid_to)
 
-        # all actions inactive -> archived True
+        # All linked actions completed -> Evidence validity is shortened to now.
         a1.status = Action.Status.ENDED
         a1.save()
-        f.update_archived()
         f.refresh_from_db()
-        self.assertTrue(f.archived)
+        self.assertLess(f.valid_to, original_valid_to)
+        self.assertFalse(f.is_active())
 
     def test_get_absolute_urls_exist(self):
         f = Finding.objects.create(short_description="url", audit=self.audit, severity=Finding.Severity.MINOR)
@@ -711,7 +722,7 @@ class AuditAndFindingExtraTests(TestCase):
 class ControlAndControlPointExtrasTests(TestCase):
     def setUp(self):
         self.org = Organization.objects.create(name="Org Z")
-        self.ctl = Control.objects.create(title="Ctl", organization=self.org)
+        self.ctl = Control.objects.create(title="Ctl",)
 
     def test_control_str_and_get_controlpoint_and_signal_idempotent(self):
         # initial creation generates CPs via callback

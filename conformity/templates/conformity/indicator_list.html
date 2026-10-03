@@ -3,7 +3,7 @@
 {% load ui_tags %}
 
 {% block header %}
-    <h1 class="h1 bi bi-speedometer"> Indicators </h1>
+    <h1 class="h1 bi bi-speedometer"> Periodic indicators </h1>
 {% endblock %}
 
 {% block content %}
@@ -22,11 +22,11 @@
                 <div class="btn-group float-end">
                     <a class="btn btn-sm btn-primary bi bi-eye"
                        href="{% url 'conformity:indicator_detail' indicator.pk %}">
-                        <span class="visually-hidden">View indicator</span>
+                        <span class="visually-hidden">View periodic indicator</span>
                     </a>
                     <a class="btn btn-sm btn-warning bi bi-pencil-square"
                        href="{% url 'conformity:indicator_form' indicator.pk %}">
-                        <span class="visually-hidden">Edit indicator</span>
+                        <span class="visually-hidden">Edit periodic indicator</span>
                     </a>
                 </div>
             </div>
@@ -37,15 +37,15 @@
                     No measurement point for the current period.
                 </h5>
                 <a href="{% url 'conformity:indicator_form' indicator.pk %}">
-                    Update the indicator to generate its periods
+                    Update the periodic indicator to generate its periods
                 </a>
-            {% elif point.status == "CRIT" %}
+            {% elif point.value != None and point.result == "NEG" %}
                 <h5 class="card-title fs-1 text-danger">
                     {{ point.value }}
-            {% elif point.status == "WARN" %}
+            {% elif point.value != None and point.result == "NEU" %}
                 <h5 class="card-title fs-1 text-warning">
                     {{ point.value }}
-            {% elif point.status == "OK" %}
+            {% elif point.value != None and point.result == "POS" %}
                 <h5 class="card-title fs-1 text-success">
                     {{ point.value }}
             {% else %}

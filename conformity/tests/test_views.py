@@ -1,3 +1,4 @@
+from datetime import timedelta
 from unittest import mock
 
 from django.contrib.auth import get_user_model
@@ -7,9 +8,10 @@ from django.utils import timezone
 from constance.test import override_config
 
 from conformity import views
+from conformity.forms import FindingForm
 from conformity.models import (
     Organization, Framework, Requirement, Conformity,
-    Audit, Action, Finding, Control, ControlPoint, Attachment, Indicator, IndicatorPoint
+    Audit, Action, Evidence, Finding, Control, ControlPoint, Attachment, Indicator, IndicatorPoint
 )
 from conformity.views import ConformityUpdateView
 
@@ -80,7 +82,8 @@ class BaseDataMixin:
             audit=self.audit,
             short_description="MajA",
             severity=Finding.Severity.MAJOR,
-            archived=True,
+            valid_from=timezone.now() - timedelta(days=1),
+            valid_to=timezone.now() - timedelta(minutes=1),
         )
 
         # Actions
@@ -94,7 +97,6 @@ class BaseDataMixin:
         # Controls and ControlPoints
         self.ctrl_q = Control.objects.create(
             title="CtrlQ",
-            organization=self.org,
             frequency=Control.Frequency.QUARTERLY,
             level=Control.Level.FIRST,
         )
@@ -140,9 +142,15 @@ class HomeViewContext(BaseDataMixin, TestCase):
 class FindingIndexView(BaseDataMixin, TestCase):
     FRAMEWORK_NAME = "FW-FindingIndex"
 
-    def test_queryset_filters_severity_and_archived(self):
-        """FindingIndexView should exclude archived findings."""
-        request = self.factory.get("/findings")
+    def test_default_filters_preserve_active_findings_view(self):
+        """Default URL filters preserve the former Active findings result."""
+        request = self.factory.get(
+            "/findings",
+            {
+                "nature": ["CRT", "MAJ", "MIN", "OBS"],
+                "status": "active",
+            },
+        )
         request.user = self.user
         resp = views.FindingIndexView.as_view()(request)
         self.assertEqual(resp.status_code, 200)
@@ -150,6 +158,19 @@ class FindingIndexView(BaseDataMixin, TestCase):
         qs = list(resp.context_data["object_list"])
         self.assertIn(self.find_obs, qs)
         self.assertNotIn(self.find_maj_arch, qs)
+
+    def test_finding_queryset_can_show_invalidated_items(self):
+        request = self.factory.get(
+            "/findings",
+            {"status": "invalidated"},
+        )
+        request.user = self.user
+        resp = views.FindingIndexView.as_view()(request)
+        self.assertEqual(resp.status_code, 200)
+
+        qs = list(resp.context_data["object_list"])
+        self.assertIn(self.find_maj_arch, qs)
+        self.assertNotIn(self.find_obs, qs)
 
 
 class ConformityIndexViews(BaseDataMixin, TestCase):
@@ -164,20 +185,25 @@ class ConformityIndexViews(BaseDataMixin, TestCase):
         objs = list(resp.context_data["object_list"])
         self.assertEqual(objs, [self.c_root])
 
-    def test_progress_bar_shows_zero_when_not_yet_evaluated(self):
+    def test_status_bar_shows_not_evaluated_and_leaf_distribution(self):
         self.client.force_login(self.user)
         url = reverse('conformity:conformity_index')
+
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'style="width: 0%"')
-        self.assertContains(response, 'aria-valuenow="0"')
+        self.assertContains(
+            response,
+            'aria-label="Evidence status: 0 compliant, 0 partially compliant, '
+            '0 non-compliant, 0 inconclusive, 2 not evaluated"',
+        )
         self.assertNotContains(response, 'None%')
 
-        self.c_root.status = 80
-        self.c_root.save(update_fields=['status'])
+        self.c_a.evidence_state = Conformity.EvidenceState.COMPLIANT
+        self.c_a.save(update_fields=['evidence_state'])
+
         response = self.client.get(url)
-        self.assertContains(response, 'style="width: 80%"')
-        self.assertContains(response, 'aria-valuenow="80"')
+        self.assertContains(response, 'style="width: 50.0%"')
+        self.assertContains(response, 'title="Compliant: 1"')
 
     def test_conformity_detail_index_queryset_scoped(self):
         """ConformityDetailIndexView must filter by org and framework (pol)."""
@@ -247,7 +273,6 @@ class SharedUxComponentsTests(BaseDataMixin, TestCase):
         indicator = Indicator.objects.create(
             name="Toolbar indicator",
             responsible=self.user,
-            organization=self.org,
         )
         indicator_point = IndicatorPoint.objects.create(
             indicator=indicator,
@@ -273,7 +298,14 @@ class SharedUxComponentsTests(BaseDataMixin, TestCase):
                 self.assertContains(response, "form-toolbar")
                 self.assertContains(response, 'name="action" value="save"')
                 self.assertContains(response, 'name="action" value="save_stay"')
-                self.assertContains(response, "btn btn-outline-danger w-100")
+                self.assertContains(response, "btn btn-outline-secondary w-100")
+                self.assertContains(response, "btn btn-outline-primary w-100")
+                content = response.content.decode()
+                self.assertLess(content.index("Cancel"), content.index("Save &amp; Stay"))
+                self.assertLess(
+                    content.index("Save &amp; Stay"),
+                    content.rindex("> Save"),
+                )
 
     def test_save_next_only_appears_on_conformity_form(self):
         conformity_response = self.client.get(
@@ -370,7 +402,6 @@ class SharedUxComponentsTests(BaseDataMixin, TestCase):
             views.FrameworkIndexView,
             views.ConformityIndexView,
             views.ActionIndexView,
-            views.ControlIndexView,
             views.ControlPointIndexView,
             views.AttachmentIndexView,
             views.AuditLogDetailView,
@@ -408,9 +439,12 @@ class SharedUxComponentsTests(BaseDataMixin, TestCase):
 
     def test_empty_state_without_create_url_does_not_offer_create(self):
         Finding.objects.all().delete()
-        response = self.client.get(reverse("conformity:finding_index"))
+        response = self.client.get(
+            reverse("conformity:finding_index"),
+            follow=True,
+        )
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "No active findings are available.")
+        self.assertContains(response, "No results match the active filters.")
         self.assertNotContains(response, "> Create</a>")
 
     def test_indicator_cards_use_shared_empty_state(self):
@@ -432,3 +466,148 @@ class SharedUxComponentsTests(BaseDataMixin, TestCase):
         self.assertContains(response, self.ctrl_q.title)
         self.assertContains(response, 'class="header-back-link"')
         self.assertContains(response, reverse("conformity:control_index"))
+
+class FindingEvidenceFormTests(TestCase):
+    def setUp(self):
+        self.organization = Organization.objects.create(name="Finding form organization")
+        self.audit = Audit.objects.create(
+            organization=self.organization,
+            auditor="Auditor",
+        )
+
+    def test_new_finding_defaults_and_optional_audit(self):
+        before = timezone.now()
+        form = FindingForm()
+        after = timezone.now()
+
+        self.assertFalse(form.fields["audit"].required)
+        self.assertEqual(form.fields["cvss"].widget.attrs["min"], 0)
+        self.assertEqual(form.fields["cvss"].widget.attrs["max"], 10)
+        self.assertEqual(form.fields["cvss"].widget.attrs["step"], 0.1)
+
+        valid_from = form.initial["valid_from"]
+        valid_to = form.initial["valid_to"]
+        self.assertGreaterEqual(valid_from, before)
+        self.assertLessEqual(valid_from, after)
+        self.assertEqual(valid_to.year, valid_from.year + 3)
+        self.assertEqual(valid_to.month, valid_from.month)
+        self.assertEqual(valid_to.day, valid_from.day)
+
+    def test_finding_can_be_created_without_audit(self):
+        finding = Finding(
+            source_type=Evidence.SourceType.FINDING,
+            short_description="Discovery outside audit",
+            severity=Finding.Severity.MAJOR,
+            cvss=0,
+        )
+        finding.full_clean(exclude=["valid_from"])
+        finding.save()
+
+        self.assertIsNone(finding.audit)
+        self.assertEqual(finding.cvss, 0)
+        self.assertIsNotNone(finding.valid_from)
+        self.assertIsNotNone(finding.valid_to)
+
+
+class ConformityPeriodicEvidenceCreationTests(BaseDataMixin, TestCase):
+    FRAMEWORK_NAME = "FW-ConformityPeriodicEvidenceCreation"
+
+    def setUp(self):
+        super().setUp()
+        self.client.force_login(self.user)
+
+    def test_evidence_creation_shows_organization_before_requirements(self):
+        self.org.description = "Organization description for evidence context."
+        self.org.save(update_fields=["description"])
+
+        response = self.client.get(
+            reverse("conformity:document_evidence_create", args=[self.c_a.pk])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Associated organization")
+        self.assertContains(response, self.org.name)
+        self.assertContains(response, self.org.description)
+        content = response.content.decode()
+        self.assertLess(
+            content.index("Associated organization"),
+            content.index("Associated requirements"),
+        )
+
+    def test_leaf_conformity_offers_control_and_indicator_creation(self):
+        response = self.client.get(
+            reverse("conformity:conformity_form", args=[self.c_a.pk])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            f'{reverse("conformity:control_create")}?conformity={self.c_a.pk}',
+        )
+        self.assertContains(
+            response,
+            f'{reverse("conformity:indicator_create")}?conformity={self.c_a.pk}',
+        )
+
+    def test_control_create_from_conformity_preselects_target_and_returns(self):
+        url = f'{reverse("conformity:control_create")}?conformity={self.c_a.pk}'
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["form"].fields["conformity"].disabled)
+        self.assertEqual(
+            list(response.context["form"].initial["conformity"]),
+            [self.c_a],
+        )
+
+        response = self.client.post(
+            url,
+            {
+                "title": "Control from conformity",
+                "description": "",
+                "frequency": Control.Frequency.YEARLY,
+                "level": Control.Level.FIRST,
+            },
+        )
+
+        control = Control.objects.get(title="Control from conformity")
+        self.assertEqual(list(control.conformity.all()), [self.c_a])
+        self.assertRedirects(
+            response,
+            reverse("conformity:conformity_form", args=[self.c_a.pk]),
+        )
+
+    def test_indicator_create_from_conformity_preselects_target_and_returns(self):
+        url = f'{reverse("conformity:indicator_create")}?conformity={self.c_a.pk}'
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["form"].fields["conformity"].disabled)
+        self.assertEqual(
+            list(response.context["form"].initial["conformity"]),
+            [self.c_a],
+        )
+
+        response = self.client.post(
+            url,
+            {
+                "name": "Indicator from conformity",
+                "goal": "",
+                "source": "",
+                "formula": "",
+                "worst": 0,
+                "critical": 20,
+                "warning": 80,
+                "best": 100,
+                "responsible": self.user.pk,
+                "frequency": Indicator.Frequency.QUARTERLY,
+            },
+        )
+
+        indicator = Indicator.objects.get(name="Indicator from conformity")
+        self.assertEqual(list(indicator.conformity.all()), [self.c_a])
+        self.assertRedirects(
+            response,
+            reverse("conformity:conformity_form", args=[self.c_a.pk]),
+        )
+

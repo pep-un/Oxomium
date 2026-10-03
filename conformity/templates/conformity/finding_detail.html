@@ -13,14 +13,35 @@
 
 {% block content %}
 
-    {% if finding.archived %}
+    {% if not finding.is_valid_at %}
     <p class="alert alert-dark" role="alert">
-        <i class="bi bi-archive"></i> This finding is archived.
+        <i class="bi bi-clock-history"></i>
+        This finding is no longer valid evidence
+        {% if finding.valid_to %}since {{ finding.valid_to|date:"d-M-Y H:i" }}{% endif %}.
     </p>
     {% endif %}
+    {% if finding.audit %}
     <p class="alert alert-info">
-        <i class="bi bi-ui-checks-grid"></i> Audit of {{ audit.organization }} realised by {{ audit.auditor }} ({{ audit.get_type }}).
-        <a class="text-info" href="{% url 'conformity:audit_detail' finding.audit.id %}"> See audit </a>
+        <i class="bi bi-ui-checks-grid"></i>
+        Audit of {{ finding.audit.organization }} realised by {{ finding.audit.auditor }}
+        ({{ finding.audit.get_type }}).
+        <a class="text-info" href="{% url 'conformity:audit_detail' finding.audit.id %}">See audit</a>
+    </p>
+    {% else %}
+    <p class="alert alert-secondary">
+        <i class="bi bi-exclamation-diamond"></i>
+        Finding recorded outside an audit.
+    </p>
+    {% endif %}
+
+    <h2>Evidence validity</h2>
+    <p>
+        Valid from {{ finding.valid_from|date:"d-M-Y H:i" }}
+        {% if finding.valid_to %}
+            to {{ finding.valid_to|date:"d-M-Y H:i" }}
+        {% else %}
+            · no expiry
+        {% endif %}
     </p>
 
     <h2>Description</h2>
@@ -58,7 +79,7 @@
         {% empty %}
             <p class="list-group-item list-group-item-warning text-center my-0">No action associated</p>
         {% endfor %}
-        {% if not finding.archived %}
+        {% if finding.is_valid_at %}
             <a class="list-group-item list-group-item-action list-group-item-success text-center text-success"  href="{% url 'conformity:action_create' %}?finding={{ finding.id }}">
                 <i class="bi bi-plus-circle"></i> Register a corrective action
             </a>
@@ -70,7 +91,9 @@
         <p> {{ finding.reference }} </p>
     {% endif %}
 
-    {% if not finding.archived %}
+    {% include "includes/attachment_panel.html" with attachments=finding.attachments.all owner=finding owner_type="evidence" editable=False %}
+
+    {% if finding.is_valid_at %}
         <a href="{% url 'conformity:finding_form' finding.id %}"
            class="my-3 btn btn-primary bi bi-pencil-square"> Edit the finding</a>
     {% endif %}

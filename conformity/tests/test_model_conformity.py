@@ -7,7 +7,7 @@ from django.utils import timezone
 
 from conformity.models import (
     Framework, Organization, Requirement, Conformity,
-    Action, Control, ControlPoint
+    Action, Control, ControlPoint, Evidence
 )
 
 def _uniq(s: str) -> str:
@@ -72,13 +72,13 @@ class ConformityModelFullTests(TestCase):
             control=cls.ctrl,
             period_start_date=today - timedelta(days=10),
             period_end_date=today + timedelta(days=10),
-            status=ControlPoint.Status.NONCOMPLIANT,
+            result=Evidence.Result.NEGATIVE,
         )
         cls.cp_past_ok = ControlPoint.objects.create(
             control=cls.ctrl,
             period_start_date=today - timedelta(days=90),
             period_end_date=today - timedelta(days=60),
-            status=ControlPoint.Status.COMPLIANT,
+            result=Evidence.Result.POSITIVE,
         )
 
     # ---------- Basic helpers ----------
@@ -217,10 +217,19 @@ class ConformityModelFullTests(TestCase):
         self.assertFalse(again)
 
     def test_set_status_from_expert_guard_on_non_leaf(self):
-        changed = self.c_root.set_status_from(42, Conformity.StatusJustification.EXPERT)
+        self.c_root.refresh_from_db()
+        previous_status = self.c_root.status
+        previous_state = self.c_root.evidence_state
+
+        changed = self.c_root.set_status_from(
+            42,
+            Conformity.StatusJustification.EXPERT,
+        )
+
         self.assertFalse(changed)
         self.c_root.refresh_from_db()
-        self.assertIsNone(self.c_root.status)
+        self.assertEqual(self.c_root.status, previous_status)
+        self.assertEqual(self.c_root.evidence_state, previous_state)
 
     def test_set_status_from_action_and_control_guards(self):
         # Trying to force 100 with negatives present -> must be rejected
@@ -233,7 +242,7 @@ class ConformityModelFullTests(TestCase):
         self.a_in_progress.status = Action.Status.ENDED
         self.a_in_progress.active = False
         self.a_in_progress.save()
-        self.cp_negative.status = ControlPoint.Status.COMPLIANT
+        self.cp_negative.result = Evidence.Result.POSITIVE
         self.cp_negative.save()
 
         # Now, setting 0 without negatives should not rejected

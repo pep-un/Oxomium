@@ -1,12 +1,19 @@
 {% if controlpoint.status == "SCHD" %}
     <i class="bi bi-hexagon text-dark"></i>
+    {{ controlpoint.get_status_display }}
 {% elif controlpoint.status == "TOBE" %}
     <i class="bi bi-hexagon-fill text-info"></i>
-{% elif controlpoint.status == "NOK" %}
+    {{ controlpoint.get_status_display }}
+{% elif controlpoint.status == "EVAL" and controlpoint.result == "NEG" %}
     <i class="bi bi-hexagon-fill text-danger"></i>
-{% elif controlpoint.status == "OK" %}
+    Non-Compliant
+{% elif controlpoint.status == "EVAL" and controlpoint.result == "POS" %}
     <i class="bi bi-hexagon-fill text-success"></i>
+    Compliant
+{% elif controlpoint.status == "EVAL" %}
+    <i class="bi bi-hexagon-fill"></i>
+    {{ controlpoint.get_result_display }}
 {% elif controlpoint.status == "MISS" %}
     <i class="bi bi-hexagon text-danger"></i>
+    {{ controlpoint.get_status_display }}
 {% endif %}
-{{ controlpoint.get_status_display }}

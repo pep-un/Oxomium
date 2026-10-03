@@ -9,7 +9,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from conformity.forms import IndicatorForm, IndicatorPointForm
-from conformity.models import Indicator, IndicatorPoint
+from conformity.models import Evidence, Indicator, IndicatorPoint
 
 
 class InputParser(HTMLParser):
@@ -83,10 +83,10 @@ class IndicatorBoundsTests(TestCase):
 
     def test_inclusive_boundaries_and_thresholds_have_correct_status(self):
         configurations = (
-            (0, 100, 80, 20, ((0, 'CRIT'), (20, 'CRIT'), (21, 'WARN'), (80, 'WARN'), (81, 'OK'), (100, 'OK'))),
-            (100, 0, 20, 80, ((0, 'OK'), (19, 'OK'), (20, 'WARN'), (79, 'WARN'), (80, 'CRIT'), (100, 'CRIT'))),
-            (-10, -2, -4, -8, ((-10, 'CRIT'), (-6, 'WARN'), (-2, 'OK'))),
-            (5, 5, 5, 5, ((5, 'MISS'),)),
+            (0, 100, 80, 20, ((0, 'NEG'), (20, 'NEG'), (21, 'NEU'), (80, 'NEU'), (81, 'POS'), (100, 'POS'))),
+            (100, 0, 20, 80, ((0, 'POS'), (19, 'POS'), (20, 'NEU'), (79, 'NEU'), (80, 'NEG'), (100, 'NEG'))),
+            (-10, -2, -4, -8, ((-10, 'NEG'), (-6, 'NEU'), (-2, 'POS'))),
+            (5, 5, 5, 5, ((5, 'NEU'),)),
         )
         for worst, best, warning, critical, cases in configurations:
             self.configure(worst, best, warning, critical)
@@ -96,7 +96,8 @@ class IndicatorBoundsTests(TestCase):
                     self.assertEqual(response.status_code, 302)
                     self.point.refresh_from_db()
                     self.assertEqual(self.point.value, value)
-                    self.assertEqual(self.point.status, status)
+                    self.assertEqual(self.point.status, Evidence.Status.EVALUATED)
+                    self.assertEqual(self.point.result, status)
 
     def test_http_rejection_preserves_existing_value_status_and_logs(self):
         self.point.value = 50
@@ -109,7 +110,8 @@ class IndicatorBoundsTests(TestCase):
                 self.assertIn('value', response.context['form'].errors)
                 self.point.refresh_from_db()
                 self.assertEqual(self.point.value, 50)
-                self.assertEqual(self.point.status, 'WARN')
+                self.assertEqual(self.point.status, Evidence.Status.EVALUATED)
+                self.assertEqual(self.point.result, Evidence.Result.NEUTRAL)
                 self.assertEqual(self.point.comment, '')
                 self.assertFalse(LogEntry.objects.get_for_object(self.point).exists())
 
@@ -154,11 +156,13 @@ class IndicatorBoundsTests(TestCase):
         response = self.client.post(self.url, {'value': 0})
         self.assertEqual(response.status_code, 302)
         self.point.refresh_from_db()
-        self.assertEqual(self.point.status, 'OK')
+        self.assertEqual(self.point.status, Evidence.Status.EVALUATED)
+        self.assertEqual(self.point.result, Evidence.Result.POSITIVE)
         entry = LogEntry.objects.get_for_object(self.point).get()
         self.assertEqual(entry.actor, self.user)
         self.assertEqual(entry.changes['value'], ['None', '0'])
-        self.assertEqual(entry.changes['status'], ['SCHD', 'OK'])
+        self.assertEqual(entry.changes['status'], ['TOBE', 'EVAL'])
+        self.assertEqual(entry.changes['result'], ['NEU', 'POS'])
         for name in ('conformity:indicator_index', 'conformity:indicator_detail'):
             url = reverse(name, args=[self.indicator.pk]) if name.endswith('detail') else reverse(name)
             response = self.client.get(url)
@@ -175,7 +179,8 @@ class IndicatorBoundsTests(TestCase):
         self.point.value = 90
         self.point.save(update_fields=['value'])
         self.point.refresh_from_db()
-        self.assertEqual(self.point.status, 'OK')
+        self.assertEqual(self.point.status, Evidence.Status.EVALUATED)
+        self.assertEqual(self.point.result, Evidence.Result.POSITIVE)
 
     def test_indicator_create_and_edit_forms_feed_point_bounds(self):
         data = {
@@ -198,7 +203,7 @@ class IndicatorBoundsTests(TestCase):
         self.assertIn('value', response.context['form'].errors)
         self.assertEqual(self.client.post(url, {'value': 0}).status_code, 302)
         point.refresh_from_db()
-        self.assertEqual((point.value, point.status), (0, 'OK'))
+        self.assertEqual((point.value, point.status, point.result), (0, 'EVAL', 'POS'))
 
     def test_admin_rejects_out_of_bounds_measurement(self):
         self.user.is_staff = self.user.is_superuser = True

@@ -1,9 +1,13 @@
 import django_tables2 as tables
 from auditlog.models import LogEntry
+from django.urls import reverse
 from django.utils.html import format_html
 from django_tables2.utils import A, OrderByTuple
 
-from .models import Action, Attachment, Audit, Conformity, Control, ControlPoint, Finding, Framework, Organization
+from .models import (
+    Action, Attachment, Audit, Conformity, Control, ControlPoint, Evidence,
+    Finding, Framework, Indicator, Organization,
+)
 
 
 CENTER = {"cell": {"class": "text-center"}}
@@ -164,6 +168,15 @@ class FindingTable(BaseRichTable):
         linkify=("conformity:finding_detail", [A("pk")]),
         attrs=PRIMARY_COLUMN,
     )
+    def render_name(self, value, record):
+        if record.valid_to is not None:
+            return format_html(
+                '{} <i class="bi bi-clock-history text-body-secondary ms-1" '
+                'title="Invalidated" aria-label="Invalidated"></i>',
+                value,
+            )
+        return value
+
     short_description = tables.Column(verbose_name="Description")
     cvss = tables.TemplateColumn(
         verbose_name="CVSS",
@@ -173,14 +186,22 @@ class FindingTable(BaseRichTable):
         order_by=("cvss",),
         attrs=CENTER,
     )
-    audit = tables.Column(
+    audit = tables.TemplateColumn(
         verbose_name="Audit campaign",
-        linkify=("conformity:audit_detail", [A("audit__pk")]),
+        template_code="""
+            {% if record.audit %}
+                <a href="{% url 'conformity:audit_detail' record.audit.pk %}"
+                   class="btn btn-sm btn-outline-secondary w-75 mx-auto">
+                    {{ record.audit }}
+                </a>
+            {% else %}
+                <span class="text-body-secondary">Outside audit</span>
+            {% endif %}
+        """,
         order_by=("audit__name",),
         attrs={
             "th": {"class": "text-center"},
             "td": {"class": "text-center"},
-            "a": {"class": "btn btn-sm btn-outline-secondary w-75 mx-auto"},
         },
     )
     associated_actions = tables.TemplateColumn(
@@ -269,36 +290,197 @@ class ConformityTable(BaseRichTable):
             </a>
         """,
         order_by=("organization__name", "requirement__framework__name"),
-        attrs=PRIMARY_COLUMN,
+        attrs={
+            "th": {"class": "text-start", "style": "width: 35%;"},
+            "td": {"class": "text-start", "style": "width: 35%;"},
+            "a": {"class": "table-primary-link"},
+        },
     )
     requirements = tables.TemplateColumn(
         verbose_name="Requirements",
         template_code="{{ record.get_leaf|length }}",
         orderable=False,
-        attrs=CENTER,
+        attrs={
+            "th": {"class": "text-center text-nowrap", "style": "width: 10%;"},
+            "td": {"class": "text-center", "style": "width: 10%;"},
+        },
     )
-    completeness = tables.TemplateColumn(
-        template_code="{{ record.get_completeness }} %",
-        orderable=False,
-        attrs=CENTER,
-    )
-    status = tables.TemplateColumn(
+    evidence_status = tables.TemplateColumn(
         verbose_name="Status",
         template_code="""
-            <div class="progress" role="progressbar" aria-valuenow="{{ record.status|default_if_none:'0' }}"
-                 aria-valuemin="0" aria-valuemax="100">
-                <div class="progress-bar" style="width: {{ record.status|default_if_none:'0' }}%">
-                    {{ record.status|default_if_none:"0" }}%
+            {% with distribution=record.get_evidence_state_distribution %}
+                <div class="progress"
+                     role="img"
+                     aria-label="Evidence status: {{ distribution.compliant_count }} compliant, {{ distribution.partial_count }} partially compliant, {{ distribution.non_compliant_count }} non-compliant, {{ distribution.inconclusive_count }} inconclusive, {{ distribution.not_evaluated_count }} not evaluated"
+                     style="height: 1.5rem;">
+                    {% if distribution.compliant_pct %}
+                        <div class="progress-bar bg-success"
+                             style="width: {{ distribution.compliant_pct }}%"
+                             title="Compliant: {{ distribution.compliant_count }}">
+                            {{ distribution.compliant_count }}
+                        </div>
+                    {% endif %}
+                    {% if distribution.partial_pct %}
+                        <div class="progress-bar bg-warning text-dark"
+                             style="width: {{ distribution.partial_pct }}%"
+                             title="Partially compliant: {{ distribution.partial_count }}">
+                            {{ distribution.partial_count }}
+                        </div>
+                    {% endif %}
+                    {% if distribution.non_compliant_pct %}
+                        <div class="progress-bar bg-danger"
+                             style="width: {{ distribution.non_compliant_pct }}%"
+                             title="Non-compliant: {{ distribution.non_compliant_count }}">
+                            {{ distribution.non_compliant_count }}
+                        </div>
+                    {% endif %}
+                    {% if distribution.inconclusive_pct %}
+                        <div class="progress-bar bg-secondary progress-bar-striped text-white"
+                             style="width: {{ distribution.inconclusive_pct }}%; background-image: repeating-linear-gradient(45deg, rgba(255,255,255,.18) 0, rgba(255,255,255,.18) .55rem, transparent .55rem, transparent 1.1rem);"
+                             title="Inconclusive: {{ distribution.inconclusive_count }}">
+                            {{ distribution.inconclusive_count }}
+                        </div>
+                    {% endif %}
                 </div>
-            </div>
+            {% endwith %}
         """,
-        order_by=("status",),
-        attrs=CENTER,
+        orderable=False,
+        attrs={
+            "th": {"class": "text-center", "style": "width: 55%;"},
+            "td": {"class": "text-center", "style": "width: 55%;"},
+        },
     )
     class Meta(BaseRichTable.Meta):
         model = Conformity
-        fields = ("status",)
-        sequence = ("conformity", "requirements", "completeness", "status")
+        fields = ()
+        sequence = ("conformity", "requirements", "evidence_status")
+
+
+def periodic_source_url(record):
+    if isinstance(record, Control):
+        return reverse("conformity:control_detail", args=[record.pk])
+    if isinstance(record, Indicator):
+        return reverse("conformity:indicator_detail", args=[record.pk])
+    return None
+
+
+class PeriodicControlTable(BaseRichTable):
+    name = tables.Column(
+        accessor="periodic_name",
+        verbose_name="Name",
+        linkify=periodic_source_url,
+        order_by=("periodic_name",),
+        attrs=PRIMARY_COLUMN,
+    )
+    organization = tables.TemplateColumn(
+        verbose_name="Organization",
+        template_code="""
+            {% for conformity in record.conformity.all %}
+                <a href="{% url 'conformity:organization_detail' conformity.organization.pk %}"
+                   class="btn btn-sm btn-outline-secondary w-75 mx-auto">
+                    {{ conformity.organization }}
+                </a>
+            {% empty %}
+                <span class="text-body-secondary">—</span>
+            {% endfor %}
+        """,
+        order_by=("organization_sort",),
+        attrs=CENTER,
+    )
+    type = tables.Column(
+        accessor="periodic_type",
+        verbose_name="Type",
+        order_by=("periodic_type",),
+        attrs=CENTER,
+    )
+    level = tables.Column(
+        accessor="periodic_level",
+        verbose_name="Level",
+        order_by=("periodic_level",),
+        attrs=CENTER,
+    )
+    frequency = tables.Column(
+        accessor="periodic_frequency",
+        verbose_name="Frequency",
+        order_by=("frequency",),
+        attrs=CENTER,
+    )
+    last_result = tables.TemplateColumn(
+        verbose_name="Last result",
+        template_code="""
+            {% with point=record.periodic_point %}
+                {% if not point %}
+                    <span class="text-body-secondary">—</span>
+                {% elif record.periodic_kind == 'CTRL' %}
+                    {% if point.status == 'TOBE' %}
+                        <a href="{% url 'conformity:controlpoint_form' point.pk %}"
+                           class="btn btn-sm btn-outline-primary w-75 mx-auto bi bi-pencil-square">
+                            Evaluate
+                        </a>
+                    {% else %}
+                        {% include 'conformity/includes/controlpoint_status.html' with controlpoint=point %}
+                    {% endif %}
+                {% else %}
+                    {% if point.status == 'TOBE' %}
+                        <a href="{% url 'conformity:indicatorpoint_form' point.pk %}"
+                           class="btn btn-sm btn-outline-primary w-75 mx-auto bi bi-pencil-square">
+                            Enter value
+                        </a>
+                    {% elif point.status == 'EVAL' and point.result == 'POS' %}
+                        <span class="badge rounded-pill text-bg-success">
+                            {{ point.value }} · {{ point.get_status_display }}
+                        </span>
+                    {% elif point.status == 'EVAL' and point.result == 'NEU' %}
+                        <span class="badge rounded-pill text-bg-warning">
+                            {{ point.value }} · {{ point.get_status_display }}
+                        </span>
+                    {% elif point.status == 'EVAL' and point.result == 'NEG' %}
+                        <span class="badge rounded-pill text-bg-danger">
+                            {{ point.value }} · {{ point.get_status_display }}
+                        </span>
+                    {% else %}
+                        <span class="badge rounded-pill text-bg-secondary">
+                            {{ point.get_status_display }}
+                        </span>
+                    {% endif %}
+                {% endif %}
+            {% endwith %}
+        """,
+        order_by=("periodic_result_sort",),
+        attrs=CENTER,
+    )
+    requirements = tables.TemplateColumn(
+        verbose_name="Associated requirements",
+        template_code="""
+            <div class="d-grid gap-1">
+                {% for conformity in record.conformity.all %}
+                    <a href="{% url 'conformity:conformity_detail_index' conformity.organization.id conformity.requirement.framework.id %}#requirement-{{ conformity.requirement.id }}"
+                       class="btn btn-sm btn-outline-secondary w-75 mx-auto"
+                       title="{{ conformity.requirement.title }}">
+                        {{ conformity.requirement.full_path }}
+                    </a>
+                {% empty %}
+                    <span class="text-body-secondary">—</span>
+                {% endfor %}
+            </div>
+        """,
+        orderable=False,
+    )
+
+    class Meta(BaseRichTable.Meta):
+        fields = ()
+        sequence = (
+            "name",
+            "organization",
+            "type",
+            "level",
+            "frequency",
+            "last_result",
+            "requirements",
+        )
+
+
+PeriodicEvidenceTable = PeriodicControlTable
 
 
 class ControlTable(BaseRichTable):
@@ -310,14 +492,14 @@ class ControlTable(BaseRichTable):
     organization = tables.TemplateColumn(
         verbose_name="Organization",
         template_code="""
-            {% if record.organization %}
-                <a href="{% url 'conformity:organization_detail' record.organization.pk %}"
+            {% for conformity in record.conformity.all %}
+                <a href="{% url 'conformity:organization_detail' conformity.organization.pk %}"
                    class="btn btn-sm btn-outline-secondary w-75 mx-auto">
-                    {{ record.organization }}
+                    {{ conformity.organization }}
                 </a>
-            {% endif %}
+            {% endfor %}
         """,
-        order_by=("organization__name",),
+        orderable=False,
         attrs=CENTER,
     )
     level = tables.Column(accessor="get_level_display", order_by=("level",), attrs=CENTER)
@@ -384,9 +566,9 @@ class ControlPointTable(BaseRichTable):
         order_by=("control__title",),
         attrs=PRIMARY_COLUMN,
     )
-    period_start_date = tables.DateColumn(verbose_name="Start date", format="d-M-Y")
-    period_end_date = tables.DateColumn(verbose_name="End date", format="d-M-Y")
-    control_user = tables.Column(verbose_name="Owner", default="")
+    valid_from = tables.DateTimeColumn(verbose_name="Start date", format="d-M-Y")
+    valid_to = tables.DateTimeColumn(verbose_name="End date", format="d-M-Y")
+    evaluator = tables.Column(verbose_name="Owner", default="")
     status = tables.TemplateColumn(
         template_code="""
             {% include 'conformity/includes/controlpoint_status.html' with controlpoint=record %}
@@ -396,8 +578,8 @@ class ControlPointTable(BaseRichTable):
 
     class Meta(BaseRichTable.Meta):
         model = ControlPoint
-        fields = ("period_start_date", "period_end_date", "control_user", "status")
-        sequence = ("name", "period_start_date", "period_end_date", "control_user", "status")
+        fields = ("valid_from", "valid_to", "evaluator", "status")
+        sequence = ("name", "valid_from", "valid_to", "evaluator", "status")
 
 
 class AttachmentTable(BaseRichTable):
@@ -460,16 +642,18 @@ class AttachmentTable(BaseRichTable):
                 {% for framework in record.frameworks.all %}
                     <a href="{% url 'conformity:framework_detail' framework.id %}#attachments">
                         <span class="badge text-bg-primary px-3">
-                            <i class="bi bi-card-checklist pe-2"></i>{{ framework }}
+                            <i class="bi bi-journal-bookmark pe-2"></i>{{ framework }}
                         </span>
                     </a>
                 {% endfor %}
-                {% for cp in record.ControlPoint.all %}
-                    <a href="{% url 'conformity:controlpoint_form' cp.id %}">
-                        <span class="badge text-bg-secondary px-3">
-                            <i class="bi bi-clipboard2-check pe-2"></i>{{ cp }}
-                        </span>
-                    </a>
+                {% for evidence in record.evidence.all %}
+                    {% if evidence.controlpoint %}
+                        <a href="{% url 'conformity:controlpoint_form' evidence.controlpoint.id %}">
+                            <span class="badge text-bg-secondary px-3">
+                                <i class="bi bi-clipboard2-check pe-2"></i>{{ evidence.controlpoint }}
+                            </span>
+                        </a>
+                    {% endif %}
                 {% endfor %}
                 {% for audit in record.audits.all %}
                     <a href="{% url 'conformity:audit_detail' audit.id %}">
@@ -478,13 +662,15 @@ class AttachmentTable(BaseRichTable):
                         </span>
                     </a>
                 {% endfor %}
-                {% for point in record.IndicatorPoint.all %}
-                    <a href="{% url 'conformity:indicatorpoint_form' point.id %}">
-                        <span class="badge text-bg-info px-3">
-                            <i class="bi bi-speedometer pe-2"></i>
-                            {{ point.indicator.name }} · {{ point.period_start_date|date:"d-M-Y" }} – {{ point.period_end_date|date:"d-M-Y" }}
-                        </span>
-                    </a>
+                {% for evidence in record.evidence.all %}
+                    {% if evidence.indicatorpoint %}
+                        <a href="{% url 'conformity:indicatorpoint_form' evidence.indicatorpoint.id %}">
+                            <span class="badge text-bg-info px-3">
+                                <i class="bi bi-speedometer pe-2"></i>
+                                {{ evidence.indicatorpoint.indicator.name }} · {{ evidence.indicatorpoint.valid_from|date:"d-M-Y" }} – {{ evidence.indicatorpoint.valid_to|date:"d-M-Y" }}
+                            </span>
+                        </a>
+                    {% endif %}
                 {% endfor %}
             </div>
         """,

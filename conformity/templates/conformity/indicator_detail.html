@@ -16,7 +16,7 @@
 <div class="row">
     <div class="col-9">
         <ul>
-            <li><b>Organization:</b> {{ indicator.organization }}</li>
+            <li><b>Organization:</b> {% for conformity in indicator.conformity.all %}{{ conformity.organization }}{% if not forloop.last %}, {% endif %}{% endfor %}</li>
             <li><b>Responsible:</b> {{ indicator.responsible }}</li>
             <li><b>Frequency:</b> {{ indicator.get_frequency_display }}</li>
             <li><b>Goal:</b> {{ indicator.goal }}</li>

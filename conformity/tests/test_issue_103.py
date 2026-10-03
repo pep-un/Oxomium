@@ -7,7 +7,7 @@ from django.core.management.base import CommandError
 from django.db import IntegrityError, transaction
 from django.test import TestCase
 
-from conformity.models import Conformity, Control, ControlPoint, Framework, Organization, Requirement
+from conformity.models import Conformity, Control, ControlPoint, Evidence, Framework, Organization, Requirement
 from conformity.services.conformities import propagate_applicable_and_comment
 from conformity.services.controls import calendar_periods, generate_controlpoints
 
@@ -124,14 +124,14 @@ class CalendarControlTests(TestCase):
         control = Control.objects.create(title='Issue 103 control')
         generate_controlpoints(control, 2024)
         point = ControlPoint.objects.get(control=control, period_start_date=date(2024, 1, 1))
-        point.status = ControlPoint.Status.COMPLIANT
+        point.status = Evidence.Status.EVALUATED
         point.save(update_fields=['status'])
         control.frequency = Control.Frequency.QUARTERLY
         control.save()
         generate_controlpoints(control, 2024)
         generate_controlpoints(control, 2024)
         point.refresh_from_db()
-        self.assertEqual(point.status, ControlPoint.Status.COMPLIANT)
+        self.assertEqual(point.status, Evidence.Status.EVALUATED)
         self.assertEqual(ControlPoint.objects.filter(
             control=control, period_start_date=date(2024, 1, 1),
             period_end_date=date(2024, 3, 31)

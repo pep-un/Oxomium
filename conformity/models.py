@@ -4,16 +4,17 @@ It's Organized around Organization, Framework, Requirement and Conformity classe
 """
 # Standard library
 from calendar import monthrange
-from datetime import date, timedelta
+from datetime import date, datetime, time, timedelta
 from typing import List, Literal, Tuple
 
 # Django (third-party)
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import Count, Q
+from django.db.models.functions import TruncDate
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -235,6 +236,213 @@ class ConformityQuerySet(models.QuerySet):
         return self.select_related('organization', 'requirement__framework')
 
 
+class EvidenceQuerySet(models.QuerySet):
+    """Queries for Evidence validity and operational sources."""
+
+    def valid_at(self, at=None):
+        at = at or timezone.now()
+        return self.filter(valid_from__lte=at).filter(
+            Q(valid_to__isnull=True) | Q(valid_to__gt=at)
+        )
+
+    def current(self):
+        return self.valid_at()
+
+    def operational(self):
+        return self.exclude(source_type=Evidence.SourceType.HUMAN)
+
+
+class Evidence(models.Model):
+    """A time-bound fact which can contribute to one or more assessments.
+
+    Validity uses a half-open interval: ``valid_from <= at < valid_to``.
+    A null ``valid_to`` means that no end of validity is currently known.
+    Evidence never references other evidence.
+    """
+
+    class Result(models.TextChoices):
+        POSITIVE = 'POS', _('Positive')
+        NEGATIVE = 'NEG', _('Negative')
+        NEUTRAL = 'NEU', _('Neutral / inconclusive')
+        PARTIAL = 'PAR', _('Partially compliant')
+
+    class SourceType(models.TextChoices):
+        CONTROL = 'CTRL', _('Periodic control')
+        INDICATOR = 'IND', _('Periodic indicator')
+        HUMAN = 'HUM', _('Expert assessment')
+        FINDING = 'FIND', _('Finding')
+        DOCUMENT = 'DOC', _('Document')
+
+    class Status(models.TextChoices):
+        SCHEDULED = 'SCHD', _('Scheduled')
+        TOBEEVALUATED = 'TOBE', _('To evaluate')
+        EVALUATED = 'EVAL', _('Evaluated')
+        MISSED = 'MISS', _('Missed')
+
+    source_type = models.CharField(max_length=4, choices=SourceType.choices)
+    title = models.CharField(max_length=256, blank=True)
+    status = models.CharField(choices=Status.choices, max_length=4, default=Status.SCHEDULED)
+    result = models.CharField(max_length=3, choices=Result.choices, default=Result.NEUTRAL)
+    valid_from = models.DateTimeField()
+    valid_to = models.DateTimeField(null=True, blank=True)
+    evaluated_at = models.DateTimeField(null=True, blank=True)
+    evaluator = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='evaluated_evidence',
+    )
+    comment = models.TextField(max_length=4096, blank=True)
+    conformities = models.ManyToManyField('Conformity', blank=True, related_name='evidence')
+    attachments = models.ManyToManyField('Attachment', blank=True, related_name='evidence')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    result_updated_at = models.DateTimeField(default=timezone.now)
+
+    objects = EvidenceQuerySet.as_manager()
+
+    @staticmethod
+    def _day_start(value):
+        naive = datetime.combine(value, time.min)
+        return timezone.make_aware(naive, timezone.get_current_timezone())
+
+    class Meta:
+        ordering = ['-valid_from', '-pk']
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(valid_to__isnull=True) | Q(valid_to__gt=models.F('valid_from')),
+                name='chk_evidence_positive_validity',
+            ),
+        ]
+
+    def clean(self):
+        super().clean()
+        if self.valid_to is not None and self.valid_to <= self.valid_from:
+            raise ValidationError({'valid_to': _('Validity end must be after validity start.')})
+
+    @property
+    def periodic_point(self):
+        """Return the concrete periodic Evidence subtype, when applicable."""
+        accessor = {
+            self.SourceType.CONTROL: 'controlpoint',
+            self.SourceType.INDICATOR: 'indicatorpoint',
+        }.get(self.source_type)
+        if accessor is None:
+            return None
+        try:
+            return getattr(self, accessor)
+        except ObjectDoesNotExist:
+            return None
+
+    @property
+    def periodic_name(self):
+        point = self.periodic_point
+        if isinstance(point, ControlPoint) and point.control_id:
+            return point.control.title
+        if isinstance(point, IndicatorPoint) and point.indicator_id:
+            return point.indicator.name
+        return ''
+
+    @property
+    def display_name(self):
+        """Human-readable source name for Evidence list views."""
+        if self.source_type == self.SourceType.CONTROL:
+            point = self.periodic_point
+            return point.control.title if point and point.control_id else _('Control evidence')
+        if self.source_type == self.SourceType.INDICATOR:
+            point = self.periodic_point
+            return point.indicator.name if point and point.indicator_id else _('Indicator evidence')
+        if self.source_type == self.SourceType.HUMAN:
+            return self.title or _('Expert assessment')
+        if self.source_type == self.SourceType.DOCUMENT:
+            try:
+                document = getattr(self, 'documentevidence')
+                return document.title or str(document.document)
+            except ObjectDoesNotExist:
+                return self.title or _('Document')
+        if self.source_type == self.SourceType.FINDING:
+            try:
+                return getattr(self, 'finding').short_description
+            except ObjectDoesNotExist:
+                return _('Audit finding')
+        return self.get_source_type_display()
+
+    @property
+    def display_icon(self):
+        return {
+            self.SourceType.CONTROL: 'bi-clipboard2-check',
+            self.SourceType.INDICATOR: 'bi-speedometer',
+            self.SourceType.HUMAN: 'bi-person-check',
+            self.SourceType.DOCUMENT: 'bi-file-earmark-check',
+            self.SourceType.FINDING: 'bi-exclamation-diamond',
+        }.get(self.source_type, 'bi-journal-check')
+
+    @property
+    def periodic_organization(self):
+        point = self.periodic_point
+        if isinstance(point, ControlPoint) and point.control_id:
+            target = point.control.conformity.select_related('organization').first()
+            return target.organization if target else None
+        if isinstance(point, IndicatorPoint) and point.indicator_id:
+            target = point.indicator.conformity.select_related('organization').first()
+            return target.organization if target else None
+        return None
+
+    @property
+    def periodic_level(self):
+        point = self.periodic_point
+        if isinstance(point, ControlPoint) and point.control_id:
+            return point.control.get_level_display()
+        return '—'
+
+    @property
+    def periodic_frequency(self):
+        point = self.periodic_point
+        if isinstance(point, ControlPoint) and point.control_id:
+            return point.control.get_frequency_display()
+        if isinstance(point, IndicatorPoint) and point.indicator_id:
+            return point.indicator.get_frequency_display()
+        return '—'
+
+    def save(self, *args, **kwargs):
+        update_fields = kwargs.get('update_fields')
+        previous = None
+        if self.pk:
+            previous = Evidence.objects.filter(pk=self.pk).values(
+                'result', 'valid_from', 'valid_to'
+            ).first()
+
+        self._evidence_semantic_change = previous is None or (
+            previous['result'] != self.result
+            or previous['valid_from'] != self.valid_from
+            or previous['valid_to'] != self.valid_to
+        )
+
+        if previous is not None and previous['result'] != self.result:
+            self.result_updated_at = timezone.now()
+            if update_fields is not None:
+                kwargs['update_fields'] = [*update_fields, 'result_updated_at']
+        return super().save(*args, **kwargs)
+
+    def is_valid_at(self, at=None):
+        at = at or timezone.now()
+        return self.valid_from <= at and (self.valid_to is None or at < self.valid_to)
+
+    def update_schedule_status(self):
+        """Refresh lifecycle status from the canonical validity window."""
+        if self.result != self.Result.NEUTRAL:
+            self.status = self.Status.EVALUATED
+            return
+        now = timezone.now()
+        if self.valid_to is not None and self.valid_to <= now:
+            self.status = self.Status.MISSED
+        elif self.valid_from <= now and (self.valid_to is None or now < self.valid_to):
+            self.status = self.Status.TOBEEVALUATED
+        else:
+            self.status = self.Status.SCHEDULED
+
+    def __str__(self):
+        return f'{self.get_source_type_display()}: {self.get_result_display()}'
+
+
 class Conformity(models.Model):
     """
     Conformity represent the conformity of an Organization to a Requirement.
@@ -247,6 +455,14 @@ class Conformity(models.Model):
         ACTION = 'ACT', _('From completed action')
         FINDING = 'FIN', _('From an audit finding')
         CONFORMITY = 'CONF', _('From conformity aggregation')
+        EVIDENCE = 'EVID', _('From evidence')
+
+    class EvidenceState(models.TextChoices):
+        NOT_EVALUATED = 'NONE', _('Not evaluated')
+        COMPLIANT = 'COMP', _('Compliant')
+        PARTIAL = 'PART', _('Partially compliant')
+        NON_COMPLIANT = 'NONC', _('Non-compliant')
+        INCONCLUSIVE = 'INCO', _('Inconclusive')
 
     objects = ConformityQuerySet.as_manager()
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, null=True, related_name='conformities')
@@ -261,6 +477,10 @@ class Conformity(models.Model):
         choices=StatusJustification.choices,
         default=StatusJustification.EXPERT,
         blank=True,
+    )
+    evidence_state = models.CharField(
+        max_length=4, choices=EvidenceState.choices,
+        default=EvidenceState.NOT_EVALUATED,
     )
 
     class Meta:
@@ -296,6 +516,39 @@ class Conformity(models.Model):
         complete = sum(1 for conformity in leaves if conformity.status is not None)
         return round((complete / total) * 100)
 
+    def get_evidence_state_distribution(self):
+        """Return categorical leaf status counts and percentages for summary bars."""
+        leaves = [item for item in self.get_leaf() if item.applicable]
+        total = len(leaves)
+
+        counts = {
+            self.EvidenceState.COMPLIANT: 0,
+            self.EvidenceState.PARTIAL: 0,
+            self.EvidenceState.NON_COMPLIANT: 0,
+            self.EvidenceState.INCONCLUSIVE: 0,
+            self.EvidenceState.NOT_EVALUATED: 0,
+        }
+        for item in leaves:
+            counts[item.evidence_state] = counts.get(item.evidence_state, 0) + 1
+
+        def percentage(state):
+            if total == 0:
+                return 0
+            return round((counts[state] / total) * 100, 2)
+
+        return {
+            'total': total,
+            'compliant_count': counts[self.EvidenceState.COMPLIANT],
+            'partial_count': counts[self.EvidenceState.PARTIAL],
+            'non_compliant_count': counts[self.EvidenceState.NON_COMPLIANT],
+            'inconclusive_count': counts[self.EvidenceState.INCONCLUSIVE],
+            'not_evaluated_count': counts[self.EvidenceState.NOT_EVALUATED],
+            'compliant_pct': percentage(self.EvidenceState.COMPLIANT),
+            'partial_pct': percentage(self.EvidenceState.PARTIAL),
+            'non_compliant_pct': percentage(self.EvidenceState.NON_COMPLIANT),
+            'inconclusive_pct': percentage(self.EvidenceState.INCONCLUSIVE),
+        }
+
     def get_absolute_url(self):
         """Return the absolute URL of the class for Form, probably not the best way to do it"""
         return reverse('conformity:conformity_detail_index',
@@ -326,8 +579,8 @@ class Conformity(models.Model):
         return Action.objects.filter(associated_conformity=self.id).filter(active=True)
 
     def get_control(self):
-        """Return the list of Control associated with this Conformity"""
-        return Control.objects.filter(conformity=self.id)
+        """Return controls configured to target this requirement."""
+        return Control.objects.filter(conformity=self)
 
     def get_related(self,*,include_actions: bool = True,include_controls: bool = True,
             only_active: bool = False,negative_only: bool = False,
@@ -374,15 +627,13 @@ class Conformity(models.Model):
             items.extend(("action", action) for action in self.actions.filter(status__in=statuses))
         if include_controls:
             today = date.today()
-            statuses = [
-                ControlPoint.Status.NONCOMPLIANT, ControlPoint.Status.MISSED,
-                ControlPoint.Status.SCHEDULED, ControlPoint.Status.TOBEEVALUATED,
-            ]
             points = ControlPoint.objects.filter(
-                control__conformity=self,
-                period_start_date__lte=today,
-                period_end_date__gte=today,
-                status__in=statuses,
+                conformities=self,
+                valid_from__date__lte=today,
+                valid_to__date__gt=today,
+            ).filter(
+                Q(result=Evidence.Result.NEGATIVE)
+                | Q(status__in=[Evidence.Status.MISSED, Evidence.Status.SCHEDULED, Evidence.Status.TOBEEVALUATED])
             )
             items.extend(("controlpoint", point) for point in points)
         return items
@@ -405,8 +656,8 @@ class Conformity(models.Model):
             items.sort(
                 key=lambda item: (
                     getattr(item[1], "update_date", None)
-                    or getattr(item[1], "period_end_date", None)
-                    or date.min,
+                    or getattr(item[1], "valid_to", None)
+                    or timezone.make_aware(datetime.min),
                     cls._related_label(item[1]),
                 ),
                 reverse=True,
@@ -455,6 +706,39 @@ class Conformity(models.Model):
         self.status_last_update = timezone.now()
         self.save()
         return True
+
+    def evaluate_evidence(self, at=None, *, persist=True):
+        """Evaluate this Conformity through the shared Evidence engine."""
+        from .services.evidence import evaluate_conformity
+        return evaluate_conformity(self, at=at, persist=persist)
+
+    def _persist_evidence_state(self, state, at):
+        state_to_status = {
+            self.EvidenceState.COMPLIANT: 100,
+            self.EvidenceState.PARTIAL: 50,
+            self.EvidenceState.NON_COMPLIANT: 0,
+        }
+        updates = []
+        if self.evidence_state != state:
+            self.evidence_state = state
+            updates.append('evidence_state')
+        if self.requirement.is_leaf_node() and state in state_to_status:
+            value = state_to_status[state]
+            if self.status != value or self.status_justification != self.StatusJustification.EVIDENCE:
+                self.status = value
+                self.status_justification = self.StatusJustification.EVIDENCE
+                self.status_last_update = at
+                updates.extend(['status', 'status_justification', 'status_last_update'])
+        elif (
+            self.requirement.is_leaf_node()
+            and self.status_justification == self.StatusJustification.EVIDENCE
+            and self.status is not None
+        ):
+            self.status = None
+            self.status_last_update = at
+            updates.extend(['status', 'status_last_update'])
+        if updates:
+            self.save(update_fields=list(dict.fromkeys(updates)))
 
 
 class Audit(models.Model):
@@ -559,13 +843,11 @@ class Audit(models.Model):
         return Finding.objects.filter(audit=self.id).filter(severity=Finding.Severity.OTHER)
 
 
-class Finding(models.Model):
-    """
-    Finding class represent the element discover during and Audit.
-    """
+class Finding(Evidence):
+    """An audit finding represented directly as Evidence."""
 
     class Severity(models.TextChoices):
-        """ List of the Type of finding """
+        """Nature and gravity of an audit finding."""
         CRITICAL = 'CRT', _('Critical non-conformity')
         MAJOR = 'MAJ', _('Major non-conformity')
         MINOR = 'MIN', _('Minor non-conformity')
@@ -579,29 +861,71 @@ class Finding(models.Model):
     observation = models.TextField(max_length=4096, blank=True)
     recommendation = models.TextField(max_length=4096, blank=True)
     reference = models.TextField(max_length=4096, blank=True)
-    audit = models.ForeignKey(Audit, on_delete=models.CASCADE)
+    audit = models.ForeignKey(
+        Audit, on_delete=models.SET_NULL, null=True, blank=True
+    )
     severity = models.CharField(
         max_length=5,
         choices=Severity.choices,
         default=Severity.OBSERVATION,
     )
-    archived = models.BooleanField(default=False)
     cvss = models.FloatField('CVSS', blank=True, null=True, default=None)
-    cvss_descriptor = models.CharField('CVSS Vector',max_length=256, blank=True)
+    cvss_descriptor = models.CharField('CVSS Vector', max_length=256, blank=True)
 
     class Meta:
         ordering = ['severity']
 
     def clean(self):
-        if self.cvss is not None and (self.cvss < 0.1 or self.cvss > 10.0):
-            raise ValidationError('CVSS must be between 0.1 and 10.0.')
+        self.source_type = Evidence.SourceType.FINDING
+        if self.cvss is not None and (self.cvss < 0.0 or self.cvss > 10.0):
+            raise ValidationError('CVSS must be between 0 and 10.')
         super().clean()
+
+    def result_from_severity(self):
+        if self.severity == self.Severity.POSITIVE:
+            return Evidence.Result.POSITIVE
+        if self.severity in {
+            self.Severity.CRITICAL,
+            self.Severity.MAJOR,
+            self.Severity.MINOR,
+        }:
+            return Evidence.Result.NEGATIVE
+        return Evidence.Result.NEUTRAL
+
+    @staticmethod
+    def _plus_years(value, years):
+        try:
+            return value.replace(year=value.year + years)
+        except ValueError:
+            return value.replace(month=2, day=28, year=value.year + years)
+
+    def _default_valid_from(self):
+        return timezone.now()
+
+    def save(self, *args, **kwargs):
+        creating = self._state.adding
+        if not self.valid_from:
+            self.valid_from = self._default_valid_from()
+        if creating and self.valid_to is None:
+            self.valid_to = self._plus_years(self.valid_from, 3)
+        self.source_type = Evidence.SourceType.FINDING
+        self.status = Evidence.Status.EVALUATED
+        self.result = self.result_from_severity()
+
+        update_fields = kwargs.get('update_fields')
+        if update_fields is not None:
+            update_fields = set(update_fields)
+            update_fields.update({'source_type', 'status', 'result'})
+            if 'audit' in update_fields or 'audit_id' in update_fields:
+                update_fields.add('valid_from')
+            kwargs['update_fields'] = update_fields
+
+        return super().save(*args, **kwargs)
 
     def __str__(self):
         return str(self.short_description)
 
     def get_severity(self):
-        """return the readable version of the Findings Severity"""
         return self.severity_label
 
     @property
@@ -609,35 +933,35 @@ class Finding(models.Model):
         return self.get_severity_display()
 
     def get_absolute_url(self):
-        """return somewhere else when an edit has work"""
         return reverse('conformity:finding_detail', kwargs={'pk': self.id})
 
     def get_action(self):
-        """Return the list of Action associated with this Findings"""
         return Action.objects.filter(associated_findings=self.id)
 
-    def is_active(self) -> bool:
-        return (not self.archived) and (self.severity != Finding.Severity.POSITIVE)
-
-    def update_archived(self):
-        """
-        Keep `archived` consistent with linked Actions, using a single DB query:
-        - If there are actions AND none is active -> archived = True
-        - Otherwise (no actions OR at least one active) -> archived = False
-        Idempotent: only writes when the value actually changes.
-        """
-        agg = self.actions.aggregate(
-            total=Count("pk"),
-            active=Count("pk", filter=Q(active=True)),
+    def is_active(self, at=None) -> bool:
+        return (
+            self.severity != self.Severity.POSITIVE
+            and self.is_valid_at(at)
         )
-        total = agg["total"] or 0
-        active = agg["active"] or 0
 
-        new_archived = (total > 0 and active == 0)
+    def close_if_actions_completed(self, at=None):
+        """Invalidate the finding once it has actions and none remains active.
 
-        if self.archived != new_archived:
-            self.archived = new_archived
-            self.save(update_fields=["archived"])
+        This is intentionally monotone: reopening an Action does not erase an
+        explicit/manual or previously recorded validity end.
+        """
+        at = at or timezone.now()
+        if self.valid_to is not None and self.valid_to <= at:
+            return False
+        aggregate = self.actions.aggregate(
+            total=Count('pk'),
+            active=Count('pk', filter=Q(active=True)),
+        )
+        if (aggregate['total'] or 0) == 0 or (aggregate['active'] or 0) > 0:
+            return False
+        self.valid_to = at
+        self.save(update_fields=['valid_to'])
+        return True
 
 
 class Control(models.Model):
@@ -660,7 +984,6 @@ class Control(models.Model):
 
     title = models.CharField(max_length=256)
     description = models.TextField(max_length=4096, blank=True)
-    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, blank=True, null=True)
     conformity = models.ManyToManyField(Conformity, blank=True, related_name="controls")
     control = models.ManyToManyField('self', blank=True)
     frequency = models.IntegerField(
@@ -676,7 +999,7 @@ class Control(models.Model):
         ordering = ['level','frequency','title']
 
     def __str__(self):
-        return "[" + str(self.organization) + "] " + str(self.title)
+        return self.title
 
     @staticmethod
     def get_absolute_url():
@@ -691,65 +1014,111 @@ class Control(models.Model):
 
     def get_controlpoint(self):
         """Return all control point based on this control"""
-        return ControlPoint.objects.filter(control=self).order_by('period_start_date')
+        return ControlPoint.objects.filter(control=self).order_by('valid_from')
 
 
-class ControlPoint(models.Model):
-    """
-    A control point is a specific point of verification of a periodic Control.
-    """
+    @property
+    def periodic_kind(self):
+        return Evidence.SourceType.CONTROL
 
-    class Status(models.TextChoices):
-        """ List of status possible for a ControlPoint"""
-        SCHEDULED = 'SCHD', _('Scheduled')
-        TOBEEVALUATED = 'TOBE', _('To evaluate')
-        COMPLIANT = 'OK', _('Compliant')
-        NONCOMPLIANT = 'NOK', _('Non-Compliant')
-        MISSED = 'MISS', _('Missed')
+    @property
+    def periodic_name(self):
+        return self.title
+
+    @property
+    def periodic_type(self):
+        return _('Control')
+
+    @property
+    def periodic_level(self):
+        return self.get_level_display()
+
+    @property
+    def periodic_frequency(self):
+        return self.get_frequency_display()
+
+    @property
+    def periodic_point(self):
+        points = getattr(self, 'periodic_points', None)
+        if points is None:
+            points = list(
+                self.get_controlpoint().order_by('-valid_from', '-pk')
+            )
+        today = timezone.localdate()
+        return next(
+            (point for point in points if point.valid_from.date() <= today and (point.valid_to is None or today < point.valid_to.date())),
+            points[0] if points else None,
+        )
+
+    @property
+    def organization_sort(self):
+        """Stable display/sort key derived from configured Conformities."""
+        return ', '.join(sorted({
+            str(conformity.organization)
+            for conformity in self.conformity.select_related('organization').all()
+        }))
+
+    @property
+    def periodic_result_sort(self):
+        point = self.periodic_point
+        return point.status if point is not None else ''
+
+class ControlPoint(Evidence):
+    """A periodic control result represented directly as Evidence."""
 
     control = models.ForeignKey(Control, on_delete=models.CASCADE, null=True, blank=True)
-    control_date = models.DateTimeField(blank=True, null=True)
-    control_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
-    period_start_date = models.DateField()
-    period_end_date = models.DateField()
-    status = models.CharField(choices=Status.choices, max_length=4, default=Status.SCHEDULED)
-    comment = models.TextField(max_length=4096, blank=True)
-    attachment = models.ManyToManyField('Attachment', blank=True, related_name='ControlPoint')
 
     class Meta:
-        ordering = ['period_end_date']
+        ordering = ['valid_to']
 
     @staticmethod
     def get_absolute_url():
-        """return the absolute URL for Forms, could probably do better"""
         return reverse('conformity:control_index')
 
     @staticmethod
     def update_status(instance):
-        if instance.status != ControlPoint.Status.COMPLIANT and instance.status != ControlPoint.Status.NONCOMPLIANT:
-            today = date.today()
-            if instance.period_end_date < today:
-                instance.status = ControlPoint.Status.MISSED
-            elif instance.period_start_date <= today <= instance.period_end_date:
-                instance.status = ControlPoint.Status.TOBEEVALUATED
-            else:
-                instance.status = ControlPoint.Status.SCHEDULED
+        if instance.status != Evidence.Status.EVALUATED:
+            instance.update_schedule_status()
+
+    def save(self, *args, **kwargs):
+        self.source_type = Evidence.SourceType.CONTROL
+        if self.result != Evidence.Result.NEUTRAL:
+            self.status = Evidence.Status.EVALUATED
+        update_fields = kwargs.get('update_fields')
+        if update_fields is not None:
+            update_fields = set(update_fields)
+            if 'status' in update_fields:
+                update_fields.update({'result', 'source_type'})
+            kwargs['update_fields'] = update_fields
+        return super().save(*args, **kwargs)
 
     def __str__(self):
-        return "[" + str(self.control.organization) + "] " + self.control.title + " (" \
-            + self.period_start_date.strftime('%b-%Y') + "⇒" \
-            + self.period_end_date.strftime('%b-%Y') + ")"
+        if not self.control:
+            return super().__str__()
+        start = timezone.localtime(self.valid_from).date() if self.valid_from else None
+        end = (
+            (timezone.localtime(self.valid_to) - timedelta(microseconds=1)).date()
+            if self.valid_to else None
+        )
+        return (
+            f"{self.control.title} "
+            f"({start.strftime('%b-%Y') if start else '?'}⇒{end.strftime('%b-%Y') if end else '?'})"
+        )
 
     def get_action(self):
-        """Return the list of Action associated with this Findings"""
         return Action.objects.filter(associated_controlPoints=self)
 
     def is_current_period(self, when: date | None = None) -> bool:
         when = when or date.today()
-        return self.period_start_date <= when <= self.period_end_date
+        start = timezone.localtime(self.valid_from).date() if self.valid_from else None
+        end = (
+            (timezone.localtime(self.valid_to) - timedelta(microseconds=1)).date()
+            if self.valid_to else None
+        )
+        return bool(start and end and start <= when <= end)
 
     def is_final_status(self) -> bool:
-        return self.status in (ControlPoint.Status.COMPLIANT, ControlPoint.Status.NONCOMPLIANT)
+        return self.status == Evidence.Status.EVALUATED
 
 
 class Action(models.Model):
@@ -1016,7 +1385,6 @@ class Indicator (models.Model):
     warning = models.IntegerField(default=80)
     critical = models.IntegerField(default=20)
     responsible = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, blank=True, null=True)
     conformity = models.ManyToManyField(Conformity, blank=True)
     frequency = models.IntegerField(
         choices=Frequency.choices,
@@ -1134,11 +1502,15 @@ class Indicator (models.Model):
         for _ in range(num_cp):
             period_start_date = date(start_date.year, start_date.month, 1)
             period_end_date = date(end_date.year, end_date.month, monthrange(end_date.year, end_date.month)[1])
-            if not IndicatorPoint.objects.filter(indicator=self, period_start_date=period_start_date, period_end_date=period_end_date).exists() :
+            if not IndicatorPoint.objects.filter(
+                indicator=self,
+                valid_from__date=period_start_date,
+                valid_to__date=period_end_date + timedelta(days=1),
+            ).exists():
                 IndicatorPoint.objects.create(
                     indicator=self,
-                    period_start_date=period_start_date,
-                    period_end_date=period_end_date,
+                    valid_from=Evidence._day_start(period_start_date),
+                    valid_to=Evidence._day_start(period_end_date + timedelta(days=1)),
                 )
             start_date = period_end_date + timedelta(days=1)
             end_date = start_date + delta - timedelta(days=1)
@@ -1147,41 +1519,73 @@ class Indicator (models.Model):
         today = timezone.now().date()
         return (
             IndicatorPoint.objects
-            .filter(indicator=self, period_start_date__lte=today, period_end_date__gte=today)
+            .filter(indicator=self, valid_from__date__lte=today, valid_to__date__gt=today)
             .first()
         )
 
 
-class IndicatorPoint(models.Model):
-    """ Measurement point of an Indicator """
+    @property
+    def periodic_kind(self):
+        return Evidence.SourceType.INDICATOR
 
-    class Status(models.TextChoices):
-        """ List of status possible for a IndicatorPoint"""
-        SCHEDULED = 'SCHD', _('Scheduled')
-        TOBEEVALUATED = 'TOBE', _('To evaluate')
-        COMPLIANT = 'OK', _('Compliant')
-        WARNING = 'WARN', _('Warning')
-        CRITICAL = 'CRIT', _('Critical')
-        MISSED = 'MISS', _('Missed')
+    @property
+    def periodic_name(self):
+        return self.name
+
+    @property
+    def periodic_type(self):
+        return _('Indicator')
+
+    @property
+    def periodic_level(self):
+        return '—'
+
+    @property
+    def periodic_frequency(self):
+        return self.get_frequency_display()
+
+    @property
+    def periodic_point(self):
+        points = getattr(self, 'periodic_points', None)
+        if points is None:
+            points = list(
+                IndicatorPoint.objects
+                .filter(indicator=self)
+                .order_by('-valid_from', '-pk')
+            )
+        today = timezone.localdate()
+        return next(
+            (point for point in points if point.valid_from.date() <= today and (point.valid_to is None or today < point.valid_to.date())),
+            points[0] if points else None,
+        )
+
+
+    @property
+    def organization_sort(self):
+        """Stable display/sort key derived from configured Conformities."""
+        return ', '.join(sorted({
+            str(conformity.organization)
+            for conformity in self.conformity.select_related('organization').all()
+        }))
+
+    @property
+    def periodic_result_sort(self):
+        point = self.periodic_point
+        return point.status if point is not None else ''
+
+
+class IndicatorPoint(Evidence):
+    """An Indicator measurement represented directly as Evidence."""
 
     indicator = models.ForeignKey(Indicator, on_delete=models.CASCADE, null=True, blank=True)
-    control_date = models.DateTimeField(blank=True, null=True)
-    control_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
-    period_start_date = models.DateField()
-    period_end_date = models.DateField()
-    status = models.CharField(choices=Status.choices, max_length=4, default=Status.SCHEDULED)
-    comment = models.TextField(max_length=4096, blank=True)
     value = models.IntegerField(null=True)
-    attachment = models.ManyToManyField('Attachment', blank=True, related_name='IndicatorPoint')
 
     @staticmethod
     def get_absolute_url():
-        """return the absolute URL for Forms, could probably do better"""
         return reverse('conformity:indicator_index')
 
     def validate_value_bounds(self):
         if self.value is None:
-            # Automatically generated periods have no measurement yet.
             return
         try:
             self.value = self._meta.get_field('value').clean(self.value, self)
@@ -1201,42 +1605,76 @@ class IndicatorPoint(models.Model):
         self.validate_value_bounds()
 
     def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
-        # Validate and derive status before auditlog's pre_save receiver.
         self.validate_value_bounds()
-        self.status_update()
+        self.result_update()
+        self.source_type = Evidence.SourceType.INDICATOR
+        if self.value is not None:
+            self.status = Evidence.Status.EVALUATED
         if update_fields is not None:
             update_fields = set(update_fields)
             if update_fields & {'value', 'indicator', 'indicator_id'}:
-                update_fields.add('status')
+                update_fields.update({'status', 'result'})
+            if 'status' in update_fields:
+                update_fields.update({'result', 'source_type'})
         return super().save(
             force_insert=force_insert, force_update=force_update,
             using=using, update_fields=update_fields,
         )
 
-    def status_update(self):
-        """Update the status according to the indicator thresholds."""
-        if self.value is None or self.indicator_id is None:
+    def result_update(self):
+        if self.value is None:
+            self.update_schedule_status()
+            self.result = Evidence.Result.NEUTRAL
             return
 
-        if self.indicator.best > self.indicator.worst :
-            if self.indicator.best >= self.value > self.indicator.warning :
-                self.status = IndicatorPoint.Status.COMPLIANT
-            elif self.indicator.warning >= self.value > self.indicator.critical :
-                self.status = IndicatorPoint.Status.WARNING
-            elif self.indicator.critical >= self.value >= self.indicator.worst :
-                self.status = IndicatorPoint.Status.CRITICAL
-            else:
-                self.status = IndicatorPoint.Status.MISSED
+        if self.indicator_id is None:
+            return
 
-        elif self.indicator.best < self.indicator.worst :
-            if self.indicator.best <= self.value < self.indicator.warning :
-                self.status = IndicatorPoint.Status.COMPLIANT
-            elif self.indicator.warning <= self.value < self.indicator.critical :
-                self.status = IndicatorPoint.Status.WARNING
-            elif self.indicator.critical <= self.value <= self.indicator.worst :
-                self.status = IndicatorPoint.Status.CRITICAL
+        if self.indicator.best > self.indicator.worst:
+            if self.indicator.best >= self.value > self.indicator.warning:
+                self.result = Evidence.Result.POSITIVE
+            elif self.indicator.warning >= self.value > self.indicator.critical:
+                self.result = Evidence.Result.NEUTRAL
+            elif self.indicator.critical >= self.value >= self.indicator.worst:
+                self.result = Evidence.Result.NEGATIVE
             else:
-                self.status = IndicatorPoint.Status.MISSED
-
+                self.result = Evidence.Result.NEUTRAL
+        elif self.indicator.best < self.indicator.worst:
+            if self.indicator.best <= self.value < self.indicator.warning:
+                self.result = Evidence.Result.POSITIVE
+            elif self.indicator.warning <= self.value < self.indicator.critical:
+                self.result = Evidence.Result.NEUTRAL
+            elif self.indicator.critical <= self.value <= self.indicator.worst:
+                self.result = Evidence.Result.NEGATIVE
+            else:
+                self.result = Evidence.Result.NEUTRAL
         else:
-            self.status = IndicatorPoint.Status.MISSED
+            self.result = Evidence.Result.NEUTRAL
+
+
+class HumanEvidence(Evidence):
+    """An auditable human arbitration for a Conformity assessment."""
+
+    class Decision(models.TextChoices):
+        COMPLIANT = Evidence.Result.POSITIVE, _('Compliant')
+        PARTIAL = Evidence.Result.PARTIAL, _('Partially compliant')
+        NON_COMPLIANT = Evidence.Result.NEGATIVE, _('Non-compliant')
+        INCONCLUSIVE = Evidence.Result.NEUTRAL, _('Inconclusive')
+
+    decision = models.CharField(max_length=3, choices=Decision.choices)
+
+    def save(self, *args, **kwargs):
+        self.source_type = Evidence.SourceType.HUMAN
+        self.result = self.decision
+        return super().save(*args, **kwargs)
+
+
+class DocumentEvidence(Evidence):
+    """Evidence whose source is an existing documentary attachment."""
+
+    document = models.ForeignKey(
+        Attachment, on_delete=models.PROTECT, related_name='document_evidence'
+    )
+    def save(self, *args, **kwargs):
+        self.source_type = Evidence.SourceType.DOCUMENT
+        return super().save(*args, **kwargs)

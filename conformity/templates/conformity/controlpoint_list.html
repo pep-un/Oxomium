@@ -28,7 +28,7 @@
                     <ul>
                         <li><b>Level:</b> {{ controlpoint_list.0.control.get_level_display }}</li>
                         <li><b>Frequency:</b> {{ controlpoint_list.0.control.get_frequency_display }}</li>
-                        <li><b>Organization:</b> {{ controlpoint_list.0.control.organization }}</li>
+                        <li><b>Organization:</b> {% for conformity in controlpoint_list.0.control.conformity.all %}{{ conformity.organization }}{% if not forloop.last %}, {% endif %}{% endfor %}</li>
                     </ul>
 
                     <b>Associated conformity:</b>

@@ -8,8 +8,12 @@ from django.db import transaction
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
 from .services.conformities import set_frameworks
-from .models import Organization, Framework, Requirement, Conformity, Audit, Finding, Action, Control, ControlPoint, \
-    Attachment, Indicator, IndicatorPoint
+from .models import (
+    Action, Attachment, Audit, Conformity, Control, ControlPoint,
+    DocumentEvidence, Evidence, Finding, Framework,
+    HumanEvidence, Indicator, IndicatorPoint, Organization,
+    Requirement,
+)
 
 
 class OrganizationResources(resources.ModelResource):
@@ -98,7 +102,7 @@ class ControlPointResources(resources.ModelResource):
 
 class ControlPointAdmin(ImportExportModelAdmin):
     ressource_class = ControlPoint
-    list_select_related = ['control', 'control_user']
+    list_select_related = ['control', 'evaluator']
 
 
 class FindingResources(resources.ModelResource):
@@ -156,3 +160,6 @@ admin.site.register(Organization, OrganizationAdmin)
 admin.site.register(Requirement, RequirementAdmin)
 admin.site.register(Indicator, IndicatorAdmin)
 admin.site.register(IndicatorPoint, IndicatorPointAdmin)
+admin.site.register(Evidence)
+admin.site.register(HumanEvidence)
+admin.site.register(DocumentEvidence)

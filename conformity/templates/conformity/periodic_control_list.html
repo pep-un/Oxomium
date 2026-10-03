@@ -1,0 +1,18 @@
+{% extends "conformity/main.html" %}
+{% load render_table from django_tables2 %}
+{% load ui_tags %}
+
+{% block header %}
+    <h1 class="h1 bi bi-clipboard2-check"> Periodic controls </h1>
+{% endblock %}
+
+{% block content %}
+    {% route_url 'conformity:control_export' as export_url %}
+    {% include "includes/list_toolbar.html" with export_url=export_url filter=filter total_count=result_total_count visible_count=result_visible_count is_paginated=result_is_paginated %}
+
+    {% if object_list %}
+        {% render_table table %}
+    {% else %}
+        {% include "includes/empty_state.html" with empty_message="No periodic controls match the current filters." %}
+    {% endif %}
+{% endblock %}

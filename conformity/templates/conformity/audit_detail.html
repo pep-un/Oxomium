@@ -43,7 +43,7 @@
                 <ul class="list-group list-group-flush">
                     {% for finding in audit.get_critical_findings %}
                         <a href="{% url 'conformity:finding_detail' finding.id %}" class="list-group-item list-group-item-dark">
-                            {% if finding.archived %}<i class="bi bi-archive"></i> {% endif%}
+                            {% if not finding.is_valid_at %}<i class="bi bi-clock-history" title="Invalidated"></i> {% endif %}
                             {{ finding.short_description }}
                         </a>
                     {% empty %}
@@ -61,7 +61,7 @@
                 <ul class="list-group list-group-flush">
                     {% for finding in audit.get_major_findings %}
                         <a href="{% url 'conformity:finding_detail' finding.id %}" class="list-group-item list-group-item-danger">
-                            {% if finding.archived %}<i class="bi bi-archive"></i> {% endif%}
+                            {% if not finding.is_valid_at %}<i class="bi bi-clock-history" title="Invalidated"></i> {% endif %}
                             {{ finding.short_description }}
                         </a>
                     {% empty %}
@@ -79,7 +79,7 @@
                 <ul class="list-group list-group-flush">
                     {% for finding in audit.get_minor_findings %}
                         <a href="{% url 'conformity:finding_detail' finding.id %}" class="list-group-item list-group-item-warning">
-                            {% if finding.archived %}<i class="bi bi-archive"></i> {% endif%}
+                            {% if not finding.is_valid_at %}<i class="bi bi-clock-history" title="Invalidated"></i> {% endif %}
                             {{ finding.short_description }}
                         </a>
                     {% empty %}
@@ -97,7 +97,7 @@
                 <ul class="list-group list-group-flush">
                     {% for finding in audit.get_observation_findings %}
                         <a href="{% url 'conformity:finding_detail' finding.id %}" class="list-group-item list-group-item-info">
-                            {% if finding.archived %}<i class="bi bi-archive"></i> {% endif%}
+                            {% if not finding.is_valid_at %}<i class="bi bi-clock-history" title="Invalidated"></i> {% endif %}
                             {{ finding.short_description }}
                         </a>
                     {% empty %}
@@ -115,7 +115,7 @@
                 <ul class="list-group list-group-flush">
                     {% for finding in audit.get_other_findings %}
                         <a href="{% url 'conformity:finding_detail' finding.id %}" class="list-group-item list-group-item-light">
-                            {% if finding.archived %}<i class="bi bi-archive"></i> {% endif%}
+                            {% if not finding.is_valid_at %}<i class="bi bi-clock-history" title="Invalidated"></i> {% endif %}
                             {{ finding.short_description }}
                         </a>
                     {% empty %}
@@ -133,7 +133,7 @@
                 <ul class="list-group list-group-flush">
                     {% for finding in audit.get_positive_findings %}
                         <a href="{% url 'conformity:finding_detail' finding.id %}" class="list-group-item list-group-item-positive">
-                            {% if finding.archived %}<i class="bi bi-archive"></i> {% endif%}
+                            {% if not finding.is_valid_at %}<i class="bi bi-clock-history" title="Invalidated"></i> {% endif %}
                             {{ finding.short_description }}
                         </a>
                     {% empty %}

@@ -8,10 +8,11 @@ from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import transaction
 from django.test import TestCase, override_settings
+from django.utils import timezone
 
 from conformity.models import (
     Action, Attachment, Audit, Conformity, Control, ControlPoint, Finding,
-    Framework, Indicator, IndicatorPoint, Organization, Requirement,
+    Evidence, Framework, Indicator, IndicatorPoint, Organization, Requirement,
 )
 
 
@@ -29,7 +30,8 @@ class RelationAuditTests(TestCase):
             Attachment.objects.create(file=SimpleUploadedFile(f'audit{i}.txt', f'content-{i}'.encode()))
             for i in range(2)
         ]
-        self.conformities = [Conformity.objects.create(organization=self.org, requirement=Requirement.objects.create(framework=self.frameworks[i], code=f'ROOT{i}')) for i in range(2)]
+        self.requirements = [Requirement.objects.create(framework=self.frameworks[i], code=f'ROOT{i}') for i in range(2)]
+        self.conformities = [Conformity.objects.create(organization=self.org, requirement=self.requirements[i]) for i in range(2)]
         self.audit = Audit.objects.create(organization=self.org, auditor='Auditor')
         self.findings = [Finding.objects.create(audit=self.audit, short_description=f'Finding {i}') for i in range(2)]
         self.controls = [Control.objects.create(title=f'Control {i}') for i in range(3)]
@@ -37,6 +39,10 @@ class RelationAuditTests(TestCase):
         self.action = Action.objects.create(title='Action')
         self.indicator = Indicator.objects.create(name='Indicator', responsible=self.user)
         self.indicator_point = IndicatorPoint.objects.filter(indicator=self.indicator).first()
+        self.evidence = Evidence.objects.create(
+            source_type=Evidence.SourceType.HUMAN,
+            valid_from=timezone.now(),
+        )
         self.cases = [
             (self.frameworks[0], 'attachment', self.attachments),
             (self.org, 'attachment', self.attachments),
@@ -45,12 +51,12 @@ class RelationAuditTests(TestCase):
             (self.audit, 'attachment', self.attachments),
             (self.controls[0], 'conformity', self.conformities),
             (self.controls[0], 'control', self.controls[1:]),
-            (self.points[0], 'attachment', self.attachments),
             (self.action, 'associated_conformity', self.conformities),
             (self.action, 'associated_findings', self.findings),
             (self.action, 'associated_controlPoints', self.points),
             (self.indicator, 'conformity', self.conformities),
-            (self.indicator_point, 'attachment', self.attachments),
+            (self.evidence, 'attachments', self.attachments),
+            (self.evidence, 'conformities', self.conformities),
         ]
 
     def assert_event(self, owner, field, operation, targets):

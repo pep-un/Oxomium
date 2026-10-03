@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
@@ -10,6 +10,7 @@ from django.test import RequestFactory, TestCase
 from django.urls import reverse
 from django_filters.views import FilterView
 from django.views.generic import DetailView, ListView
+from django.utils import timezone
 
 from conformity.forms import (
     ActionForm,
@@ -23,6 +24,7 @@ from conformity.models import (
     Conformity,
     Control,
     ControlPoint,
+    Evidence,
     Finding,
     Framework,
     Indicator,
@@ -90,8 +92,7 @@ class RemainingCoverageTests(TestCase):
             title="Action", organization=self.organization, owner=self.user
         )
         self.control = Control.objects.create(
-            title="Control", organization=self.organization
-        )
+            title="Control",)
         self.control.conformity.add(self.root_conformity)
         self.control_point = ControlPoint.objects.create(
             control=self.control,
@@ -100,18 +101,20 @@ class RemainingCoverageTests(TestCase):
             status=ControlPoint.Status.TOBEEVALUATED,
         )
         self.indicator = Indicator.objects.create(
-            name="Indicator", responsible=self.user, organization=self.organization
-        )
+            name="Indicator", responsible=self.user,)
 
     def test_forms_cover_stateful_initialization(self):
         parent_form = ConformityForm(instance=self.root_conformity)
-        self.assertTrue(parent_form.fields["status"].disabled)
+        self.assertNotIn("status", parent_form.fields)
 
-        archived = Finding.objects.create(
-            audit=self.audit, short_description="Archived", archived=True
+        invalidated = Finding.objects.create(
+            audit=self.audit,
+            short_description="Invalidated",
+            valid_from=timezone.now() - timedelta(days=1),
+            valid_to=timezone.now() - timedelta(minutes=1),
         )
-        archived_form = FindingForm(instance=archived)
-        self.assertTrue(all(field.disabled for field in archived_form.fields.values()))
+        invalidated_form = FindingForm(instance=invalidated)
+        self.assertIn("valid_to", invalidated_form.fields)
 
         for status in Action.Status:
             form = ActionForm(instance=Action(status=status))
@@ -119,10 +122,7 @@ class RemainingCoverageTests(TestCase):
             self.assertTrue(form.fields["update_date"].disabled)
 
         evaluating = ControlPointForm(instance=self.control_point, user=self.user)
-        self.assertIn(
-            (ControlPoint.Status.COMPLIANT, ControlPoint.Status.COMPLIANT.label),
-            list(evaluating.fields["status"].widget.choices),
-        )
+        self.assertNotIn("status", evaluating.fields)
         scheduled = ControlPoint.objects.create(
             control=self.control,
             period_start_date=date.today().replace(year=date.today().year + 1),
@@ -179,10 +179,6 @@ class RemainingCoverageTests(TestCase):
             "",
         )
         finding_resource = FindingResource()
-        self.assertEqual(finding_resource.dehydrate_archived(self.finding), "No")
-        self.assertEqual(
-            finding_resource.dehydrate_archived(SimpleNamespace(archived=None)), ""
-        )
         self.assertIn("Action", finding_resource.dehydrate_actions(self.finding))
         self.assertEqual(
             finding_resource.dehydrate_actions(
@@ -232,7 +228,7 @@ class RemainingCoverageTests(TestCase):
             (AuditExportView, "/audits", "audits"),
             (FindingExportView, "/findings", "findings"),
             (ActionExportView, "/actions", "actions"),
-            (ControlExportView, "/controls", "controls"),
+            (ControlExportView, "/controls", "periodic-controls"),
             (IndicatorExportView, "/indicators", "indicators"),
             (AttachmentExportView, "/attachments", "attachments"),
             (AuditLogExportView, "/auditlog", "audit-log"),
@@ -328,26 +324,26 @@ class RemainingCoverageTests(TestCase):
         point = IndicatorPoint.objects.filter(indicator=self.indicator).first()
         point.indicator = self.indicator
         self.indicator.best, self.indicator.warning, self.indicator.critical, self.indicator.worst = 100, 80, 50, 0
-        for value, status in ((90, IndicatorPoint.Status.COMPLIANT),
-                              (70, IndicatorPoint.Status.WARNING),
-                              (40, IndicatorPoint.Status.CRITICAL),
-                              (20, IndicatorPoint.Status.CRITICAL),
-                              (-1, IndicatorPoint.Status.MISSED)):
+        for value, result in ((90, Evidence.Result.POSITIVE),
+                              (70, Evidence.Result.NEUTRAL),
+                              (40, Evidence.Result.NEGATIVE),
+                              (20, Evidence.Result.NEGATIVE),
+                              (-1, Evidence.Result.NEUTRAL)):
             point.value = value
-            point.status_update()
-            self.assertEqual(point.status, status)
+            point.result_update()
+            self.assertEqual(point.result, result)
         self.indicator.best, self.indicator.warning, self.indicator.critical, self.indicator.worst = 0, 20, 50, 100
-        for value, status in ((10, IndicatorPoint.Status.COMPLIANT),
-                              (30, IndicatorPoint.Status.WARNING),
-                              (75, IndicatorPoint.Status.CRITICAL),
-                              (150, IndicatorPoint.Status.MISSED)):
+        for value, result in ((10, Evidence.Result.POSITIVE),
+                              (30, Evidence.Result.NEUTRAL),
+                              (75, Evidence.Result.NEGATIVE),
+                              (150, Evidence.Result.NEUTRAL)):
             point.value = value
-            point.status_update()
-            self.assertEqual(point.status, status)
+            point.result_update()
+            self.assertEqual(point.result, result)
         self.indicator.best = self.indicator.worst = 50
         point.value = 50
-        point.status_update()
-        self.assertEqual(point.status, IndicatorPoint.Status.MISSED)
+        point.result_update()
+        self.assertEqual(point.result, Evidence.Result.NEUTRAL)
 
     def test_view_context_helpers(self):
         framework_view = FrameworkDetailView()
@@ -359,13 +355,12 @@ class RemainingCoverageTests(TestCase):
         ))
 
         control_view = ControlIndexView()
-        control_view.request = self.factory.get("/")
+        control_view.request = self.factory.get("/", {"status": "TOBE"})
         control_view.request.user = self.user
-        control_view.object_list = Control.objects.all()
         control_view.kwargs = {}
-        with patch.object(FilterView, "get_context_data", return_value={}):
-            context = control_view.get_context_data()
-        self.assertIn("controlpoint_list", context)
+        context = control_view.get_context_data()
+        self.assertNotIn("controlpoint_list", context)
+        self.assertIn("filter", context)
 
         log_view = AuditLogDetailView()
         self.assertEqual(log_view.get_queryset().query.order_by, ("-timestamp", "-pk"))

@@ -4,130 +4,327 @@
 {% load mptt_tags %}
 
 {% block header %}
-<h1 class="h1 d-flex align-items-center gap-2">
-    <a href="{% url 'conformity:conformity_detail_index' conformity.organization.pk conformity.requirement.framework.pk %}" class="header-back-link" aria-label="Back to conformity review" title="Back to conformity review">
+<h1 class="h1 d-flex align-items-center gap-2 w-100">
+    <a href="{% url 'conformity:conformity_detail_index' conformity.organization.pk conformity.requirement.framework.pk %}"
+       class="header-back-link"
+       aria-label="Back to conformity review"
+       title="Back to conformity review">
         <i class="bi bi-chevron-left" aria-hidden="true"></i>
     </a>
     {{ conformity.requirement.full_path }} — {{ conformity.organization.name }}
+    {% if conformity.evidence_state == 'COMP' %}
+        <span class="badge rounded-pill text-bg-success fs-5 px-3 py-2 ms-auto">Compliant</span>
+    {% elif conformity.evidence_state == 'NONC' %}
+        <span class="badge rounded-pill text-bg-danger fs-5 px-3 py-2 ms-auto">Non-compliant</span>
+    {% elif conformity.evidence_state == 'PART' %}
+        <span class="badge rounded-pill text-bg-warning fs-5 px-3 py-2 ms-auto">Partially compliant</span>
+    {% elif conformity.evidence_state == 'INCO' %}
+        <span class="badge rounded-pill text-bg-secondary fs-5 px-3 py-2 ms-auto">Inconclusive</span>
+    {% else %}
+        <span class="badge rounded-pill text-bg-secondary fs-5 px-3 py-2 ms-auto">Not evaluated</span>
+    {% endif %}
 </h1>
 {% endblock %}
 
 {% block content %}
+<form class="form" method="post" action="" id="conformity-form">
+    {% csrf_token %}
 
-    <form class="form" method="post" action="">
-        {% csrf_token %}
+    <div class="row g-4 align-items-start">
+        <div class="col-12 col-lg-6">
+            {% include "conformity/includes/evidence_organization_cards.html" %}
+            {% include "conformity/includes/evidence_requirement_cards.html" with hide_add_requirement=True %}
 
-        <div class="card border-info">
-            <div class="card-header border-info text-bg-info text-secondary h4">
-                <h6 class="card-subtitle text-body-secondary">
-                    <nav aria-label="breadcrumb">
-                        <ol class="breadcrumb mb-0">
-                            {% for item in conformity.requirement.get_ancestors %}
-                                <li class="breadcrumb-item"> {{ item.title }} </li>
-                            {% endfor %}
-                        </ol>
-                    </nav>
-                </h6>
-            </div>
-            <div class="card-header border-info text-bg-info h4">
-                <h4 class="card-title">
-                    <span class="badge rounded-pill text-bg-primary" >{{ conformity.requirement.full_path }}</span>
-                    {{ conformity.requirement.title }}
-                </h4>
-            </div>
-            <div class="card-body bg-info bg-opacity-25">
-                <p class="card-text">{{ conformity.requirement.description }}</p>
-            </div>
-        </div>
-
-        <div class="row justify-content-center">
-            <div class="col">
-                <div class="form-check form-switch my-3">
-                    <label class="form-check-label" for="id_applicable">Requirement is applicable</label>
-                    <input class="form-check-input" type="checkbox" role="switch" id="id_applicable" name="applicable"
-                        {% if conformity.applicable %}
-                           checked aria-checked="true"
-                        {% else %}
-                           aria-checked="false"
-                        {% endif %}
-                    >
+            <div class="card mt-4">
+                <div class="card-header d-flex justify-content-between align-items-center gap-2">
+                    <span class="h4 mb-0">Associated action</span>
+                    <a class="btn btn-sm btn-success"
+                       href="{% url 'conformity:action_create' %}?conformity={{ conformity.id }}">
+                        <i class="bi bi-plus-circle me-1" aria-hidden="true"></i>
+                        Register corrective action
+                    </a>
                 </div>
-                {% bootstrap_field form.responsible %}
-                {% bootstrap_field form.status %}
-                {% bootstrap_field form.comment %}
-                {% bootstrap_field form.propagate_to_children %}
-            </div>
-
-            <div class="col col-6">
-
-
-                <br />
-
-                <div class="card ">
-                    <div class="card-header text-center h4">
-                        Associated action
-                    </div>
-                    <div class="list-group">
+                <div class="list-group list-group-flush">
                     {% for action in conformity.get_action %}
-                        <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-start" href="{% url 'conformity:action_form' action.id %}">
-                            {{action}} <span class="badge bg-primary rounded-pill"> {{ action.get_status_display }} </span>
-                        </a>
-                    {% empty %}
-                        <p class="list-group-item list-group-item-warning text-center my-0">No action associated</p>
-                    {% endfor %}
-                        <a class="list-group-item list-group-item-action list-group-item-success text-center text-success"  href="{% url 'conformity:action_create' %}?conformity={{ conformity.id }}">
-                            <i class="bi bi-plus-circle"></i> Register a corrective action
-                        </a>
-                    </div>
-                </div>
-
-                <br />
-
-                <div class="card ">
-                    <div class="card-header text-center h4">
-                        Associated control
-                    </div>
-                    <div class="list-group">
-                    {% for control in conformity.get_control %}
                         <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-start"
-                           href="{% url 'conformity:control_form' control.id %}">
-                           {{control}}
+                           href="{% url 'conformity:action_form' action.id %}">
+                            {{ action }}
+                            <span class="badge bg-primary rounded-pill">
+                                {{ action.get_status_display }}
+                            </span>
                         </a>
                     {% empty %}
-                        <p class="list-group-item list-group-item-warning text-center my-0">No action control</p>
+                        <div class="list-group-item border-0 p-0">
+                            {% include "includes/empty_state.html" with empty_message="No action associated." compact=True %}
+                        </div>
                     {% endfor %}
-                        <a class="list-group-item list-group-item-action list-group-item-success text-center text-success"  href="{% url 'conformity:control_create' %}?conformity={{ conformity.id }}">
-                            <i class="bi bi-plus-circle"></i> Register a nex control
-                        </a>
-                    </div>
                 </div>
             </div>
         </div>
 
+        <div class="col-12 col-lg-6">
+            <div class="card mb-4">
+                <div class="card-header d-flex align-items-center gap-2">
+                    <i class="bi bi-person-check text-primary" aria-hidden="true"></i>
+                    <span class="h4 mb-0">Assessment</span>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3 align-items-center mb-4">
+                        <div class="col-12 col-md-6">
+                            <div class="fw-semibold mb-1">{{ form.responsible.label }}</div>
+                            <div class="text-body-secondary small">
+                                Person responsible for reviewing this requirement.
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            {{ form.responsible }}
+                            {% for error in form.responsible.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
 
-        {% url 'conformity:conformity_detail_index' conformity.organization.pk conformity.requirement.framework.pk as cancel_url %}
-        {% if conformity.requirement.get_next_sibling and conformity.requirement.is_leaf_node %}
-            {% include "includes/form_toolbar.html" with cancel_url=cancel_url show_save_next=True save_next_enabled=True %}
-        {% else %}
-            {% include "includes/form_toolbar.html" with cancel_url=cancel_url show_save_next=True save_next_enabled=False %}
-        {% endif %}
+                    <div class="border rounded bg-body-tertiary p-3 mb-3">
+                        <div class="form-check form-switch mb-0">
+                            <label class="form-check-label fw-semibold" for="id_applicable">
+                                Requirement is applicable
+                            </label>
+                            <input
+                                class="form-check-input"
+                                type="checkbox"
+                                role="switch"
+                                id="id_applicable"
+                                name="applicable"
+                                {% if form.applicable.value %}
+                                    checked
+                                    aria-checked="true"
+                                {% else %}
+                                    aria-checked="false"
+                                {% endif %}
+                            >
+                        </div>
 
-        <script>
-            function applicable() {
-                if ( ! document.getElementById('id_applicable').checked ){
-                    document.getElementById('id_responsible').disabled = true;
-                    document.getElementById('id_status').disabled = true;
-                    document.getElementById('id_status').required = false;
-                    document.getElementById('id_comment').required = true;
-                } else {
-                    document.getElementById('id_responsible').disabled = false;
-                    document.getElementById('id_status').disabled = false;
-                    document.getElementById('id_status').required = true;
-                    document.getElementById('id_comment').required = false;
-                }
-            }
-            document.getElementById('id_applicable').addEventListener("click", applicable);
-            applicable();
-        </script>
-    </form>
+                        <div id="conformity-comment"
+                             class="mt-3 {% if form.applicable.value %}d-none{% endif %}">
+                            {{ form.comment }}
+                            {% if form.comment.help_text %}
+                                <div class="form-text">{{ form.comment.help_text }}</div>
+                            {% endif %}
+                            {% for error in form.comment.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="border-top pt-3 mt-3">
+                        <div class="form-check mb-0">
+                            {{ form.propagate_to_children }}
+                            {{ form.propagate_to_children.label_tag }}
+                            {% for error in form.propagate_to_children.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center gap-2">
+                    <div>
+                        <span class="h4 mb-0">Evidence</span>
+                        {% if show_evidence_conformities %}
+                            <div class="small text-body-secondary">
+                                Evidence from descendant requirements
+                            </div>
+                        {% endif %}
+                    </div>
+                    {% if conformity.requirement.is_leaf_node %}
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-success dropdown-toggle"
+                                    type="button"
+                                    data-bs-toggle="dropdown"
+                                    aria-expanded="false">
+                                <i class="bi bi-plus-circle me-1" aria-hidden="true"></i>
+                                Create evidence
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="{% url 'conformity:control_create' %}?conformity={{ conformity.pk }}"><i class="bi bi-clipboard2-check me-2"></i>Periodic control</a></li>
+                                <li><a class="dropdown-item" href="{% url 'conformity:indicator_create' %}?conformity={{ conformity.pk }}"><i class="bi bi-speedometer me-2"></i>Periodic indicator</a></li>
+                                <li><a class="dropdown-item" href="{% url 'conformity:finding_create' %}?conformity={{ conformity.pk }}"><i class="bi bi-exclamation-diamond me-2"></i>Finding</a></li>
+                                <li><a class="dropdown-item" href="{% url 'conformity:document_evidence_create' conformity.pk %}"><i class="bi bi-file-earmark-check me-2"></i>Document</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{% url 'conformity:human_evidence_create' conformity.pk %}"><i class="bi bi-person-check me-2"></i>Expert assessment</a></li>
+                            </ul>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="list-group list-group-flush">
+                    {% for item in active_evidence %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center gap-3">
+                                <div class="min-w-0">
+                                    <div class="fw-semibold d-flex align-items-center gap-2">
+                                        <i class="bi {{ item.display_icon }}"
+                                           aria-hidden="true"
+                                           title="{{ item.get_source_type_display }}"></i>
+                                        <span>{{ item.display_name }}</span>
+                                    </div>
+                                    <div class="small text-body-secondary mt-1">
+                                        Valid from {{ item.valid_from|date:"d-M-Y H:i" }}
+                                        {% if item.valid_to %}
+                                            to {{ item.valid_to|date:"d-M-Y H:i" }}
+                                        {% else %}
+                                            · no expiry
+                                        {% endif %}
+                                    </div>
+                                    {% if show_evidence_conformities %}
+                                        <div class="d-flex flex-wrap gap-1 mt-2">
+                                            {% for target in item.display_conformities %}
+                                                <a href="{% url 'conformity:conformity_form' target.pk %}"
+                                                   class="badge rounded-pill text-bg-light text-dark border text-decoration-none"
+                                                   title="{{ target.requirement.title }}">
+                                                                                {{ target.requirement.full_path }} · {{ target.requirement.title|truncatechars:48 }}
+                                                </a>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    {% if item.comment %}
+                                        <div class="small mt-1">
+                                            {{ item.comment|truncatechars:160 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                    {% if item.result == 'POS' %}
+                                        <span class="badge rounded-pill text-bg-success px-3 py-2 d-inline-block text-center" style="min-width: 10rem;">
+                                            {{ item.get_result_display }}
+                                        </span>
+                                    {% elif item.result == 'NEG' %}
+                                        <span class="badge rounded-pill text-bg-danger px-3 py-2 d-inline-block text-center" style="min-width: 10rem;">
+                                            {{ item.get_result_display }}
+                                        </span>
+                                    {% elif item.result == 'PAR' %}
+                                        <span class="badge rounded-pill text-bg-warning px-3 py-2 d-inline-block text-center" style="min-width: 10rem;">
+                                            {{ item.get_result_display }}
+                                        </span>
+                                    {% else %}
+                                        <span class="badge rounded-pill text-bg-secondary px-3 py-2 d-inline-block text-center" style="min-width: 10rem;">
+                                            {{ item.get_result_display }}
+                                        </span>
+                                    {% endif %}
+
+                                    <div class="btn-group btn-group-sm"
+                                         role="group"
+                                         aria-label="Evidence actions">
+                                        <a class="btn btn-primary"
+                                           href="{% url 'conformity:evidence_detail' item.pk %}"
+                                           title="View evidence details">
+                                            <i class="bi bi-eye" aria-hidden="true"></i>
+                                            <span class="visually-hidden">View</span>
+                                        </a>
+                                        {% if item.source_type == 'CTRL' %}
+                                            {% if item.status == 'TOBE' %}
+                                                <a class="btn btn-warning"
+                                                   href="{% url 'conformity:controlpoint_form' item.pk %}"
+                                                   title="Enter control result">
+                                                    <i class="bi bi-pencil-square" aria-hidden="true"></i>
+                                                    <span class="visually-hidden">Enter result</span>
+                                                </a>
+                                            {% else %}
+                                                <button type="button"
+                                                        class="btn btn-secondary disabled"
+                                                        disabled
+                                                        aria-disabled="true"
+                                                        title="{% if item.status == 'EVAL' %}Control already evaluated{% else %}Control is not ready for evaluation{% endif %}">
+                                                    <i class="bi bi-pencil-square" aria-hidden="true"></i>
+                                                    <span class="visually-hidden">Entry unavailable</span>
+                                                </button>
+                                            {% endif %}
+                                        {% elif item.source_type == 'IND' %}
+                                            {% if item.status == 'TOBE' %}
+                                                <a class="btn btn-warning"
+                                                   href="{% url 'conformity:indicatorpoint_form' item.pk %}"
+                                                   title="Enter indicator value">
+                                                    <i class="bi bi-pencil-square" aria-hidden="true"></i>
+                                                    <span class="visually-hidden">Enter value</span>
+                                                </a>
+                                            {% else %}
+                                                <button type="button"
+                                                        class="btn btn-secondary disabled"
+                                                        disabled
+                                                        aria-disabled="true"
+                                                        title="{% if item.status == 'EVAL' %}Indicator already evaluated{% else %}Indicator is not ready for evaluation{% endif %}">
+                                                    <i class="bi bi-pencil-square" aria-hidden="true"></i>
+                                                    <span class="visually-hidden">Entry unavailable</span>
+                                                </button>
+                                            {% endif %}
+                                        {% else %}
+                                            <a class="btn btn-warning"
+                                               href="{% url 'conformity:evidence_form' item.pk %}"
+                                               title="Edit evidence">
+                                                <i class="bi bi-pencil-square" aria-hidden="true"></i>
+                                                <span class="visually-hidden">Edit</span>
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="list-group-item border-0 p-0">
+                            {% if show_evidence_conformities %}
+                                {% include "includes/empty_state.html" with empty_message="No currently valid evidence in descendant requirements." compact=True %}
+                            {% else %}
+                                {% include "includes/empty_state.html" with empty_message="No currently valid evidence associated." compact=True %}
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    {% url 'conformity:conformity_detail_index' conformity.organization.pk conformity.requirement.framework.pk as cancel_url %}
+    {% if conformity.requirement.get_next_sibling and conformity.requirement.is_leaf_node %}
+        {% include "includes/form_toolbar.html" with cancel_url=cancel_url show_save_next=True save_next_enabled=True %}
+    {% else %}
+        {% include "includes/form_toolbar.html" with cancel_url=cancel_url show_save_next=True save_next_enabled=False %}
+    {% endif %}
+</form>
+
+<script>
+(function () {
+    const applicable = document.getElementById("id_applicable");
+    const commentWrapper = document.getElementById("conformity-comment");
+    const comment = document.getElementById("id_comment");
+    const responsible = document.getElementById("id_responsible");
+
+    function updateApplicabilityFields() {
+        if (!applicable || !commentWrapper) {
+            return;
+        }
+
+        const isApplicable = applicable.checked;
+        applicable.setAttribute("aria-checked", isApplicable ? "true" : "false");
+        commentWrapper.classList.toggle("d-none", isApplicable);
+
+        if (comment) {
+            comment.required = !isApplicable;
+        }
+
+        if (responsible) {
+            responsible.disabled = !isApplicable;
+        }
+    }
+
+    if (applicable) {
+        applicable.addEventListener("change", updateApplicabilityFields);
+        updateApplicabilityFields();
+    }
+})();
+</script>
 {% endblock %}

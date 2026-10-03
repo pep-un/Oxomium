@@ -1,0 +1,42 @@
+{% extends "conformity/main.html" %}
+{% load django_bootstrap5 %}
+
+{% block header %}
+<h1 class="h1 d-flex align-items-center gap-2">
+    <a href="{% url 'conformity:evidence_detail' evidence.pk %}"
+       class="header-back-link"
+       aria-label="Back to evidence"
+       title="Back to evidence">
+        <i class="bi bi-chevron-left" aria-hidden="true"></i>
+    </a>
+    Associate requirement
+</h1>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-6">
+        <div class="card border-info">
+            <div class="card-header text-bg-info">
+                <span class="h4 mb-0">{{ evidence.display_name }}</span>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    {% bootstrap_form form %}
+                    <div class="d-flex gap-2 mt-3 justify-content-end">
+                        <a class="btn btn-outline-secondary"
+                           href="{% url 'conformity:evidence_detail' evidence.pk %}">
+                            Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-link-45deg me-1" aria-hidden="true"></i>
+                            Associate requirement
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
