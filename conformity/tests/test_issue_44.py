@@ -602,10 +602,18 @@ class RichTableInteractionTests(TestCase):
 
     def test_control_index_shows_current_point_evaluate_call_to_action(self):
         organization = Organization.objects.create(name="Control result org")
+        framework = Framework.objects.create(name="Control result framework")
+        requirement = Requirement.objects.create(
+            framework=framework, code="CTRL", title="Control result requirement"
+        )
+        conformity = Conformity.objects.create(
+            organization=organization, requirement=requirement
+        )
         control = Control.objects.create(
             title="Control awaiting evaluation",
             frequency=Control.Frequency.YEARLY,
         )
+        control.conformity.add(conformity)
         current_point = next(
             point for point in control.get_controlpoint()
             if point.is_current_period()
