@@ -72,13 +72,13 @@ class ConformityModelFullTests(TestCase):
             control=cls.ctrl,
             period_start_date=today - timedelta(days=10),
             period_end_date=today + timedelta(days=10),
-            status=Evidence.Status.EVALUATED,
+            result=Evidence.Result.NEGATIVE,
         )
         cls.cp_past_ok = ControlPoint.objects.create(
             control=cls.ctrl,
             period_start_date=today - timedelta(days=90),
             period_end_date=today - timedelta(days=60),
-            status=Evidence.Status.EVALUATED,
+            result=Evidence.Result.POSITIVE,
         )
 
     # ---------- Basic helpers ----------
@@ -242,7 +242,7 @@ class ConformityModelFullTests(TestCase):
         self.a_in_progress.status = Action.Status.ENDED
         self.a_in_progress.active = False
         self.a_in_progress.save()
-        self.cp_negative.status = Evidence.Status.EVALUATED
+        self.cp_negative.result = Evidence.Result.POSITIVE
         self.cp_negative.save()
 
         # Now, setting 0 without negatives should not rejected
