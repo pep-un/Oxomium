@@ -297,7 +297,14 @@ class SharedUxComponentsTests(BaseDataMixin, TestCase):
                 self.assertContains(response, "form-toolbar")
                 self.assertContains(response, 'name="action" value="save"')
                 self.assertContains(response, 'name="action" value="save_stay"')
-                self.assertContains(response, "btn btn-outline-danger w-100")
+                self.assertContains(response, "btn btn-outline-secondary w-100")
+                self.assertContains(response, "btn btn-outline-primary w-100")
+                content = response.content.decode()
+                self.assertLess(content.index("Cancel"), content.index("Save &amp; Stay"))
+                self.assertLess(
+                    content.index("Save &amp; Stay"),
+                    content.rindex("> Save"),
+                )
 
     def test_save_next_only_appears_on_conformity_form(self):
         conformity_response = self.client.get(
