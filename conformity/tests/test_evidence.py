@@ -434,8 +434,8 @@ class EvidenceTests(TestCase):
         self.assertContains(response, 'Warning')
         self.assertContains(response, 'Compliant')
         self.assertContains(response, 'Periodic indicator result')
-        self.assertContains(response, 'card border-primary mb-4')
-        self.assertContains(response, 'card-header text-bg-primary')
+        self.assertContains(response, 'card mb-4')
+        self.assertContains(response, '<div class="card-header">', html=False)
         self.assertContains(response, 'name="value"')
         self.assertContains(response, 'Attachments')
 
