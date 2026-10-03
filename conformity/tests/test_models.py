@@ -744,8 +744,8 @@ class ControlAndControlPointExtrasTests(TestCase):
         cp = self.ctl.get_controlpoint().first()
         # Force dates around today and compute status via update_status
         from datetime import date, timedelta
-        cp.valid_from.date() = date.today()
-        (cp.valid_to - timedelta(microseconds=1)).date() = date.today()
+        cp.valid_from = ControlPoint._day_start(date.today())
+        cp.valid_to = ControlPoint._day_start(date.today() + timedelta(days=1))
         ControlPoint.update_status(cp)
         self.assertEqual(cp.status, ControlPoint.Status.TOBEEVALUATED)
         # helper methods
