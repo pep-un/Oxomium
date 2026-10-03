@@ -666,10 +666,15 @@ class AuditAndFindingExtraTests(TestCase):
         self.assertEqual(self.audit.get_positive_findings().count(), 1)
         self.assertEqual(self.audit.get_other_findings().count(), 1)
 
-    def test_finding_helpers_and_archived_logic(self):
-        f = Finding.objects.create(short_description="x", audit=self.audit, severity=Finding.Severity.MAJOR)
-        # is_active True by default (not archived, not positive)
+    def test_finding_helpers_and_validity_logic(self):
+        f = Finding.objects.create(
+            short_description="x",
+            audit=self.audit,
+            severity=Finding.Severity.MAJOR,
+        )
         self.assertTrue(f.is_active())
+        self.assertEqual(f.result, Evidence.Result.NEGATIVE)
+        self.assertEqual(f.source_type, Evidence.SourceType.FINDING)
 
         # cvss validation
         f.cvss = 10.1
@@ -679,19 +684,23 @@ class AuditAndFindingExtraTests(TestCase):
         with self.assertRaises(ValidationError):
             f.clean()
 
-        # update_archived with actions
-        a1 = Action.objects.create(title="A", organization=self.org, status=Action.Status.ANALYSING)
+        # Active actions keep the Finding valid.
+        a1 = Action.objects.create(
+            title="A",
+            organization=self.org,
+            status=Action.Status.ANALYSING,
+        )
         a1.associated_findings.add(f)
-        f.update_archived()
+        f.close_if_actions_completed()
         f.refresh_from_db()
-        self.assertFalse(f.archived)  # at least one active
+        self.assertIsNone(f.valid_to)
 
-        # all actions inactive -> archived True
+        # All linked actions completed -> Evidence validity is closed.
         a1.status = Action.Status.ENDED
         a1.save()
-        f.update_archived()
         f.refresh_from_db()
-        self.assertTrue(f.archived)
+        self.assertIsNotNone(f.valid_to)
+        self.assertFalse(f.is_active())
 
     def test_get_absolute_urls_exist(self):
         f = Finding.objects.create(short_description="url", audit=self.audit, severity=Finding.Severity.MINOR)
