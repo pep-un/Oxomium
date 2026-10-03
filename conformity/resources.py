@@ -75,7 +75,7 @@ class PeriodicControlResource(resources.Resource):
         return obj.periodic_name
 
     def dehydrate_organization(self, obj):
-        return str(obj.organization) if obj.organization else ""
+        return ", ".join(sorted({str(conf.organization) for conf in obj.conformity.all()}))
 
     def dehydrate_type(self, obj):
         return obj.periodic_type
@@ -95,12 +95,12 @@ class PeriodicControlResource(resources.Resource):
         return point.get_status_display()
 
     def dehydrate_requirements(self, obj):
-        return ", ".join(requirement.full_path for requirement in obj.requirements.all())
+        return ", ".join(conf.requirement.full_path for conf in obj.conformity.select_related('requirement').all())
 
     def dehydrate_references(self, obj):
         return ", ".join(sorted({
-            requirement.framework.name
-            for requirement in obj.requirements.all()
+            conf.requirement.framework.name
+            for conf in obj.conformity.select_related('requirement__framework').all()
         }))
 
 
@@ -110,7 +110,7 @@ PeriodicEvidenceResource = PeriodicControlResource
 class ControlResource(resources.ModelResource):
     class Meta:
         model = Control
-        fields = ("title", "level", "frequency", "organization__name", "description", "conformity")
+        fields = ("title", "level", "frequency", "description", "conformity")
 
     def dehydrate_frequency(self, obj):
         if hasattr(obj, "get_frequency_display"):
@@ -252,7 +252,7 @@ class ControlPointResource(resources.ModelResource):
     class Meta:
         model = ControlPoint
         fields = (
-            "control__title", "control__organization__name", "valid_from",
+            "control__title", "valid_from",
             "valid_to", "status", "evaluator__username", "evaluated_at", "comment",
         )
 
