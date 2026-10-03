@@ -6,20 +6,30 @@ calculation.
 
 ## Responsibilities
 
-The model deliberately separates three concepts:
+The domain model separates normative definitions, organization context, control
+configuration, and observations:
 
-1. **Target configuration** — `Control.requirements` and
-   `Indicator.requirements` say which requirements an operational source is
-   intended to assess.
-2. **Assessment association** — `Evidence.conformities` records which concrete
-   organization-specific Conformity records a particular fact actually
-   contributes to.
-3. **Computed state** — `Conformity.evidence_state` is derived from the
-   currently valid Evidence attached to that Conformity.
+1. **Requirement** is an abstract requirement from a Framework. It has no
+   organization-specific assessment context.
+2. **Conformity** contextualizes one Requirement for one Organization. It is the
+   only object that joins those two concepts.
+3. **Control** and **Indicator** target concrete Conformity records. They do not
+   reference Requirement or Organization directly; their context comes
+   exclusively from Conformity.
+4. **Evidence** records a fact and the concrete Conformity records to which that
+   fact contributes.
 
-Target configuration is therefore not assessment history. Once an Evidence
-exists, its `conformities` relation is the authoritative record of where that
-fact applies.
+A ControlPoint or IndicatorPoint is itself Evidence. When a periodic point is
+created, its `Evidence.conformities` relation is initialized as a snapshot of
+the source Control/Indicator `conformity` relation. Later changes to the
+Control/Indicator configuration do not rewrite historical Evidence.
+
+This gives two distinct relations with different meanings:
+
+- `Control/Indicator.conformity`: what the source is configured to assess.
+- `Evidence.conformities`: what a particular historical fact contributes to.
+
+Neither relation is derived through Requirement.
 
 ## Validity window
 
@@ -122,69 +132,40 @@ The implementation lives in `conformity/services/evidence.py`. Signals in
 `conformity/signals.py` should only notify this service of model or association
 changes; arbitration rules belong in the service.
 
-## Target synchronization
+## Periodic source targeting
 
-ControlPoint and IndicatorPoint are Evidence themselves. When they are created,
-their concrete `Evidence.conformities` associations are initialized from their
-source's configured Requirement targets.
+A Control or Indicator is configured directly against one or more Conformity
+records. It has no direct Requirement or Organization relation.
 
-When `Control.requirements` or `Indicator.requirements` changes, signals
-currently resynchronize the existing points' `conformities` sets.
-
-This makes `Evidence.conformities` a materialized relation derived from target
-configuration for periodic operational Evidence, while manually associated
-Evidence types use `Evidence.conformities` directly.
+When a ControlPoint or IndicatorPoint is created, the current source
+Conformities are copied to the Evidence. This is a creation-time snapshot, not
+a permanently synchronized relation.
 
 ### Invariant
 
-Code that asks **what a Control or Indicator is configured to cover** should
-read `requirements`.
+Code that asks **what a Control or Indicator is configured to assess** reads
+`source.conformity`.
 
-Code that asks **which facts currently support a concrete assessment** or
-computes conformity must read `Evidence.conformities` / `Conformity.evidence`.
+Code that asks **which assessments a historical fact supports** reads
+`Evidence.conformities`.
 
-Do not compute a Conformity state directly from `Control.requirements` or
-`Indicator.requirements`.
+Code must never reconstruct a Conformity from a Requirement plus an
+Organization for periodic sources.
 
 ## Simplification opportunities
 
-The current design is workable, but the synchronization contract can be made
-clearer.
+The architecture should remain deliberately small:
 
-### 1. Centralize target resolution
+- keep Requirement purely normative;
+- keep organization context only on Conformity;
+- keep Control/Indicator targeting only on Conformity;
+- snapshot those targets onto each periodic Evidence at creation;
+- keep arbitration rules in `services/evidence.py`, with signals acting only
+  as event adapters.
 
-Both ControlPoint and IndicatorPoint signals independently translate
-`requirements` into organization-specific Conformity records. A single helper
-such as `resolve_target_conformities(source)` and a single synchronization
-service would remove duplicated rules and make the invariant testable in one
-place.
-
-### 2. Name configuration and evidence relations explicitly
-
-Compatibility APIs named `conformity` can blur the distinction between a
-Requirement target and an Evidence association. New code should prefer
-`requirements`, `target_requirements`, or similarly explicit terminology
-for configuration and reserve `conformities` for concrete Evidence
-associations.
-
-Legacy adapters can then be deprecated without changing the persisted model.
-
-### 3. Keep arbitration out of signals
-
-Signals should remain thin event adapters. They should not acquire additional
-business rules. Keeping all state derivation and HumanEvidence invalidation in
-`services/evidence.py` prevents multiple implementations of arbitration.
-
-### 4. Make synchronization policy explicit
-
-Changing a Control/Indicator target currently rewrites the `conformities`
-relation of existing points. That is simple, but it also changes which
-historical Evidence is associated with assessments.
-
-If historical association is intended to be immutable, future target changes
-should affect only new Evidence. If retroactive retargeting is intended, the
-current behavior should be retained and covered by an explicit regression test.
-This policy should be decided before removing the compatibility layer.
+No compatibility adapter should translate Conformity to Requirement and back.
+Such an adapter hides a loss of domain context and creates competing paths to
+the same assessment.
 
 ## Regression cases
 
