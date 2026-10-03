@@ -51,9 +51,9 @@ def migrate_points_to_inheritance(apps, schema_editor):
             )
             cursor.execute(
                 f"INSERT INTO {cp_table} "
-                f"({qn('evidence_ptr_id')}, {qn('status')}, {qn('control_id')}) "
-                "VALUES (%s, %s, %s)",
-                [evidence_id, old.status, old.control_id],
+                f"({qn('evidence_ptr_id')}, {qn('control_id')}) "
+                "VALUES (%s, %s)",
+                [evidence_id, old.control_id],
             )
             control_map[old.pk] = evidence_id
 
@@ -64,9 +64,9 @@ def migrate_points_to_inheritance(apps, schema_editor):
             )
             cursor.execute(
                 f"INSERT INTO {ip_table} "
-                f"({qn('evidence_ptr_id')}, {qn('status')}, {qn('value')}, {qn('indicator_id')}) "
-                "VALUES (%s, %s, %s, %s)",
-                [evidence_id, old.status, old.value, old.indicator_id],
+                f"({qn('evidence_ptr_id')}, {qn('value')}, {qn('indicator_id')}) "
+                "VALUES (%s, %s, %s)",
+                [evidence_id, old.value, old.indicator_id],
             )
 
     for action in Action.objects.all().iterator():
@@ -165,20 +165,6 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 (
-                    'status',
-                    models.CharField(
-                        choices=[
-                            ('SCHD', 'Scheduled'),
-                            ('TOBE', 'To evaluate'),
-                            ('OK', 'Compliant'),
-                            ('NOK', 'Non-Compliant'),
-                            ('MISS', 'Missed'),
-                        ],
-                        default='SCHD',
-                        max_length=4,
-                    ),
-                ),
-                (
                     'control',
                     models.ForeignKey(
                         blank=True,
@@ -203,21 +189,6 @@ class Migration(migrations.Migration):
                         primary_key=True,
                         serialize=False,
                         to='conformity.evidence',
-                    ),
-                ),
-                (
-                    'status',
-                    models.CharField(
-                        choices=[
-                            ('SCHD', 'Scheduled'),
-                            ('TOBE', 'To evaluate'),
-                            ('OK', 'Compliant'),
-                            ('WARN', 'Warning'),
-                            ('CRIT', 'Critical'),
-                            ('MISS', 'Missed'),
-                        ],
-                        default='SCHD',
-                        max_length=4,
                     ),
                 ),
                 ('value', models.IntegerField(null=True)),
