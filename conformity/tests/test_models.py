@@ -680,9 +680,11 @@ class AuditAndFindingExtraTests(TestCase):
         f.cvss = 10.1
         with self.assertRaises(ValidationError):
             f.clean()
-        f.cvss = 0.05
+        f.cvss = -0.01
         with self.assertRaises(ValidationError):
             f.clean()
+        f.cvss = 0
+        f.clean()
 
         # Active actions keep the Finding valid.
         a1 = Action.objects.create(
@@ -691,15 +693,16 @@ class AuditAndFindingExtraTests(TestCase):
             status=Action.Status.ANALYSING,
         )
         a1.associated_findings.add(f)
+        original_valid_to = f.valid_to
         f.close_if_actions_completed()
         f.refresh_from_db()
-        self.assertIsNone(f.valid_to)
+        self.assertEqual(f.valid_to, original_valid_to)
 
-        # All linked actions completed -> Evidence validity is closed.
+        # All linked actions completed -> Evidence validity is shortened to now.
         a1.status = Action.Status.ENDED
         a1.save()
         f.refresh_from_db()
-        self.assertIsNotNone(f.valid_to)
+        self.assertLess(f.valid_to, original_valid_to)
         self.assertFalse(f.is_active())
 
     def test_get_absolute_urls_exist(self):
