@@ -39,13 +39,13 @@
                 <a href="{% url 'conformity:indicator_form' indicator.pk %}">
                     Update the indicator to generate its periods
                 </a>
-            {% elif point.status == "CRIT" %}
+            {% elif point.value != None and point.result == "NEG" %}
                 <h5 class="card-title fs-1 text-danger">
                     {{ point.value }}
-            {% elif point.status == "WARN" %}
+            {% elif point.value != None and point.result == "NEU" %}
                 <h5 class="card-title fs-1 text-warning">
                     {{ point.value }}
-            {% elif point.status == "OK" %}
+            {% elif point.value != None and point.result == "POS" %}
                 <h5 class="card-title fs-1 text-success">
                     {{ point.value }}
             {% else %}
