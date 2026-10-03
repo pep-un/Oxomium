@@ -236,7 +236,13 @@ class EvidenceContractTests(TestCase):
                 human = self.add_human(human_result)
                 for result in automatic_results:
                     self.add_evidence(result)
-                evaluate_conformity(self.leaf, at=self.now)
+                evaluate_conformity(
+                    self.leaf,
+                    at=self.now,
+                    trigger=self.leaf.evidence.exclude(
+                        source_type=Evidence.SourceType.HUMAN
+                    ).order_by('-pk').first(),
+                )
                 human.refresh_from_db()
                 self.assertEqual(human.is_valid_at(self.now), remains_valid)
 
