@@ -484,14 +484,14 @@ class ControlTable(BaseRichTable):
     organization = tables.TemplateColumn(
         verbose_name="Organization",
         template_code="""
-            {% if record.organization %}
-                <a href="{% url 'conformity:organization_detail' record.organization.pk %}"
+            {% for conformity in record.conformity.all %}
+                <a href="{% url 'conformity:organization_detail' conformity.organization.pk %}"
                    class="btn btn-sm btn-outline-secondary w-75 mx-auto">
-                    {{ record.organization }}
+                    {{ conformity.organization }}
                 </a>
-            {% endif %}
+            {% endfor %}
         """,
-        order_by=("organization__name",),
+        orderable=False,
         attrs=CENTER,
     )
     level = tables.Column(accessor="get_level_display", order_by=("level",), attrs=CENTER)
