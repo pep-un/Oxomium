@@ -5,15 +5,15 @@
 {% block header %}
 <h1 class="h1 d-flex align-items-center gap-2">
     {% if object %}
-        <a href="{% url 'conformity:indicator_detail' object.pk %}" class="header-back-link" aria-label="Back to indicator" title="Back to indicator">
+        <a href="{% url 'conformity:indicator_detail' object.pk %}" class="header-back-link" aria-label="Back to periodic indicator" title="Back to periodic indicator">
             <i class="bi bi-chevron-left" aria-hidden="true"></i>
         </a>
         {{ object.name }}
     {% else %}
-        <a href="{% url 'conformity:indicator_index' %}" class="header-back-link" aria-label="Back to indicators" title="Back to indicators">
+        <a href="{% url 'conformity:indicator_index' %}" class="header-back-link" aria-label="Back to periodic indicators" title="Back to periodic indicators">
             <i class="bi bi-chevron-left" aria-hidden="true"></i>
         </a>
-        Create indicator
+        Create periodic indicator
     {% endif %}
 </h1>
 {% endblock %}
