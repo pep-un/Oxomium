@@ -168,6 +168,9 @@
                                 Create evidence
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="{% url 'conformity:control_create' %}?conformity={{ conformity.pk }}"><i class="bi bi-clipboard2-check me-2"></i>Control</a></li>
+                                <li><a class="dropdown-item" href="{% url 'conformity:indicator_create' %}?conformity={{ conformity.pk }}"><i class="bi bi-speedometer me-2"></i>Indicator</a></li>
+                                <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="{% url 'conformity:human_evidence_create' conformity.pk %}"><i class="bi bi-person-check me-2"></i>Human assessment</a></li>
                                 <li><a class="dropdown-item" href="{% url 'conformity:manual_evidence_create' conformity.pk %}"><i class="bi bi-pencil-square me-2"></i>Manual evidence</a></li>
                                 <li><a class="dropdown-item" href="{% url 'conformity:document_evidence_create' conformity.pk %}"><i class="bi bi-file-earmark-check me-2"></i>Document evidence</a></li>
