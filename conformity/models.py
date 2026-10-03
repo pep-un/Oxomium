@@ -488,7 +488,7 @@ class Evidence(models.Model):
                 return _('Documentary proof')
         if self.source_type == self.SourceType.FINDING:
             try:
-                return str(getattr(self, 'findingevidence').finding)
+                return getattr(self, 'finding').short_description
             except ObjectDoesNotExist:
                 return _('Audit finding')
         return self.get_source_type_display()
@@ -959,13 +959,11 @@ class Audit(models.Model):
         return Finding.objects.filter(audit=self.id).filter(severity=Finding.Severity.OTHER)
 
 
-class Finding(models.Model):
-    """
-    Finding class represent the element discover during and Audit.
-    """
+class Finding(Evidence):
+    """An audit finding represented directly as Evidence."""
 
     class Severity(models.TextChoices):
-        """ List of the Type of finding """
+        """Nature and gravity of an audit finding."""
         CRITICAL = 'CRT', _('Critical non-conformity')
         MAJOR = 'MAJ', _('Major non-conformity')
         MINOR = 'MIN', _('Minor non-conformity')
@@ -985,9 +983,8 @@ class Finding(models.Model):
         choices=Severity.choices,
         default=Severity.OBSERVATION,
     )
-    archived = models.BooleanField(default=False)
     cvss = models.FloatField('CVSS', blank=True, null=True, default=None)
-    cvss_descriptor = models.CharField('CVSS Vector',max_length=256, blank=True)
+    cvss_descriptor = models.CharField('CVSS Vector', max_length=256, blank=True)
 
     class Meta:
         ordering = ['severity']
@@ -997,11 +994,49 @@ class Finding(models.Model):
             raise ValidationError('CVSS must be between 0.1 and 10.0.')
         super().clean()
 
+    def result_from_severity(self):
+        if self.severity == self.Severity.POSITIVE:
+            return Evidence.Result.POSITIVE
+        if self.severity in {
+            self.Severity.CRITICAL,
+            self.Severity.MAJOR,
+            self.Severity.MINOR,
+        }:
+            return Evidence.Result.NEGATIVE
+        return Evidence.Result.NEUTRAL
+
+    def _default_valid_from(self):
+        if self.audit_id:
+            source_date = (
+                self.audit.report_date
+                or self.audit.end_date
+                or self.audit.start_date
+            )
+            if source_date:
+                return self._day_start(source_date)
+        return timezone.now()
+
+    def save(self, *args, **kwargs):
+        if not self.valid_from:
+            self.valid_from = self._default_valid_from()
+        self.source_type = Evidence.SourceType.FINDING
+        self.status = Evidence.Status.EVALUATED
+        self.result = self.result_from_severity()
+
+        update_fields = kwargs.get('update_fields')
+        if update_fields is not None:
+            update_fields = set(update_fields)
+            update_fields.update({'source_type', 'status', 'result'})
+            if 'audit' in update_fields or 'audit_id' in update_fields:
+                update_fields.add('valid_from')
+            kwargs['update_fields'] = update_fields
+
+        return super().save(*args, **kwargs)
+
     def __str__(self):
         return str(self.short_description)
 
     def get_severity(self):
-        """return the readable version of the Findings Severity"""
         return self.severity_label
 
     @property
@@ -1009,35 +1044,34 @@ class Finding(models.Model):
         return self.get_severity_display()
 
     def get_absolute_url(self):
-        """return somewhere else when an edit has work"""
         return reverse('conformity:finding_detail', kwargs={'pk': self.id})
 
     def get_action(self):
-        """Return the list of Action associated with this Findings"""
         return Action.objects.filter(associated_findings=self.id)
 
-    def is_active(self) -> bool:
-        return (not self.archived) and (self.severity != Finding.Severity.POSITIVE)
-
-    def update_archived(self):
-        """
-        Keep `archived` consistent with linked Actions, using a single DB query:
-        - If there are actions AND none is active -> archived = True
-        - Otherwise (no actions OR at least one active) -> archived = False
-        Idempotent: only writes when the value actually changes.
-        """
-        agg = self.actions.aggregate(
-            total=Count("pk"),
-            active=Count("pk", filter=Q(active=True)),
+    def is_active(self, at=None) -> bool:
+        return (
+            self.severity != self.Severity.POSITIVE
+            and self.is_valid_at(at)
         )
-        total = agg["total"] or 0
-        active = agg["active"] or 0
 
-        new_archived = (total > 0 and active == 0)
+    def close_if_actions_completed(self, at=None):
+        """Invalidate the finding once it has actions and none remains active.
 
-        if self.archived != new_archived:
-            self.archived = new_archived
-            self.save(update_fields=["archived"])
+        This is intentionally monotone: reopening an Action does not erase an
+        explicit/manual or previously recorded validity end.
+        """
+        if self.valid_to is not None:
+            return False
+        aggregate = self.actions.aggregate(
+            total=Count('pk'),
+            active=Count('pk', filter=Q(active=True)),
+        )
+        if (aggregate['total'] or 0) == 0 or (aggregate['active'] or 0) > 0:
+            return False
+        self.valid_to = at or timezone.now()
+        self.save(update_fields=['valid_to'])
+        return True
 
 
 class Control(models.Model):
@@ -1760,16 +1794,4 @@ class DocumentEvidence(Evidence):
 
     def save(self, *args, **kwargs):
         self.source_type = Evidence.SourceType.DOCUMENT
-        return super().save(*args, **kwargs)
-
-
-class FindingEvidence(Evidence):
-    """Evidence derived explicitly from an audit finding."""
-
-    finding = models.OneToOneField(
-        Finding, on_delete=models.CASCADE, related_name='evidence_record'
-    )
-
-    def save(self, *args, **kwargs):
-        self.source_type = Evidence.SourceType.FINDING
         return super().save(*args, **kwargs)
