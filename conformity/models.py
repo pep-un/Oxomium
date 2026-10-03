@@ -992,10 +992,7 @@ class Control(models.Model):
 
     title = models.CharField(max_length=256)
     description = models.TextField(max_length=4096, blank=True)
-    conformity = models.ManyToManyField(
-        Conformity, blank=True, related_name="controls",
-        help_text=_("Organization-specific conformities assessed by this control."),
-    )
+    conformity = models.ManyToManyField(Conformity, blank=True, related_name="controls")
     control = models.ManyToManyField('self', blank=True)
     frequency = models.IntegerField(
         choices=Frequency.choices,
@@ -1450,10 +1447,7 @@ class Indicator (models.Model):
     warning = models.IntegerField(default=80)
     critical = models.IntegerField(default=20)
     responsible = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    conformity = models.ManyToManyField(
-        Conformity, blank=True,
-        help_text=_("Organization-specific conformities measured by this indicator."),
-    )
+    conformity = models.ManyToManyField(Conformity, blank=True)
     frequency = models.IntegerField(
         choices=Frequency.choices,
         default=Frequency.QUARTERLY,
