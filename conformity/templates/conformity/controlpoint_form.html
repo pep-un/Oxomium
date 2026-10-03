@@ -6,8 +6,8 @@
 <h1 class="h1 d-flex align-items-center gap-2">
     <a href="{% url 'conformity:control_detail' controlpoint.control.pk %}"
        class="header-back-link"
-       aria-label="Back to control"
-       title="Back to control">
+       aria-label="Back to periodic control"
+       title="Back to periodic control">
         <i class="bi bi-chevron-left" aria-hidden="true"></i>
     </a>
     {{ controlpoint.control.title }}
@@ -28,7 +28,7 @@
 
             <div class="card mb-4">
                 <div class="card-header">
-                    <span class="h4 mb-0">Control result</span>
+                    <span class="h4 mb-0">Periodic control result</span>
                 </div>
                 <div class="card-body">
                     {% for field in form %}
