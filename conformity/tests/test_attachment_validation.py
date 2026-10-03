@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 import hashlib
 from unittest.mock import MagicMock, patch
 
@@ -349,15 +349,15 @@ class AttachmentChecksumViewTests(TestCase):
         )
         point = IndicatorPoint.objects.create(
             indicator=indicator,
-            period_start_date=date.today(),
-            period_end_date=date.today(),
+            valid_from=IndicatorPoint._day_start(date.today()),
+            valid_to=IndicatorPoint._day_start(date.today() + timedelta(days=1)),
         )
         attachment = Attachment.objects.create(
             file=self.upload(name="indicator-reference.pdf"),
             mime_type="application/pdf",
             sha256="3" * 64,
         )
-        point.attachment.add(attachment)
+        point.attachments.add(attachment)
 
         response = self.client.get(reverse("conformity:attachment_index"))
 
