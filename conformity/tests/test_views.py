@@ -80,7 +80,7 @@ class BaseDataMixin:
             audit=self.audit,
             short_description="MajA",
             severity=Finding.Severity.MAJOR,
-            archived=True,
+            valid_to=timezone.now() - timedelta(minutes=1),
         )
 
         # Actions
@@ -156,10 +156,10 @@ class FindingIndexView(BaseDataMixin, TestCase):
         self.assertIn(self.find_obs, qs)
         self.assertNotIn(self.find_maj_arch, qs)
 
-    def test_finding_queryset_can_be_broadened_to_archived_items(self):
+    def test_finding_queryset_can_show_invalidated_items(self):
         request = self.factory.get(
             "/findings",
-            {"status": "archived"},
+            {"status": "invalidated"},
         )
         request.user = self.user
         resp = views.FindingIndexView.as_view()(request)
