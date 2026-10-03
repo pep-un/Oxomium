@@ -49,7 +49,6 @@ class AttachmentPanelTests(TestCase):
         )
         self.control = Control.objects.create(
             title="Attachment control",
-            organization=self.organization,
         )
         self.control_point = ControlPoint.objects.filter(
             control=self.control,
@@ -65,7 +64,6 @@ class AttachmentPanelTests(TestCase):
         self.indicator = Indicator.objects.create(
             name="Attachment indicator",
             responsible=self.user,
-            organization=self.organization,
         )
         self.indicator_point = IndicatorPoint.objects.filter(
             indicator=self.indicator,
