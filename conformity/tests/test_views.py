@@ -11,7 +11,7 @@ from conformity import views
 from conformity.forms import FindingForm
 from conformity.models import (
     Organization, Framework, Requirement, Conformity,
-    Audit, Action, Finding, Control, ControlPoint, Attachment, Indicator, IndicatorPoint
+    Audit, Action, Evidence, Finding, Control, ControlPoint, Attachment, Indicator, IndicatorPoint
 )
 from conformity.views import ConformityUpdateView
 
