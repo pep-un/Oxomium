@@ -35,8 +35,8 @@ class IndicatorBoundsTests(TestCase):
         IndicatorPoint.objects.filter(indicator=self.indicator).delete()
         today = timezone.localdate()
         self.point = IndicatorPoint.objects.create(
-            indicator=self.indicator, period_start_date=today,
-            period_end_date=today + timedelta(days=1),
+            indicator=self.indicator, valid_from=IndicatorPoint._day_start(today),
+            valid_to=IndicatorPoint._day_start(today + timedelta(days=2)),
         )
         self.url = reverse('conformity:indicatorpoint_form', args=[self.point.pk])
 
@@ -64,8 +64,8 @@ class IndicatorBoundsTests(TestCase):
                     with self.assertRaises(ValidationError):
                         IndicatorPoint.objects.create(
                             indicator=self.indicator, value=value,
-                            period_start_date=self.point.period_start_date,
-                            period_end_date=self.point.period_end_date,
+                            valid_from=self.point.valid_from,
+                            valid_to=self.point.valid_to,
                         )
                     self.assertEqual(IndicatorPoint.objects.filter(indicator=self.indicator).count(), 1)
                     self.assertFalse(LogEntry.objects.exists())
@@ -211,8 +211,7 @@ class IndicatorBoundsTests(TestCase):
         url = reverse('admin:conformity_indicatorpoint_change', args=[self.point.pk])
         response = self.client.post(url, {
             'indicator': self.indicator.pk, 'value': 101, 'status': 'SCHD',
-            'period_start_date': self.point.period_start_date.isoformat(),
-            'period_end_date': self.point.period_end_date.isoformat(), '_save': 'Save',
+            '_save': 'Save',
         })
         self.assertEqual(response.status_code, 200)
         self.assertIn('value', response.context['adminform'].form.errors)
