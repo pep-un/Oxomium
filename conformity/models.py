@@ -1634,7 +1634,7 @@ class IndicatorPoint(Evidence):
             if self.indicator.best >= self.value > self.indicator.warning:
                 self.result = Evidence.Result.POSITIVE
             elif self.indicator.warning >= self.value > self.indicator.critical:
-                self.result = Evidence.Result.NEUTRAL
+                self.result = Evidence.Result.PARTIAL
             elif self.indicator.critical >= self.value >= self.indicator.worst:
                 self.result = Evidence.Result.NEGATIVE
             else:
@@ -1643,7 +1643,7 @@ class IndicatorPoint(Evidence):
             if self.indicator.best <= self.value < self.indicator.warning:
                 self.result = Evidence.Result.POSITIVE
             elif self.indicator.warning <= self.value < self.indicator.critical:
-                self.result = Evidence.Result.NEUTRAL
+                self.result = Evidence.Result.PARTIAL
             elif self.indicator.critical <= self.value <= self.indicator.worst:
                 self.result = Evidence.Result.NEGATIVE
             else:
