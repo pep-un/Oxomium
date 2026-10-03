@@ -91,8 +91,7 @@ class RemainingCoverageTests(TestCase):
             title="Action", organization=self.organization, owner=self.user
         )
         self.control = Control.objects.create(
-            title="Control", organization=self.organization
-        )
+            title="Control",)
         self.control.conformity.add(self.root_conformity)
         self.control_point = ControlPoint.objects.create(
             control=self.control,
@@ -101,8 +100,7 @@ class RemainingCoverageTests(TestCase):
             status=ControlPoint.Status.TOBEEVALUATED,
         )
         self.indicator = Indicator.objects.create(
-            name="Indicator", responsible=self.user, organization=self.organization
-        )
+            name="Indicator", responsible=self.user,)
 
     def test_forms_cover_stateful_initialization(self):
         parent_form = ConformityForm(instance=self.root_conformity)
