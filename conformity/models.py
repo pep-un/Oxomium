@@ -345,10 +345,6 @@ class Evidence(models.Model):
         SCHEDULED = 'SCHD', _('Scheduled')
         TOBEEVALUATED = 'TOBE', _('To evaluate')
         EVALUATED = 'EVAL', _('Evaluated')
-        COMPLIANT = 'OK', _('Compliant')
-        NONCOMPLIANT = 'NOK', _('Non-Compliant')
-        WARNING = 'WARN', _('Warning')
-        CRITICAL = 'CRIT', _('Critical')
         MISSED = 'MISS', _('Missed')
 
     source_type = models.CharField(max_length=4, choices=SourceType.choices)
@@ -1148,8 +1144,6 @@ class Control(models.Model):
 class ControlPoint(Evidence):
     """A periodic control result represented directly as Evidence."""
 
-    Status = Evidence.Status
-
     control = models.ForeignKey(Control, on_delete=models.CASCADE, null=True, blank=True)
 
     class Meta:
@@ -1161,15 +1155,13 @@ class ControlPoint(Evidence):
 
     @staticmethod
     def update_status(instance):
-        if instance.status not in (ControlPoint.Status.COMPLIANT, ControlPoint.Status.NONCOMPLIANT):
+        if instance.status != Evidence.Status.EVALUATED:
             instance.update_schedule_status()
 
     def save(self, *args, **kwargs):
         self.source_type = Evidence.SourceType.CONTROL
-        self.result = {
-            self.Status.COMPLIANT: Evidence.Result.POSITIVE,
-            self.Status.NONCOMPLIANT: Evidence.Result.NEGATIVE,
-        }.get(self.status, Evidence.Result.NEUTRAL)
+        if self.result != Evidence.Result.NEUTRAL:
+            self.status = Evidence.Status.EVALUATED
         update_fields = kwargs.get('update_fields')
         if update_fields is not None:
             update_fields = set(update_fields)
@@ -1200,7 +1192,7 @@ class ControlPoint(Evidence):
         )
 
     def is_final_status(self) -> bool:
-        return self.status in (ControlPoint.Status.COMPLIANT, ControlPoint.Status.NONCOMPLIANT)
+        return self.status == Evidence.Status.EVALUATED
 
 
 class Action(models.Model):
@@ -1659,8 +1651,6 @@ class Indicator (models.Model):
 class IndicatorPoint(Evidence):
     """An Indicator measurement represented directly as Evidence."""
 
-    Status = Evidence.Status
-
     indicator = models.ForeignKey(Indicator, on_delete=models.CASCADE, null=True, blank=True)
     value = models.IntegerField(null=True)
 
@@ -1690,16 +1680,14 @@ class IndicatorPoint(Evidence):
 
     def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
         self.validate_value_bounds()
-        self.status_update()
+        self.result_update()
         self.source_type = Evidence.SourceType.INDICATOR
-        self.result = {
-            self.Status.COMPLIANT: Evidence.Result.POSITIVE,
-            self.Status.CRITICAL: Evidence.Result.NEGATIVE,
-        }.get(self.status, Evidence.Result.NEUTRAL)
+        if self.value is not None:
+            self.status = Evidence.Status.EVALUATED
         if update_fields is not None:
             update_fields = set(update_fields)
             if update_fields & {'value', 'indicator', 'indicator_id'}:
-                update_fields.add('status')
+                update_fields.update({'status', 'result'})
             if 'status' in update_fields:
                 update_fields.update({'result', 'source_type'})
         return super().save(
@@ -1707,9 +1695,10 @@ class IndicatorPoint(Evidence):
             using=using, update_fields=update_fields,
         )
 
-    def status_update(self):
+    def result_update(self):
         if self.value is None:
             self.update_schedule_status()
+            self.result = Evidence.Result.NEUTRAL
             return
 
         if self.indicator_id is None:
@@ -1717,24 +1706,24 @@ class IndicatorPoint(Evidence):
 
         if self.indicator.best > self.indicator.worst:
             if self.indicator.best >= self.value > self.indicator.warning:
-                self.status = IndicatorPoint.Status.COMPLIANT
+                self.result = Evidence.Result.POSITIVE
             elif self.indicator.warning >= self.value > self.indicator.critical:
-                self.status = IndicatorPoint.Status.WARNING
+                self.result = Evidence.Result.NEUTRAL
             elif self.indicator.critical >= self.value >= self.indicator.worst:
-                self.status = IndicatorPoint.Status.CRITICAL
+                self.result = Evidence.Result.NEGATIVE
             else:
-                self.status = IndicatorPoint.Status.MISSED
+                self.result = Evidence.Result.NEUTRAL
         elif self.indicator.best < self.indicator.worst:
             if self.indicator.best <= self.value < self.indicator.warning:
-                self.status = IndicatorPoint.Status.COMPLIANT
+                self.result = Evidence.Result.POSITIVE
             elif self.indicator.warning <= self.value < self.indicator.critical:
-                self.status = IndicatorPoint.Status.WARNING
+                self.result = Evidence.Result.NEUTRAL
             elif self.indicator.critical <= self.value <= self.indicator.worst:
-                self.status = IndicatorPoint.Status.CRITICAL
+                self.result = Evidence.Result.NEGATIVE
             else:
-                self.status = IndicatorPoint.Status.MISSED
+                self.result = Evidence.Result.NEUTRAL
         else:
-            self.status = IndicatorPoint.Status.MISSED
+            self.result = Evidence.Result.NEUTRAL
 
 
 class HumanEvidence(Evidence):
