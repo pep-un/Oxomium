@@ -675,9 +675,21 @@ class Conformity(models.Model):
         ), responsible=self.responsible)
 
     def update_status(self):
-        """Update this node's conformity status and propagate update to its parent."""
-        from .services.conformities import recompute_parent_chain
-        recompute_parent_chain(self)
+        """Aggregate numeric child statuses outside the Evidence engine."""
+        current = self
+        while current is not None:
+            children = current.get_children().filter(applicable=True)
+            values = list(
+                children.exclude(status__isnull=True).values_list('status', flat=True)
+            )
+            if values:
+                current.status = round(sum(values) / len(values))
+                current.status_justification = self.StatusJustification.CONFORMITY
+                current.status_last_update = timezone.now()
+                current.save(update_fields=[
+                    'status', 'status_justification', 'status_last_update',
+                ])
+            current = current.get_parent()
 
     def update_applicable(self):
         """Explicit API for callers that intentionally propagate applicability."""
