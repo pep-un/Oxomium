@@ -667,7 +667,7 @@ class AttachmentTable(BaseRichTable):
                         <a href="{% url 'conformity:indicatorpoint_form' evidence.indicatorpoint.id %}">
                             <span class="badge text-bg-info px-3">
                                 <i class="bi bi-speedometer pe-2"></i>
-                                {{ evidence.indicatorpoint.indicator.name }} · {{ evidence.indicatorpoint.period_start_date|date:"d-M-Y" }} – {{ evidence.indicatorpoint.period_end_date|date:"d-M-Y" }}
+                                {{ evidence.indicatorpoint.indicator.name }} · {{ evidence.indicatorpoint.valid_from|date:"d-M-Y" }} – {{ evidence.indicatorpoint.valid_to|date:"d-M-Y" }}
                             </span>
                         </a>
                     {% endif %}
