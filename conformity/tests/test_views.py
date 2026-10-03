@@ -456,3 +456,88 @@ class SharedUxComponentsTests(BaseDataMixin, TestCase):
         self.assertContains(response, self.ctrl_q.title)
         self.assertContains(response, 'class="header-back-link"')
         self.assertContains(response, reverse("conformity:control_index"))
+
+class ConformityPeriodicEvidenceCreationTests(BaseDataMixin, TestCase):
+    FRAMEWORK_NAME = "FW-ConformityPeriodicEvidenceCreation"
+
+    def setUp(self):
+        super().setUp()
+        self.client.force_login(self.user)
+
+    def test_leaf_conformity_offers_control_and_indicator_creation(self):
+        response = self.client.get(
+            reverse("conformity:conformity_form", args=[self.c_a.pk])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            f'{reverse("conformity:control_create")}?conformity={self.c_a.pk}',
+        )
+        self.assertContains(
+            response,
+            f'{reverse("conformity:indicator_create")}?conformity={self.c_a.pk}',
+        )
+
+    def test_control_create_from_conformity_preselects_target_and_returns(self):
+        url = f'{reverse("conformity:control_create")}?conformity={self.c_a.pk}'
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["form"].fields["conformity"].disabled)
+        self.assertEqual(
+            list(response.context["form"].initial["conformity"]),
+            [self.c_a],
+        )
+
+        response = self.client.post(
+            url,
+            {
+                "title": "Control from conformity",
+                "description": "",
+                "frequency": Control.Frequency.YEARLY,
+                "level": Control.Level.FIRST,
+            },
+        )
+
+        control = Control.objects.get(title="Control from conformity")
+        self.assertEqual(list(control.conformity.all()), [self.c_a])
+        self.assertRedirects(
+            response,
+            reverse("conformity:conformity_form", args=[self.c_a.pk]),
+        )
+
+    def test_indicator_create_from_conformity_preselects_target_and_returns(self):
+        url = f'{reverse("conformity:indicator_create")}?conformity={self.c_a.pk}'
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["form"].fields["conformity"].disabled)
+        self.assertEqual(
+            list(response.context["form"].initial["conformity"]),
+            [self.c_a],
+        )
+
+        response = self.client.post(
+            url,
+            {
+                "name": "Indicator from conformity",
+                "goal": "",
+                "source": "",
+                "formula": "",
+                "worst": 0,
+                "critical": 20,
+                "warning": 80,
+                "best": 100,
+                "responsible": self.user.pk,
+                "frequency": Indicator.Frequency.QUARTERLY,
+            },
+        )
+
+        indicator = Indicator.objects.get(name="Indicator from conformity")
+        self.assertEqual(list(indicator.conformity.all()), [self.c_a])
+        self.assertRedirects(
+            response,
+            reverse("conformity:conformity_form", args=[self.c_a.pk]),
+        )
+
