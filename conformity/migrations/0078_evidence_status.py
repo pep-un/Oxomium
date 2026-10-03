@@ -6,7 +6,14 @@ def copy_point_status_to_evidence(apps, schema_editor):
     for model_name in ('ControlPoint', 'IndicatorPoint'):
         Point = apps.get_model('conformity', model_name)
         for point in Point.objects.all().only('pk', 'status').iterator():
-            Evidence.objects.filter(pk=point.pk).update(status=point.status)
+            status = point.status
+            lifecycle = {
+                'OK': 'EVAL',
+                'NOK': 'EVAL',
+                'WARN': 'EVAL',
+                'CRIT': 'EVAL',
+            }.get(status, status)
+            Evidence.objects.filter(pk=point.pk).update(status=lifecycle)
 
 
 class Migration(migrations.Migration):
@@ -24,10 +31,6 @@ class Migration(migrations.Migration):
                     ('SCHD', 'Scheduled'),
                     ('TOBE', 'To evaluate'),
                     ('EVAL', 'Evaluated'),
-                    ('OK', 'Compliant'),
-                    ('NOK', 'Non-Compliant'),
-                    ('WARN', 'Warning'),
-                    ('CRIT', 'Critical'),
                     ('MISS', 'Missed'),
                 ],
                 default='SCHD',
