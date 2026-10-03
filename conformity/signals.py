@@ -104,7 +104,7 @@ def indicator_conformity_bootstrap(instance: Indicator, action, **kwargs):
 
 @receiver(pre_save, sender=IndicatorPoint)
 def indicatorpoint_pre_save_status(instance: IndicatorPoint, **kwargs):
-    instance.status_update()
+    instance.result_update()
 
 
 @receiver(post_save, sender=ControlPoint)
