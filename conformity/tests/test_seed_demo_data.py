@@ -76,9 +76,8 @@ class SeedDemoDataCommandTests(TestCase):
         )
 
         self.assertEqual(
-            Evidence.objects.filter(
+            HumanEvidence.objects.filter(
                 title__startswith="Demo - ",
-                source_type=Evidence.SourceType.GENERIC,
             ).count(),
             3,
         )
