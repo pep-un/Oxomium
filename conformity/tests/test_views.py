@@ -495,6 +495,7 @@ class FindingEvidenceFormTests(TestCase):
 
     def test_finding_can_be_created_without_audit(self):
         finding = Finding(
+            source_type=Evidence.SourceType.FINDING,
             short_description="Discovery outside audit",
             severity=Finding.Severity.MAJOR,
             cvss=0,
