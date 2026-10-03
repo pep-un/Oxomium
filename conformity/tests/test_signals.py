@@ -267,7 +267,7 @@ def test_controlpoint_final_status_updates_conformity(self):
     self.assertIsNotNone(cp, "Bootstrap must create at least one ControlPoint")
 
     # 1) NONCOMPLIANT -> Conformity 0 (justification CONTROL)
-    cp.status = Evidence.Status.EVALUATED
+    cp.result = Evidence.Result.NEGATIVE
     cp.save()
     conf_leaf.refresh_from_db()
     self.assertEqual(conf_leaf.status, 0, msg="Conformity should reflect NONCOMPLIANT control")
@@ -277,7 +277,7 @@ def test_controlpoint_final_status_updates_conformity(self):
     )
 
     # 2) COMPLIANT -> Conformity 100 (justification CONTROL)
-    cp.status = Evidence.Status.EVALUATED
+    cp.result = Evidence.Result.POSITIVE
     cp.save()
     conf_leaf.refresh_from_db()
     self.assertEqual(conf_leaf.status, 100, msg="Conformity should reflect COMPLIANT control")
@@ -298,9 +298,9 @@ def test_controlpoint_final_status_updates_conformity(self):
     self.assertIsNotNone(cp_ko)
 
     # 3) One OK, one NONCOMPLIANT -> overall should be 0
-    cp_ok.status = Evidence.Status.EVALUATED
+    cp_ok.result = Evidence.Result.POSITIVE
     cp_ok.save()
-    cp_ko.status = Evidence.Status.EVALUATED
+    cp_ko.result = Evidence.Result.NEGATIVE
     cp_ko.save()
     conf_leaf.refresh_from_db()
     self.assertEqual(
@@ -351,7 +351,7 @@ def test_controlpoint_final_status_updates_conformity(self):
         self.assertIsNotNone(cp, "Bootstrap must create at least one ControlPoint")
 
         ## NONCOMPLIANT -> Conformity 0 (justification CONTROL)
-        cp.status = Evidence.Status.EVALUATED
+        cp.result = Evidence.Result.NEGATIVE
         cp.save()
         conf_leaf.refresh_from_db()
         self.assertEqual(conf_leaf.status, 0, msg="Conformity should reflect NONCOMPLIANT control")
@@ -361,7 +361,7 @@ def test_controlpoint_final_status_updates_conformity(self):
         )
 
         ## COMPLIANT -> Conformity 100 (justification CONTROL)
-        cp.status = Evidence.Status.EVALUATED
+        cp.result = Evidence.Result.POSITIVE
         cp.save()
         conf_leaf.refresh_from_db()
         self.assertEqual(conf_leaf.status, 100, msg="Conformity should reflect COMPLIANT control")
@@ -382,9 +382,9 @@ def test_controlpoint_final_status_updates_conformity(self):
         self.assertIsNotNone(cp_ko)
 
         ## One OK, one NONCOMPLIANT -> overall should be 0
-        cp_ok.status = Evidence.Status.EVALUATED
+        cp_ok.result = Evidence.Result.POSITIVE
         cp_ok.save()
-        cp_ko.status = Evidence.Status.EVALUATED
+        cp_ko.result = Evidence.Result.NEGATIVE
         cp_ko.save()
         conf_leaf.refresh_from_db()
         self.assertEqual(
@@ -494,9 +494,9 @@ def test_controlpoint_final_status_updates_conformity(self):
         self.assertIsNotNone(cp_b, "Bootstrap must create at least one ControlPoint for CTRL-B")
 
         # Normalize baseline: bring controls to a compliant state
-        cp_a.status = Evidence.Status.EVALUATED
+        cp_a.result = Evidence.Result.POSITIVE
         cp_a.save()
-        cp_b.status = Evidence.Status.EVALUATED
+        cp_b.result = Evidence.Result.POSITIVE
         cp_b.save()
         conf_leaf.refresh_from_db()
         self.assertEqual(conf_leaf.status, 100, "With compliant controls and no active actions, status should be 100")
@@ -543,7 +543,7 @@ def test_controlpoint_final_status_updates_conformity(self):
         )
 
         # Flip one control to NONCOMPLIANT -> should drop to 0, justification CONTROL
-        cp_a.status = Evidence.Status.EVALUATED
+        cp_a.result = Evidence.Result.NEGATIVE
         cp_a.save()
         conf_leaf.refresh_from_db()
         self.assertEqual(conf_leaf.status, 0, "A NONCOMPLIANT control must drive conformity to 0")
@@ -554,7 +554,7 @@ def test_controlpoint_final_status_updates_conformity(self):
         )
 
         # Bring that control back to COMPLIANT -> 100 (since both controls are OK and no active actions)
-        cp_a.status = Evidence.Status.EVALUATED
+        cp_a.result = Evidence.Result.POSITIVE
         cp_a.save()
         conf_leaf.refresh_from_db()
         self.assertEqual(conf_leaf.status, 100, "All controls compliant and no active actions -> 100")
