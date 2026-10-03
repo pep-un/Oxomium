@@ -79,8 +79,8 @@ class EvidenceTests(TestCase):
 
         point = ControlPoint.objects.create(
             control=control,
-            period_start_date=date.today() - timedelta(days=1),
-            period_end_date=date.today() + timedelta(days=1),
+            valid_from=Evidence._day_start(date.today() - timedelta(days=1)),
+            valid_to=Evidence._day_start(date.today() + timedelta(days=1) + timedelta(days=1)),
             status=Evidence.Status.EVALUATED, result=Evidence.Result.POSITIVE,
         )
 
@@ -102,8 +102,8 @@ class EvidenceTests(TestCase):
 
         point = IndicatorPoint.objects.create(
             indicator=indicator,
-            period_start_date=date.today() - timedelta(days=1),
-            period_end_date=date.today() + timedelta(days=1),
+            valid_from=Evidence._day_start(date.today() - timedelta(days=1)),
+            valid_to=Evidence._day_start(date.today() + timedelta(days=1) + timedelta(days=1)),
             value=90,
         )
 
@@ -743,8 +743,8 @@ class EvidenceTests(TestCase):
         control.conformity.add(self.conformity)
         point = ControlPoint.objects.create(
             control=control,
-            period_start_date=date.today() - timedelta(days=1),
-            period_end_date=date.today() + timedelta(days=1),
+            valid_from=Evidence._day_start(date.today() - timedelta(days=1)),
+            valid_to=Evidence._day_start(date.today() + timedelta(days=1) + timedelta(days=1)),
             status=Evidence.Status.EVALUATED, result=Evidence.Result.POSITIVE,
         )
         human = HumanEvidence.objects.create(
@@ -769,8 +769,8 @@ class EvidenceTests(TestCase):
         control.conformity.add(self.conformity)
         point = ControlPoint.objects.create(
             control=control,
-            period_start_date=date.today() - timedelta(days=1),
-            period_end_date=date.today() + timedelta(days=1),
+            valid_from=Evidence._day_start(date.today() - timedelta(days=1)),
+            valid_to=Evidence._day_start(date.today() + timedelta(days=1) + timedelta(days=1)),
             status=Evidence.Status.EVALUATED, result=Evidence.Result.NEGATIVE,
         )
         self.evidence(Evidence.Result.POSITIVE)
@@ -793,8 +793,8 @@ class EvidenceTests(TestCase):
         control.conformity.add(self.conformity)
         point = ControlPoint.objects.create(
             control=control,
-            period_start_date=date.today() - timedelta(days=1),
-            period_end_date=date.today() + timedelta(days=1),
+            valid_from=Evidence._day_start(date.today() - timedelta(days=1)),
+            valid_to=Evidence._day_start(date.today() + timedelta(days=1) + timedelta(days=1)),
             status=Evidence.Status.EVALUATED, result=Evidence.Result.NEGATIVE,
             comment='Access not removed.',
         )
@@ -812,8 +812,8 @@ class EvidenceTests(TestCase):
         indicator.conformity.add(self.conformity)
         point = IndicatorPoint.objects.create(
             indicator=indicator,
-            period_start_date=date.today() - timedelta(days=1),
-            period_end_date=date.today() + timedelta(days=1),
+            valid_from=Evidence._day_start(date.today() - timedelta(days=1)),
+            valid_to=Evidence._day_start(date.today() + timedelta(days=1) + timedelta(days=1)),
             value=10,
         )
         point.refresh_from_db()
@@ -961,8 +961,8 @@ class EvidenceTests(TestCase):
         control.conformity.add(self.conformity)
         point = ControlPoint.objects.create(
             control=control,
-            period_start_date=date.today() - timedelta(days=1),
-            period_end_date=date.today() + timedelta(days=1),
+            valid_from=Evidence._day_start(date.today() - timedelta(days=1)),
+            valid_to=Evidence._day_start(date.today() + timedelta(days=1) + timedelta(days=1)),
             status=Evidence.Status.EVALUATED, result=Evidence.Result.POSITIVE,
         )
 
