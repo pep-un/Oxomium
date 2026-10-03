@@ -80,39 +80,47 @@ def set_frameworks(organization, frameworks):
 
 
 def recompute_parent_chain(conformity):
-    """Aggregate this node and its ancestors, one level at a time."""
+    """Aggregate direct child states and propagate the result to ancestors."""
     from conformity.models import Conformity
 
     with transaction.atomic():
         current = conformity
         while current is not None:
-            mean = Conformity.objects.filter(
-                organization=current.organization,
-                requirement__parent=current.requirement,
-                applicable=True,
-                status__range=(0, 100),
-            ).aggregate(mean=models.Avg('status'))['mean']
-            if mean is not None:
-                current.status = mean
-                if mean >= 100:
-                    current.evidence_state = Conformity.EvidenceState.COMPLIANT
-                elif mean <= 0:
-                    current.evidence_state = Conformity.EvidenceState.NON_COMPLIANT
+            children = list(
+                Conformity.objects.filter(
+                    organization=current.organization,
+                    requirement__parent=current.requirement,
+                    applicable=True,
+                ).values_list('evidence_state', flat=True)
+            )
+            if children:
+                states = set(children)
+                unresolved = {
+                    Conformity.EvidenceState.NOT_EVALUATED,
+                    Conformity.EvidenceState.INCONCLUSIVE,
+                }
+                if states & unresolved:
+                    state = Conformity.EvidenceState.NOT_EVALUATED
+                elif states == {Conformity.EvidenceState.COMPLIANT}:
+                    state = Conformity.EvidenceState.COMPLIANT
+                elif states == {Conformity.EvidenceState.NON_COMPLIANT}:
+                    state = Conformity.EvidenceState.NON_COMPLIANT
                 else:
-                    current.evidence_state = Conformity.EvidenceState.PARTIAL
+                    state = Conformity.EvidenceState.PARTIAL
+
+                status_for = {
+                    Conformity.EvidenceState.COMPLIANT: 100,
+                    Conformity.EvidenceState.PARTIAL: 50,
+                    Conformity.EvidenceState.NON_COMPLIANT: 0,
+                    Conformity.EvidenceState.NOT_EVALUATED: None,
+                }
+                current.status = status_for[state]
+                current.evidence_state = state
                 current.status_justification = Conformity.StatusJustification.CONFORMITY
                 current.status_last_update = timezone.now()
                 current.save(update_fields=[
                     'status', 'evidence_state', 'status_justification',
                     'status_last_update',
-                ])
-            elif current.status_justification == Conformity.StatusJustification.CONFORMITY:
-                # Do not retain a stale aggregate when no child is evaluated.
-                current.status = None
-                current.evidence_state = Conformity.EvidenceState.NOT_EVALUATED
-                current.status_last_update = timezone.now()
-                current.save(update_fields=[
-                    'status', 'evidence_state', 'status_last_update',
                 ])
             current = current.get_parent()
 
