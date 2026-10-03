@@ -136,3 +136,112 @@ class EvidenceMigrationTests(TransactionTestCase):
         self.assertEqual(old_control_point.comment, 'Legacy control result')
         self.assertEqual(old_indicator_point.status, 'OK')
         self.assertEqual(old_indicator_point.value, 90)
+
+class FindingEvidenceMergeMigrationTests(TransactionTestCase):
+    migrate_from = [('conformity', '0078_evidence_status')]
+    migrate_to = [('conformity', '0079_merge_finding_into_evidence')]
+
+    def setUp(self):
+        super().setUp()
+        self.executor = MigrationExecutor(connection)
+        self.executor.migrate(self.migrate_from)
+        apps = self.executor.loader.project_state(self.migrate_from).apps
+
+        User = apps.get_model('auth', 'User')
+        Framework = apps.get_model('conformity', 'Framework')
+        Requirement = apps.get_model('conformity', 'Requirement')
+        Organization = apps.get_model('conformity', 'Organization')
+        Conformity = apps.get_model('conformity', 'Conformity')
+        Audit = apps.get_model('conformity', 'Audit')
+        Finding = apps.get_model('conformity', 'Finding')
+        FindingEvidence = apps.get_model('conformity', 'FindingEvidence')
+        Action = apps.get_model('conformity', 'Action')
+        Attachment = apps.get_model('conformity', 'Attachment')
+
+        user = User.objects.create(username='finding-migration-user')
+        framework = Framework.objects.create(name='Finding migration framework')
+        requirement = Requirement.objects.create(
+            framework=framework,
+            code='FM1',
+            name='FM1',
+            level=0,
+            tree_id=1,
+            lft=1,
+            rght=2,
+        )
+        organization = Organization.objects.create(name='Finding migration organization')
+        conformity = Conformity.objects.create(
+            organization=organization,
+            requirement=requirement,
+        )
+        audit = Audit.objects.create(
+            organization=organization,
+            auditor='Migration auditor',
+            report_date=date.today(),
+        )
+        finding = Finding.objects.create(
+            audit=audit,
+            short_description='Legacy merged finding',
+            severity='MAJ',
+            observation='Observed legacy problem',
+            archived=True,
+        )
+        attachment = Attachment.objects.create(file='attachments/finding-legacy.txt')
+        evidence = FindingEvidence.objects.create(
+            finding=finding,
+            result='NEU',
+            valid_from=timezone.now() - timedelta(days=10),
+            evaluator_id=user.pk,
+            comment='Legacy finding evidence comment',
+        )
+        evidence.conformities.add(conformity)
+        evidence.attachments.add(attachment)
+
+        action = Action.objects.create(
+            title='Legacy finding action',
+            organization=organization,
+            status='2',
+        )
+        action.associated_findings.add(finding)
+
+        self.finding_description = finding.short_description
+        self.conformity_pk = conformity.pk
+        self.attachment_pk = attachment.pk
+        self.action_pk = action.pk
+
+    def tearDown(self):
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
+        super().tearDown()
+
+    def test_finding_becomes_evidence_and_preserves_relations(self):
+        self.executor = MigrationExecutor(connection)
+        self.executor.migrate(self.migrate_to)
+        apps = self.executor.loader.project_state(self.migrate_to).apps
+
+        Finding = apps.get_model('conformity', 'Finding')
+        Action = apps.get_model('conformity', 'Action')
+
+        finding = Finding.objects.get(
+            short_description=self.finding_description
+        )
+        self.assertEqual(finding.source_type, 'FIND')
+        self.assertEqual(finding.status, 'EVAL')
+        self.assertEqual(finding.result, 'NEG')
+        self.assertIsNotNone(finding.valid_to)
+        self.assertEqual(
+            list(finding.conformities.values_list('pk', flat=True)),
+            [self.conformity_pk],
+        )
+        self.assertEqual(
+            list(finding.attachments.values_list('pk', flat=True)),
+            [self.attachment_pk],
+        )
+        self.assertEqual(
+            list(
+                Action.objects.get(pk=self.action_pk)
+                .associated_findings.values_list('pk', flat=True)
+            ),
+            [finding.pk],
+        )
+
