@@ -51,13 +51,10 @@ class PeriodicControlFilterForm(forms.Form):
         required=False,
         choices=(
             ('', '---------'),
-            (ControlPoint.Status.TOBEEVALUATED, 'To evaluate'),
-            (ControlPoint.Status.SCHEDULED, 'Scheduled'),
-            (ControlPoint.Status.COMPLIANT, 'Compliant'),
-            (ControlPoint.Status.NONCOMPLIANT, 'Non-Compliant'),
-            (IndicatorPoint.Status.WARNING, 'Warning'),
-            (IndicatorPoint.Status.CRITICAL, 'Critical'),
-            (ControlPoint.Status.MISSED, 'Missed'),
+            (Evidence.Status.TOBEEVALUATED, 'To evaluate'),
+            (Evidence.Status.SCHEDULED, 'Scheduled'),
+            (Evidence.Status.EVALUATED, 'Evaluated'),
+            (Evidence.Status.MISSED, 'Missed'),
         ),
         label='Last result',
     )
