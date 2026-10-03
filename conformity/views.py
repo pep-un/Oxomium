@@ -550,6 +550,7 @@ class ConformityUpdateView(LoginRequiredMixin, UpdateView):
 
         context['active_evidence'] = active_evidence
         context['show_evidence_conformities'] = not is_leaf
+        context['evidence_conformities'] = [self.object]
         return context
 
     def form_valid(self, form):
