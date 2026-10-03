@@ -1073,25 +1073,8 @@ class Control(models.Model):
         point = self.periodic_point
         return point.status if point is not None else ''
 
-class ControlPoint(Evidence):
-    """A periodic control result represented directly as Evidence."""
-
-    class Status(models.TextChoices):
-        SCHEDULED = 'SCHD', _('Scheduled')
-        TOBEEVALUATED = 'TOBE', _('To evaluate')
-        COMPLIANT = 'OK', _('Compliant')
-        NONCOMPLIANT = 'NOK', _('Non-Compliant')
-        MISSED = 'MISS', _('Missed')
-
-    control = models.ForeignKey(Control, on_delete=models.CASCADE, null=True, blank=True)
-    status = models.CharField(choices=Status.choices, max_length=4, default=Status.SCHEDULED)
-
-    class Meta:
-        ordering = ['valid_to']
-
-    @staticmethod
-    def get_absolute_url():
-        return reverse('conformity:control_index')
+class PeriodicEvidenceMixin:
+    """Shared date and compatibility behavior for periodic Evidence."""
 
     @staticmethod
     def _day_start(value):
@@ -1136,23 +1119,46 @@ class ControlPoint(Evidence):
 
     @property
     def attachment(self):
-        """Compatibility alias; attachments are stored once on Evidence."""
         return self.attachments
+
+    def _set_period_status(self, status_class):
+        today = date.today()
+        if self.period_end_date and self.period_end_date < today:
+            self.status = status_class.MISSED
+        elif (
+            self.period_start_date
+            and self.period_end_date
+            and self.period_start_date <= today <= self.period_end_date
+        ):
+            self.status = status_class.TOBEEVALUATED
+        else:
+            self.status = status_class.SCHEDULED
+
+
+class ControlPoint(PeriodicEvidenceMixin, Evidence):
+    """A periodic control result represented directly as Evidence."""
+
+    class Status(models.TextChoices):
+        SCHEDULED = 'SCHD', _('Scheduled')
+        TOBEEVALUATED = 'TOBE', _('To evaluate')
+        COMPLIANT = 'OK', _('Compliant')
+        NONCOMPLIANT = 'NOK', _('Non-Compliant')
+        MISSED = 'MISS', _('Missed')
+
+    control = models.ForeignKey(Control, on_delete=models.CASCADE, null=True, blank=True)
+    status = models.CharField(choices=Status.choices, max_length=4, default=Status.SCHEDULED)
+
+    class Meta:
+        ordering = ['valid_to']
+
+    @staticmethod
+    def get_absolute_url():
+        return reverse('conformity:control_index')
 
     @staticmethod
     def update_status(instance):
         if instance.status not in (ControlPoint.Status.COMPLIANT, ControlPoint.Status.NONCOMPLIANT):
-            today = date.today()
-            if instance.period_end_date and instance.period_end_date < today:
-                instance.status = ControlPoint.Status.MISSED
-            elif (
-                instance.period_start_date
-                and instance.period_end_date
-                and instance.period_start_date <= today <= instance.period_end_date
-            ):
-                instance.status = ControlPoint.Status.TOBEEVALUATED
-            else:
-                instance.status = ControlPoint.Status.SCHEDULED
+            instance._set_period_status(ControlPoint.Status)
 
     def save(self, *args, **kwargs):
         self.source_type = Evidence.SourceType.CONTROL
@@ -1646,7 +1652,7 @@ class Indicator (models.Model):
         return point.status if point is not None else ''
 
 
-class IndicatorPoint(Evidence):
+class IndicatorPoint(PeriodicEvidenceMixin, Evidence):
     """An Indicator measurement represented directly as Evidence."""
 
     class Status(models.TextChoices):
@@ -1664,51 +1670,6 @@ class IndicatorPoint(Evidence):
     @staticmethod
     def get_absolute_url():
         return reverse('conformity:indicator_index')
-
-    @staticmethod
-    def _day_start(value):
-        naive = datetime.combine(value, time.min)
-        return timezone.make_aware(naive, timezone.get_current_timezone())
-
-    @property
-    def period_start_date(self):
-        return timezone.localtime(self.valid_from).date() if self.valid_from else None
-
-    @period_start_date.setter
-    def period_start_date(self, value):
-        if value is not None:
-            self.valid_from = self._day_start(value)
-
-    @property
-    def period_end_date(self):
-        if not self.valid_to:
-            return None
-        return (timezone.localtime(self.valid_to) - timedelta(microseconds=1)).date()
-
-    @period_end_date.setter
-    def period_end_date(self, value):
-        if value is not None:
-            self.valid_to = self._day_start(value + timedelta(days=1))
-
-    @property
-    def control_date(self):
-        return self.evaluated_at
-
-    @control_date.setter
-    def control_date(self, value):
-        self.evaluated_at = value
-
-    @property
-    def control_user(self):
-        return self.evaluator
-
-    @control_user.setter
-    def control_user(self, value):
-        self.evaluator = value
-
-    @property
-    def attachment(self):
-        return self.attachments
 
     def validate_value_bounds(self):
         if self.value is None:
@@ -1751,17 +1712,7 @@ class IndicatorPoint(Evidence):
 
     def status_update(self):
         if self.value is None:
-            today = date.today()
-            if self.period_end_date and self.period_end_date < today:
-                self.status = IndicatorPoint.Status.MISSED
-            elif (
-                self.period_start_date
-                and self.period_end_date
-                and self.period_start_date <= today <= self.period_end_date
-            ):
-                self.status = IndicatorPoint.Status.TOBEEVALUATED
-            else:
-                self.status = IndicatorPoint.Status.SCHEDULED
+            self._set_period_status(IndicatorPoint.Status)
             return
 
         if self.indicator_id is None:
