@@ -40,7 +40,7 @@ class RelationAuditTests(TestCase):
         self.indicator = Indicator.objects.create(name='Indicator', responsible=self.user)
         self.indicator_point = IndicatorPoint.objects.filter(indicator=self.indicator).first()
         self.evidence = Evidence.objects.create(
-            source_type=Evidence.SourceType.MANUAL,
+            source_type=Evidence.SourceType.HUMAN,
             valid_from=timezone.now(),
         )
         self.cases = [
