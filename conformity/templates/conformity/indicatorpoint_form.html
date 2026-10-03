@@ -6,8 +6,8 @@
 <h1 class="h1 d-flex align-items-center gap-2">
     <a href="{% url 'conformity:indicator_detail' indicatorpoint.indicator.pk %}"
        class="header-back-link"
-       aria-label="Back to indicator"
-       title="Back to indicator">
+       aria-label="Back to periodic indicator"
+       title="Back to periodic indicator">
         <i class="bi bi-chevron-left" aria-hidden="true"></i>
     </a>
     {{ indicatorpoint.indicator.name }}
@@ -28,7 +28,7 @@
 
             <div class="card border-primary mb-4">
                 <div class="card-header text-bg-primary">
-                    <span class="h4 mb-0">Indicator result</span>
+                    <span class="h4 mb-0">Periodic indicator result</span>
                 </div>
                 <div class="card-body">
                     {% for field in form %}
