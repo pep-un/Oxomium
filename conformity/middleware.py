@@ -1,6 +1,8 @@
+from datetime import datetime
+
 from django.contrib.auth.signals import user_logged_in
 from django.dispatch import receiver
-from datetime import datetime
+
 from .models import ControlPoint, IndicatorPoint
 from .services.audit import update_with_audit
 
@@ -30,36 +32,36 @@ class SanityCheckMiddleware:
     @staticmethod
     def check_control_points(today):
         """Checks and updates the status of ControlPoint."""
-
-        """Update SCHD to TOBE when period start"""
-        scheduled_controls = ControlPoint.objects.filter(period_start_date__lte=today,
-                                                         period_end_date__gte=today,
-                                                         status="SCHD")
+        scheduled_controls = ControlPoint.objects.filter(
+            valid_from__date__lte=today,
+            valid_to__date__gt=today,
+            status="SCHD",
+        )
         update_with_audit(scheduled_controls, status='TOBE')
 
-        """Update expired TOBE to MISS """
-        missed_controls = ControlPoint.objects.filter(period_start_date__lt=today,
-                                                      period_end_date__lt=today,
-                                                      status__in=["TOBE","SCHD"])
+        missed_controls = ControlPoint.objects.filter(
+            valid_to__date__lte=today,
+            status__in=["TOBE", "SCHD"],
+        )
         update_with_audit(missed_controls, status='MISS')
 
     @staticmethod
     def check_indicator_points(today):
         """Checks and updates the status of IndicatorPoint."""
-
-        """Update SCHD to TOBE when period start"""
-        scheduled_indicators = IndicatorPoint.objects.filter(period_start_date__lte=today,
-                                                         period_end_date__gte=today,
-                                                         status="SCHD")
+        scheduled_indicators = IndicatorPoint.objects.filter(
+            valid_from__date__lte=today,
+            valid_to__date__gt=today,
+            status="SCHD",
+        )
         update_with_audit(scheduled_indicators, status='TOBE')
 
-        """Update expired TOBE to MISS """
-        missed_indicators = IndicatorPoint.objects.filter(period_start_date__lt=today,
-                                                      period_end_date__lt=today,
-                                                      status__in=["TOBE","SCHD"])
+        missed_indicators = IndicatorPoint.objects.filter(
+            valid_to__date__lte=today,
+            status__in=["TOBE", "SCHD"],
+        )
         update_with_audit(missed_indicators, status='MISS')
 
-# Connect the user login signal
+
 @receiver(user_logged_in)
 def update_on_login(sender, user, request, **kwargs):
     middleware = SanityCheckMiddleware(None)
