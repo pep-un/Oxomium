@@ -2,7 +2,7 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from django.test import TestCase
 
-from conformity.models import User, Control, ControlPoint
+from conformity.models import User, Control, ControlPoint, Evidence
 from conformity.middleware import SanityCheckMiddleware
 
 class SanityCheckMiddlewareTest(TestCase):
@@ -87,14 +87,14 @@ class SanityCheckMiddlewareTest(TestCase):
             control_user=cls.user,
             period_start_date=today.replace(day=1),
             period_end_date=today.replace(day=1) + relativedelta(months=1) - relativedelta(days=1),
-            status="OK"
+            status=Evidence.Status.EVALUATED, result=Evidence.Result.POSITIVE
         )
         cls.nok_control = ControlPoint.objects.create(
             control=cls.control,
             control_user=cls.user,
             period_start_date=today.replace(day=1) - relativedelta(months=3),
             period_end_date=today.replace(day=1) - relativedelta(days=1),
-            status="NOK"
+            status=Evidence.Status.EVALUATED, result=Evidence.Result.NEGATIVE
         )
 
     def test_missed_controls_update(self):
@@ -143,5 +143,7 @@ class SanityCheckMiddlewareTest(TestCase):
         self.ok_control.refresh_from_db()
         self.nok_control.refresh_from_db()
 
-        self.assertEqual(self.ok_control.status, 'OK')
-        self.assertEqual(self.nok_control.status, 'NOK')
+        self.assertEqual(self.ok_control.status, Evidence.Status.EVALUATED)
+        self.assertEqual(self.ok_control.result, Evidence.Result.POSITIVE)
+        self.assertEqual(self.nok_control.status, Evidence.Status.EVALUATED)
+        self.assertEqual(self.nok_control.result, Evidence.Result.NEGATIVE)
