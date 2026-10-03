@@ -1,5 +1,4 @@
 from django.core.exceptions import ValidationError
-from django.db import models
 from django.db.models.signals import m2m_changed, pre_save, post_save
 from django.dispatch import receiver
 from .models import (
@@ -73,18 +72,9 @@ def indicatorpoint_pre_save_status(instance: IndicatorPoint, **kwargs):
 
 @receiver(post_save, sender=ControlPoint)
 def controlpoint_post_save_evidence(instance: ControlPoint, **kwargs):
-    """A ControlPoint is itself Evidence; attach configured targets and evaluate them."""
+    """Attach a new ControlPoint to its Control's configured Conformities."""
     if instance.control_id and not instance.conformities.exists():
-        conformities = Conformity.objects.filter(
-            requirement__in=instance.control.requirements.filter(
-                rght=models.F('lft') + 1,
-            ),
-        )
-        if instance.control.organization_id:
-            conformities = conformities.filter(
-                organization_id=instance.control.organization_id
-            )
-        instance.conformities.set(conformities)
+        instance.conformities.set(instance.control.conformity.all())
     from .services.evidence import evaluate_evidence
     evaluate_evidence(
         instance,
@@ -94,55 +84,14 @@ def controlpoint_post_save_evidence(instance: ControlPoint, **kwargs):
 
 @receiver(post_save, sender=IndicatorPoint)
 def indicatorpoint_post_save_evidence(instance: IndicatorPoint, **kwargs):
-    """An IndicatorPoint is itself Evidence; attach configured targets and evaluate them."""
+    """Attach a new IndicatorPoint to its Indicator's configured Conformities."""
     if instance.indicator_id and not instance.conformities.exists():
-        conformities = Conformity.objects.filter(
-            requirement__in=instance.indicator.requirements.filter(
-                rght=models.F('lft') + 1,
-            ),
-        )
-        if instance.indicator.organization_id:
-            conformities = conformities.filter(
-                organization_id=instance.indicator.organization_id
-            )
-        instance.conformities.set(conformities)
+        instance.conformities.set(instance.indicator.conformity.all())
     from .services.evidence import evaluate_evidence
     evaluate_evidence(
         instance,
         contradiction=getattr(instance, '_evidence_semantic_change', False),
     )
-
-
-@receiver(m2m_changed, sender=Control.requirements.through)
-def control_requirement_targets_changed(instance, action, **kwargs):
-    if action in {'post_add', 'post_remove', 'post_clear'}:
-        conformities = Conformity.objects.filter(
-            requirement__in=instance.requirements.filter(
-                rght=models.F('lft') + 1,
-            ),
-        )
-        if instance.organization_id:
-            conformities = conformities.filter(
-                organization_id=instance.organization_id
-            )
-        for point in instance.get_controlpoint():
-            point.conformities.set(conformities)
-
-
-@receiver(m2m_changed, sender=Indicator.requirements.through)
-def indicator_requirement_targets_changed(instance, action, **kwargs):
-    if action in {'post_add', 'post_remove', 'post_clear'}:
-        conformities = Conformity.objects.filter(
-            requirement__in=instance.requirements.filter(
-                rght=models.F('lft') + 1,
-            ),
-        )
-        if instance.organization_id:
-            conformities = conformities.filter(
-                organization_id=instance.organization_id
-            )
-        for point in IndicatorPoint.objects.filter(indicator=instance):
-            point.conformities.set(conformities)
 
 
 @receiver(m2m_changed, sender=Evidence.conformities.through)
