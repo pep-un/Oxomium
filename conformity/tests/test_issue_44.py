@@ -223,7 +223,8 @@ class RichTableConfigurationTests(TestCase):
             item for item in completed.get_controlpoint()
             if item.is_current_period()
         )
-        completed_point.status = ControlPoint.Status.COMPLIANT
+        completed_point.status = Evidence.Status.EVALUATED
+        completed_point.result = Evidence.Result.POSITIVE
         completed_point.save(update_fields=["status"])
 
         response = self.client.get(
@@ -319,7 +320,7 @@ class ActionStatusComponentTests(TestCase):
 
 class ControlPointStatusComponentTests(TestCase):
     def test_non_compliant_uses_danger_filled_hexagon(self):
-        control_point = ControlPoint(status=ControlPoint.Status.NONCOMPLIANT)
+        control_point = ControlPoint(status=Evidence.Status.EVALUATED, result=Evidence.Result.NEGATIVE)
 
         html = render_to_string(
             "conformity/includes/controlpoint_status.html",
@@ -645,7 +646,8 @@ class RichTableInteractionTests(TestCase):
             point for point in control.get_controlpoint()
             if point.is_current_period()
         )
-        current_point.status = ControlPoint.Status.COMPLIANT
+        current_point.status = Evidence.Status.EVALUATED
+        current_point.result = Evidence.Result.POSITIVE
         current_point.save(update_fields=["status"])
 
         response = self.client.get(
@@ -676,7 +678,8 @@ class RichTableInteractionTests(TestCase):
             point for point in completed_control.get_controlpoint()
             if point.is_current_period()
         )
-        completed_point.status = ControlPoint.Status.COMPLIANT
+        completed_point.status = Evidence.Status.EVALUATED
+        completed_point.result = Evidence.Result.POSITIVE
         completed_point.save(update_fields=["status"])
 
         response = self.client.get(reverse("conformity:control_index"))
@@ -709,7 +712,8 @@ class RichTableInteractionTests(TestCase):
             item for item in control.get_controlpoint()
             if item.is_current_period()
         )
-        point.status = ControlPoint.Status.COMPLIANT
+        point.status = Evidence.Status.EVALUATED
+        point.result = Evidence.Result.POSITIVE
         point.save(update_fields=["status"])
 
         response = self.client.get(
