@@ -235,13 +235,13 @@ class ConformityRelatedCreateViewTest(TestCase):
         other_control.conformity.add(other_conformity)
         organization_point = ControlPoint.objects.create(
             control=organization_control,
-            period_start_date=date.today(),
-            period_end_date=date.today(),
+            valid_from=ControlPoint._day_start(date.today()),
+            valid_to=ControlPoint._day_start(date.today() + timedelta(days=1)),
         )
         other_point = ControlPoint.objects.create(
             control=other_control,
-            period_start_date=date.today(),
-            period_end_date=date.today(),
+            valid_from=ControlPoint._day_start(date.today()),
+            valid_to=ControlPoint._day_start(date.today() + timedelta(days=1)),
         )
 
         form = ActionForm(initial={'organization': self.organization.pk})
