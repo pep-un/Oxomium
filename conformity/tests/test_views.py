@@ -464,6 +464,24 @@ class ConformityPeriodicEvidenceCreationTests(BaseDataMixin, TestCase):
         super().setUp()
         self.client.force_login(self.user)
 
+    def test_evidence_creation_shows_organization_before_requirements(self):
+        self.org.description = "Organization description for evidence context."
+        self.org.save(update_fields=["description"])
+
+        response = self.client.get(
+            reverse("conformity:manual_evidence_create", args=[self.c_a.pk])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Associated Organization")
+        self.assertContains(response, self.org.name)
+        self.assertContains(response, self.org.description)
+        content = response.content.decode()
+        self.assertLess(
+            content.index("Associated Organization"),
+            content.index("Associated requirements"),
+        )
+
     def test_leaf_conformity_offers_control_and_indicator_creation(self):
         response = self.client.get(
             reverse("conformity:conformity_form", args=[self.c_a.pk])
