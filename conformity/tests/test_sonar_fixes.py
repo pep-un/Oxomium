@@ -229,12 +229,10 @@ class ConformityRelatedCreateViewTest(TestCase):
         other_finding = Finding.objects.create(
             audit=other_audit, short_description="Other finding"
         )
-        organization_control = Control.objects.create(
-            title="Organization control", organization=self.organization
-        )
-        other_control = Control.objects.create(
-            title="Other control", organization=self.other_organization
-        )
+        organization_control = Control.objects.create(title="Organization control")
+        other_control = Control.objects.create(title="Other control")
+        organization_control.conformity.add(self.conformity)
+        other_control.conformity.add(other_conformity)
         organization_point = ControlPoint.objects.create(
             control=organization_control,
             period_start_date=date.today(),
