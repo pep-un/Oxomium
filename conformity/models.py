@@ -345,6 +345,10 @@ class Evidence(models.Model):
         SCHEDULED = 'SCHD', _('Scheduled')
         TOBEEVALUATED = 'TOBE', _('To evaluate')
         EVALUATED = 'EVAL', _('Evaluated')
+        COMPLIANT = 'OK', _('Compliant')
+        NONCOMPLIANT = 'NOK', _('Non-Compliant')
+        WARNING = 'WARN', _('Warning')
+        CRITICAL = 'CRIT', _('Critical')
         MISSED = 'MISS', _('Missed')
 
     source_type = models.CharField(max_length=4, choices=SourceType.choices)
@@ -1144,9 +1148,7 @@ class Control(models.Model):
 class ControlPoint(Evidence):
     """A periodic control result represented directly as Evidence."""
 
-    class Status(Evidence.Status):
-        COMPLIANT = 'OK', _('Compliant')
-        NONCOMPLIANT = 'NOK', _('Non-Compliant')
+    Status = Evidence.Status
 
     control = models.ForeignKey(Control, on_delete=models.CASCADE, null=True, blank=True)
 
@@ -1657,10 +1659,7 @@ class Indicator (models.Model):
 class IndicatorPoint(Evidence):
     """An Indicator measurement represented directly as Evidence."""
 
-    class Status(Evidence.Status):
-        COMPLIANT = 'OK', _('Compliant')
-        WARNING = 'WARN', _('Warning')
-        CRITICAL = 'CRIT', _('Critical')
+    Status = Evidence.Status
 
     indicator = models.ForeignKey(Indicator, on_delete=models.CASCADE, null=True, blank=True)
     value = models.IntegerField(null=True)
