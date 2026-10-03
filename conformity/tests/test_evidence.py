@@ -154,7 +154,7 @@ class EvidenceTests(TestCase):
         self.evidence(Evidence.Result.NEUTRAL)
         self.conformity.refresh_from_db()
         self.assertEqual(
-            self.conformity.evidence_state, Conformity.EvidenceState.NOT_EVALUATED
+            self.conformity.evidence_state, Conformity.EvidenceState.INCONCLUSIVE
         )
         self.assertIsNone(self.conformity.status)
 
@@ -185,11 +185,11 @@ class EvidenceTests(TestCase):
         existing_negative.conformities.add(self.conformity)
 
         human.refresh_from_db()
-        self.assertIsNotNone(human.valid_to)
+        self.assertIsNone(human.valid_to)
         self.conformity.refresh_from_db()
         self.assertEqual(
             self.conformity.evidence_state,
-            Conformity.EvidenceState.INCONCLUSIVE,
+            Conformity.EvidenceState.COMPLIANT,
         )
 
     def test_evidence_status_change_propagates_to_parent(self):
@@ -708,10 +708,10 @@ class EvidenceTests(TestCase):
         negative.valid_to = self.now
         negative.save(update_fields=['valid_to'])
         human.refresh_from_db()
-        self.assertIsNotNone(human.valid_to)
-        self.assertFalse(human.is_valid_at())
+        self.assertIsNone(human.valid_to)
+        self.assertTrue(human.is_valid_at())
         self.conformity.refresh_from_db()
-        self.assertEqual(self.conformity.evidence_state, Conformity.EvidenceState.COMPLIANT)
+        self.assertEqual(self.conformity.evidence_state, Conformity.EvidenceState.PARTIAL)
 
     def test_human_can_arbitrate_existing_mixed_evidence(self):
         self.evidence(Evidence.Result.POSITIVE)
@@ -734,7 +734,9 @@ class EvidenceTests(TestCase):
         )
         later_negative.conformities.add(self.conformity)
         human.refresh_from_db()
-        self.assertIsNotNone(human.valid_to)
+        self.assertIsNone(human.valid_to)
+        self.conformity.refresh_from_db()
+        self.assertEqual(self.conformity.evidence_state, Conformity.EvidenceState.COMPLIANT)
 
     def test_later_control_result_invalidates_human_arbitration(self):
         control = Control.objects.create(
