@@ -106,11 +106,13 @@ class RemainingCoverageTests(TestCase):
         parent_form = ConformityForm(instance=self.root_conformity)
         self.assertNotIn("status", parent_form.fields)
 
-        archived = Finding.objects.create(
-            audit=self.audit, short_description="Archived", archived=True
+        invalidated = Finding.objects.create(
+            audit=self.audit,
+            short_description="Invalidated",
+            valid_to=timezone.now() - timedelta(minutes=1),
         )
-        archived_form = FindingForm(instance=archived)
-        self.assertTrue(all(field.disabled for field in archived_form.fields.values()))
+        invalidated_form = FindingForm(instance=invalidated)
+        self.assertIn("valid_to", invalidated_form.fields)
 
         for status in Action.Status:
             form = ActionForm(instance=Action(status=status))
@@ -175,10 +177,6 @@ class RemainingCoverageTests(TestCase):
             "",
         )
         finding_resource = FindingResource()
-        self.assertEqual(finding_resource.dehydrate_archived(self.finding), "No")
-        self.assertEqual(
-            finding_resource.dehydrate_archived(SimpleNamespace(archived=None)), ""
-        )
         self.assertIn("Action", finding_resource.dehydrate_actions(self.finding))
         self.assertEqual(
             finding_resource.dehydrate_actions(
