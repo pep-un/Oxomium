@@ -872,11 +872,11 @@ class RichTableInteractionTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(
             response,
-            control_point.period_start_date.strftime("%d-%b-%Y"),
+            control_point.valid_from.strftime("%d-%b-%Y"),
         )
         self.assertContains(
             response,
-            control_point.period_end_date.strftime("%d-%b-%Y"),
+            (control_point.valid_to - timedelta(microseconds=1)).strftime("%d-%b-%Y"),
         )
 
 
