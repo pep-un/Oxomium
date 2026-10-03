@@ -70,14 +70,14 @@ class ConformityModelFullTests(TestCase):
         today = date.today()
         cls.cp_negative = ControlPoint.objects.create(
             control=cls.ctrl,
-            period_start_date=today - timedelta(days=10),
-            period_end_date=today + timedelta(days=10),
+            valid_from=ControlPoint._day_start(today - timedelta(days=10)),
+            valid_to=ControlPoint._day_start(today + timedelta(days=11)),
             result=Evidence.Result.NEGATIVE,
         )
         cls.cp_past_ok = ControlPoint.objects.create(
             control=cls.ctrl,
-            period_start_date=today - timedelta(days=90),
-            period_end_date=today - timedelta(days=60),
+            valid_from=ControlPoint._day_start(today - timedelta(days=90)),
+            valid_to=ControlPoint._day_start(today - timedelta(days=59)),
             result=Evidence.Result.POSITIVE,
         )
 
