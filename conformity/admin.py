@@ -10,7 +10,7 @@ from import_export.admin import ImportExportModelAdmin
 from .services.conformities import set_frameworks
 from .models import (
     Action, Attachment, Audit, Conformity, Control, ControlPoint,
-    DocumentEvidence, Evidence, Finding, FindingEvidence, Framework,
+    DocumentEvidence, Evidence, Finding, Framework,
     HumanEvidence, Indicator, IndicatorPoint, ManualEvidence, Organization,
     Requirement,
 )
@@ -164,4 +164,3 @@ admin.site.register(Evidence)
 admin.site.register(HumanEvidence)
 admin.site.register(ManualEvidence)
 admin.site.register(DocumentEvidence)
-admin.site.register(FindingEvidence)
