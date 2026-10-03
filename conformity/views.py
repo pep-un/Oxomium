@@ -800,7 +800,10 @@ class ActionCreateView(LoginRequiredMixin, SaveStayMixin, CreateView):
                 finding_id = int(finding_id)
             except ValueError as exc:
                 raise Http404('Invalid finding identifier.') from exc
-            finding = get_object_or_404(Finding, pk=finding_id)
+            try:
+                finding = get_object_or_404(Finding, pk=finding_id)
+            except OverflowError as exc:
+                raise Http404('Invalid finding identifier.') from exc
             initial['associated_findings'] = [finding]
             initial['organization'] = finding.audit.organization_id
 
