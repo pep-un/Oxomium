@@ -42,8 +42,7 @@ class ControlFilter(FilterSet):
 
     class Meta:
         model = Control
-        fields = ['title', 'level', 'frequency', 'organization',
-                  'conformity']
+        fields = ['title', 'level', 'frequency', 'conformity']
 
 
 class PeriodicControlFilterForm(forms.Form):
@@ -129,7 +128,7 @@ class PeriodicControlFilter:
         if values['organization']:
             items = [
                 item for item in items
-                if item.organization_id == values['organization'].pk
+                if item.conformity.filter(organization=values['organization']).exists()
             ]
 
         if values['source_type']:
@@ -153,14 +152,14 @@ class PeriodicControlFilter:
             requirement_id = values['requirement'].pk
             items = [
                 item for item in items
-                if any(req.pk == requirement_id for req in item.requirements.all())
+                if item.conformity.filter(requirement_id=requirement_id).exists()
             ]
 
         if values['reference']:
             framework_id = values['reference'].pk
             items = [
                 item for item in items
-                if any(req.framework_id == framework_id for req in item.requirements.all())
+                if item.conformity.filter(requirement__framework_id=framework_id).exists()
             ]
 
         return items
