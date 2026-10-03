@@ -1061,6 +1061,14 @@ class Control(models.Model):
         )
 
     @property
+    def organization_sort(self):
+        """Stable display/sort key derived from configured Conformities."""
+        return ', '.join(sorted({
+            str(conformity.organization)
+            for conformity in self.conformity.select_related('organization').all()
+        }))
+
+    @property
     def periodic_result_sort(self):
         point = self.periodic_point
         return point.status if point is not None else ''
@@ -1623,6 +1631,14 @@ class Indicator (models.Model):
             points[0] if points else None,
         )
 
+
+    @property
+    def organization_sort(self):
+        """Stable display/sort key derived from configured Conformities."""
+        return ', '.join(sorted({
+            str(conformity.organization)
+            for conformity in self.conformity.select_related('organization').all()
+        }))
 
     @property
     def periodic_result_sort(self):
