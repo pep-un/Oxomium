@@ -5,56 +5,72 @@
 {% block header %}
 <h1 class="h1 d-flex align-items-center gap-2">
     {% if object %}
-        <a href="{% url 'conformity:finding_detail' object.pk %}" class="header-back-link" aria-label="Back to finding" title="Back to finding">
+        <a href="{% url 'conformity:finding_detail' object.pk %}"
+           class="header-back-link"
+           aria-label="Back to finding"
+           title="Back to finding">
             <i class="bi bi-chevron-left" aria-hidden="true"></i>
         </a>
-        {{ object.short_description }}
+        Edit finding
     {% else %}
-        <a href="{% url 'conformity:finding_index' %}" class="header-back-link" aria-label="Back to findings" title="Back to findings">
-            <i class="bi bi-chevron-left" aria-hidden="true"></i>
-        </a>
+        <i class="bi bi-plus-circle" aria-hidden="true"></i>
         Create finding
     {% endif %}
 </h1>
 {% endblock %}
 
 {% block content %}
-
-    <form class="form" method="post" action="" enctype="multipart/form-data" id="object-form">
-        {% csrf_token %}
-        <div class="row justify-content-center">
-            <div class="col col-6">
-                {% for field in form %}
-                    {% if field.name == "valid_from" %}
-                        <div class="row g-3">
-                            <div class="col-12 col-md-6">
-                                {% bootstrap_field field %}
-                            </div>
-                    {% elif field.name == "valid_to" %}
-                            <div class="col-12 col-md-6">
-                                {% bootstrap_field field %}
-                            </div>
-                        </div>
-                    {% elif field.name != "attachments" %}
-                        {% bootstrap_field field %}
-                    {% endif %}
-                {% endfor %}
-
-                {% if form.attachments %}
-                    {% if object %}
-                        {% include "includes/attachment_panel.html" with attachments=object.attachments.all owner=object owner_type="evidence" editable=True attachment_field=form.attachments %}
-                    {% else %}
-                        {% include "includes/attachment_panel.html" with attachments=None owner=None owner_type="evidence" editable=False attachment_field=form.attachments %}
-                    {% endif %}
-                {% endif %}
-
-                {% if object %}
-                    {% url 'conformity:finding_detail' object.pk as cancel_url %}
-                {% else %}
-                    {% url 'conformity:finding_index' as cancel_url %}
-                {% endif %}
-                {% include "includes/form_toolbar.html" with cancel_url=cancel_url %}
-            </div>
+<form class="form" method="post" action="" enctype="multipart/form-data" id="object-form">
+    {% csrf_token %}
+    <div class="row g-4 align-items-start">
+        <div class="col-12 col-lg-6">
+            {% if evidence_conformities %}
+                {% include "conformity/includes/evidence_organization_cards.html" %}
+                {% include "conformity/includes/evidence_requirement_cards.html" %}
+            {% endif %}
         </div>
-    </form>
+
+        <div class="col-12 col-lg-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <span class="h4 mb-0">Finding</span>
+                </div>
+                <div class="card-body">
+                    {% for field in form %}
+                        {% if field.name == "valid_from" %}
+                            <div class="row g-3">
+                                <div class="col-12 col-md-6">
+                                    {% bootstrap_field field %}
+                                </div>
+                        {% elif field.name == "valid_to" %}
+                                <div class="col-12 col-md-6">
+                                    {% bootstrap_field field %}
+                                </div>
+                            </div>
+                        {% elif field.name != "attachments" %}
+                            {% bootstrap_field field %}
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+
+            {% if form.attachments %}
+                {% if object %}
+                    {% include "includes/attachment_panel.html" with attachments=object.attachments.all owner=object owner_type="evidence" editable=True attachment_field=form.attachments %}
+                {% else %}
+                    {% include "includes/attachment_panel.html" with attachments=None owner=None owner_type="evidence" editable=False attachment_field=form.attachments %}
+                {% endif %}
+            {% endif %}
+
+            {% if object %}
+                {% url 'conformity:finding_detail' object.pk as cancel_url %}
+            {% elif request.GET.conformity %}
+                {% url 'conformity:conformity_form' request.GET.conformity as cancel_url %}
+            {% else %}
+                {% url 'conformity:finding_index' as cancel_url %}
+            {% endif %}
+            {% include "includes/form_toolbar.html" with cancel_url=cancel_url form_id="object-form" %}
+        </div>
+    </div>
+</form>
 {% endblock %}
