@@ -7,7 +7,6 @@ from conformity.models import (
     Control,
     ControlPoint,
     Finding,
-    FindingEvidence,
     Framework,
     HumanEvidence,
     Indicator,
@@ -87,8 +86,9 @@ class SeedDemoDataCommandTests(TestCase):
             1,
         )
         self.assertEqual(
-            FindingEvidence.objects.filter(
-                finding__reference="DEMO"
-            ).count(),
+            Finding.objects.filter(
+                reference="DEMO",
+                conformities__isnull=False,
+            ).distinct().count(),
             4,
         )
