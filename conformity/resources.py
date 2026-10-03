@@ -129,13 +129,10 @@ class FindingResource(resources.ModelResource):
 
     class Meta:
         model = Finding
-        fields = ("name", "audit__name", "archived", "short_description", "cvss", "cvss_descriptor", "actions" )
-
-    def dehydrate_archived(self, obj):
-        val = getattr(obj, "archived", None)
-        if val is None:
-            return ""
-        return "Yes" if bool(val) else "No"
+        fields = (
+            "name", "audit__name", "short_description", "severity", "result",
+            "valid_from", "valid_to", "cvss", "cvss_descriptor", "actions",
+        )
 
     def dehydrate_actions(self, obj):
         actions = obj.actions.all()
