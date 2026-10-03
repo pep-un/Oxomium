@@ -119,7 +119,7 @@ class RemainingCoverageTests(TestCase):
 
         evaluating = ControlPointForm(instance=self.control_point, user=self.user)
         self.assertIn(
-            (ControlPoint.Status.COMPLIANT, ControlPoint.Status.COMPLIANT.label),
+            (Evidence.Status.EVALUATED, Evidence.Status.EVALUATED.label),
             list(evaluating.fields["status"].widget.choices),
         )
         scheduled = ControlPoint.objects.create(
@@ -327,18 +327,18 @@ class RemainingCoverageTests(TestCase):
         point = IndicatorPoint.objects.filter(indicator=self.indicator).first()
         point.indicator = self.indicator
         self.indicator.best, self.indicator.warning, self.indicator.critical, self.indicator.worst = 100, 80, 50, 0
-        for value, status in ((90, IndicatorPoint.Status.COMPLIANT),
-                              (70, IndicatorPoint.Status.WARNING),
-                              (40, IndicatorPoint.Status.CRITICAL),
-                              (20, IndicatorPoint.Status.CRITICAL),
+        for value, status in ((90, Evidence.Status.EVALUATED),
+                              (70, Evidence.Status.EVALUATED),
+                              (40, Evidence.Status.EVALUATED),
+                              (20, Evidence.Status.EVALUATED),
                               (-1, IndicatorPoint.Status.MISSED)):
             point.value = value
             point.status_update()
             self.assertEqual(point.status, status)
         self.indicator.best, self.indicator.warning, self.indicator.critical, self.indicator.worst = 0, 20, 50, 100
-        for value, status in ((10, IndicatorPoint.Status.COMPLIANT),
-                              (30, IndicatorPoint.Status.WARNING),
-                              (75, IndicatorPoint.Status.CRITICAL),
+        for value, status in ((10, Evidence.Status.EVALUATED),
+                              (30, Evidence.Status.EVALUATED),
+                              (75, Evidence.Status.EVALUATED),
                               (150, IndicatorPoint.Status.MISSED)):
             point.value = value
             point.status_update()
