@@ -440,9 +440,9 @@ class Evidence(models.Model):
     def periodic_organization(self):
         point = self.periodic_point
         if isinstance(point, ControlPoint) and point.control_id:
-            return point.control.organization
+            return point.control.conformity.values_list('organization', flat=True).first()
         if isinstance(point, IndicatorPoint) and point.indicator_id:
-            return point.indicator.organization
+            return point.indicator.conformity.values_list('organization', flat=True).first()
         return None
 
     @property
@@ -626,11 +626,7 @@ class Conformity(models.Model):
 
     def get_control(self):
         """Return controls configured to target this requirement."""
-        return Control.objects.filter(
-            requirements=self.requirement,
-        ).filter(
-            Q(organization=self.organization) | Q(organization__isnull=True)
-        )
+        return Control.objects.filter(conformity=self)
 
     def get_related(self,*,include_actions: bool = True,include_controls: bool = True,
             only_active: bool = False,negative_only: bool = False,
@@ -976,36 +972,6 @@ class Finding(models.Model):
             self.save(update_fields=["archived"])
 
 
-class _ConformityTargetAdapter:
-    """Compatibility facade backed by Requirement targets, not a Conformity M2M."""
-
-    def __init__(self, owner):
-        self.owner = owner
-
-    def all(self):
-        queryset = Conformity.objects.filter(
-            requirement__in=self.owner.requirements.all(),
-        )
-        if self.owner.organization_id:
-            queryset = queryset.filter(organization_id=self.owner.organization_id)
-        return queryset
-
-    def add(self, *conformities):
-        self.owner.requirements.add(*(c.requirement_id for c in conformities))
-
-    def set(self, conformities):
-        self.owner.requirements.set(c.requirement_id for c in conformities)
-
-    def remove(self, *conformities):
-        self.owner.requirements.remove(*(c.requirement_id for c in conformities))
-
-    def clear(self):
-        self.owner.requirements.clear()
-
-    def exists(self):
-        return self.all().exists()
-
-
 class Control(models.Model):
     """
     Control class represent the periodic control needed to verify the security and the effectiveness of the security requirement.
@@ -1026,10 +992,9 @@ class Control(models.Model):
 
     title = models.CharField(max_length=256)
     description = models.TextField(max_length=4096, blank=True)
-    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, blank=True, null=True)
-    requirements = models.ManyToManyField(
-        Requirement, blank=True, related_name="controls",
-        help_text=_("Requirements targeted by this control. Concrete Conformity links live on Evidence."),
+    conformity = models.ManyToManyField(
+        Conformity, blank=True, related_name="controls",
+        help_text=_("Organization-specific conformities assessed by this control."),
     )
     control = models.ManyToManyField('self', blank=True)
     frequency = models.IntegerField(
@@ -1045,12 +1010,7 @@ class Control(models.Model):
         ordering = ['level','frequency','title']
 
     def __str__(self):
-        return "[" + str(self.organization) + "] " + str(self.title)
-
-    @property
-    def conformity(self):
-        """Deprecated compatibility accessor backed by requirements."""
-        return _ConformityTargetAdapter(self)
+        return self.title
 
     @staticmethod
     def get_absolute_url():
@@ -1207,7 +1167,7 @@ class ControlPoint(Evidence):
         start = self.period_start_date
         end = self.period_end_date
         return (
-            f"[{self.control.organization}] {self.control.title} "
+            f"{self.control.title} "
             f"({start.strftime('%b-%Y') if start else '?'}⇒{end.strftime('%b-%Y') if end else '?'})"
         )
 
@@ -1490,20 +1450,14 @@ class Indicator (models.Model):
     warning = models.IntegerField(default=80)
     critical = models.IntegerField(default=20)
     responsible = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, blank=True, null=True)
-    requirements = models.ManyToManyField(
-        Requirement, blank=True, related_name="indicators",
-        help_text=_("Requirements targeted by this indicator. Concrete Conformity links live on Evidence."),
+    conformity = models.ManyToManyField(
+        Conformity, blank=True, related_name="indicators",
+        help_text=_("Organization-specific conformities measured by this indicator."),
     )
     frequency = models.IntegerField(
         choices=Frequency.choices,
         default=Frequency.QUARTERLY,
     )
-
-    @property
-    def conformity(self):
-        """Deprecated compatibility accessor backed by requirements."""
-        return _ConformityTargetAdapter(self)
 
     @staticmethod
     def get_absolute_url():
