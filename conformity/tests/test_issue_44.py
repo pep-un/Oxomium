@@ -372,8 +372,8 @@ class FindingActionStatusTests(TestCase):
         self.assertContains(response, "Planning")
 
 
-class FindingTableArchiveStateTests(TestCase):
-    def test_archived_finding_name_shows_archive_icon(self):
+class FindingTableValidityStateTests(TestCase):
+    def test_invalidated_finding_name_shows_history_icon(self):
         organization = Organization.objects.create(name="Archived finding org")
         audit = Audit.objects.create(
             name="Archived finding audit",
@@ -385,7 +385,7 @@ class FindingTableArchiveStateTests(TestCase):
             short_description="Archived finding",
             audit=audit,
             severity=Finding.Severity.MAJOR,
-            archived=True,
+            valid_to=timezone.now() - timedelta(minutes=1),
         )
 
         table = FindingTable([finding])
@@ -393,8 +393,8 @@ class FindingTableArchiveStateTests(TestCase):
             __import__("django.test").test.RequestFactory().get("/")
         )
 
-        self.assertIn("bi bi-archive-fill", html)
-        self.assertIn('title="Archived"', html)
+        self.assertIn("bi bi-clock-history", html)
+        self.assertIn('title="Invalidated"', html)
 
 
 class FindingCvssBadgeTests(TestCase):
