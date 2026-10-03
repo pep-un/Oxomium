@@ -94,6 +94,8 @@ class SignalTests(TestCase):
                 valid_from=ControlPoint._day_start(frozen_today - datetime.timedelta(days=40)),
                 valid_to=ControlPoint._day_start(frozen_today - datetime.timedelta(days=29)),
             )
+            manual_past.update_schedule_status()
+            manual_past.save(update_fields=['status'])
             manual_past.refresh_from_db()
             self.assertEqual(manual_past.status, ControlPoint.Status.MISSED)
 
