@@ -376,7 +376,7 @@ class PeriodicControlTable(BaseRichTable):
                 <span class="text-body-secondary">—</span>
             {% endfor %}
         """,
-        orderable=False,
+        order_by=("organization_sort",),
         attrs=CENTER,
     )
     type = tables.Column(
