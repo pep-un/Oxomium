@@ -113,7 +113,7 @@ class ModelAuditTests(TestCase):
 
     def test_evidence_crud(self):
         self.exercise_crud(Evidence, {
-            'source_type': Evidence.SourceType.MANUAL,
+            'source_type': Evidence.SourceType.DOCUMENT,
             'result': Evidence.Result.NEUTRAL,
             'valid_from': timezone.now(), 'comment': 'Before',
         }, 'comment', 'Before', 'After')
