@@ -819,22 +819,42 @@ class ActionExportView(LoginRequiredMixin, FilteredExportMixin, View):
 #
 
 
-class ControlCreateView(LoginRequiredMixin, SaveStayMixin, CreateView):
-    stay_url_name = "conformity:control_form"
-    model = Control
-    form_class = ControlForm
+class ConformityTargetedSourceCreateMixin:
+    """Preselect one Conformity when creating a periodic evidence source."""
+
+    def get_target_conformity(self):
+        conformity_id = self.request.GET.get('conformity')
+        if not conformity_id:
+            return None
+        try:
+            conformity_id = int(conformity_id)
+        except ValueError as exc:
+            raise Http404('Invalid conformity identifier.') from exc
+        return get_object_or_404(Conformity, pk=conformity_id)
 
     def get_initial(self):
         initial = super().get_initial()
-        conformity_id = self.request.GET.get('conformity')
-        if conformity_id:
-            try:
-                conformity_id = int(conformity_id)
-            except ValueError as exc:
-                raise Http404('Invalid conformity identifier.') from exc
-            conformity = get_object_or_404(Conformity, pk=conformity_id)
+        conformity = self.get_target_conformity()
+        if conformity is not None:
             initial['conformity'] = [conformity]
         return initial
+
+    def get_success_url(self):
+        conformity = self.get_target_conformity()
+        if conformity is not None and self.request.POST.get("action") != "save_stay":
+            return reverse('conformity:conformity_form', args=[conformity.pk])
+        return super().get_success_url()
+
+
+class ControlCreateView(
+    LoginRequiredMixin,
+    ConformityTargetedSourceCreateMixin,
+    SaveStayMixin,
+    CreateView,
+):
+    stay_url_name = "conformity:control_form"
+    model = Control
+    form_class = ControlForm
 
 
 def _periodic_sources():
@@ -984,7 +1004,12 @@ class ControlExportView(LoginRequiredMixin, FilteredExportMixin, View):
 #
 
 
-class IndicatorCreateView(LoginRequiredMixin, SaveStayMixin, CreateView):
+class IndicatorCreateView(
+    LoginRequiredMixin,
+    ConformityTargetedSourceCreateMixin,
+    SaveStayMixin,
+    CreateView,
+):
     stay_url_name = "conformity:indicator_form"
     model = Indicator
     form_class = IndicatorForm
