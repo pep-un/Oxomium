@@ -1065,7 +1065,8 @@ class Finding(Evidence):
         This is intentionally monotone: reopening an Action does not erase an
         explicit/manual or previously recorded validity end.
         """
-        if self.valid_to is not None:
+        at = at or timezone.now()
+        if self.valid_to is not None and self.valid_to <= at:
             return False
         aggregate = self.actions.aggregate(
             total=Count('pk'),
@@ -1073,7 +1074,7 @@ class Finding(Evidence):
         )
         if (aggregate['total'] or 0) == 0 or (aggregate['active'] or 0) > 0:
             return False
-        self.valid_to = at or timezone.now()
+        self.valid_to = at
         self.save(update_fields=['valid_to'])
         return True
 
