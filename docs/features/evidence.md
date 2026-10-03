@@ -53,7 +53,7 @@ does not silently recalculate historical framework totals.
   critical/major/minor findings map to negative Evidence, and observation/other
   findings map to neutral Evidence.
 - `DocumentEvidence`: a Document with an explicit result and assessment association.
-- Base `Evidence`: a generic explicitly entered fact; no separate manual subtype is needed.
+Legacy `ManualEvidence` records are migrated to `HumanEvidence` expert assessments; there is no manual or generic evidence creation subtype.
 
 ControlPoint, IndicatorPoint, Finding, HumanEvidence and DocumentEvidence are concrete subclasses of Evidence.
 Common validity, result, evaluator, comment, attachments and Conformity
