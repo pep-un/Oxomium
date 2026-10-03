@@ -96,8 +96,8 @@ class RemainingCoverageTests(TestCase):
         self.control.conformity.add(self.root_conformity)
         self.control_point = ControlPoint.objects.create(
             control=self.control,
-            period_start_date=date.today(),
-            period_end_date=date.today(),
+            valid_from=ControlPoint._day_start(date.today()),
+            valid_to=ControlPoint._day_start(date.today() + timedelta(days=1)),
             status=ControlPoint.Status.TOBEEVALUATED,
         )
         self.indicator = Indicator.objects.create(
@@ -125,8 +125,8 @@ class RemainingCoverageTests(TestCase):
         self.assertNotIn("status", evaluating.fields)
         scheduled = ControlPoint.objects.create(
             control=self.control,
-            period_start_date=date.today().replace(year=date.today().year + 1),
-            period_end_date=date.today().replace(year=date.today().year + 1),
+            valid_from=ControlPoint._day_start(date.today().replace(year=date.today().year + 1)),
+            valid_to=ControlPoint._day_start(date.today().replace(year=date.today().year + 1) + timedelta(days=1)),
             status=ControlPoint.Status.SCHEDULED,
         )
         display = ControlPointForm(instance=scheduled, user=self.user)
@@ -285,8 +285,8 @@ class RemainingCoverageTests(TestCase):
     def test_indicator_detail_context(self):
         point = IndicatorPoint.objects.create(
             indicator=self.indicator,
-            period_start_date=date.today(),
-            period_end_date=date.today(),
+            valid_from=ControlPoint._day_start(date.today()),
+            valid_to=ControlPoint._day_start(date.today() + timedelta(days=1)),
         )
         view = IndicatorDetailView()
         view.object = self.indicator
@@ -296,7 +296,7 @@ class RemainingCoverageTests(TestCase):
         self.assertIn(point, list(context["indicator_point_list"]))
 
     def test_attachment_download(self):
-        attachment = self.control_point.attachment.create(
+        attachment = self.control_point.attachments.create(
             file=SimpleUploadedFile("coverage.txt", b"coverage")
         )
         response = AttachmentDownloadView().get(attachment.pk)
