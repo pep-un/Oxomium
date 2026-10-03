@@ -100,7 +100,7 @@ class ModelAuditTests(TestCase):
         self.exercise_crud(Control, {'title': 'Before'}, 'title', 'Before', 'After')
 
     def test_controlpoint_crud(self):
-        self.exercise_crud(ControlPoint, {'control': self.control, 'period_start_date': date.today(), 'period_end_date': date.today() + timedelta(days=5), 'comment': 'Before'}, 'comment', 'Before', 'After', {'control': self.control.pk})
+        self.exercise_crud(ControlPoint, {'control': self.control, 'valid_from': ControlPoint._day_start(date.today()), 'valid_to': ControlPoint._day_start(date.today() + timedelta(days=6)), 'comment': 'Before'}, 'comment', 'Before', 'After', {'control': self.control.pk})
 
     def test_attachment_crud(self):
         self.exercise_crud(Attachment, {'file': SimpleUploadedFile('audit.txt', b'audit content'), 'comment': 'Before'}, 'comment', 'Before', 'After')
@@ -109,7 +109,7 @@ class ModelAuditTests(TestCase):
         self.exercise_crud(Indicator, {'name': 'Before', 'responsible': self.actor}, 'name', 'Before', 'After', {'responsible': self.actor.pk})
 
     def test_indicatorpoint_crud(self):
-        self.exercise_crud(IndicatorPoint, {'indicator': self.indicator, 'period_start_date': date.today(), 'period_end_date': date.today() + timedelta(days=5), 'comment': 'Before'}, 'comment', 'Before', 'After', {'indicator': self.indicator.pk})
+        self.exercise_crud(IndicatorPoint, {'indicator': self.indicator, 'valid_from': IndicatorPoint._day_start(date.today()), 'valid_to': IndicatorPoint._day_start(date.today() + timedelta(days=6)), 'comment': 'Before'}, 'comment', 'Before', 'After', {'indicator': self.indicator.pk})
 
     def test_evidence_crud(self):
         self.exercise_crud(Evidence, {
