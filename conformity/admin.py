@@ -11,7 +11,7 @@ from .services.conformities import set_frameworks
 from .models import (
     Action, Attachment, Audit, Conformity, Control, ControlPoint,
     DocumentEvidence, Evidence, Finding, Framework,
-    HumanEvidence, Indicator, IndicatorPoint, ManualEvidence, Organization,
+    HumanEvidence, Indicator, IndicatorPoint, Organization,
     Requirement,
 )
 
@@ -162,5 +162,4 @@ admin.site.register(Indicator, IndicatorAdmin)
 admin.site.register(IndicatorPoint, IndicatorPointAdmin)
 admin.site.register(Evidence)
 admin.site.register(HumanEvidence)
-admin.site.register(ManualEvidence)
 admin.site.register(DocumentEvidence)
