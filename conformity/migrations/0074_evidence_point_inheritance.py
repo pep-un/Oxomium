@@ -150,14 +150,6 @@ class Migration(migrations.Migration):
             old_name='IndicatorPoint',
             new_name='LegacyIndicatorPoint',
         ),
-        migrations.RemoveField(
-            model_name='control',
-            name='organization',
-        ),
-        migrations.RemoveField(
-            model_name='indicator',
-            name='organization',
-        ),
         migrations.CreateModel(
             name='ControlPoint',
             fields=[
