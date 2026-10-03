@@ -206,40 +206,46 @@ class SignalTests(TestCase):
                 "Stored file must be deleted at the end of the test",
             )
 
-    def test_findings_archiving_updates_on_action_save_and_m2m(self):
-        """
-        Finding.archived should reflect whether active Actions are linked
-        (via m2m signals and action post_save).
-        """
+    def test_findings_validity_closes_when_actions_complete(self):
+        """Completed Actions close Finding validity without automatic reopening."""
         org = Organization.objects.create(name="Org")
-        audit = Audit.objects.create(organization=org, auditor="Aud", report_date=timezone.now())
+        audit = Audit.objects.create(
+            organization=org,
+            auditor="Aud",
+            report_date=timezone.localdate(),
+        )
         finding = Finding.objects.create(
-            short_description="F1", audit=audit, severity=Finding.Severity.MAJOR
+            short_description="F1",
+            audit=audit,
+            severity=Finding.Severity.MAJOR,
         )
 
-        finding.update_archived()
+        finding.close_if_actions_completed()
         finding.refresh_from_db()
-        self.assertFalse(finding.archived, msg="Finding with no action should not be archived")
+        self.assertIsNone(finding.valid_to)
 
-        act = Action.objects.create(title="A1", organization=org, status=Action.Status.PLANNING)
+        act = Action.objects.create(
+            title="A1",
+            organization=org,
+            status=Action.Status.PLANNING,
+        )
         act.associated_findings.add(finding)
         act.save()
         finding.refresh_from_db()
-        self.assertFalse(finding.archived, msg="Finding with active action should not be archived")
+        self.assertIsNone(finding.valid_to)
 
         act.status = Action.Status.ENDED
         act.save()
         finding.refresh_from_db()
-        self.assertTrue(finding.archived, msg="Finding with ended action should be archived")
+        self.assertIsNotNone(finding.valid_to)
+        closed_at = finding.valid_to
 
+        # Reopening the Action does not erase historical/manual invalidation.
         act.status = Action.Status.PLANNING
         act.save()
         finding.refresh_from_db()
-        self.assertFalse(finding.archived, msg="If action is back to active, finding should not be archived")
+        self.assertEqual(finding.valid_to, closed_at)
 
-        finding.actions.remove(act)
-        finding.refresh_from_db()
-        self.assertFalse(finding.archived, msg="Finding with no action should not be archived")
 
 def test_controlpoint_final_status_updates_conformity(self):
     """
