@@ -24,14 +24,14 @@ from .filterset import ActionFilter, ControlFilter, ControlPointFilter, Framewor
     PeriodicControlFilter
 from .forms import (
     ActionForm, AuditForm, ConformityForm, ControlForm, ControlPointForm,
-    DocumentEvidenceForm, EvidenceForm, FindingEvidenceForm, FindingForm,
-    HumanEvidenceForm, IndicatorForm, IndicatorPointForm, ManualEvidenceForm,
+    DocumentEvidenceForm, EvidenceForm, FindingForm, HumanEvidenceForm,
+    IndicatorForm, IndicatorPointForm, ManualEvidenceForm,
     OrganizationForm, EvidenceRequirementForm,
 )
 from .models import (
     Action, Attachment, Audit, Conformity, Control, ControlPoint,
-    DocumentEvidence, Evidence, Finding, FindingEvidence, Framework,
-    HumanEvidence, Indicator, IndicatorPoint, ManualEvidence, Organization,
+    DocumentEvidence, Evidence, Finding, Framework, HumanEvidence, Indicator,
+    IndicatorPoint, ManualEvidence, Organization,
     Requirement,
 )
 from .resources import (
@@ -284,13 +284,31 @@ class FindingIndexView(DefaultFilterMixin, LoginRequiredMixin, RichTableMixin, F
         )
 
 
-class FindingCreateView(LoginRequiredMixin, SaveStayMixin, CreateView):
+class FindingCreateView(
+    AttachmentUploadViewMixin,
+    LoginRequiredMixin,
+    SaveStayMixin,
+    CreateView,
+):
     stay_url_name = "conformity:finding_form"
     model = Finding
     form_class = FindingForm
 
     def get_initial(self):
         initial = super().get_initial()
+
+        conformity_id = self.request.GET.get('conformity')
+        if conformity_id:
+            try:
+                conformity_id = int(conformity_id)
+            except ValueError as exc:
+                raise Http404('Invalid conformity identifier.') from exc
+            conformity = get_object_or_404(Conformity, pk=conformity_id)
+            if not conformity.requirement.is_leaf_node():
+                raise Http404('Evidence can only target a leaf requirement.')
+            initial['conformity'] = conformity
+            initial['organization'] = conformity.organization
+
         audit_id = self.request.GET.get('audit')
         if audit_id:
             try:
@@ -302,15 +320,46 @@ class FindingCreateView(LoginRequiredMixin, SaveStayMixin, CreateView):
             initial['organization'] = audit.organization
         return initial
 
+    def form_valid(self, form):
+        with transaction.atomic():
+            self.object = form.save(commit=False)
+            if not self.object.evaluator_id:
+                self.object.evaluator = self.request.user
+            self.object.save()
+            form.save_m2m()
+
+            conformity_id = self.request.GET.get('conformity')
+            if conformity_id:
+                conformity = get_object_or_404(Conformity, pk=conformity_id)
+                self.object.conformities.add(conformity)
+
+            for file in self.request.FILES.getlist('attachments'):
+                attachment = Attachment.get_or_create_for_upload(file)[0]
+                self.object.attachments.add(attachment)
+
+        return HttpResponseRedirect(self.get_success_url())
+
 
 class FindingDetailView(LoginRequiredMixin, DetailView):
     model = Finding
 
 
-class FindingUpdateView(LoginRequiredMixin, SaveStayMixin, UpdateView):
+class FindingUpdateView(
+    AttachmentUploadViewMixin,
+    LoginRequiredMixin,
+    SaveStayMixin,
+    UpdateView,
+):
     stay_url_name = "conformity:finding_form"
     model = Finding
     form_class = FindingForm
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        for file in self.request.FILES.getlist('attachments'):
+            attachment = Attachment.get_or_create_for_upload(file)[0]
+            self.object.attachments.add(attachment)
+        return response
 
 
 class FindingExportView(LoginRequiredMixin, FilteredExportMixin, View):
@@ -513,7 +562,7 @@ def _resolve_evidence_subtype(evidence):
     """Return the concrete Evidence instance when one exists."""
     for accessor in (
         'controlpoint', 'indicatorpoint', 'humanevidence',
-        'manualevidence', 'documentevidence', 'findingevidence',
+        'manualevidence', 'documentevidence', 'finding',
     ):
         try:
             return getattr(evidence, accessor)
@@ -690,17 +739,6 @@ class DocumentEvidenceCreateView(
     form_class = DocumentEvidenceForm
     success_message = 'Document evidence recorded.'
     evidence_label = 'Document evidence'
-
-
-class FindingEvidenceCreateView(
-    LoginRequiredMixin,
-    ConformityEvidenceCreateMixin,
-    CreateView,
-):
-    model = FindingEvidence
-    form_class = FindingEvidenceForm
-    success_message = 'Finding evidence recorded.'
-    evidence_label = 'Finding evidence'
 
 
 class ConformityExportView(LoginRequiredMixin, View):
