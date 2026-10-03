@@ -346,7 +346,6 @@ class AttachmentChecksumViewTests(TestCase):
         indicator = Indicator.objects.create(
             name="Indicator attachment reference",
             responsible=self.user,
-            organization=organization,
         )
         point = IndicatorPoint.objects.create(
             indicator=indicator,
