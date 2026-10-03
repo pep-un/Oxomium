@@ -1,5 +1,5 @@
 import os
-from datetime import date
+from datetime import date, timedelta
 from tempfile import TemporaryDirectory
 
 from django.contrib.auth import get_user_model
@@ -56,8 +56,8 @@ class AttachmentPanelTests(TestCase):
         if self.control_point is None:
             self.control_point = ControlPoint.objects.create(
                 control=self.control,
-                period_start_date=date.today(),
-                period_end_date=date.today(),
+                valid_from=ControlPoint._day_start(date.today()),
+                valid_to=ControlPoint._day_start(date.today() + timedelta(days=1)),
                 status=ControlPoint.Status.TOBEEVALUATED,
             )
 
@@ -71,8 +71,8 @@ class AttachmentPanelTests(TestCase):
         if self.indicator_point is None:
             self.indicator_point = IndicatorPoint.objects.create(
                 indicator=self.indicator,
-                period_start_date=date.today(),
-                period_end_date=date.today(),
+                valid_from=ControlPoint._day_start(date.today()),
+                valid_to=ControlPoint._day_start(date.today() + timedelta(days=1)),
             )
 
         self.attachment = Attachment.objects.create(
@@ -141,7 +141,7 @@ class AttachmentPanelTests(TestCase):
         )
 
         for owner, owner_type, url, last_content_marker in owners:
-            owner.attachment.add(self.attachment)
+            (owner.attachments if isinstance(owner, (ControlPoint, IndicatorPoint)) else owner.attachment).add(self.attachment)
             with self.subTest(owner_type=owner_type):
                 response = self.client.get(url)
                 self.assertEqual(response.status_code, 200)
@@ -234,15 +234,15 @@ class AttachmentPanelTests(TestCase):
             ),
             fetch_redirect_response=False,
         )
-        self.assertEqual(self.indicator_point.attachment.count(), 2)
+        self.assertEqual(self.indicator_point.attachments.count(), 2)
         self.assertEqual(
-            {str(item) for item in self.indicator_point.attachment.all()},
+            {str(item) for item in self.indicator_point.attachments.all()},
             {"indicator-note.txt", "indicator-proof.txt"},
         )
 
     def test_unlink_shared_attachment_preserves_document_and_other_links(self):
-        self.control_point.attachment.add(self.attachment)
-        self.indicator_point.attachment.add(self.attachment)
+        self.control_point.attachments.add(self.attachment)
+        self.indicator_point.attachments.add(self.attachment)
         file_path = self.attachment.file.path
 
         response = self.client.post(
@@ -265,10 +265,10 @@ class AttachmentPanelTests(TestCase):
             fetch_redirect_response=False,
         )
         self.assertFalse(
-            self.control_point.attachment.filter(pk=self.attachment.pk).exists()
+            self.control_point.attachments.filter(pk=self.attachment.pk).exists()
         )
         self.assertTrue(
-            self.indicator_point.attachment.filter(pk=self.attachment.pk).exists()
+            self.indicator_point.attachments.filter(pk=self.attachment.pk).exists()
         )
         self.assertTrue(Attachment.objects.filter(pk=self.attachment.pk).exists())
         self.assertTrue(os.path.exists(file_path))
